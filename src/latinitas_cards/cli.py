@@ -1,7 +1,10 @@
 import csv
 import re
+import sqlite3
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
+import zipfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Annotated
@@ -39,27 +42,97 @@ def cloze_once(text: str, pattern: re.Pattern):
 def parse_usfx_to_df(path: Path):
     tree = ET.parse(path)
     root = tree.getroot()
-    rows = []
-    current_book = None
-    current_chapter = None
 
-    for elem in root.iter():
-        tag = elem.tag.lower()
-        if tag in ("book", "b"):
-            current_book = elem.attrib.get("id") or elem.attrib.get("code") or elem.attrib.get("n")
-        elif tag in ("c", "chapter"):
-            val = elem.attrib.get("id") or elem.attrib.get("n") or "0"
-            m = re.search(r"\d+", str(val))
-            current_chapter = int(m.group()) if m else 0
-        elif tag in ("v", "verse"):
-            val = elem.attrib.get("id") or elem.attrib.get("n") or "0"
-            m = re.search(r"\d+", str(val))
-            verse_num = int(m.group()) if m else 0
-            text = "".join(elem.itertext()).strip()
-            if text:
-                rows.append({"book": current_book, "chapter": current_chapter, "verse": verse_num, "text": text})
+    rows: list[dict] = []
 
-    df = pd.DataFrame(rows).dropna(subset=["book", "chapter", "verse"])
+    current_book: str | None = None
+    current_chapter: int | None = None
+    current_verse: int | None = None
+    buffer: list[str] = []
+
+    number_re = re.compile(r"\d+")
+
+    def norm_space(s: str) -> str:
+        s = re.sub(r"\s+", " ", s)
+        return s.strip()
+
+    def flush():
+        nonlocal current_verse, buffer
+        if current_book and current_chapter is not None and current_verse is not None:
+            txt = norm_space(" ".join(part for part in buffer if part and part.strip()))
+            if txt:
+                rows.append(
+                    {
+                        "book": current_book,
+                        "chapter": int(current_chapter),
+                        "verse": int(current_verse),
+                        "text": txt,
+                    }
+                )
+        buffer = []
+        current_verse = None
+
+    # We need to walk in document order and grab text residing outside tags too.
+    # xml.etree doesn't give easy "between siblings" text via iter(), so we do a manual stack walk
+    # capturing both .text and .tail relative to verse boundaries.
+    stack: list[tuple[ET.Element, int]] = [(root, 0)]
+    while stack:
+        node, state = stack.pop()
+
+        # On first visit, process start of node, then push children, then mark to process tail after children
+        if state == 0:
+            tag = node.tag.lower()
+
+            if tag in ("book", "b"):
+                flush()
+                current_book = node.attrib.get("id") or node.attrib.get("code") or node.attrib.get("n") or current_book
+
+            elif tag in ("c", "chapter"):
+                flush()
+                ch_val = node.attrib.get("id") or node.attrib.get("n") or ""
+                m = number_re.search(ch_val)
+                current_chapter = int(m.group()) if m else current_chapter
+
+            elif tag in ("v", "verse"):
+                # Start a new verse; if one is open, flush it first
+                flush()
+                v_val = node.attrib.get("id") or node.attrib.get("n") or ""
+                m = number_re.search(v_val)
+                current_verse = int(m.group()) if m else 0
+                # Initial text inside <v>...</v> if any
+                if node.text and current_verse is not None:
+                    buffer.append(node.text)
+
+            elif tag == "ve":
+                # Verse end; include any text in <ve> (rare) then flush
+                if node.text and current_verse is not None:
+                    buffer.append(node.text)
+                flush()
+
+            else:
+                # Normal node text inside an open verse
+                if node.text and current_verse is not None:
+                    buffer.append(node.text)
+
+            # push a marker to process tail after children
+            stack.append((node, 1))
+            # push children in reverse to simulate pre-order traversal
+            children = list(node)
+            for child in reversed(children):
+                stack.append((child, 0))
+
+        else:
+            # state == 1: process tail text after closing this node
+            if node.tail and current_verse is not None:
+                buffer.append(node.tail)
+
+    # End of document: flush any open verse
+    flush()
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        raise ValueError("Parsed zero verses from USFX; check that <v/> ... text ... <ve/> structure is present.")
+
     df["text_norm"] = df["text"].apply(normalize_latin)
     return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)
 
@@ -114,6 +187,113 @@ def generate_clozes_for_word(df, word, bucket, max_examples=2):
     return out
 
 
+def _read_apkg_field_rows(apkg_path: Path, field_name: str) -> list[dict]:
+    """
+    Read notes from an .apkg and extract a single field by name, returning rows like [{'Front': '...'}, ...].
+    Assumptions:
+      - .colpkg is a zip with collection.anki2 (SQLite)
+      - notes.flds holds all field values separated by \x1f (unit separator)
+      - field order comes from the model JSON inside col.models; we use the first model’s field order if present,
+        else assume first field is 'Front'.
+    """
+    rows: list[dict] = []
+
+    # Extract the SQLite DB to a temp file
+    with zipfile.ZipFile(apkg_path, "r") as zf, tempfile.TemporaryDirectory() as td:
+        # Usually it is collection.anki2, sometimes called collection.anki21
+        sqlite_name = None
+        for name in zf.namelist():
+            if name.endswith(".anki2") or name.endswith(".anki21"):
+                sqlite_name = name
+                break
+        if not sqlite_name:
+            raise ValueError("APKG does not contain a collection .anki2/.anki21 database.")
+
+        db_path = Path(td) / "collection.anki2"
+        with zf.open(sqlite_name) as src, open(db_path, "wb") as dst:
+            dst.write(src.read())
+
+        # Connect to the DB
+        con = sqlite3.connect(str(db_path))
+        con.row_factory = sqlite3.Row
+        try:
+            # Discover field names order from the first model if available
+            # col table has a single row with JSON meta; but to keep it robust without external JSON libs,
+            # we fallback to generic mapping if JSON parsing is not strict here.
+            # We instead infer field count from the first note and assume 'Front' maps to index 0 if not found.
+            cur = con.execute("SELECT flds FROM notes LIMIT 1")
+            first = cur.fetchone()
+            if not first:
+                return rows
+
+            # Default: if front-like field exists in common positions
+            candidate_index = 0  # fallback to index 0
+            front_like_names = ["Front", "front", "Expression", "Word"]
+            # Try to infer from notetypes if available
+            try:
+                # Read models JSON from col table (optional best-effort)
+                meta = con.execute("SELECT models FROM col LIMIT 1").fetchone()
+                if meta and meta[0]:
+                    import json
+
+                    models = json.loads(meta[0])
+                    # Pick first model, find fields order
+                    if isinstance(models, dict) and models:
+                        first_model = next(iter(models.values()))
+                        if isinstance(first_model, dict) and "flds" in first_model:
+                            names = [f.get("name", "") for f in first_model["flds"]]
+                            # Find requested field name (case-insensitive)
+                            lowered = [n.lower() for n in names]
+                            if field_name.lower() in lowered:
+                                candidate_index = lowered.index(field_name.lower())
+                            else:
+                                # try front-like defaults
+                                for n in front_like_names:
+                                    if n.lower() in lowered:
+                                        candidate_index = lowered.index(n.lower())
+                                        break
+                        # else fallback to first
+            except Exception:
+                # Best-effort; ignore JSON parsing failures
+                pass
+
+            # If still not found, try to guess by common names embedded in first note (no labels available),
+            # else stick to index 0
+            # Now iterate all notes
+            cur = con.execute("SELECT flds FROM notes")
+            for r in cur:
+                parts = r["flds"].split("\x1f")
+                if candidate_index < len(parts):
+                    rows.append({field_name: parts[candidate_index]})
+                else:
+                    # skip malformed notes
+                    continue
+            return rows
+        finally:
+            con.close()
+
+
+def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
+    """
+    Load either CSV (with header) or APKG into a DataFrame exposing the front_col.
+    """
+    suffix = input_path.suffix.lower()
+    if suffix in {".colpkg"}:
+        apkg_rows = _read_apkg_field_rows(input_path, front_col)
+        if not apkg_rows:
+            raise ValueError("No notes found in APKG or field could not be resolved.")
+        return pd.DataFrame(apkg_rows)
+    else:
+        # CSV path (existing behavior)
+        with open(input_path, newline="", encoding="utf-8") as f:
+            sample = f.read(4096)
+            dialect = csv.Sniffer().sniff(sample)
+            has_header = csv.Sniffer().has_header(sample)
+        if not has_header:
+            raise ValueError("CSV seems to have no header row. Please export with headers (Front, Back, ...).")
+        return pd.read_csv(input_path, encoding="utf-8", dialect=dialect, keep_default_na=False)
+
+
 def update_csv_with_cloze(
     csv_input: Path,
     csv_output: Path,
@@ -129,19 +309,11 @@ def update_csv_with_cloze(
     bible_df = parse_usfx_to_df(usfx_path)
     bucket = build_bucket_index(bible_df)
 
-    eprint(f"[INFO] Reading Anki CSV: {csv_input}")
-    with open(csv_input, newline="", encoding="utf-8") as f:
-        sample = f.read(4096)
-        dialect = csv.Sniffer().sniff(sample)
-        has_header = csv.Sniffer().has_header(sample)
-
-    if not has_header:
-        raise ValueError("CSV seems to have no header row. Please export with headers (Front, Back, ...).")
-
-    df = pd.read_csv(csv_input, encoding="utf-8", dialect=dialect, keep_default_na=False)
+    eprint(f"[INFO] Reading input: {csv_input}")
+    df = _load_input_to_dataframe(csv_input, front_col)
 
     if front_col not in df.columns:
-        raise KeyError(f"Column '{front_col}' not found in CSV. Available columns: {list(df.columns)}")
+        raise KeyError(f"Column '{front_col}' not found. Available columns: {list(df.columns)}")
 
     stopwords = read_stopwords(stopwords_path) if stopwords_path else set()
     if stopwords:
@@ -186,7 +358,7 @@ def vulgata_cloze_cli(
         Path,
         typer.Option(
             ...,
-            help="Path to Anki CSV export (with header, e.g., Front,Back,...)",
+            help="Path to Anki CSV export or .apkg file",
             exists=True,
             readable=True,
         ),
@@ -203,7 +375,7 @@ def vulgata_cloze_cli(
     output: Annotated[Path, typer.Option(..., help="Path for the updated CSV output")],
     anki_front: Annotated[
         str,
-        typer.Option("--anki-front", help="Name of the 'Front' column to match notes for updates"),
+        typer.Option("--anki-front", help="Name of the 'Front' field to match notes for updates"),
     ] = "Front",
     new_field: Annotated[
         str,
@@ -219,7 +391,7 @@ def vulgata_cloze_cli(
     ] = None,
     append: Annotated[bool, typer.Option(help="Append to existing values instead of overwriting")] = False,
 ):
-    """Update an Anki CSV file with cloze examples from the Latin Vulgate."""
+    """Update an Anki CSV or APKG file with cloze examples from the Latin Vulgate."""
     update_csv_with_cloze(
         csv_input=input,
         csv_output=output,
