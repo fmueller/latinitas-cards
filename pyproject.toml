@@ -1,0 +1,61 @@
+[project]
+name = "latinitas-cards"
+version = "0.1.0"
+description = "Tool to generate flashcards for learning Latin with Anki."
+authors = [
+    {name = "Felix Müller",email = "felix@fmueller.io"}
+]
+license = {text = "GPL-3.0-or-later"}
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic (>=2.11.9,<3.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "typer (>=0.19.2,<0.20.0)"
+]
+
+[tool.poetry]
+packages = [
+    { include = "latinitas_cards", from = "src" }
+]
+
+[tool.poetry.scripts]
+latinitas-cards = "latinitas_cards.cli:app"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.18.2"
+ruff = "^0.13.2"
+pytest = "^8.4.2"
+pre-commit = "^4.3.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "UP",
+    "B",
+    "SIM",
+    "I",
+]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+files = "src/**/*.py,tests/**/*.py"
+strict = true
+check_untyped_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
