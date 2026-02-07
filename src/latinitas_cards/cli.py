@@ -13,8 +13,8 @@ import pandas as pd
 import typer
 
 
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+def eprint(*args: object) -> None:
+    print(*args, file=sys.stderr)
 
 
 def normalize_latin(s: str) -> str:
@@ -26,24 +26,24 @@ def normalize_latin(s: str) -> str:
     return s
 
 
-def make_word_regex(word: str) -> re.Pattern:
+def make_word_regex(word: str) -> re.Pattern[str]:
     w = re.escape(normalize_latin(word))
     return re.compile(rf"\b{w}\b", flags=re.IGNORECASE)
 
 
-def cloze_once(text: str, pattern: re.Pattern):
-    def repl(m):
+def cloze_once(text: str, pattern: re.Pattern[str]) -> tuple[str, int]:
+    def repl(m: re.Match[str]) -> str:
         return "{{c1::" + m.group(0) + "}}"
 
     new_text, n = pattern.subn(repl, text, count=1)
     return new_text, n
 
 
-def parse_usfx_to_df(path: Path):
+def parse_usfx_to_df(path: Path) -> pd.DataFrame:
     tree = ET.parse(path)
     root = tree.getroot()
 
-    rows: list[dict] = []
+    rows: list[dict[str, object]] = []
 
     current_book: str | None = None
     current_chapter: int | None = None
@@ -56,7 +56,7 @@ def parse_usfx_to_df(path: Path):
         s = re.sub(r"\s+", " ", s)
         return s.strip()
 
-    def flush():
+    def flush() -> None:
         nonlocal current_verse, buffer
         if current_book and current_chapter is not None and current_verse is not None:
             txt = norm_space(" ".join(part for part in buffer if part and part.strip()))
@@ -137,25 +137,25 @@ def parse_usfx_to_df(path: Path):
     return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)
 
 
-def build_bucket_index(df):
-    bucket = defaultdict(list)
+def build_bucket_index(df: pd.DataFrame) -> dict[str, list[int]]:
+    bucket: dict[str, list[int]] = defaultdict(list)
     for idx, row in df.iterrows():
         tn = row["text_norm"]
         if not tn:
             continue
         letters = set(re.findall(r"[a-z]", tn[:60])) or {"*"}
         for ch in letters:
-            bucket[ch].append(idx)
+            bucket[ch].append(idx)  # type: ignore[arg-type]
     return bucket
 
 
-def candidate_indices(word_norm, bucket, total_len):
+def candidate_indices(word_norm: str, bucket: dict[str, list[int]], total_len: int) -> list[int] | range:
     first = next((c for c in word_norm if c.isalpha()), "*")
     return bucket.get(first, range(total_len))
 
 
-def read_stopwords(path: Path) -> set:
-    stops = set()
+def read_stopwords(path: Path) -> set[str]:
+    stops: set[str] = set()
     if not path:
         return stops
     with open(path, encoding="utf-8") as f:
@@ -167,14 +167,16 @@ def read_stopwords(path: Path) -> set:
     return stops
 
 
-def generate_clozes_for_word(df, word, bucket, max_examples=2):
+def generate_clozes_for_word(
+    df: pd.DataFrame, word: str, bucket: dict[str, list[int]], max_examples: int = 2
+) -> list[str]:
     patt = make_word_regex(word)
     word_norm = normalize_latin(word)
     out = []
     cnt = 0
     for idx in candidate_indices(word_norm, bucket, len(df)):
-        verse_text = df.at[idx, "text"]
-        verse_norm = df.at[idx, "text_norm"]
+        verse_text = str(df.at[idx, "text"])
+        verse_norm = str(df.at[idx, "text_norm"])
         if word_norm not in verse_norm:
             continue
         cloze, n = cloze_once(verse_text, patt)
@@ -187,7 +189,7 @@ def generate_clozes_for_word(df, word, bucket, max_examples=2):
     return out
 
 
-def _read_apkg_field_rows(apkg_path: Path, field_name: str) -> list[dict]:
+def _read_apkg_field_rows(apkg_path: Path, field_name: str) -> list[dict[str, str]]:
     """
     Read notes from an .apkg and extract a single field by name, returning rows like [{'Front': '...'}, ...].
     Assumptions:
@@ -196,7 +198,7 @@ def _read_apkg_field_rows(apkg_path: Path, field_name: str) -> list[dict]:
       - field order comes from the model JSON inside col.models; we use the first model’s field order if present,
         else assume first field is 'Front'.
     """
-    rows: list[dict] = []
+    rows: list[dict[str, str]] = []
 
     # Extract the SQLite DB to a temp file
     with zipfile.ZipFile(apkg_path, "r") as zf, tempfile.TemporaryDirectory() as td:
@@ -291,7 +293,7 @@ def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
             has_header = csv.Sniffer().has_header(sample)
         if not has_header:
             raise ValueError("CSV seems to have no header row. Please export with headers (Front, Back, ...).")
-        return pd.read_csv(input_path, encoding="utf-8", dialect=dialect, keep_default_na=False)
+        return pd.read_csv(input_path, encoding="utf-8", dialect=dialect, keep_default_na=False)  # type: ignore[call-overload,no-any-return]
 
 
 def update_csv_with_cloze(
@@ -304,7 +306,7 @@ def update_csv_with_cloze(
     joiner: str = "<br><br>",
     stopwords_path: Path | None = None,
     overwrite: bool = True,
-):
+) -> None:
     eprint(f"[INFO] Loading Vulgata USFX: {usfx_path}")
     bible_df = parse_usfx_to_df(usfx_path)
     bucket = build_bucket_index(bible_df)
@@ -390,7 +392,7 @@ def vulgata_cloze_cli(
         ),
     ] = None,
     append: Annotated[bool, typer.Option(help="Append to existing values instead of overwriting")] = False,
-):
+) -> None:
     """Update an Anki CSV or APKG file with cloze examples from the Latin Vulgate."""
     update_csv_with_cloze(
         csv_input=input,
