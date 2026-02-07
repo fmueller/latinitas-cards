@@ -134,7 +134,7 @@ def parse_usfx_to_df(path: Path) -> pd.DataFrame:
         raise ValueError("Parsed zero verses from USFX; check that <v/> ... text ... <ve/> structure is present.")
 
     df["text_norm"] = df["text"].apply(normalize_latin)
-    return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)
+    return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)  # type: ignore[no-any-return]
 
 
 def build_bucket_index(df: pd.DataFrame) -> dict[str, list[int]]:
@@ -293,7 +293,9 @@ def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
             has_header = csv.Sniffer().has_header(sample)
         if not has_header:
             raise ValueError("CSV seems to have no header row. Please export with headers (Front, Back, ...).")
-        return pd.read_csv(input_path, encoding="utf-8", dialect=dialect, keep_default_na=False)  # type: ignore[call-overload,no-any-return]
+        return pd.read_csv(  # type: ignore[call-overload,no-any-return]
+            input_path, encoding="utf-8", dialect=dialect, keep_default_na=False
+        )
 
 
 def update_csv_with_cloze(
