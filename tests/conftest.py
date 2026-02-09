@@ -1,7 +1,8 @@
-import pytest
-from typer.testing import CliRunner
+from __future__ import annotations
 
+import sys
+from pathlib import Path
 
-@pytest.fixture
-def runner() -> CliRunner:
-    return CliRunner()
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_PATH = PROJECT_ROOT / "src"
+sys.path.append(str(SRC_PATH))
