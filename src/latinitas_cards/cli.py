@@ -298,6 +298,32 @@ def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
         )
 
 
+def _build_cloze_column(
+    df: pd.DataFrame,
+    bible_df: pd.DataFrame,
+    bucket: dict[str, list[int]],
+    front_col: str,
+    max_examples: int,
+    joiner: str,
+    stopwords: set[str],
+) -> list[str]:
+    if front_col not in df.columns:
+        raise KeyError(f"Column '{front_col}' not found. Available columns: {list(df.columns)}")
+
+    cloze_col = []
+    for _, row in df.iterrows():
+        front_val = str(row[front_col]).strip()
+        if not front_val:
+            cloze_col.append("")
+            continue
+        if normalize_latin(front_val) in stopwords:
+            cloze_col.append("")
+            continue
+        clozes = generate_clozes_for_word(bible_df, front_val, bucket, max_examples=max_examples)
+        cloze_col.append(joiner.join(clozes))
+    return cloze_col
+
+
 def update_csv_with_cloze(
     csv_input: Path,
     csv_output: Path,
@@ -316,24 +342,19 @@ def update_csv_with_cloze(
     eprint(f"[INFO] Reading input: {csv_input}")
     df = _load_input_to_dataframe(csv_input, front_col)
 
-    if front_col not in df.columns:
-        raise KeyError(f"Column '{front_col}' not found. Available columns: {list(df.columns)}")
-
     stopwords = read_stopwords(stopwords_path) if stopwords_path else set()
     if stopwords:
         eprint(f"[INFO] Loaded {len(stopwords)} stopwords.")
 
-    cloze_col = []
-    for _, row in df.iterrows():
-        front_val = str(row[front_col]).strip()
-        if not front_val:
-            cloze_col.append("")
-            continue
-        if normalize_latin(front_val) in stopwords:
-            cloze_col.append("")
-            continue
-        clozes = generate_clozes_for_word(bible_df, front_val, bucket, max_examples=max_examples)
-        cloze_col.append(joiner.join(clozes))
+    cloze_col = _build_cloze_column(
+        df,
+        bible_df,
+        bucket,
+        front_col=front_col,
+        max_examples=max_examples,
+        joiner=joiner,
+        stopwords=stopwords,
+    )
 
     if new_field not in df.columns:
         df[new_field] = cloze_col
@@ -357,7 +378,7 @@ app = typer.Typer(help="Generate Anki cloze examples from the Latin Vulgate and 
 
 
 @app.command()
-def vulgata_cloze_cli(
+def generate(
     input: Annotated[
         Path,
         typer.Option(
@@ -407,3 +428,72 @@ def vulgata_cloze_cli(
         stopwords_path=stopwords,
         overwrite=not append,
     )
+
+
+@app.command()
+def preview(
+    input: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            help="Path to Anki CSV export or .apkg file",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    usfx: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            help="Path to Vulgate USFX XML (e.g., lat-clementine.usfx.xml)",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    anki_front: Annotated[
+        str,
+        typer.Option("--anki-front", help="Name of the 'Front' field to match notes for updates"),
+    ] = "Front",
+    max_examples: Annotated[int, typer.Option("--max-examples", help="Max cloze examples per word")] = 2,
+    joiner: Annotated[str, typer.Option(help="HTML separator for multiple examples")] = "<br><br>",
+    stopwords: Annotated[
+        Path | None,
+        typer.Option(
+            help="Optional path to a stopwords file (one word per line)",
+        ),
+    ] = None,
+    limit: Annotated[int, typer.Option("--limit", help="Max number of preview rows to print")] = 5,
+) -> None:
+    """Show a sample of generated clozes without writing output."""
+    eprint(f"[INFO] Loading Vulgata USFX: {usfx}")
+    bible_df = parse_usfx_to_df(usfx)
+    bucket = build_bucket_index(bible_df)
+
+    eprint(f"[INFO] Reading input: {input}")
+    df = _load_input_to_dataframe(input, anki_front)
+
+    stopwords_set = read_stopwords(stopwords) if stopwords else set()
+    if stopwords_set:
+        eprint(f"[INFO] Loaded {len(stopwords_set)} stopwords.")
+
+    cloze_col = _build_cloze_column(
+        df,
+        bible_df,
+        bucket,
+        front_col=anki_front,
+        max_examples=max_examples,
+        joiner=joiner,
+        stopwords=stopwords_set,
+    )
+
+    shown = 0
+    for front_val, cloze_val in zip(df[anki_front].astype(str), cloze_col, strict=False):
+        if not cloze_val.strip():
+            continue
+        typer.echo(f"{front_val}: {cloze_val}")
+        shown += 1
+        if shown >= limit:
+            break
+
+    if shown == 0:
+        typer.echo("No clozes generated for the provided input.")
