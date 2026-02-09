@@ -1,7 +1,6 @@
 import csv
 import re
 import sqlite3
-import sys
 import tempfile
 import unicodedata
 import xml.etree.ElementTree as ET
@@ -12,10 +11,22 @@ from typing import Annotated
 
 import pandas as pd
 import typer
+from rich import box
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
 
-def eprint(*args: object) -> None:
-    print(*args, file=sys.stderr)
+stderr_console = Console(stderr=True)
+stdout_console = Console()
+
+
+def info(message: str) -> None:
+    stderr_console.print(f"[bold cyan][INFO][/bold cyan] {message}")
+
+
+def success(message: str) -> None:
+    stderr_console.print(f"[bold green][OK][/bold green] {message}")
 
 
 _BLOCK_TAG_RE = re.compile(r"<(div|br|p|li|ul|ol|tr|td|th|table|blockquote|h[1-6])\b", flags=re.IGNORECASE)
@@ -385,16 +396,18 @@ def update_csv_with_cloze(
     stopwords_path: Path | None = None,
     overwrite: bool = True,
 ) -> None:
-    eprint(f"[INFO] Loading Vulgata USFX: {usfx_path}")
-    bible_df = parse_usfx_to_df(usfx_path)
-    bucket = build_bucket_index(bible_df)
+    with stderr_console.status("Loading Vulgata USFX..."):
+        bible_df = parse_usfx_to_df(usfx_path)
+        bucket = build_bucket_index(bible_df)
+    info(f"Loaded Vulgata USFX: {usfx_path}")
 
-    eprint(f"[INFO] Reading input: {csv_input}")
-    df = _load_input_to_dataframe(csv_input, front_col)
+    with stderr_console.status("Reading input..."):
+        df = _load_input_to_dataframe(csv_input, front_col)
+    info(f"Reading input: {csv_input}")
 
     stopwords = read_stopwords(stopwords_path) if stopwords_path else set()
     if stopwords:
-        eprint(f"[INFO] Loaded {len(stopwords)} stopwords.")
+        info(f"Loaded {len(stopwords)} stopwords.")
 
     cloze_col = _build_cloze_column(
         df,
@@ -421,7 +434,7 @@ def update_csv_with_cloze(
             df[new_field] = merged
 
     df.to_csv(csv_output, index=False, encoding="utf-8")
-    eprint(f"[OK] Wrote: {csv_output.resolve()}")
+    success(f"Wrote: {csv_output.resolve()}")
 
 
 app = typer.Typer(help="Generate Anki cloze examples from the Latin Vulgate and update your Anki CSV export.")
@@ -515,16 +528,18 @@ def preview(
     limit: Annotated[int, typer.Option("--limit", help="Max number of preview rows to print")] = 5,
 ) -> None:
     """Show a sample of generated clozes without writing output."""
-    eprint(f"[INFO] Loading Vulgata USFX: {usfx}")
-    bible_df = parse_usfx_to_df(usfx)
-    bucket = build_bucket_index(bible_df)
+    with stderr_console.status("Loading Vulgata USFX..."):
+        bible_df = parse_usfx_to_df(usfx)
+        bucket = build_bucket_index(bible_df)
+    info(f"Loaded Vulgata USFX: {usfx}")
 
-    eprint(f"[INFO] Reading input: {input}")
-    df = _load_input_to_dataframe(input, anki_front)
+    with stderr_console.status("Reading input..."):
+        df = _load_input_to_dataframe(input, anki_front)
+    info(f"Reading input: {input}")
 
     stopwords_set = read_stopwords(stopwords) if stopwords else set()
     if stopwords_set:
-        eprint(f"[INFO] Loaded {len(stopwords_set)} stopwords.")
+        info(f"Loaded {len(stopwords_set)} stopwords.")
 
     cloze_col = _build_cloze_column(
         df,
@@ -536,14 +551,20 @@ def preview(
         stopwords=stopwords_set,
     )
 
+    table = Table(title="Cloze Preview", box=box.SIMPLE_HEAVY)
+    table.add_column("Front", style="bold")
+    table.add_column("Cloze Examples", overflow="fold")
+
     shown = 0
     for front_val, cloze_val in zip(df[anki_front].astype(str), cloze_col, strict=False):
         if not cloze_val.strip():
             continue
-        typer.echo(f"{front_val}: {cloze_val}")
+        table.add_row(Text(front_val), Text(cloze_val))
         shown += 1
         if shown >= limit:
             break
 
     if shown == 0:
-        typer.echo("No clozes generated for the provided input.")
+        stdout_console.print("[yellow]No clozes generated for the provided input.[/yellow]")
+    else:
+        stdout_console.print(table)
