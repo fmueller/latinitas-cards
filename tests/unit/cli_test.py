@@ -199,6 +199,13 @@ def test_cli_help_option() -> None:
     assert "Usage" in result.output
 
 
+def test_cli_short_help_option() -> None:
+    runner = CliRunner()
+    result = runner.invoke(get_command(app), ["-h"])
+    assert result.exit_code == 0
+    assert "Usage" in result.output
+
+
 def test_preview_shows_sample_clozes_without_writing_output(tmp_path: Path) -> None:
     usfx_path = tmp_path / "sample.usfx.xml"
     usfx_path.write_text(
