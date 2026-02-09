@@ -424,7 +424,10 @@ def update_csv_with_cloze(
     eprint(f"[OK] Wrote: {csv_output.resolve()}")
 
 
-app = typer.Typer(help="Generate Anki cloze examples from the Latin Vulgate and update your Anki CSV export.")
+app = typer.Typer(
+    help="Generate Anki cloze examples from the Latin Vulgate and update your Anki CSV export.",
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 
 
 @app.command()
