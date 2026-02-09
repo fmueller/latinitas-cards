@@ -3,6 +3,7 @@ import re
 import sqlite3
 import sys
 import tempfile
+import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
@@ -15,6 +16,40 @@ import typer
 
 def eprint(*args: object) -> None:
     print(*args, file=sys.stderr)
+
+
+_BLOCK_TAG_RE = re.compile(r"<(div|br|p|li|ul|ol|tr|td|th|table|blockquote|h[1-6])\b", flags=re.IGNORECASE)
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_HTML_ENTITY_MAP: dict[str, str] = {
+    "&nbsp;": " ",
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+}
+
+
+def strip_anki_field(s: str) -> str:
+    """Strip HTML tags, HTML entities, and Unicode macrons/breves from an Anki field value.
+
+    Block-level HTML elements (``<div>``, ``<br>``, etc.) and everything after
+    them are dropped — in typical Anki exports the main word/phrase appears
+    before such elements, while hints and extra info follow inside them.
+    """
+    if not s:
+        return s
+    # Truncate at first block-level tag (supplementary hint content)
+    m = _BLOCK_TAG_RE.search(s)
+    if m:
+        s = s[: m.start()]
+    # Replace HTML entities
+    for entity, char in _HTML_ENTITY_MAP.items():
+        s = s.replace(entity, char)
+    # Strip remaining inline HTML tags
+    s = _HTML_TAG_RE.sub("", s)
+    # Decompose Unicode and drop combining diacritical marks (macrons, breves, etc.)
+    s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+    return s.strip()
 
 
 def normalize_latin(s: str) -> str:
@@ -191,29 +226,44 @@ def generate_clozes_for_word(
 
 def _read_apkg_field_rows(apkg_path: Path, field_name: str) -> list[dict[str, str]]:
     """
-    Read notes from an .apkg and extract a single field by name, returning rows like [{'Front': '...'}, ...].
-    Assumptions:
-      - .colpkg is a zip with collection.anki2 (SQLite)
-      - notes.flds holds all field values separated by \x1f (unit separator)
-      - field order comes from the model JSON inside col.models; we use the first model’s field order if present,
-        else assume first field is 'Front'.
+    Read notes from an .apkg/.colpkg and extract a single field by name,
+    returning rows like [{'Front': '...'}, ...].
+
+    Supports both plain SQLite (.anki2/.anki21) and zstd-compressed (.anki21b)
+    collection databases.  When a .anki21b is present it is preferred over the
+    plain .anki2 (which modern Anki exports populate with only a placeholder note).
     """
     rows: list[dict[str, str]] = []
 
     # Extract the SQLite DB to a temp file
     with zipfile.ZipFile(apkg_path, "r") as zf, tempfile.TemporaryDirectory() as td:
-        # Usually it is collection.anki2, sometimes called collection.anki21
-        sqlite_name = None
-        for name in zf.namelist():
-            if name.endswith(".anki2") or name.endswith(".anki21"):
+        names = zf.namelist()
+
+        # Prefer zstd-compressed anki21b when available
+        sqlite_name: str | None = None
+        is_zstd = False
+        for name in names:
+            if name.endswith(".anki21b"):
                 sqlite_name = name
+                is_zstd = True
                 break
         if not sqlite_name:
-            raise ValueError("APKG does not contain a collection .anki2/.anki21 database.")
+            for name in names:
+                if name.endswith(".anki2") or name.endswith(".anki21"):
+                    sqlite_name = name
+                    break
+        if not sqlite_name:
+            raise ValueError("APKG does not contain a collection database (.anki2/.anki21/.anki21b).")
 
         db_path = Path(td) / "collection.anki2"
-        with zf.open(sqlite_name) as src, open(db_path, "wb") as dst:
-            dst.write(src.read())
+        with zf.open(sqlite_name) as src:
+            raw = src.read()
+        if is_zstd:
+            import zstandard
+
+            raw = zstandard.ZstdDecompressor().decompress(raw, max_output_size=256 * 1024 * 1024)
+        with open(db_path, "wb") as dst:
+            dst.write(raw)
 
         # Connect to the DB
         con = sqlite3.connect(str(db_path))
@@ -280,7 +330,7 @@ def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
     Load either CSV (with header) or APKG into a DataFrame exposing the front_col.
     """
     suffix = input_path.suffix.lower()
-    if suffix in {".colpkg"}:
+    if suffix in {".apkg", ".colpkg"}:
         apkg_rows = _read_apkg_field_rows(input_path, front_col)
         if not apkg_rows:
             raise ValueError("No notes found in APKG or field could not be resolved.")
@@ -312,7 +362,7 @@ def _build_cloze_column(
 
     cloze_col = []
     for _, row in df.iterrows():
-        front_val = str(row[front_col]).strip()
+        front_val = strip_anki_field(str(row[front_col]))
         if not front_val:
             cloze_col.append("")
             continue
