@@ -258,3 +258,128 @@ def test_generate_writes_output_csv(tmp_path: Path) -> None:
     output_text = output_path.read_text(encoding="utf-8")
     assert "VulgataCloze" in output_text
     assert "{{c1::verbum}}" in output_text
+
+
+def test_preview_multi_cloze_per_verse_marks_all_occurrences(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>verbum et verbum in principio</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text("Front,Back\nverbum,\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "preview",
+            "--input",
+            str(csv_path),
+            "--usfx",
+            str(usfx_path),
+            "--multi-cloze-per-verse",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.output.count("{{c1::verbum}}") == 2
+
+
+def test_preview_expands_word_forms_from_mapping_file(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>dixit autem dominus</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text("Front,Back\ndice,\n", encoding="utf-8")
+
+    forms_path = tmp_path / "forms.txt"
+    forms_path.write_text("dice,dico,dicis,dixit\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "preview",
+            "--input",
+            str(csv_path),
+            "--usfx",
+            str(usfx_path),
+            "--word-forms",
+            str(forms_path),
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "{{c1::dixit}}" in result.output
+
+
+def test_preview_supports_lemma_forms_file(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>Puer amat sapientiam</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    apkg_path = tmp_path / "input.apkg"
+    _create_colpkg_with_anki2(apkg_path, [["amo", "love"], ["terra", "land"]])
+
+    lemmas_path = tmp_path / "lemmas.txt"
+    lemmas_path.write_text("amo, amas, amat\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "preview",
+            "--input",
+            str(apkg_path),
+            "--usfx",
+            str(usfx_path),
+            "--lemmas",
+            str(lemmas_path),
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "{{c1::amat}}" in result.output
+
+
+def test_preview_supports_ignore_pattern(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>Et verbum erat apud Deum</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text("Front,Back\net,and\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "preview",
+            "--input",
+            str(csv_path),
+            "--usfx",
+            str(usfx_path),
+            "--ignore-pattern",
+            "^et$",
+            "--limit",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "No clozes generated" in result.output

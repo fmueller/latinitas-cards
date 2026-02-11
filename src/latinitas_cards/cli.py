@@ -84,6 +84,13 @@ def cloze_once(text: str, pattern: re.Pattern[str]) -> tuple[str, int]:
     return new_text, n
 
 
+def cloze_all(text: str, pattern: re.Pattern[str]) -> tuple[str, int]:
+    def repl(m: re.Match[str]) -> str:
+        return "{{c1::" + m.group(0) + "}}"
+
+    return pattern.subn(repl, text)
+
+
 def parse_usfx_to_df(path: Path) -> pd.DataFrame:
     tree = ET.parse(path)
     root = tree.getroot()
@@ -212,25 +219,66 @@ def read_stopwords(path: Path) -> set[str]:
     return stops
 
 
+def read_lemma_index(path: Path) -> dict[str, set[str]]:
+    """Read lemma/form groups and build lookup index keyed by normalized form.
+
+    Accepted line formats are flexible, for example:
+    - ``amo, amas, amat``
+    - ``amo: amas amat``
+    - ``amo => amas amat``
+    """
+    lemma_index: dict[str, set[str]] = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            cleaned = line.strip()
+            if not cleaned or cleaned.startswith("#"):
+                continue
+            tokens = [normalize_latin(t) for t in re.split(r"(?:=>|[:,]|\s)+", cleaned) if t.strip()]
+            forms = {t for t in tokens if t}
+            if not forms:
+                continue
+            for form in forms:
+                lemma_index[form] = forms
+    return lemma_index
+
+
+def compile_ignore_patterns(patterns: list[str]) -> list[re.Pattern[str]]:
+    return [re.compile(p, flags=re.IGNORECASE) for p in patterns if p.strip()]
+
+
 def generate_clozes_for_word(
-    df: pd.DataFrame, word: str, bucket: dict[str, list[int]], max_examples: int = 2
+    df: pd.DataFrame,
+    word: str,
+    bucket: dict[str, list[int]],
+    max_examples: int = 2,
+    multi_cloze_per_verse: bool = False,
+    lookup_terms: set[str] | None = None,
 ) -> list[str]:
-    patt = make_word_regex(word)
     word_norm = normalize_latin(word)
+    terms = lookup_terms or {word_norm}
     out = []
     cnt = 0
-    for idx in candidate_indices(word_norm, bucket, len(df)):
-        verse_text = str(df.at[idx, "text"])
-        verse_norm = str(df.at[idx, "text_norm"])
-        if word_norm not in verse_norm:
-            continue
-        cloze, n = cloze_once(verse_text, patt)
-        if n > 0:
-            ref = f"{df.at[idx, 'book']} {df.at[idx, 'chapter']}:{df.at[idx, 'verse']}"
-            out.append(f"{cloze} <span style='color:#888'>({ref})</span>")
-            cnt += 1
-            if cnt >= max_examples:
-                break
+    seen: set[int] = set()
+    for term in terms:
+        patt = make_word_regex(term)
+        for idx in candidate_indices(term, bucket, len(df)):
+            if idx in seen:
+                continue
+            verse_text = str(df.at[idx, "text"])
+            verse_norm = str(df.at[idx, "text_norm"])
+            if term not in verse_norm:
+                continue
+            if multi_cloze_per_verse:
+                cloze, n = cloze_all(verse_text, patt)
+            else:
+                cloze, n = cloze_once(verse_text, patt)
+            if n > 0:
+                ref = f"{df.at[idx, 'book']} {df.at[idx, 'chapter']}:{df.at[idx, 'verse']}"
+                out.append(f"{cloze} <span style='color:#888'>({ref})</span>")
+                cnt += 1
+                seen.add(int(idx))
+                if cnt >= max_examples:
+                    return out
     return out
 
 
@@ -366,6 +414,10 @@ def _build_cloze_column(
     max_examples: int,
     joiner: str,
     stopwords: set[str],
+    word_forms: dict[str, list[str]],
+    lemma_index: dict[str, set[str]],
+    ignore_patterns: list[re.Pattern[str]],
+    multi_cloze_per_verse: bool,
 ) -> list[str]:
     if front_col not in df.columns:
         raise KeyError(f"Column '{front_col}' not found. Available columns: {list(df.columns)}")
@@ -376,12 +428,55 @@ def _build_cloze_column(
         if not front_val:
             cloze_col.append("")
             continue
-        if normalize_latin(front_val) in stopwords:
+        front_norm = normalize_latin(front_val)
+        if front_norm in stopwords:
             cloze_col.append("")
             continue
-        clozes = generate_clozes_for_word(bible_df, front_val, bucket, max_examples=max_examples)
+        if any(p.search(front_norm) for p in ignore_patterns):
+            cloze_col.append("")
+            continue
+        # Prefer lemma_index (PR #8), fall back to word_forms (PR #7), then single term
+        lookup_terms = lemma_index.get(front_norm) or set(word_forms.get(front_norm, [front_val]))
+        clozes: list[str] = []
+        for form in lookup_terms:
+            remaining = max_examples - len(clozes)
+            if remaining <= 0:
+                break
+            clozes.extend(
+                generate_clozes_for_word(
+                    bible_df,
+                    form,
+                    bucket,
+                    max_examples=remaining,
+                    multi_cloze_per_verse=multi_cloze_per_verse,
+                    lookup_terms={normalize_latin(form)},
+                )
+            )
         cloze_col.append(joiner.join(clozes))
     return cloze_col
+
+
+def read_word_forms(path: Path) -> dict[str, list[str]]:
+    """Read optional lemma→forms mapping.
+
+    Format: one entry per line, comma-separated.
+    Example: ``amo,amo,amas,amat``
+    """
+    mapping: dict[str, list[str]] = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            t = line.strip()
+            if not t or t.startswith("#"):
+                continue
+            parts = [p.strip() for p in t.split(",") if p.strip()]
+            if not parts:
+                continue
+            lemma = normalize_latin(parts[0])
+            forms = [normalize_latin(p) for p in parts]
+            # preserve order while dropping duplicates
+            unique_forms = list(dict.fromkeys(forms))
+            mapping[lemma] = unique_forms
+    return mapping
 
 
 def update_csv_with_cloze(
@@ -393,6 +488,10 @@ def update_csv_with_cloze(
     max_examples: int = 2,
     joiner: str = "<br><br>",
     stopwords_path: Path | None = None,
+    word_forms_path: Path | None = None,
+    lemmas_path: Path | None = None,
+    ignore_patterns: list[str] | None = None,
+    multi_cloze_per_verse: bool = False,
     overwrite: bool = True,
 ) -> None:
     with stderr_console.status("Loading Vulgata USFX..."):
@@ -405,8 +504,17 @@ def update_csv_with_cloze(
     info(f"Reading input: {csv_input}")
 
     stopwords = read_stopwords(stopwords_path) if stopwords_path else set()
+    word_forms = read_word_forms(word_forms_path) if word_forms_path else {}
+    lemma_index = read_lemma_index(lemmas_path) if lemmas_path else {}
+    compiled_ignore_patterns = compile_ignore_patterns(ignore_patterns or [])
     if stopwords:
         info(f"Loaded {len(stopwords)} stopwords.")
+    if word_forms:
+        info(f"Loaded word-form mappings for {len(word_forms)} lemmas.")
+    if lemma_index:
+        info(f"Loaded {len(lemma_index)} lemma/form entries.")
+    if compiled_ignore_patterns:
+        info(f"Loaded {len(compiled_ignore_patterns)} ignore patterns.")
 
     cloze_col = _build_cloze_column(
         df,
@@ -416,6 +524,10 @@ def update_csv_with_cloze(
         max_examples=max_examples,
         joiner=joiner,
         stopwords=stopwords,
+        word_forms=word_forms,
+        lemma_index=lemma_index,
+        ignore_patterns=compiled_ignore_patterns,
+        multi_cloze_per_verse=multi_cloze_per_verse,
     )
 
     if new_field not in df.columns:
@@ -479,6 +591,27 @@ def generate(
             help="Optional path to a stopwords file (one word per line)",
         ),
     ] = None,
+    word_forms: Annotated[
+        Path | None,
+        typer.Option(help="Optional path to lemma→forms mapping file (CSV-like: lemma,form1,form2,...)"),
+    ] = None,
+    lemmas: Annotated[
+        Path | None,
+        typer.Option(
+            help="Optional path to lemma/form groups (comma or whitespace separated)",
+        ),
+    ] = None,
+    ignore_pattern: Annotated[
+        list[str] | None,
+        typer.Option(help="Regex pattern(s) for normalized front values to ignore; can be repeated"),
+    ] = None,
+    multi_cloze_per_verse: Annotated[
+        bool,
+        typer.Option(
+            "--multi-cloze-per-verse",
+            help="Cloze every matching occurrence in a verse instead of just the first one",
+        ),
+    ] = False,
     append: Annotated[bool, typer.Option(help="Append to existing values instead of overwriting")] = False,
 ) -> None:
     """Update an Anki CSV or APKG file with cloze examples from the Latin Vulgate."""
@@ -491,6 +624,10 @@ def generate(
         max_examples=max_examples,
         joiner=joiner,
         stopwords_path=stopwords,
+        word_forms_path=word_forms,
+        lemmas_path=lemmas,
+        ignore_patterns=ignore_pattern or [],
+        multi_cloze_per_verse=multi_cloze_per_verse,
         overwrite=not append,
     )
 
@@ -527,6 +664,27 @@ def preview(
             help="Optional path to a stopwords file (one word per line)",
         ),
     ] = None,
+    word_forms: Annotated[
+        Path | None,
+        typer.Option(help="Optional path to lemma→forms mapping file (CSV-like: lemma,form1,form2,...)"),
+    ] = None,
+    lemmas: Annotated[
+        Path | None,
+        typer.Option(
+            help="Optional path to lemma/form groups (comma or whitespace separated)",
+        ),
+    ] = None,
+    ignore_pattern: Annotated[
+        list[str] | None,
+        typer.Option(help="Regex pattern(s) for normalized front values to ignore; can be repeated"),
+    ] = None,
+    multi_cloze_per_verse: Annotated[
+        bool,
+        typer.Option(
+            "--multi-cloze-per-verse",
+            help="Cloze every matching occurrence in a verse instead of just the first one",
+        ),
+    ] = False,
     limit: Annotated[int, typer.Option("--limit", help="Max number of preview rows to print")] = 5,
 ) -> None:
     """Show a sample of generated clozes without writing output."""
@@ -540,8 +698,17 @@ def preview(
     info(f"Reading input: {input}")
 
     stopwords_set = read_stopwords(stopwords) if stopwords else set()
+    word_forms_map = read_word_forms(word_forms) if word_forms else {}
+    lemma_index = read_lemma_index(lemmas) if lemmas else {}
+    compiled_ignore_patterns = compile_ignore_patterns(ignore_pattern or [])
     if stopwords_set:
         info(f"Loaded {len(stopwords_set)} stopwords.")
+    if word_forms_map:
+        info(f"Loaded word-form mappings for {len(word_forms_map)} lemmas.")
+    if lemma_index:
+        info(f"Loaded {len(lemma_index)} lemma/form entries.")
+    if compiled_ignore_patterns:
+        info(f"Loaded {len(compiled_ignore_patterns)} ignore patterns.")
 
     cloze_col = _build_cloze_column(
         df,
@@ -551,6 +718,10 @@ def preview(
         max_examples=max_examples,
         joiner=joiner,
         stopwords=stopwords_set,
+        word_forms=word_forms_map,
+        lemma_index=lemma_index,
+        ignore_patterns=compiled_ignore_patterns,
+        multi_cloze_per_verse=multi_cloze_per_verse,
     )
 
     table = Table(title="Cloze Preview", box=box.SIMPLE_HEAVY)
