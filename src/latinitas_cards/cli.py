@@ -1,4 +1,5 @@
 import csv
+import json
 import re
 import sqlite3
 import tempfile
@@ -219,32 +220,66 @@ def read_stopwords(path: Path) -> set[str]:
     return stops
 
 
+def read_lemma_index(path: Path) -> dict[str, set[str]]:
+    """Read lemma/form groups and build lookup index keyed by normalized form.
+
+    Accepted line formats are flexible, for example:
+    - ``amo, amas, amat``
+    - ``amo: amas amat``
+    - ``amo => amas amat``
+    """
+    lemma_index: dict[str, set[str]] = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            cleaned = line.strip()
+            if not cleaned or cleaned.startswith("#"):
+                continue
+            tokens = [normalize_latin(t) for t in re.split(r"(?:=>|[:,]|\s)+", cleaned) if t.strip()]
+            forms = {t for t in tokens if t}
+            if not forms:
+                continue
+            for form in forms:
+                lemma_index[form] = forms
+    return lemma_index
+
+
+def compile_ignore_patterns(patterns: list[str]) -> list[re.Pattern[str]]:
+    return [re.compile(p, flags=re.IGNORECASE) for p in patterns if p.strip()]
+
+
 def generate_clozes_for_word(
     df: pd.DataFrame,
     word: str,
     bucket: dict[str, list[int]],
     max_examples: int = 2,
     multi_cloze_per_verse: bool = False,
+    lookup_terms: set[str] | None = None,
 ) -> list[str]:
-    patt = make_word_regex(word)
     word_norm = normalize_latin(word)
+    terms = lookup_terms or {word_norm}
     out = []
     cnt = 0
-    for idx in candidate_indices(word_norm, bucket, len(df)):
-        verse_text = str(df.at[idx, "text"])
-        verse_norm = str(df.at[idx, "text_norm"])
-        if word_norm not in verse_norm:
-            continue
-        if multi_cloze_per_verse:
-            cloze, n = cloze_all(verse_text, patt)
-        else:
-            cloze, n = cloze_once(verse_text, patt)
-        if n > 0:
-            ref = f"{df.at[idx, 'book']} {df.at[idx, 'chapter']}:{df.at[idx, 'verse']}"
-            out.append(f"{cloze} <span style='color:#888'>({ref})</span>")
-            cnt += 1
-            if cnt >= max_examples:
-                break
+    seen: set[int] = set()
+    for term in terms:
+        patt = make_word_regex(term)
+        for idx in candidate_indices(term, bucket, len(df)):
+            if idx in seen:
+                continue
+            verse_text = str(df.at[idx, "text"])
+            verse_norm = str(df.at[idx, "text_norm"])
+            if term not in verse_norm:
+                continue
+            if multi_cloze_per_verse:
+                cloze, n = cloze_all(verse_text, patt)
+            else:
+                cloze, n = cloze_once(verse_text, patt)
+            if n > 0:
+                ref = f"{df.at[idx, 'book']} {df.at[idx, 'chapter']}:{df.at[idx, 'verse']}"
+                out.append(f"{cloze} <span style='color:#888'>({ref})</span>")
+                cnt += 1
+                seen.add(int(idx))
+                if cnt >= max_examples:
+                    return out
     return out
 
 
@@ -289,64 +324,144 @@ def _read_apkg_field_rows(apkg_path: Path, field_name: str) -> list[dict[str, st
         with open(db_path, "wb") as dst:
             dst.write(raw)
 
-        # Connect to the DB
         con = sqlite3.connect(str(db_path))
         con.row_factory = sqlite3.Row
         try:
-            # Discover field names order from the first model if available
-            # col table has a single row with JSON meta; but to keep it robust without external JSON libs,
-            # we fallback to generic mapping if JSON parsing is not strict here.
-            # We instead infer field count from the first note and assume 'Front' maps to index 0 if not found.
-            cur = con.execute("SELECT flds FROM notes LIMIT 1")
-            first = cur.fetchone()
-            if not first:
-                return rows
-
-            # Default: if front-like field exists in common positions
-            candidate_index = 0  # fallback to index 0
-            front_like_names = ["Front", "front", "Expression", "Word"]
-            # Try to infer from notetypes if available
-            try:
-                # Read models JSON from col table (optional best-effort)
-                meta = con.execute("SELECT models FROM col LIMIT 1").fetchone()
-                if meta and meta[0]:
-                    import json
-
-                    models = json.loads(meta[0])
-                    # Pick first model, find fields order
-                    if isinstance(models, dict) and models:
-                        first_model = next(iter(models.values()))
-                        if isinstance(first_model, dict) and "flds" in first_model:
-                            names = [f.get("name", "") for f in first_model["flds"]]
-                            # Find requested field name (case-insensitive)
-                            lowered = [n.lower() for n in names]
-                            if field_name.lower() in lowered:
-                                candidate_index = lowered.index(field_name.lower())
-                            else:
-                                # try front-like defaults
-                                for n in front_like_names:
-                                    if n.lower() in lowered:
-                                        candidate_index = lowered.index(n.lower())
-                                        break
-                        # else fallback to first
-            except Exception:
-                # Best-effort; ignore JSON parsing failures
-                pass
-
-            # If still not found, try to guess by common names embedded in first note (no labels available),
-            # else stick to index 0
-            # Now iterate all notes
+            candidate_index = _resolve_note_field_index(con, field_name, fallback_to_front=True)
             cur = con.execute("SELECT flds FROM notes")
             for r in cur:
                 parts = r["flds"].split("\x1f")
                 if candidate_index < len(parts):
                     rows.append({field_name: parts[candidate_index]})
-                else:
-                    # skip malformed notes
-                    continue
             return rows
         finally:
             con.close()
+
+
+def _resolve_note_field_index(con: sqlite3.Connection, field_name: str, fallback_to_front: bool) -> int:
+    candidate_index = 0
+    front_like_names = ["front", "expression", "word"]
+
+    try:
+        meta = con.execute("SELECT models FROM col LIMIT 1").fetchone()
+        if not meta or not meta[0]:
+            return candidate_index
+        models = json.loads(meta[0])
+        if not isinstance(models, dict) or not models:
+            return candidate_index
+        first_model = next(iter(models.values()))
+        if not isinstance(first_model, dict) or "flds" not in first_model:
+            return candidate_index
+
+        names = [f.get("name", "") for f in first_model["flds"]]
+        lowered = [n.lower() for n in names]
+        if field_name.lower() in lowered:
+            return lowered.index(field_name.lower())
+
+        if fallback_to_front:
+            for name in front_like_names:
+                if name in lowered:
+                    return lowered.index(name)
+    except Exception:
+        return candidate_index
+
+    if fallback_to_front:
+        return candidate_index
+    raise KeyError(f"Field '{field_name}' not found in APKG note model.")
+
+
+def _update_apkg_with_cloze(
+    apkg_input: Path,
+    apkg_output: Path,
+    usfx_path: Path,
+    front_col: str,
+    new_field: str,
+    max_examples: int = 2,
+    joiner: str = "<br><br>",
+    stopwords_path: Path | None = None,
+    overwrite: bool = True,
+) -> None:
+    with stderr_console.status("Loading Vulgata USFX..."):
+        bible_df = parse_usfx_to_df(usfx_path)
+        bucket = build_bucket_index(bible_df)
+    info(f"Loaded Vulgata USFX: {usfx_path}")
+
+    stopwords = read_stopwords(stopwords_path) if stopwords_path else set()
+    if stopwords:
+        info(f"Loaded {len(stopwords)} stopwords.")
+
+    with zipfile.ZipFile(apkg_input, "r") as zf, tempfile.TemporaryDirectory() as td:
+        names = zf.namelist()
+        sqlite_name: str | None = None
+        is_zstd = False
+        for name in names:
+            if name.endswith(".anki21b"):
+                sqlite_name = name
+                is_zstd = True
+                break
+        if not sqlite_name:
+            for name in names:
+                if name.endswith(".anki2") or name.endswith(".anki21"):
+                    sqlite_name = name
+                    break
+        if not sqlite_name:
+            raise ValueError("APKG does not contain a collection database (.anki2/.anki21/.anki21b).")
+
+        db_path = Path(td) / "collection.anki2"
+        with zf.open(sqlite_name) as src:
+            raw = src.read()
+        if is_zstd:
+            import zstandard
+
+            raw = zstandard.ZstdDecompressor().decompress(raw, max_output_size=256 * 1024 * 1024)
+        with open(db_path, "wb") as dst:
+            dst.write(raw)
+
+        con = sqlite3.connect(str(db_path))
+        con.row_factory = sqlite3.Row
+        try:
+            front_idx = _resolve_note_field_index(con, front_col, fallback_to_front=True)
+            target_idx = _resolve_note_field_index(con, new_field, fallback_to_front=False)
+
+            notes = con.execute("SELECT id, flds FROM notes").fetchall()
+            updated = 0
+            for note in notes:
+                fields = note["flds"].split("\x1f")
+                if front_idx >= len(fields) or target_idx >= len(fields):
+                    continue
+                front_val = strip_anki_field(fields[front_idx])
+                if not front_val or normalize_latin(front_val) in stopwords:
+                    new_val = ""
+                else:
+                    clozes = generate_clozes_for_word(bible_df, front_val, bucket, max_examples=max_examples)
+                    new_val = joiner.join(clozes)
+
+                if overwrite:
+                    fields[target_idx] = new_val
+                elif fields[target_idx].strip() and new_val.strip():
+                    fields[target_idx] = fields[target_idx].strip() + joiner + new_val.strip()
+                else:
+                    fields[target_idx] = (fields[target_idx] or "") + (new_val or "")
+
+                con.execute("UPDATE notes SET flds = ? WHERE id = ?", ("\x1f".join(fields), note["id"]))
+                updated += 1
+
+            con.commit()
+        finally:
+            con.close()
+
+        updated_raw = db_path.read_bytes()
+        if is_zstd:
+            import zstandard
+
+            updated_raw = zstandard.ZstdCompressor().compress(updated_raw)
+
+        with zipfile.ZipFile(apkg_output, "w") as out_zip:
+            for info_obj in zf.infolist():
+                data = updated_raw if info_obj.filename == sqlite_name else zf.read(info_obj.filename)
+                out_zip.writestr(info_obj, data)
+
+    success(f"Updated {updated} notes and wrote: {apkg_output.resolve()}")
 
 
 def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
@@ -381,6 +496,8 @@ def _build_cloze_column(
     joiner: str,
     stopwords: set[str],
     word_forms: dict[str, list[str]],
+    lemma_index: dict[str, set[str]],
+    ignore_patterns: list[re.Pattern[str]],
     multi_cloze_per_verse: bool,
 ) -> list[str]:
     if front_col not in df.columns:
@@ -392,12 +509,17 @@ def _build_cloze_column(
         if not front_val:
             cloze_col.append("")
             continue
-        if normalize_latin(front_val) in stopwords:
+        front_norm = normalize_latin(front_val)
+        if front_norm in stopwords:
             cloze_col.append("")
             continue
-        forms = word_forms.get(normalize_latin(front_val), [front_val])
+        if any(p.search(front_norm) for p in ignore_patterns):
+            cloze_col.append("")
+            continue
+        # Prefer lemma_index (PR #8), fall back to word_forms (PR #7), then single term
+        lookup_terms = lemma_index.get(front_norm) or set(word_forms.get(front_norm, [front_val]))
         clozes: list[str] = []
-        for form in forms:
+        for form in lookup_terms:
             remaining = max_examples - len(clozes)
             if remaining <= 0:
                 break
@@ -408,6 +530,7 @@ def _build_cloze_column(
                     bucket,
                     max_examples=remaining,
                     multi_cloze_per_verse=multi_cloze_per_verse,
+                    lookup_terms={normalize_latin(form)},
                 )
             )
         cloze_col.append(joiner.join(clozes))
@@ -447,9 +570,25 @@ def update_csv_with_cloze(
     joiner: str = "<br><br>",
     stopwords_path: Path | None = None,
     word_forms_path: Path | None = None,
+    lemmas_path: Path | None = None,
+    ignore_patterns: list[str] | None = None,
     multi_cloze_per_verse: bool = False,
     overwrite: bool = True,
 ) -> None:
+    if csv_input.suffix.lower() in {".apkg", ".colpkg"}:
+        _update_apkg_with_cloze(
+            apkg_input=csv_input,
+            apkg_output=csv_output,
+            usfx_path=usfx_path,
+            front_col=front_col,
+            new_field=new_field,
+            max_examples=max_examples,
+            joiner=joiner,
+            stopwords_path=stopwords_path,
+            overwrite=overwrite,
+        )
+        return
+
     with stderr_console.status("Loading Vulgata USFX..."):
         bible_df = parse_usfx_to_df(usfx_path)
         bucket = build_bucket_index(bible_df)
@@ -461,10 +600,16 @@ def update_csv_with_cloze(
 
     stopwords = read_stopwords(stopwords_path) if stopwords_path else set()
     word_forms = read_word_forms(word_forms_path) if word_forms_path else {}
+    lemma_index = read_lemma_index(lemmas_path) if lemmas_path else {}
+    compiled_ignore_patterns = compile_ignore_patterns(ignore_patterns or [])
     if stopwords:
         info(f"Loaded {len(stopwords)} stopwords.")
     if word_forms:
         info(f"Loaded word-form mappings for {len(word_forms)} lemmas.")
+    if lemma_index:
+        info(f"Loaded {len(lemma_index)} lemma/form entries.")
+    if compiled_ignore_patterns:
+        info(f"Loaded {len(compiled_ignore_patterns)} ignore patterns.")
 
     cloze_col = _build_cloze_column(
         df,
@@ -475,6 +620,8 @@ def update_csv_with_cloze(
         joiner=joiner,
         stopwords=stopwords,
         word_forms=word_forms,
+        lemma_index=lemma_index,
+        ignore_patterns=compiled_ignore_patterns,
         multi_cloze_per_verse=multi_cloze_per_verse,
     )
 
@@ -543,6 +690,16 @@ def generate(
         Path | None,
         typer.Option(help="Optional path to lemma→forms mapping file (CSV-like: lemma,form1,form2,...)"),
     ] = None,
+    lemmas: Annotated[
+        Path | None,
+        typer.Option(
+            help="Optional path to lemma/form groups (comma or whitespace separated)",
+        ),
+    ] = None,
+    ignore_pattern: Annotated[
+        list[str] | None,
+        typer.Option(help="Regex pattern(s) for normalized front values to ignore; can be repeated"),
+    ] = None,
     multi_cloze_per_verse: Annotated[
         bool,
         typer.Option(
@@ -563,6 +720,8 @@ def generate(
         joiner=joiner,
         stopwords_path=stopwords,
         word_forms_path=word_forms,
+        lemmas_path=lemmas,
+        ignore_patterns=ignore_pattern or [],
         multi_cloze_per_verse=multi_cloze_per_verse,
         overwrite=not append,
     )
@@ -604,6 +763,16 @@ def preview(
         Path | None,
         typer.Option(help="Optional path to lemma→forms mapping file (CSV-like: lemma,form1,form2,...)"),
     ] = None,
+    lemmas: Annotated[
+        Path | None,
+        typer.Option(
+            help="Optional path to lemma/form groups (comma or whitespace separated)",
+        ),
+    ] = None,
+    ignore_pattern: Annotated[
+        list[str] | None,
+        typer.Option(help="Regex pattern(s) for normalized front values to ignore; can be repeated"),
+    ] = None,
     multi_cloze_per_verse: Annotated[
         bool,
         typer.Option(
@@ -625,10 +794,16 @@ def preview(
 
     stopwords_set = read_stopwords(stopwords) if stopwords else set()
     word_forms_map = read_word_forms(word_forms) if word_forms else {}
+    lemma_index = read_lemma_index(lemmas) if lemmas else {}
+    compiled_ignore_patterns = compile_ignore_patterns(ignore_pattern or [])
     if stopwords_set:
         info(f"Loaded {len(stopwords_set)} stopwords.")
     if word_forms_map:
         info(f"Loaded word-form mappings for {len(word_forms_map)} lemmas.")
+    if lemma_index:
+        info(f"Loaded {len(lemma_index)} lemma/form entries.")
+    if compiled_ignore_patterns:
+        info(f"Loaded {len(compiled_ignore_patterns)} ignore patterns.")
 
     cloze_col = _build_cloze_column(
         df,
@@ -639,6 +814,8 @@ def preview(
         joiner=joiner,
         stopwords=stopwords_set,
         word_forms=word_forms_map,
+        lemma_index=lemma_index,
+        ignore_patterns=compiled_ignore_patterns,
         multi_cloze_per_verse=multi_cloze_per_verse,
     )
 
