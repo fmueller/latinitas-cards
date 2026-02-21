@@ -29,6 +29,20 @@ def success(message: str) -> None:
     stderr_console.print(f"[bold green][OK][/bold green] {message}")
 
 
+def _status_label(ok: bool) -> str:
+    return "[green]PASS[/green]" if ok else "[red]FAIL[/red]"
+
+
+def _render_validation_table(checks: list[dict[str, str]]) -> None:
+    table = Table(title="Validation Report", box=box.SIMPLE_HEAVY)
+    table.add_column("Check", style="bold")
+    table.add_column("Status", justify="center")
+    table.add_column("Details", overflow="fold")
+    for check in checks:
+        table.add_row(check["name"], check["status"], check["details"])
+    stdout_console.print(table)
+
+
 _BLOCK_TAG_RE = re.compile(r"<(div|br|p|li|ul|ol|tr|td|th|table|blockquote|h[1-6])\b", flags=re.IGNORECASE)
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _HTML_ENTITY_MAP: dict[str, str] = {
@@ -836,3 +850,148 @@ def preview(
         stdout_console.print("[yellow]No clozes generated for the provided input.[/yellow]")
     else:
         stdout_console.print(table)
+
+
+@app.command()
+def validate(
+    input: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            help="Path to Anki CSV export or .apkg file",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    usfx: Annotated[
+        Path,
+        typer.Option(
+            ...,
+            help="Path to Vulgate USFX XML (e.g., lat-clementine.usfx.xml)",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    anki_front: Annotated[
+        str,
+        typer.Option("--anki-front", help="Name of the 'Front' field expected in the input file"),
+    ] = "Front",
+) -> None:
+    """Validate USFX parsing integrity and required input columns."""
+    checks: list[dict[str, str]] = []
+    all_ok = True
+
+    # USFX integrity checks
+    try:
+        bible_df = parse_usfx_to_df(usfx)
+        expected_usfx_columns = ["book", "chapter", "verse", "text", "text_norm"]
+        missing_usfx_columns = [c for c in expected_usfx_columns if c not in bible_df.columns]
+
+        if missing_usfx_columns:
+            all_ok = False
+            checks.append(
+                {
+                    "name": "USFX columns",
+                    "status": _status_label(False),
+                    "details": f"Missing parsed columns: {missing_usfx_columns}",
+                }
+            )
+        else:
+            checks.append(
+                {
+                    "name": "USFX columns",
+                    "status": _status_label(True),
+                    "details": "All expected verse columns are present.",
+                }
+            )
+
+        empty_verse_rows = int((bible_df["text"].astype(str).str.strip() == "").sum())
+        verses_count = len(bible_df)
+        if empty_verse_rows > 0:
+            all_ok = False
+            checks.append(
+                {
+                    "name": "USFX verse text",
+                    "status": _status_label(False),
+                    "details": f"Found {empty_verse_rows} verse rows with empty text.",
+                }
+            )
+        else:
+            checks.append(
+                {
+                    "name": "USFX verse text",
+                    "status": _status_label(True),
+                    "details": f"Parsed {verses_count} verses with non-empty text.",
+                }
+            )
+    except (ET.ParseError, ValueError) as exc:
+        all_ok = False
+        checks.append(
+            {
+                "name": "USFX structure",
+                "status": _status_label(False),
+                "details": f"Could not parse USFX structure: {exc}",
+            }
+        )
+
+    # Input integrity checks
+    input_df: pd.DataFrame | None = None
+    try:
+        input_df = _load_input_to_dataframe(input, anki_front)
+    except (ValueError, csv.Error) as exc:
+        # Validation should still check columns if this is a CSV with ambiguous
+        # header detection from csv.Sniffer in the strict loader.
+        if input.suffix.lower() not in {".apkg", ".colpkg"}:
+            try:
+                input_df = pd.read_csv(input, encoding="utf-8", keep_default_na=False)
+                checks.append(
+                    {
+                        "name": "Input parser",
+                        "status": _status_label(True),
+                        "details": (
+                            "CSV header detection was ambiguous for the strict loader, "
+                            "but validation recovered using a direct CSV read."
+                        ),
+                    }
+                )
+            except Exception:
+                input_df = None
+
+        if input_df is None:
+            all_ok = False
+            checks.append(
+                {
+                    "name": "Input file",
+                    "status": _status_label(False),
+                    "details": f"Could not parse input data: {exc}",
+                }
+            )
+
+    if input_df is not None:
+        if anki_front not in input_df.columns:
+            all_ok = False
+            checks.append(
+                {
+                    "name": "Input columns",
+                    "status": _status_label(False),
+                    "details": f"Missing required column '{anki_front}'. Available: {list(input_df.columns)}",
+                }
+            )
+        else:
+            non_empty_front = int((input_df[anki_front].astype(str).str.strip() != "").sum())
+            checks.append(
+                {
+                    "name": "Input columns",
+                    "status": _status_label(True),
+                    "details": (f"Column '{anki_front}' is present. Non-empty rows: {non_empty_front}/{len(input_df)}"),
+                }
+            )
+
+    _render_validation_table(checks)
+
+    if all_ok:
+        success("Validation passed: all integrity checks succeeded.")
+        return
+
+    stderr_console.print("[bold red][ERROR][/bold red] Validation failed. See report above.")
+    raise typer.Exit(code=1)
