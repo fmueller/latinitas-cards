@@ -2,6 +2,7 @@ import csv
 import hashlib
 import html
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -13,6 +14,8 @@ import zipfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Annotated
+from urllib import error as urlerror
+from urllib import request as urlrequest
 
 import pandas as pd
 import typer
@@ -977,7 +980,130 @@ def _ensure_latin_stanza_resources() -> None:
         return
 
 
-def annotate_with_cltk(df: pd.DataFrame, form_column: str) -> pd.DataFrame:
+def _build_analysis_candidates(
+    form: str,
+    lemma: str,
+    upos: str,
+    xpos: str,
+    morph_features: str,
+) -> list[dict[str, str]]:
+    primary = {
+        "lemma": lemma,
+        "upos": upos,
+        "xpos": xpos,
+        "morph_features": morph_features,
+        "source": "cltk",
+    }
+    candidates = [primary]
+    form_norm = normalize_latin(form)
+    lemma_norm = normalize_latin(lemma)
+    if form_norm and form_norm != lemma_norm:
+        candidates.append(
+            {
+                "lemma": form_norm,
+                "upos": upos,
+                "xpos": xpos,
+                "morph_features": morph_features,
+                "source": "surface",
+            }
+        )
+    return candidates
+
+
+def _extract_llm_choice(content: str, max_choice: int) -> int:
+    choice_match = re.search(r'"choice"\s*:\s*(\d+)', content)
+    if choice_match:
+        choice = int(choice_match.group(1))
+    else:
+        num_match = re.search(r"\b(\d+)\b", content)
+        if not num_match:
+            raise ValueError("No numeric choice found in LLM output.")
+        choice = int(num_match.group(1))
+    if choice < 1 or choice > max_choice:
+        raise ValueError(f"LLM choice {choice} out of range 1..{max_choice}")
+    return choice - 1
+
+
+def _query_ollama_choice(form: str, candidates: list[dict[str, str]], model: str, endpoint: str) -> int:
+    endpoint_base = endpoint.rstrip("/")
+    if not endpoint_base.startswith("http://") and not endpoint_base.startswith("https://"):
+        endpoint_base = "http://" + endpoint_base
+    prompt = (
+        "Choose the best grammatical analysis for this Latin form.\n"
+        f"Form: {form}\n"
+        "Candidates:\n"
+        + "\n".join(
+            [
+                (
+                    f"{idx}. lemma={candidate['lemma']}; upos={candidate['upos']}; "
+                    f"xpos={candidate['xpos']}; morph={candidate['morph_features']}; source={candidate['source']}"
+                )
+                for idx, candidate in enumerate(candidates, start=1)
+            ]
+        )
+        + '\nReply with JSON only, like {"choice": 1}.'
+    )
+    payload = {
+        "model": model,
+        "stream": False,
+        "messages": [
+            {
+                "role": "system",
+                "content": "Return only JSON with a numeric 'choice' field.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "options": {"temperature": 0},
+    }
+    req = urlrequest.Request(
+        url=f"{endpoint_base}/api/chat",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=20) as response:
+            response_body = response.read().decode("utf-8")
+    except (urlerror.URLError, TimeoutError) as exc:
+        raise RuntimeError(f"Ollama request failed: {exc}") from exc
+
+    data = json.loads(response_body)
+    content = str(data.get("message", {}).get("content", "")).strip()
+    if not content:
+        raise RuntimeError("Ollama response missing message content.")
+    return _extract_llm_choice(content, max_choice=len(candidates))
+
+
+def _select_analysis_candidate(
+    form: str,
+    candidates: list[dict[str, str]],
+    use_llm: bool,
+    llm_provider: str,
+    llm_model: str,
+    llm_endpoint: str,
+) -> tuple[dict[str, str], str]:
+    if not candidates:
+        raise ValueError("No analysis candidates available for disambiguation.")
+    if not use_llm or len(candidates) == 1:
+        return candidates[0], "ok"
+    if llm_provider != "ollama":
+        raise ValueError(f"Unsupported LLM provider '{llm_provider}'. Only 'ollama' is currently supported.")
+    try:
+        chosen_index = _query_ollama_choice(form=form, candidates=candidates, model=llm_model, endpoint=llm_endpoint)
+        status = "ok-llm" if chosen_index != 0 else "ok"
+        return candidates[chosen_index], status
+    except Exception:
+        return candidates[0], "ok-llm-fallback"
+
+
+def annotate_with_cltk(
+    df: pd.DataFrame,
+    form_column: str,
+    use_llm: bool = False,
+    llm_provider: str = "ollama",
+    llm_model: str = "ministral-3:8b",
+    llm_endpoint: str = "http://localhost:11434",
+) -> pd.DataFrame:
     if form_column not in df.columns:
         raise KeyError(f"Form column '{form_column}' not found. Available: {list(df.columns)}")
 
@@ -1005,6 +1131,7 @@ def annotate_with_cltk(df: pd.DataFrame, form_column: str) -> pd.DataFrame:
     feature_values: list[str] = []
     analysis_count: list[int] = []
     analysis_status: list[str] = []
+    llm_fallback_warned = False
 
     for form in df[form_column].astype(str):
         text = form.strip()
@@ -1032,12 +1159,34 @@ def annotate_with_cltk(df: pd.DataFrame, form_column: str) -> pd.DataFrame:
             upos = str(getattr(first, "upos", "") or "")
             xpos = str(getattr(first, "xpos", "") or "")
             feats = getattr(first, "features", "")
-            lemmas.append(lemma)
-            upos_values.append(upos)
-            xpos_values.append(xpos)
-            feature_values.append(str(feats or ""))
-            analysis_count.append(len(words))
-            analysis_status.append("ok")
+            features_text = str(feats or "")
+            candidates = _build_analysis_candidates(
+                form=text,
+                lemma=lemma,
+                upos=upos,
+                xpos=xpos,
+                morph_features=features_text,
+            )
+            selected, status = _select_analysis_candidate(
+                form=text,
+                candidates=candidates,
+                use_llm=use_llm,
+                llm_provider=llm_provider,
+                llm_model=llm_model,
+                llm_endpoint=llm_endpoint,
+            )
+            if status == "ok-llm-fallback" and not llm_fallback_warned:
+                stderr_console.print(
+                    "[yellow][WARN][/yellow] LLM disambiguation failed for at least one row; "
+                    "falling back to CLTK analysis."
+                )
+                llm_fallback_warned = True
+            lemmas.append(selected["lemma"])
+            upos_values.append(selected["upos"])
+            xpos_values.append(selected["xpos"])
+            feature_values.append(selected["morph_features"])
+            analysis_count.append(len(candidates))
+            analysis_status.append(status)
         except Exception:
             lemmas.append("")
             upos_values.append("")
@@ -1751,16 +1900,27 @@ def annotate(
         str,
         typer.Option(help="LLM model name when --use-llm is enabled"),
     ] = "ministral-3:8b",
+    llm_endpoint: Annotated[
+        str,
+        typer.Option(help="Ollama base URL when --use-llm is enabled"),
+    ] = os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
 ) -> None:
     """Annotate CSV forms with CLTK lemma/POS/morphology metadata."""
     if use_llm:
-        info(f"LLM disambiguation enabled: provider={llm_provider}, model={llm_model}")
+        info(f"LLM disambiguation enabled: provider={llm_provider}, model={llm_model}, endpoint={llm_endpoint}")
         stderr_console.print(
             "[yellow][WARN][/yellow] LLM disambiguation fallback is currently experimental; "
             "using CLTK output as source of truth."
         )
     df = pd.read_csv(input, encoding="utf-8", keep_default_na=False)
-    annotated = annotate_with_cltk(df, form_column=form_column)
+    annotated = annotate_with_cltk(
+        df,
+        form_column=form_column,
+        use_llm=use_llm,
+        llm_provider=llm_provider,
+        llm_model=llm_model,
+        llm_endpoint=llm_endpoint,
+    )
     final_df = _select_output_columns(annotated, include_column or [], exclude_column or [])
     final_df.to_csv(output, index=False, encoding="utf-8")
     success(f"Wrote annotated output: {output.resolve()} ({len(final_df)} rows)")

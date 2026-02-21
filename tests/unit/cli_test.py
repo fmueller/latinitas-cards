@@ -9,7 +9,15 @@ from click.testing import CliRunner
 from typer.main import get_command
 
 import latinitas_cards.cli as cli_mod
-from latinitas_cards.cli import _read_apkg_field_rows, app, clean_anki_field, split_latin_forms, strip_anki_field
+from latinitas_cards.cli import (
+    _extract_llm_choice,
+    _read_apkg_field_rows,
+    _select_analysis_candidate,
+    app,
+    clean_anki_field,
+    split_latin_forms,
+    strip_anki_field,
+)
 
 
 def _create_anki_db(db_path: Path, notes: list[list[str]], field_names: list[str] | None = None) -> None:
@@ -691,7 +699,7 @@ def test_annotate_command_uses_annotation_pipeline(tmp_path: Path, monkeypatch: 
     csv_path.write_text("form\namo\n", encoding="utf-8")
     out_path = tmp_path / "annotated.csv"
 
-    def fake_annotate(df: pd.DataFrame, form_column: str) -> pd.DataFrame:
+    def fake_annotate(df: pd.DataFrame, form_column: str, **_: object) -> pd.DataFrame:
         out: pd.DataFrame = df.copy()
         out["lemma"] = ["amo"]
         out["upos"] = ["VERB"]
@@ -718,7 +726,10 @@ def test_annotate_command_accepts_ollama_defaults(tmp_path: Path, monkeypatch: p
     csv_path.write_text("form\namo\n", encoding="utf-8")
     out_path = tmp_path / "annotated.csv"
 
-    def fake_annotate(df: pd.DataFrame, form_column: str) -> pd.DataFrame:
+    captured: dict[str, object] = {}
+
+    def fake_annotate(df: pd.DataFrame, form_column: str, **kwargs: object) -> pd.DataFrame:
+        captured["kwargs"] = kwargs
         out: pd.DataFrame = df.copy()
         out["lemma"] = ["amo"]
         out["upos"] = ["VERB"]
@@ -744,6 +755,61 @@ def test_annotate_command_accepts_ollama_defaults(tmp_path: Path, monkeypatch: p
     assert result.exit_code == 0
     assert "provider=ollama" in result.output
     assert "model=ministral-3:8b" in result.output
+    assert isinstance(captured.get("kwargs"), dict)
+    kwargs = captured["kwargs"]
+    assert isinstance(kwargs, dict)
+    assert kwargs.get("use_llm") is True
+    assert kwargs.get("llm_provider") == "ollama"
+    assert kwargs.get("llm_model") == "ministral-3:8b"
+
+
+def test_extract_llm_choice_supports_json_and_plain_number() -> None:
+    assert _extract_llm_choice('{"choice": 2}', max_choice=3) == 1
+    assert _extract_llm_choice("I choose 1", max_choice=2) == 0
+
+
+def test_select_analysis_candidate_falls_back_when_llm_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    candidates = [
+        {"lemma": "dominus", "upos": "NOUN", "xpos": "", "morph_features": "", "source": "cltk"},
+        {"lemma": "domina", "upos": "NOUN", "xpos": "", "morph_features": "", "source": "surface"},
+    ]
+
+    def fake_query(*_: object, **__: object) -> int:
+        raise RuntimeError("ollama unavailable")
+
+    monkeypatch.setattr(cli_mod, "_query_ollama_choice", fake_query)
+    selected, status = _select_analysis_candidate(
+        form="domina",
+        candidates=candidates,
+        use_llm=True,
+        llm_provider="ollama",
+        llm_model="ministral-3:8b",
+        llm_endpoint="http://localhost:11434",
+    )
+    assert status == "ok-llm-fallback"
+    assert selected["lemma"] == "dominus"
+
+
+def test_select_analysis_candidate_uses_llm_choice(monkeypatch: pytest.MonkeyPatch) -> None:
+    candidates = [
+        {"lemma": "dominus", "upos": "NOUN", "xpos": "", "morph_features": "", "source": "cltk"},
+        {"lemma": "domina", "upos": "NOUN", "xpos": "", "morph_features": "", "source": "surface"},
+    ]
+
+    def fake_query(*_: object, **__: object) -> int:
+        return 1
+
+    monkeypatch.setattr(cli_mod, "_query_ollama_choice", fake_query)
+    selected, status = _select_analysis_candidate(
+        form="domina",
+        candidates=candidates,
+        use_llm=True,
+        llm_provider="ollama",
+        llm_model="ministral-3:8b",
+        llm_endpoint="http://localhost:11434",
+    )
+    assert status == "ok-llm"
+    assert selected["lemma"] == "domina"
 
 
 def test_cloze_command_generates_corpus_cloze(tmp_path: Path) -> None:
