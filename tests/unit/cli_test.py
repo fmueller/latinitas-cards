@@ -3,10 +3,13 @@ import sqlite3
 import zipfile
 from pathlib import Path
 
+import pandas as pd
+import pytest
 from click.testing import CliRunner
 from typer.main import get_command
 
-from latinitas_cards.cli import _read_apkg_field_rows, app, strip_anki_field
+import latinitas_cards.cli as cli_mod
+from latinitas_cards.cli import _read_apkg_field_rows, app, clean_anki_field, split_latin_forms, strip_anki_field
 
 
 def _create_anki_db(db_path: Path, notes: list[list[str]], field_names: list[str] | None = None) -> None:
@@ -71,6 +74,68 @@ def _create_colpkg_with_anki21b(
         with zipfile.ZipFile(colpkg_path, "w") as zf:
             zf.write(dummy_db, "collection.anki2")
             zf.writestr("collection.anki21b", compressed)
+
+
+def _create_modern_anki_db(db_path: Path, notes: list[list[str]], field_names: list[str] | None = None) -> None:
+    """Create a modern Anki-like DB with fields/notetypes tables."""
+    if field_names is None:
+        field_names = ["Latein", "Deutsch", "Konstruktion_Hinweise"]
+    con = sqlite3.connect(str(db_path))
+    con.execute(
+        "CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, mod INTEGER, usn INTEGER, "
+        "tags TEXT, flds TEXT, sfld INTEGER, csum INTEGER, flags INTEGER, data TEXT)"
+    )
+    con.execute(
+        "CREATE TABLE cards (id INTEGER PRIMARY KEY, nid INTEGER, did INTEGER, ord INTEGER, mod INTEGER, usn INTEGER, "
+        "type INTEGER, queue INTEGER, due INTEGER, ivl INTEGER, factor INTEGER, reps INTEGER, lapses INTEGER, "
+        "left INTEGER, odue INTEGER, odid INTEGER, flags INTEGER, data TEXT)"
+    )
+    con.execute("CREATE TABLE col (id INTEGER PRIMARY KEY, models TEXT)")
+    con.execute(
+        "CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT, mtime_secs INTEGER, usn INTEGER, config BLOB)"
+    )
+    con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT, config BLOB)")
+
+    model_id = 1502189247895
+    con.execute(
+        "INSERT INTO notetypes (id, name, mtime_secs, usn, config) VALUES (?, ?, 0, 0, ?)",
+        (model_id, "Latein", b"{}"),
+    )
+    for i, field_name in enumerate(field_names):
+        con.execute(
+            "INSERT INTO fields (ntid, ord, name, config) VALUES (?, ?, ?, ?)",
+            (model_id, i, field_name, b"{}"),
+        )
+    con.execute("INSERT INTO col (id, models) VALUES (1, '')")
+
+    for i, note_fields in enumerate(notes, start=1):
+        note_id = 1000 + i
+        con.execute(
+            (
+                "INSERT INTO notes (id, guid, mid, mod, usn, tags, flds, sfld, csum, flags, data) "
+                "VALUES (?, ?, ?, 0, 0, '', ?, 0, 0, 0, '')"
+            ),
+            (note_id, f"guid-{i}", model_id, "\x1f".join(note_fields)),
+        )
+        con.execute(
+            (
+                "INSERT INTO cards (id, nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, "
+                "left, odue, odid, flags, data) VALUES (?, ?, 1, 0, 0, 0, 0, 0, ?, 0, 0, 0, 0, 0, 0, 0, 0, '')"
+            ),
+            (2000 + i, note_id, i),
+        )
+    con.commit()
+    con.close()
+
+
+def _create_modern_colpkg(colpkg_path: Path, notes: list[list[str]], field_names: list[str] | None = None) -> None:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "collection.anki2"
+        _create_modern_anki_db(db_path, notes, field_names=field_names)
+        with zipfile.ZipFile(colpkg_path, "w") as zf:
+            zf.write(db_path, "collection.anki2")
 
 
 class TestStripAnkiField:
@@ -515,3 +580,222 @@ def test_validate_fails_for_invalid_usfx_structure(tmp_path: Path) -> None:
     assert result.exit_code == 1
     assert "Validation Report" in result.output
     assert "Could not parse USFX structure" in result.output
+
+
+def test_read_apkg_field_rows_supports_modern_schema(tmp_path: Path) -> None:
+    apkg = tmp_path / "modern.apkg"
+    _create_modern_colpkg(
+        apkg,
+        notes=[
+            ["amo", "lieben", "amo, amas, amat"],
+            ["video", "sehen", "video, vides, videt"],
+        ],
+    )
+    rows = _read_apkg_field_rows(apkg, "Latein")
+    assert [row["Latein"] for row in rows] == ["amo", "video"]
+
+
+def test_clean_anki_field_preserves_block_content_when_requested() -> None:
+    assert clean_anki_field("esse<div>(est - sunt)</div>", truncate_at_block=False) == "esse | (est - sunt)"
+
+
+def test_split_latin_forms_auto_detects_commas() -> None:
+    forms, rule, confidence = split_latin_forms("amo, amas, amat", mode="auto")
+    assert forms == ["amo", "amas", "amat"]
+    assert rule == "comma"
+    assert confidence > 0.9
+
+
+def test_inspect_lists_notetype_and_fields(tmp_path: Path) -> None:
+    apkg = tmp_path / "modern.apkg"
+    _create_modern_colpkg(apkg, notes=[["amo", "lieben", "amo, amas, amat"]])
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "inspect",
+            "--input",
+            str(apkg),
+            "--head",
+            "1",
+            "--fields",
+            "Latein",
+            "--fields",
+            "Konstruktion_Hinweise",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "Anki Note Types" in result.output
+    assert "Konstruktion_Hinweise" in result.output
+
+
+def test_split_command_writes_csv_rows(tmp_path: Path) -> None:
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text('Latein,Konstruktion_Hinweise\namo,"amo, amas, amat"\n', encoding="utf-8")
+    out_path = tmp_path / "split.csv"
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "split",
+            "--input",
+            str(csv_path),
+            "--output",
+            str(out_path),
+            "--source-field",
+            "Konstruktion_Hinweise",
+            "--split-mode",
+            "comma",
+        ],
+    )
+    assert result.exit_code == 0
+    out_text = out_path.read_text(encoding="utf-8")
+    assert "form" in out_text
+    assert "amo" in out_text
+    assert "amas" in out_text
+
+
+def test_split_command_can_rewrite_apkg(tmp_path: Path) -> None:
+    apkg = tmp_path / "modern.apkg"
+    _create_modern_colpkg(
+        apkg,
+        notes=[
+            ["amo", "lieben", "amo, amas, amat"],
+        ],
+    )
+    out_apkg = tmp_path / "rewritten.apkg"
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "split",
+            "--input",
+            str(apkg),
+            "--output",
+            str(out_apkg),
+            "--source-field",
+            "Konstruktion_Hinweise",
+            "--split-mode",
+            "comma",
+            "--output-format",
+            "apkg",
+        ],
+    )
+    assert result.exit_code == 0
+    rows = _read_apkg_field_rows(out_apkg, "Konstruktion_Hinweise")
+    assert len(rows) >= 3
+
+
+def test_annotate_command_uses_annotation_pipeline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    csv_path = tmp_path / "split.csv"
+    csv_path.write_text("form\namo\n", encoding="utf-8")
+    out_path = tmp_path / "annotated.csv"
+
+    def fake_annotate(df: pd.DataFrame, form_column: str) -> pd.DataFrame:
+        out: pd.DataFrame = df.copy()
+        out["lemma"] = ["amo"]
+        out["upos"] = ["VERB"]
+        out["xpos"] = [""]
+        out["morph_features"] = ["Mood=Ind"]
+        out["analysis_count"] = [1]
+        out["analysis_status"] = ["ok"]
+        return out
+
+    monkeypatch.setattr(cli_mod, "annotate_with_cltk", fake_annotate)
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        ["annotate", "--input", str(csv_path), "--output", str(out_path), "--form-column", "form"],
+    )
+    assert result.exit_code == 0
+    content = out_path.read_text(encoding="utf-8")
+    assert "lemma" in content
+    assert "VERB" in content
+
+
+def test_annotate_command_accepts_ollama_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    csv_path = tmp_path / "split.csv"
+    csv_path.write_text("form\namo\n", encoding="utf-8")
+    out_path = tmp_path / "annotated.csv"
+
+    def fake_annotate(df: pd.DataFrame, form_column: str) -> pd.DataFrame:
+        out: pd.DataFrame = df.copy()
+        out["lemma"] = ["amo"]
+        out["upos"] = ["VERB"]
+        out["xpos"] = [""]
+        out["morph_features"] = ["Mood=Ind"]
+        out["analysis_count"] = [1]
+        out["analysis_status"] = ["ok"]
+        return out
+
+    monkeypatch.setattr(cli_mod, "annotate_with_cltk", fake_annotate)
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "annotate",
+            "--input",
+            str(csv_path),
+            "--output",
+            str(out_path),
+            "--use-llm",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "provider=ollama" in result.output
+    assert "model=ministral-3:8b" in result.output
+
+
+def test_cloze_command_generates_corpus_cloze(tmp_path: Path) -> None:
+    input_csv = tmp_path / "forms.csv"
+    input_csv.write_text("form\nverbum\n", encoding="utf-8")
+    corpus_txt = tmp_path / "corpus.txt"
+    corpus_txt.write_text("In principio erat verbum.\n", encoding="utf-8")
+    output_csv = tmp_path / "cloze.csv"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "cloze",
+            "--input",
+            str(input_csv),
+            "--output",
+            str(output_csv),
+            "--corpus",
+            str(corpus_txt),
+            "--corpus-format",
+            "txt",
+        ],
+    )
+    assert result.exit_code == 0
+    text = output_csv.read_text(encoding="utf-8")
+    assert "CorpusCloze" in text
+    assert "{{c1::verbum}}" in text
+
+
+def test_cloze_non_interactive_ignores_parallel_columns_by_default(tmp_path: Path) -> None:
+    input_csv = tmp_path / "forms.csv"
+    input_csv.write_text("form\namo\n", encoding="utf-8")
+    corpus_csv = tmp_path / "parallel.csv"
+    corpus_csv.write_text("la,en,de\namo,loving,lieben\n", encoding="utf-8")
+    output_csv = tmp_path / "cloze.csv"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "cloze",
+            "--input",
+            str(input_csv),
+            "--output",
+            str(output_csv),
+            "--corpus",
+            str(corpus_csv),
+            "--corpus-format",
+            "csv",
+        ],
+    )
+    assert result.exit_code == 0
+    text = output_csv.read_text(encoding="utf-8")
+    assert "translation_en" not in text
