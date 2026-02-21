@@ -12,7 +12,7 @@ from latinitas_cards.cli import _read_apkg_field_rows, app, strip_anki_field
 def _create_anki_db(db_path: Path, notes: list[list[str]], field_names: list[str] | None = None) -> None:
     """Create a minimal Anki SQLite database with the given notes."""
     if field_names is None:
-        field_names = ["Front", "Back"]
+        field_names = ["Front", "Back", "VulgataCloze"]
     con = sqlite3.connect(str(db_path))
     con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, mid INTEGER, flds TEXT)")
     con.execute("CREATE TABLE col (id INTEGER PRIMARY KEY, models TEXT)")
@@ -32,13 +32,17 @@ def _create_anki_db(db_path: Path, notes: list[list[str]], field_names: list[str
     con.close()
 
 
-def _create_colpkg_with_anki2(colpkg_path: Path, notes: list[list[str]]) -> None:
+def _create_colpkg_with_anki2(
+    colpkg_path: Path,
+    notes: list[list[str]],
+    field_names: list[str] | None = None,
+) -> None:
     """Create a .colpkg zip containing only collection.anki2."""
     import tempfile
 
     with tempfile.TemporaryDirectory() as td:
         db_path = Path(td) / "collection.anki2"
-        _create_anki_db(db_path, notes)
+        _create_anki_db(db_path, notes, field_names=field_names)
         with zipfile.ZipFile(colpkg_path, "w") as zf:
             zf.write(db_path, "collection.anki2")
 
@@ -47,6 +51,7 @@ def _create_colpkg_with_anki21b(
     colpkg_path: Path,
     real_notes: list[list[str]],
     dummy_notes: list[list[str]] | None = None,
+    field_names: list[str] | None = None,
 ) -> None:
     """Create a .colpkg zip with a zstd-compressed collection.anki21b and a dummy collection.anki2."""
     import tempfile
@@ -56,12 +61,12 @@ def _create_colpkg_with_anki21b(
     with tempfile.TemporaryDirectory() as td:
         # Build the real DB for anki21b
         real_db = Path(td) / "real.db"
-        _create_anki_db(real_db, real_notes)
+        _create_anki_db(real_db, real_notes, field_names=field_names)
         compressed = zstandard.ZstdCompressor().compress(real_db.read_bytes())
 
         # Build a dummy anki2 (placeholder)
         dummy_db = Path(td) / "collection.anki2"
-        _create_anki_db(dummy_db, dummy_notes or [["placeholder", ""]])
+        _create_anki_db(dummy_db, dummy_notes or [["placeholder", "", ""]], field_names=field_names)
 
         with zipfile.ZipFile(colpkg_path, "w") as zf:
             zf.write(dummy_db, "collection.anki2")
@@ -100,7 +105,7 @@ class TestStripAnkiField:
 class TestReadApkgFieldRows:
     def test_reads_anki2_colpkg(self, tmp_path: Path) -> None:
         colpkg = tmp_path / "deck.colpkg"
-        _create_colpkg_with_anki2(colpkg, [["dominus", "lord"], ["servus", "slave"]])
+        _create_colpkg_with_anki2(colpkg, [["dominus", "lord", ""], ["servus", "slave", ""]])
         rows = _read_apkg_field_rows(colpkg, "Front")
         assert len(rows) == 2
         assert rows[0]["Front"] == "dominus"
@@ -110,8 +115,8 @@ class TestReadApkgFieldRows:
         colpkg = tmp_path / "deck.colpkg"
         _create_colpkg_with_anki21b(
             colpkg,
-            real_notes=[["insula", "island"], ["terra", "land"], ["aqua", "water"]],
-            dummy_notes=[["placeholder", ""]],
+            real_notes=[["insula", "island", ""], ["terra", "land", ""], ["aqua", "water", ""]],
+            dummy_notes=[["placeholder", "", ""]],
         )
         rows = _read_apkg_field_rows(colpkg, "Front")
         assert len(rows) == 3
@@ -119,7 +124,7 @@ class TestReadApkgFieldRows:
 
     def test_reads_apkg_suffix(self, tmp_path: Path) -> None:
         apkg = tmp_path / "deck.apkg"
-        _create_colpkg_with_anki2(apkg, [["verbum", "word"]])
+        _create_colpkg_with_anki2(apkg, [["verbum", "word", ""]])
         rows = _read_apkg_field_rows(apkg, "Front")
         assert len(rows) == 1
         assert rows[0]["Front"] == "verbum"
@@ -132,7 +137,7 @@ class TestReadApkgFieldRows:
             encoding="utf-8",
         )
         apkg = tmp_path / "deck.apkg"
-        _create_colpkg_with_anki2(apkg, [["verbum", "word"]])
+        _create_colpkg_with_anki2(apkg, [["verbum", "word", ""]])
 
         runner = CliRunner()
         result = runner.invoke(
@@ -330,7 +335,7 @@ def test_preview_supports_lemma_forms_file(tmp_path: Path) -> None:
     )
 
     apkg_path = tmp_path / "input.apkg"
-    _create_colpkg_with_anki2(apkg_path, [["amo", "love"], ["terra", "land"]])
+    _create_colpkg_with_anki2(apkg_path, [["amo", "love", ""], ["terra", "land", ""]])
 
     lemmas_path = tmp_path / "lemmas.txt"
     lemmas_path.write_text("amo, amas, amat\n", encoding="utf-8")
@@ -383,3 +388,70 @@ def test_preview_supports_ignore_pattern(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "No clozes generated" in result.output
+
+
+def test_generate_writes_back_to_apkg(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>In principio erat verbum</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    apkg_path = tmp_path / "input.apkg"
+    _create_colpkg_with_anki2(apkg_path, [["verbum", "word", ""]])
+    output_path = tmp_path / "output.apkg"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "generate",
+            "--input",
+            str(apkg_path),
+            "--usfx",
+            str(usfx_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    rows = _read_apkg_field_rows(output_path, "VulgataCloze")
+    assert len(rows) == 1
+    assert "{{c1::verbum}}" in rows[0]["VulgataCloze"]
+
+
+def test_generate_apkg_requires_existing_output_field(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>In principio erat verbum</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    apkg_path = tmp_path / "input.apkg"
+    _create_colpkg_with_anki2(
+        apkg_path,
+        [["verbum", "word"]],
+        field_names=["Front", "Back"],
+    )
+    output_path = tmp_path / "output.apkg"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "generate",
+            "--input",
+            str(apkg_path),
+            "--usfx",
+            str(usfx_path),
+            "--output",
+            str(output_path),
+            "--new-field",
+            "VulgataCloze",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert result.exception is not None
+    assert "Field 'VulgataCloze' not found" in str(result.exception)
