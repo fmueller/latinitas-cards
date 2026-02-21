@@ -40,7 +40,7 @@ Use Poetry for environment and task execution.
 
 ## Coding Style & Naming Conventions
 
-- Target Python `>=3.10,<3.14`; keep code compatible with 3.10. CI tests on 3.10 and 3.13.
+- Target Python `>=3.10,<3.13`; keep code compatible with 3.10. CI tests on 3.10 and 3.12.
 - Ruff for formatting and linting (rules: E, F, UP, B, SIM, I). Line length 120.
 - mypy strict mode (`target: 3.10`); add explicit types on public functions and non-trivial internals.
 - Follow snake_case for functions/variables and lowercase module names.
@@ -54,6 +54,18 @@ Use Poetry for environment and task execution.
 - Place tests under `tests/unit/` mirroring package behavior.
 - Add regression tests for parser edge cases and CLI input/output changes.
 - Run `poetry run pytest -v` before opening a PR.
+
+### Mandatory Validation After Code Changes
+
+After completing any task that includes code changes, run this exact validation chain:
+
+1. `poetry run ruff check`
+2. `poetry run mypy`
+3. `poetry run pytest -v`
+
+If any command fails, fix the issue and then rerun the full chain from the beginning
+(`ruff -> mypy -> pytest`) until all checks pass. This is required to reduce
+regressions introduced while fixing earlier errors.
 
 ## Commit & Pull Request Guidelines
 

@@ -1,19 +1,20 @@
 [project]
 name = "latinitas-cards"
 version = "0.1.0"
-description = "Tool to generate flashcards for learning Latin with Anki."
+description = "CLI for Latin Anki workflows: split forms, annotate grammar, and generate corpus-based cloze cards."
 authors = [
     {name = "Felix Müller",email = "felix@fmueller.io"}
 ]
 license = {text = "GPL-3.0-or-later"}
 readme = "README.md"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "pydantic (>=2.11.9,<3.0.0)",
     "pandas (>=2.3.3,<3.0.0)",
     "rich (>=13.9.4,<14.0.0)",
     "typer (>=0.19.2,<0.20.0)",
-    "zstandard (>=0.25.0,<0.26.0)"
+    "zstandard (>=0.25.0,<0.26.0)",
+    "cltk (>=1.5.0,<2.0.0)"
 ]
 
 [tool.poetry]
