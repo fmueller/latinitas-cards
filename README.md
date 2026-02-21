@@ -83,6 +83,19 @@ poetry run latinitas-cards split \
 Grammar analysis uses [CLTK](https://cltk.org). If you add LLM-based disambiguation in your own pipeline,
 the project default is Ollama with model `ministral-3:8b`.
 
+Example with optional Ollama disambiguation enabled:
+
+```bash
+poetry run latinitas-cards annotate \
+  --input split.csv \
+  --output annotated_llm.csv \
+  --form-column form \
+  --use-llm \
+  --llm-provider ollama \
+  --llm-model ministral-3:8b \
+  --llm-endpoint http://localhost:11434
+```
+
 ## Corpora Suggestions (Latin + English/German)
 
 Good public sources for Latin corpora (including EN/DE parallel data) include:
