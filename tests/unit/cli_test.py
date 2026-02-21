@@ -455,3 +455,63 @@ def test_generate_apkg_requires_existing_output_field(tmp_path: Path) -> None:
     assert result.exit_code != 0
     assert result.exception is not None
     assert "Field 'VulgataCloze' not found" in str(result.exception)
+
+
+def test_validate_passes_for_valid_usfx_and_csv(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>In principio erat verbum</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text("Front,Back\nverbum,word\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        ["validate", "--input", str(csv_path), "--usfx", str(usfx_path)],
+    )
+
+    assert result.exit_code == 0
+    assert "Validation Report" in result.output
+    assert "PASS" in result.output
+
+
+def test_validate_fails_when_front_column_missing(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "sample.usfx.xml"
+    usfx_path.write_text(
+        "<usfx><book id='GEN'/><c n='1'/><v n='1'>In principio erat verbum</v><ve/></usfx>",
+        encoding="utf-8",
+    )
+
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text("Word,Back\nverbum,word\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        ["validate", "--input", str(csv_path), "--usfx", str(usfx_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "Validation Report" in result.output
+    assert "Missing required column 'Front'" in result.output
+
+
+def test_validate_fails_for_invalid_usfx_structure(tmp_path: Path) -> None:
+    usfx_path = tmp_path / "broken.usfx.xml"
+    usfx_path.write_text("<usfx><book id='GEN'/><c n='1'/></usfx>", encoding="utf-8")
+
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text("Front,Back\nverbum,word\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        ["validate", "--input", str(csv_path), "--usfx", str(usfx_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "Validation Report" in result.output
+    assert "Could not parse USFX structure" in result.output
