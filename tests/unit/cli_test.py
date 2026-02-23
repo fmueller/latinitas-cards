@@ -673,6 +673,93 @@ def test_split_command_writes_csv_rows(tmp_path: Path) -> None:
     assert "amas" in out_text
 
 
+def test_split_overwrites_source_field_by_default(tmp_path: Path) -> None:
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text('Latein,Konstruktion_Hinweise\namo,"amo, amas, amat"\n', encoding="utf-8")
+    out_path = tmp_path / "split.csv"
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "split",
+            "--input",
+            str(csv_path),
+            "--output",
+            str(out_path),
+            "--source-field",
+            "Konstruktion_Hinweise",
+            "--split-mode",
+            "comma",
+        ],
+    )
+    assert result.exit_code == 0
+    import csv
+
+    with open(out_path, encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    for row in rows:
+        assert row["Konstruktion_Hinweise"] == row["form"]
+
+
+def test_split_with_front_field_overwrites_front_column(tmp_path: Path) -> None:
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text('Latein,Konstruktion_Hinweise\namo,"amo, amas, amat"\n', encoding="utf-8")
+    out_path = tmp_path / "split.csv"
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "split",
+            "--input",
+            str(csv_path),
+            "--output",
+            str(out_path),
+            "--source-field",
+            "Konstruktion_Hinweise",
+            "--front-field",
+            "Latein",
+            "--split-mode",
+            "comma",
+        ],
+    )
+    assert result.exit_code == 0
+    import csv
+
+    with open(out_path, encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    for row in rows:
+        assert row["Latein"] == row["form"]
+
+
+def test_split_keep_original_source(tmp_path: Path) -> None:
+    csv_path = tmp_path / "input.csv"
+    csv_path.write_text('Latein,Konstruktion_Hinweise\namo,"amo, amas, amat"\n', encoding="utf-8")
+    out_path = tmp_path / "split.csv"
+    runner = CliRunner()
+    result = runner.invoke(
+        get_command(app),
+        [
+            "split",
+            "--input",
+            str(csv_path),
+            "--output",
+            str(out_path),
+            "--source-field",
+            "Konstruktion_Hinweise",
+            "--keep-original-source",
+            "--split-mode",
+            "comma",
+        ],
+    )
+    assert result.exit_code == 0
+    import csv
+
+    with open(out_path, encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    for row in rows:
+        assert row["Konstruktion_Hinweise"] == "amo, amas, amat"
+
+
 def test_split_command_can_rewrite_apkg(tmp_path: Path) -> None:
     apkg = tmp_path / "modern.apkg"
     _create_modern_colpkg(
