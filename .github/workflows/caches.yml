@@ -1,8 +1,12 @@
 name: Cleanup Branch Caches
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed
+
+permissions:
+  actions: write
+  contents: read
 
 jobs:
   cleanup:
@@ -11,7 +15,12 @@ jobs:
       - name: Cleanup
         run: |
           cacheKeysForPR=$(gh cache list --ref $BRANCH --limit 100 --json id --jq '.[].id')
-          set +e
+
+          if [ -z "$cacheKeysForPR" ]; then
+            echo "No caches found for $BRANCH"
+            exit 0
+          fi
+
           for cacheKey in $cacheKeysForPR
           do
             gh cache delete $cacheKey
