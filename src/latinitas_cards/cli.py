@@ -812,6 +812,8 @@ def _split_dataframe_rows(
     split_mode: str,
     custom_separator_regex: str | None,
     keep_unsplit: bool,
+    update_source_field: bool = True,
+    front_field: str | None = None,
 ) -> pd.DataFrame:
     if source_field not in df.columns:
         raise KeyError(f"Column '{source_field}' not found. Available columns: {list(df.columns)}")
@@ -830,6 +832,10 @@ def _split_dataframe_rows(
             built["source_field"] = source_field
             built["split_rule"] = split_rule
             built["split_confidence"] = f"{confidence:.2f}"
+            if update_source_field:
+                built[source_field] = form
+            if front_field and front_field in built:
+                built[front_field] = form
             built.setdefault("source_note_id", str(row.get("note_id", idx)))
             built.setdefault("source_notetype", str(row.get("note_type", "")))
             rows.append(built)
@@ -1837,6 +1843,14 @@ def split_impl(
         list[str] | None,
         typer.Option(help="Output columns to exclude; can be repeated"),
     ] = None,
+    front_field: Annotated[
+        str | None,
+        typer.Option(help="Also overwrite this column with each split form"),
+    ] = None,
+    keep_original_source: Annotated[
+        bool,
+        typer.Option(help="Keep original source field value instead of overwriting with split form"),
+    ] = False,
     output_format: Annotated[
         str,
         typer.Option(help="Output format: csv (default) or apkg"),
@@ -1862,6 +1876,8 @@ def split_impl(
         split_mode=split_mode,
         custom_separator_regex=custom_separator_regex,
         keep_unsplit=keep_unsplit,
+        update_source_field=not keep_original_source,
+        front_field=front_field,
     )
     final_df = _select_output_columns(split_df, include_column or [], exclude_column or [])
     final_df.to_csv(output, index=False, encoding="utf-8")
