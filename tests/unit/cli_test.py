@@ -3,6 +3,7 @@ import sqlite3
 import zipfile
 from pathlib import Path
 
+import click
 import pandas as pd
 import pytest
 from click.testing import CliRunner
@@ -282,6 +283,15 @@ def test_cli_short_help_option() -> None:
     result = runner.invoke(get_command(app), ["-h"])
     assert result.exit_code == 0
     assert "Usage" in result.output
+
+
+def test_command_callbacks_are_split_into_command_modules() -> None:
+    click_app = get_command(app)
+    assert isinstance(click_app, click.Group)
+    command_modules = {name: command.callback.__module__ for name, command in click_app.commands.items()}
+
+    assert command_modules
+    assert all(module.startswith("latinitas_cards.commands.") for module in command_modules.values())
 
 
 def test_preview_shows_sample_clozes_without_writing_output(tmp_path: Path) -> None:
