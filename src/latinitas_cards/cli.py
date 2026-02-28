@@ -1521,8 +1521,7 @@ app = typer.Typer(
 )
 
 
-@app.command()
-def generate(
+def generate_impl(
     input: Annotated[
         Path,
         typer.Option(
@@ -1599,8 +1598,7 @@ def generate(
     )
 
 
-@app.command()
-def preview(
+def preview_impl(
     input: Annotated[
         Path,
         typer.Option(
@@ -1710,8 +1708,7 @@ def preview(
         stdout_console.print(table)
 
 
-@app.command()
-def inspect(
+def inspect_impl(
     input: Annotated[
         Path,
         typer.Option(
@@ -1804,8 +1801,7 @@ def inspect(
         stdout_console.print(sep_table)
 
 
-@app.command()
-def split(
+def split_impl(
     input: Annotated[
         Path,
         typer.Option(
@@ -1872,8 +1868,7 @@ def split(
     success(f"Wrote split output: {output.resolve()} ({len(final_df)} rows)")
 
 
-@app.command()
-def annotate(
+def annotate_impl(
     input: Annotated[
         Path,
         typer.Option(..., help="Path to CSV with a form column", exists=True, readable=True),
@@ -1926,8 +1921,7 @@ def annotate(
     success(f"Wrote annotated output: {output.resolve()} ({len(final_df)} rows)")
 
 
-@app.command()
-def cloze(
+def cloze_impl(
     input: Annotated[
         Path,
         typer.Option(..., help="Path to CSV with a form column", exists=True, readable=True),
@@ -2050,8 +2044,7 @@ def cloze(
     success(f"Wrote cloze output: {output.resolve()} ({len(final_df)} rows)")
 
 
-@app.command()
-def validate(
+def validate_impl(
     input: Annotated[
         Path,
         typer.Option(
@@ -2193,3 +2186,24 @@ def validate(
 
     stderr_console.print("[bold red][ERROR][/bold red] Validation failed. See report above.")
     raise typer.Exit(code=1)
+
+
+def _register_commands() -> None:
+    from .commands.annotate import annotate
+    from .commands.cloze import cloze
+    from .commands.generate import generate
+    from .commands.inspect import inspect
+    from .commands.preview import preview
+    from .commands.split import split
+    from .commands.validate import validate
+
+    app.command()(generate)
+    app.command()(preview)
+    app.command()(inspect)
+    app.command()(split)
+    app.command()(annotate)
+    app.command()(cloze)
+    app.command()(validate)
+
+
+_register_commands()
