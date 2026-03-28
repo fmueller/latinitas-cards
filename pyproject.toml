@@ -27,7 +27,7 @@ latinitas-cards = "latinitas_cards.cli:app"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.19.1"
-ruff = "^0.15.5"
+ruff = "^0.15.8"
 pytest = "^9.0.2"
 pre-commit = "^4.5.1"
 pandas-stubs = {version = ">=2.2,<4", python = ">=3.11"}
