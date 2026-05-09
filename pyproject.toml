@@ -9,7 +9,7 @@ license = {text = "GPL-3.0-or-later"}
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "pydantic (>=2.11.9,<3.0.0)",
+    "pydantic (>=2.13.4,<3.0.0)",
     "pandas (>=2.3.3,<3.0.0)",
     "rich (>=13.9.4,<14.0.0)",
     "typer (>=0.19.2,<0.20.0)",
@@ -27,9 +27,9 @@ latinitas-cards = "latinitas_cards.cli:app"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.19.1"
-ruff = "^0.15.5"
-pytest = "^9.0.2"
-pre-commit = "^4.5.1"
+ruff = "^0.15.12"
+pytest = "^9.0.3"
+pre-commit = "^4.6.0"
 pandas-stubs = {version = ">=2.2,<4", python = ">=3.11"}
 
 [build-system]
