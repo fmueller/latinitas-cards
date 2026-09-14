@@ -46,7 +46,39 @@ issue first, not necessarily a code regression.
 - `src/latinitas_cards/commands/`: command callback modules
 - `tests/unit/`: unit tests
 - `data/`: sample corpora/deck artifacts
+- `specs/`: versioned release specs (`specs/vX.Y.Z.md`, index in `specs/README.md`)
+- `planning/`: Taskrail tracked work (`STATE.md`, `tasks/`, `artifacts/`)
 - Root configs: `pyproject.toml`, `.pre-commit-config.yaml`, `.github/workflows/*.yml`
+
+## Tracked Work (Taskrail)
+
+Planning and task state live in the repo, managed by the `taskrail` CLI.
+
+- `specs/` — versioned specs. `specs/v0.1.0.md` is active; nothing is released yet, so
+  there is no baseline spec.
+- `planning/STATE.md` — current focus, blockers, next action.
+- `planning/tasks/` — one file per task, each linked to a spec heading via `spec_ref`.
+- `planning/artifacts/` — verification artifacts, gitignored.
+
+```bash
+taskrail status                 # current snapshot (read-only)
+taskrail next                   # deterministic next eligible task
+taskrail start <task-id>        # mark active (one task at a time)
+taskrail verify <task-id>       # write verification artifacts
+taskrail complete <task-id>     # mark implemented
+taskrail block <task-id>        # record a blocker
+taskrail validate               # check structure and state
+taskrail coverage               # spec coverage / orphan / drift signals
+```
+
+Do not hand-edit `planning/STATE.md`; go through the CLI. New work needs a task
+(`taskrail task new --title ... --area <spec-anchor>`) so no change bypasses a spec heading.
+Run `taskrail verify`/`complete` only after the mandatory ruff/mypy/pytest chain passes, and
+never paste a concrete `planning/artifacts/...` path into a committed note — `validate`
+rejects committed references to gitignored artifact paths; cite the verify run timestamp.
+
+Repo-agnostic tracked-work skills are installed under `.claude/skills/` and `.agents/skills/`
+(`taskrail init --with-skills`).
 
 ## Build, Test, and Development Commands
 
