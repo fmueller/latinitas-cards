@@ -88,3 +88,50 @@ checksum = "sha256:beabbce824641ae71229ed11dd8634f47148921cb649d25c90441b7374814
 url = "https://github.com/evilmartians/lefthook/releases/download/v2.1.10/lefthook_2.1.10_Windows_x86_64.gz"
 url_api = "https://api.github.com/repos/evilmartians/lefthook/releases/assets/470227505"
 provenance = "github-attestations"
+
+[[tools.uv]]
+version = "0.9.17"
+backend = "aqua:astral-sh/uv"
+specifiers = ["0.9.17"]
+
+[tools.uv."platforms.linux-arm64"]
+checksum = "sha256:e9eba97b7169e47fd3c926e409f0b714820f0befc23b3ae062780586a793e4cc"
+url = "https://github.com/astral-sh/uv/releases/download/0.9.17/uv-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/326593558"
+provenance = "github-attestations"
+
+[tools.uv."platforms.linux-arm64-musl"]
+checksum = "sha256:f6f48a301f8e855765af42ef50257af0cebc9c5439dfdcbc188142941aea45ca"
+url = "https://github.com/astral-sh/uv/releases/download/0.9.17/uv-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/326593560"
+provenance = "github-attestations"
+
+[tools.uv."platforms.linux-x64"]
+checksum = "sha256:0114d54f9aafd07516cf1cadfe72afa970f5fd293fbe82dd924b8a7b42c984d8"
+url = "https://github.com/astral-sh/uv/releases/download/0.9.17/uv-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/326593628"
+provenance = "github-attestations"
+
+[tools.uv."platforms.linux-x64-musl"]
+checksum = "sha256:ab616c1851e7b1ed377a9ff3997dcee184bea7eda0b20bc8607abba6c469cbad"
+url = "https://github.com/astral-sh/uv/releases/download/0.9.17/uv-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/326593632"
+provenance = "github-attestations"
+
+[tools.uv."platforms.macos-arm64"]
+checksum = "sha256:a1e1464aa1d04d5e5fa700aa2f2e10397d1114e835dbd56be25ba65c9a31bd99"
+url = "https://github.com/astral-sh/uv/releases/download/0.9.17/uv-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/326593550"
+provenance = "github-attestations"
+
+[tools.uv."platforms.macos-x64"]
+checksum = "sha256:249e7fb18d45c06ba283c48f0a8e586ecc5fbb9e8dad0923c4169a7c4db815b2"
+url = "https://github.com/astral-sh/uv/releases/download/0.9.17/uv-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/326593620"
+provenance = "github-attestations"
+
+[tools.uv."platforms.windows-x64"]
+checksum = "sha256:ebc76197bf3e1a58f9dac6f70f49b0ebd3e6907ab35289ce228bce5ba8a3f201"
+url = "https://github.com/astral-sh/uv/releases/download/0.9.17/uv-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/326593623"
+provenance = "github-attestations"

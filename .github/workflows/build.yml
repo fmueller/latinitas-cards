@@ -16,30 +16,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version-file: '.python-version'
-        id: setup-python
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-in-project: true
-      - name: Cache virtualenv
-        uses: actions/cache@v5
-        with:
-          path: .venv
-          key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('poetry.lock') }}
-        id: cache-venv
       - name: Install dependencies
-        if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction
+        run: uv sync --locked --dev
       - name: Run ruff checks
-        run: poetry run ruff check
+        run: uv run ruff check
       - name: Check formatting
-        run: poetry run ruff format --check
+        run: uv run ruff format --check
       - name: Run mypy for type checking
-        run: poetry run mypy
+        run: uv run mypy
 
   # The commit hooks are local and opt-in, so their own suites run here to keep
   # the message and authorship policy enforced even from a checkout without them.
@@ -65,26 +57,22 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.12"]
+    # uv prefers .python-version over the interpreter setup-python puts on
+    # PATH, so the matrix version is requested explicitly.
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      - name: Set up Python
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-        id: setup-python
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-in-project: true
-      - name: Cache virtualenv
-        uses: actions/cache@v5
-        with:
-          path: .venv
-          key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('poetry.lock') }}
-        id: cache-venv
       - name: Install dependencies
-        if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction
+        run: uv sync --locked --dev
       - name: Run unit tests
-        run: poetry run pytest -v
+        run: uv run pytest -v

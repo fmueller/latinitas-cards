@@ -1119,7 +1119,7 @@ def annotate_with_cltk(
         from cltk.dependency.processes import LatinStanzaProcess  # type: ignore[import-untyped]
         from cltk.languages.pipelines import LatinPipeline  # type: ignore[import-untyped]
     except ImportError as exc:  # pragma: no cover - import guard only
-        raise RuntimeError("CLTK is not installed. Install with `poetry add cltk`.") from exc
+        raise RuntimeError("CLTK is not installed. Install with `uv add cltk`.") from exc
 
     _ensure_latin_stanza_resources()
 
@@ -1214,7 +1214,7 @@ def annotate_with_cltk(
     if non_empty and not has_success:
         raise RuntimeError(
             "CLTK produced no successful analyses. Make sure Latin Stanza resources are installed, e.g. run: "
-            "`poetry run python -c \"import stanza; stanza.download('la', package='ittb', "
+            "`uv run python -c \"import stanza; stanza.download('la', package='ittb', "
             "processors='tokenize,pos,lemma')\"`"
         )
 

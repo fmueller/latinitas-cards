@@ -4,7 +4,7 @@ This project is licensed under **GPL-3.0-or-later** (`pyproject.toml` + `LICENSE
 
 ## Scope and method
 
-- Dependency source of truth: `poetry.lock` (all resolved packages in `main` and `dev` groups).
+- Dependency source of truth: `uv.lock` (all resolved packages in the runtime dependencies and the `dev` group).
 - License metadata source: PyPI JSON metadata for each locked package version, plus installed wheel metadata when PyPI metadata was incomplete.
 - Compatibility baseline: whether each dependency license is generally compatible with GPLv3 when distributed together in a Python application.
 
@@ -67,7 +67,7 @@ Short answer: **mostly yes**, with one release-hardening improvement recommended
 
 1. Keep a **third-party notices** file in the repo/release artifact listing runtime dependencies and their licenses.
 2. If you distribute as a **self-contained binary/container image** with bundled site-packages, include third-party license texts/notices in that artifact (or a documented link packaged alongside it).
-3. Re-run this audit whenever `poetry.lock` changes.
+3. Re-run this audit whenever `uv.lock` changes.
 
 ## Practical obligations by license family in this dependency set
 

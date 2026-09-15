@@ -83,19 +83,19 @@ Repo-agnostic tracked-work skills are installed under `.claude/skills/` and `.ag
 
 ## Build, Test, and Development Commands
 
-Use Poetry for environment and task execution. `mise.toml` pins the rest of the toolchain.
+Use uv for environment and task execution. `mise.toml` pins the rest of the toolchain.
 
-- `mise run setup` (pinned tools, `poetry install`, `lefthook install`)
+- `mise run setup` (pinned tools, `uv sync --locked --dev`, `lefthook install`)
 - `mise run check` (full local gate, mirrors CI)
-- `poetry install`
-- `poetry run pytest -v`
-- `poetry run pytest tests/unit/cli_test.py`
-- `poetry run pytest -k "test_name"`
-- `poetry run ruff check`
-- `poetry run ruff check --fix`
-- `poetry run ruff format`
-- `poetry run mypy`
-- `poetry run latinitas-cards --help`
+- `uv sync --locked --dev`
+- `uv run pytest -v`
+- `uv run pytest tests/unit/cli_test.py`
+- `uv run pytest -k "test_name"`
+- `uv run ruff check`
+- `uv run ruff check --fix`
+- `uv run ruff format`
+- `uv run mypy`
+- `uv run latinitas-cards --help`
 
 ## Coding Style & Naming Conventions
 
@@ -130,9 +130,9 @@ For non-trivial refactors (especially module splits), use red/green TDD:
 
 Run this exact chain after code changes:
 
-1. `poetry run ruff check`
-2. `poetry run mypy`
-3. `poetry run pytest -v`
+1. `uv run ruff check`
+2. `uv run mypy`
+3. `uv run pytest -v`
 
 If any command fails, fix it and rerun the **full chain from the start**.
 

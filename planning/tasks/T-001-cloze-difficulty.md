@@ -22,7 +22,7 @@ silently flip which verses are selected, or make the flag a no-op, without faili
 - Unit tests assert that each difficulty level selects a different, expected set of verses from a fixture corpus.
 - A test pins the boundary behavior between adjacent levels, so a threshold change fails the suite.
 - Tests run against local fixtures, no corpus download.
-- `poetry run ruff check`, `poetry run mypy`, and `poetry run pytest -v` pass.
+- `uv run ruff check`, `uv run mypy`, and `uv run pytest -v` pass.
 
 ## Verification Notes
 

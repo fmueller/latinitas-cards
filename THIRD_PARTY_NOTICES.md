@@ -2,7 +2,7 @@
 
 This project (`latinitas-cards`) is licensed under GPL-3.0-or-later.
 
-The project depends on the following third-party runtime libraries (from `pyproject.toml` / `poetry.lock`):
+The project depends on the following third-party runtime libraries (from `pyproject.toml` / `uv.lock`):
 
 - `pydantic` — MIT
 - `pandas` — BSD
@@ -10,7 +10,7 @@ The project depends on the following third-party runtime libraries (from `pyproj
 - `typer` — MIT
 - `zstandard` — BSD-3-Clause
 
-Plus transitive runtime dependencies resolved in `poetry.lock` (e.g., `click`, `numpy`, `python-dateutil`, `pytz`, `shellingham`, `typing-extensions`, etc.), all reviewed as GPLv3-compatible in `docs/license-compatibility-audit.md`.
+Plus transitive runtime dependencies resolved in `uv.lock` (e.g., `click`, `numpy`, `python-dateutil`, `pytz`, `shellingham`, `typing-extensions`, etc.), all reviewed as GPLv3-compatible in `docs/license-compatibility-audit.md`.
 
 For full license compatibility analysis and dependency-by-dependency details, see:
 

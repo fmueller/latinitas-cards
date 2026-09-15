@@ -23,7 +23,7 @@ does the interactive prompt branch.
 - Unit tests assert that `--parallel-mode include` writes one output column per requested `--translation-lang`.
 - A test covers a requested language missing from the corpus, asserting an actionable error rather than a silent empty column.
 - The interactive-prompt branch is covered with a stubbed TTY/prompt.
-- `poetry run ruff check`, `poetry run mypy`, and `poetry run pytest -v` pass.
+- `uv run ruff check`, `uv run mypy`, and `uv run pytest -v` pass.
 
 ## Verification Notes
 

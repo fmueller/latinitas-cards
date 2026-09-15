@@ -21,14 +21,14 @@ pre-commit:
         fi
     ruff:
       glob: "*.py"
-      run: poetry run ruff check {staged_files}
+      run: uv run ruff check {staged_files}
     ruff-format:
       glob: "*.py"
-      run: poetry run ruff format --check {staged_files}
+      run: uv run ruff format --check {staged_files}
     # mypy reads its file set from pyproject.toml, so it runs whole-project.
     mypy:
       glob: "*.py"
-      run: poetry run mypy
+      run: uv run mypy
     workflow-validate:
       glob: "{planning/**,specs/**,.taskrail/**}"
       run: taskrail validate
@@ -57,4 +57,4 @@ pre-push:
       run: bash scripts/check-push-messages.sh
     tests:
       priority: 2
-      run: poetry run pytest
+      run: uv run pytest

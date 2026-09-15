@@ -2,38 +2,50 @@
 name = "latinitas-cards"
 version = "0.1.0"
 description = "CLI for Latin Anki workflows: split forms, annotate grammar, and generate corpus-based cloze cards."
-authors = [
-    {name = "Felix Müller",email = "felix@fmueller.io"}
-]
-license = {text = "GPL-3.0-or-later"}
-readme = "README.md"
+authors = [{ name = "Felix Müller", email = "felix@fmueller.io" }]
 requires-python = ">=3.10,<3.13"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "pydantic (>=2.11.9,<3.0.0)",
     "pandas (>=2.3.3,<3.0.0)",
     "rich (>=13.9.4,<14.0.0)",
     "typer (>=0.19.2,<0.20.0)",
     "zstandard (>=0.25.0,<0.26.0)",
-    "cltk (>=1.5.0,<2.0.0)"
+    "cltk (>=1.5.0,<2.0.0)",
 ]
 
-[tool.poetry]
-packages = [
-    { include = "latinitas_cards", from = "src" }
-]
-
-[tool.poetry.scripts]
+[project.scripts]
 latinitas-cards = "latinitas_cards.cli:app"
 
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.19.1"
-ruff = "^0.15.5"
-pytest = "^9.0.2"
-pandas-stubs = {version = ">=2.2,<4", python = ">=3.11"}
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1,<2",
+    "ruff>=0.15.5,<0.16",
+    "pytest>=9.0.2,<10",
+    "pandas-stubs>=2.2,<4 ; python_full_version >= '3.11'",
+]
+
+[tool.uv]
+package = true
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=77", "packaging>=24.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 line-length = 120

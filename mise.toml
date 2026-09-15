@@ -1,19 +1,20 @@
 # Pinned developer toolchain.
 #
 # `mise run setup` is the single entry point for a working checkout: it installs
-# the pinned tools, installs the locked Python environment, and installs the
+# the pinned tools, syncs the locked Python environment, and installs the
 # local git hooks. The hooks are opt-in, so a fresh clone has none until setup
 # runs.
 
 [tools]
 "github:tessariq/taskrail" = "0.4.0"
 lefthook = "2.1.10"
+uv = "0.9.17"
 
 [tasks.setup]
 description = "Install the toolchain, sync dependencies, and install git hooks"
 run = [
   "mise install --locked",
-  "poetry install --no-interaction",
+  "uv sync --locked --dev",
   "git config --local core.hooksPath \"$(git rev-parse --path-format=absolute --git-common-dir)/hooks\"",
   "lefthook install --force",
 ]
@@ -21,10 +22,10 @@ run = [
 [tasks.check]
 description = "Run the full local gate mirroring the CI checks"
 run = [
-  "poetry run ruff check",
-  "poetry run ruff format --check",
-  "poetry run mypy",
-  "poetry run pytest -v",
+  "uv run ruff check",
+  "uv run ruff format --check",
+  "uv run mypy",
+  "uv run pytest -v",
   "bash scripts/check-commit-msg-test.sh",
   "bash scripts/check-push-messages-test.sh",
   "bash scripts/check-author-test.sh",

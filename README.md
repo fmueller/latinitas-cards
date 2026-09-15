@@ -18,36 +18,36 @@ A CLI toolkit for building Latin Anki flashcards. Inspect and restructure Anki e
 
 ## Installation
 
-**Prerequisites:** Python 3.10–3.12 and [Poetry](https://python-poetry.org/).
+**Prerequisites:** Python 3.10–3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/fmueller/latinitas-cards.git
 cd latinitas-cards
-poetry install
+uv sync
 ```
 
 Verify the installation:
 
 ```bash
-poetry run latinitas-cards --help
+uv run latinitas-cards --help
 ```
 
 ## Quick Start
 
 ```bash
 # 1. Inspect your Anki deck
-poetry run latinitas-cards inspect --input data/latin_university.apkg --head 5
+uv run latinitas-cards inspect --input data/latin_university.apkg --head 5
 
 # 2. Split multi-form entries into individual rows
-poetry run latinitas-cards split \
+uv run latinitas-cards split \
   --input data/latin_university.apkg \
   --output split.csv \
   --source-field Konstruktion_Hinweise \
   --split-mode auto
 
 # 3. Annotate grammar and generate cloze cards
-poetry run latinitas-cards annotate --input split.csv --output annotated.csv --form-column form
-poetry run latinitas-cards cloze \
+uv run latinitas-cards annotate --input split.csv --output annotated.csv --form-column form
+uv run latinitas-cards cloze \
   --input annotated.csv \
   --output cloze.csv \
   --corpus data/lat-clementine.usfx.xml \
@@ -70,13 +70,13 @@ poetry run latinitas-cards cloze \
 ### inspect
 
 ```bash
-poetry run latinitas-cards inspect --input data/latin_university.apkg --head 5
+uv run latinitas-cards inspect --input data/latin_university.apkg --head 5
 ```
 
 ### split
 
 ```bash
-poetry run latinitas-cards split \
+uv run latinitas-cards split \
   --input input.apkg \
   --output split.csv \
   --source-field Konstruktion_Hinweise \
@@ -86,7 +86,7 @@ poetry run latinitas-cards split \
 Optional APKG rewrite (keeps originals and adds split cards):
 
 ```bash
-poetry run latinitas-cards split \
+uv run latinitas-cards split \
   --input input.apkg \
   --output output.apkg \
   --source-field Konstruktion_Hinweise \
@@ -97,7 +97,7 @@ poetry run latinitas-cards split \
 ### annotate
 
 ```bash
-poetry run latinitas-cards annotate \
+uv run latinitas-cards annotate \
   --input split.csv \
   --output annotated.csv \
   --form-column form
@@ -106,7 +106,7 @@ poetry run latinitas-cards annotate \
 With optional Ollama LLM disambiguation:
 
 ```bash
-poetry run latinitas-cards annotate \
+uv run latinitas-cards annotate \
   --input split.csv \
   --output annotated_llm.csv \
   --form-column form \
@@ -119,7 +119,7 @@ poetry run latinitas-cards annotate \
 ### cloze
 
 ```bash
-poetry run latinitas-cards cloze \
+uv run latinitas-cards cloze \
   --input annotated.csv \
   --output cloze.csv \
   --corpus data/lat-clementine.usfx.xml \
@@ -130,7 +130,7 @@ poetry run latinitas-cards cloze \
 With a parallel corpus (including EN/DE translations):
 
 ```bash
-poetry run latinitas-cards cloze \
+uv run latinitas-cards cloze \
   --input annotated.csv \
   --output cloze_parallel.csv \
   --corpus opus_subset.csv \
@@ -149,7 +149,7 @@ When parallel columns are detected and behavior is unspecified:
 ### validate
 
 ```bash
-poetry run latinitas-cards validate \
+uv run latinitas-cards validate \
   --input data/latin_university.apkg \
   --usfx data/lat-clementine.usfx.xml
 ```
@@ -157,7 +157,7 @@ poetry run latinitas-cards validate \
 ### preview
 
 ```bash
-poetry run latinitas-cards preview \
+uv run latinitas-cards preview \
   --input data/latin_university.apkg \
   --usfx data/lat-clementine.usfx.xml
 ```
@@ -165,7 +165,7 @@ poetry run latinitas-cards preview \
 ### generate
 
 ```bash
-poetry run latinitas-cards generate \
+uv run latinitas-cards generate \
   --input data/latin_university.apkg \
   --output updated.csv \
   --usfx data/lat-clementine.usfx.xml
@@ -195,15 +195,15 @@ Set up the pinned toolchain and the opt-in git hooks with [mise](https://mise.jd
 mise run setup
 ```
 
-Without mise, run `poetry install` and `lefthook install`. The hooks enforce the
+Without mise, run `uv sync --locked --dev` and `lefthook install`. The hooks enforce the
 commit message policy described in AGENTS.md.
 
 Before submitting changes, run the validation chain (or `mise run check`):
 
 ```bash
-poetry run ruff check
-poetry run mypy
-poetry run pytest -v
+uv run ruff check
+uv run mypy
+uv run pytest -v
 ```
 
 ## License
