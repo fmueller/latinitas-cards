@@ -36,8 +36,26 @@ jobs:
         run: poetry install --no-interaction
       - name: Run ruff checks
         run: poetry run ruff check
+      - name: Check formatting
+        run: poetry run ruff format --check
       - name: Run mypy for type checking
         run: poetry run mypy
+
+  # The commit hooks are local and opt-in, so their own suites run here to keep
+  # the message and authorship policy enforced even from a checkout without them.
+  guards:
+    name: Commit Policy Guards
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Check commit message policy
+        run: bash scripts/check-commit-msg-test.sh
+      - name: Check push message policy
+        run: bash scripts/check-push-messages-test.sh
+      - name: Check author identity policy
+        run: bash scripts/check-author-test.sh
 
   unit-tests:
     name: Unit Tests (Python ${{ matrix.python-version }})

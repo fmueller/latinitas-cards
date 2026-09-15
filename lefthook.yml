@@ -1,0 +1,60 @@
+# Local git hooks for latinitas-cards (opt-in).
+#
+# Install with `mise run setup` or `lefthook install`. The hooks mirror the fast
+# CI checks; CI remains authoritative. Lefthook is pinned in mise.toml.
+pre-commit:
+  parallel: true
+  commands:
+    # Identity is checked on every commit, not per file: an agent runner's git
+    # config carries no staged file of its own to key off.
+    author-identity:
+      run: bash scripts/check-author.sh
+    # A merge marker reaches a commit only by accident, and it is cheapest to
+    # catch while the resolution is still on screen.
+    conflict-markers:
+      run: |
+        markers="$(git diff --cached -U0 -- {staged_files} | grep -E '^\+(<{7}|={7}|>{7})([[:space:]]|$)' || true)"
+        if [ -n "$markers" ]; then
+          echo "unresolved merge markers are staged:" >&2
+          echo "$markers" >&2
+          exit 1
+        fi
+    ruff:
+      glob: "*.py"
+      run: poetry run ruff check {staged_files}
+    ruff-format:
+      glob: "*.py"
+      run: poetry run ruff format --check {staged_files}
+    # mypy reads its file set from pyproject.toml, so it runs whole-project.
+    mypy:
+      glob: "*.py"
+      run: poetry run mypy
+    workflow-validate:
+      glob: "{planning/**,specs/**,.taskrail/**}"
+      run: taskrail validate
+    # Each guard script carries its own suite; editing a guard runs it.
+    commit-message-checker:
+      glob: "{lefthook.yml,scripts/check-commit-msg.sh,scripts/check-attribution.sh,scripts/check-commit-msg-test.sh}"
+      run: bash scripts/check-commit-msg-test.sh
+    push-message-checker:
+      glob: "{lefthook.yml,scripts/check-push-messages.sh,scripts/check-attribution.sh,scripts/check-author.sh,scripts/check-push-messages-test.sh}"
+      run: bash scripts/check-push-messages-test.sh
+    author-checker:
+      glob: "{lefthook.yml,scripts/check-author.sh,scripts/check-author-test.sh}"
+      run: bash scripts/check-author-test.sh
+
+commit-msg:
+  commands:
+    message-policy:
+      run: bash scripts/check-commit-msg.sh {1}
+
+pre-push:
+  commands:
+    # The message guard runs before the suite: a push that has to be rewritten
+    # anyway should not first pay for the tests.
+    message-policy:
+      priority: 1
+      run: bash scripts/check-push-messages.sh
+    tests:
+      priority: 2
+      run: poetry run pytest

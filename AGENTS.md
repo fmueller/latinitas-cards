@@ -48,7 +48,8 @@ issue first, not necessarily a code regression.
 - `data/`: sample corpora/deck artifacts
 - `specs/`: versioned release specs (`specs/vX.Y.Z.md`, index in `specs/README.md`)
 - `planning/`: Taskrail tracked work (`STATE.md`, `tasks/`, `artifacts/`)
-- Root configs: `pyproject.toml`, `.pre-commit-config.yaml`, `.github/workflows/*.yml`
+- `scripts/check-*.sh`: commit policy guards, each with its own `*-test.sh` suite
+- Root configs: `pyproject.toml`, `mise.toml`, `lefthook.yml`, `.github/workflows/*.yml`
 
 ## Tracked Work (Taskrail)
 
@@ -82,8 +83,10 @@ Repo-agnostic tracked-work skills are installed under `.claude/skills/` and `.ag
 
 ## Build, Test, and Development Commands
 
-Use Poetry for environment and task execution.
+Use Poetry for environment and task execution. `mise.toml` pins the rest of the toolchain.
 
+- `mise run setup` (pinned tools, `poetry install`, `lefthook install`)
+- `mise run check` (full local gate, mirrors CI)
 - `poetry install`
 - `poetry run pytest -v`
 - `poetry run pytest tests/unit/cli_test.py`
@@ -135,7 +138,17 @@ If any command fails, fix it and rerun the **full chain from the start**.
 
 ## Commit & Pull Request Guidelines
 
-- Use Conventional Commits: `feat:`, `fix:`, `chore:`, `ci:`.
+- Coding agents must run `mise run setup` (or `lefthook install`) before creating
+  their first commit in a worktree; do not assume the hooks are already installed.
+- Use Conventional Commits with imperative subjects. Types: `feat fix refactor
+  docs test chore build perf ci`.
+- Include a descriptive body after the subject, wrap body lines at 72 characters,
+  and suffix tracked-task subjects with the short key, for example `(T-001)`.
+- Never add attribution trailers: no co-authorship line, no agent session or
+  thread trailer, and no session link. `scripts/check-attribution.sh` is the one
+  policy the `commit-msg` and `pre-push` hooks both apply.
+- Commit under the maintainer's git identity. `scripts/check-author.sh` refuses
+  an agent author in `pre-commit` and again in `pre-push`.
 - Keep commits focused and atomic (code + tests together).
 - PRs should include:
   - concise behavior summary,

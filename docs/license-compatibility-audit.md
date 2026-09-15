@@ -19,29 +19,23 @@ All currently locked dependencies are under licenses that are **GPLv3-compatible
 | Package | Version | Group(s) | License | GPLv3-compatible? | Notes |
 |---|---:|---|---|---|---|
 | annotated-types | 0.7.0 | main | MIT | Yes | Permissive. |
-| cfgv | 3.4.0 | dev | MIT | Yes | Permissive. |
 | click | 8.3.0 | main | BSD-3-Clause | Yes | Permissive. |
 | colorama | 0.4.6 | main,dev | BSD | Yes | Permissive BSD family. |
-| distlib | 0.4.0 | dev | PSF-2.0 | Yes | GPL-compatible free software license. |
 | exceptiongroup | 1.3.1 | dev | MIT | Yes | Permissive. |
 | filelock | 3.19.1 | dev | Unlicense | Yes | GPL-compatible public-domain style dedication. |
-| identify | 2.6.14 | dev | MIT | Yes | License from package metadata field. |
 | iniconfig | 2.1.0 | dev | MIT | Yes | Permissive. |
 | librt | 0.7.8 | dev | MIT | Yes | Permissive. |
 | markdown-it-py | 4.0.0 | main | MIT | Yes | Permissive. |
 | mdurl | 0.1.2 | main | MIT | Yes | Permissive. |
 | mypy | 1.19.1 | dev | MIT | Yes | Permissive. |
 | mypy-extensions | 1.1.0 | dev | MIT | Yes | License confirmed from installed LICENSE file. |
-| nodeenv | 1.9.1 | dev | BSD | Yes | Permissive BSD family. |
 | numpy | 2.2.6 | main | BSD | Yes | Permissive BSD family. |
 | numpy | 2.3.3 | main,dev | BSD | Yes | Alternate locked version for other env markers. |
 | packaging | 25.0 | dev | Apache-2.0 or BSD | Yes | Apache-2.0 is GPLv3-compatible. |
 | pandas | 2.3.3 | main | BSD | Yes | Permissive BSD family. |
 | pandas-stubs | 3.0.0.260204 | dev | BSD | Yes | Dev-only stubs. |
 | pathspec | 0.12.1 | dev | MPL-2.0 | Yes | MPL-2.0 is GPLv3-compatible (file-level copyleft). |
-| platformdirs | 4.4.0 | dev | MIT | Yes | Permissive. |
 | pluggy | 1.6.0 | dev | MIT | Yes | Permissive. |
-| pre-commit | 4.5.1 | dev | MIT | Yes | Permissive. |
 | pydantic | 2.12.5 | main | MIT | Yes | Permissive. |
 | pydantic-core | 2.41.5 | main | MIT | Yes | Permissive. |
 | pygments | 2.19.2 | main,dev | BSD | Yes | Permissive BSD family. |
@@ -58,7 +52,6 @@ All currently locked dependencies are under licenses that are **GPLv3-compatible
 | typing-extensions | 4.15.0 | main,dev | PSF-2.0 | Yes | GPL-compatible free software license. |
 | typing-inspection | 0.4.2 | main | MIT | Yes | Permissive. |
 | tzdata | 2025.2 | main | Apache-2.0 | Yes | GPLv3-compatible. |
-| virtualenv | 20.34.0 | dev | MIT | Yes | Dev-only. |
 | zstandard | 0.25.0 | main | BSD-3-Clause | Yes | Permissive. |
 
 ## Are you currently respecting dependency license terms?

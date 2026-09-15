@@ -189,7 +189,16 @@ Good public sources for additional Latin corpora (including EN/DE parallel data)
 
 See [AGENTS.md](AGENTS.md) for coding style, project structure, and commit conventions.
 
-Before submitting changes, run the validation chain:
+Set up the pinned toolchain and the opt-in git hooks with [mise](https://mise.jdx.dev):
+
+```bash
+mise run setup
+```
+
+Without mise, run `poetry install` and `lefthook install`. The hooks enforce the
+commit message policy described in AGENTS.md.
+
+Before submitting changes, run the validation chain (or `mise run check`):
 
 ```bash
 poetry run ruff check

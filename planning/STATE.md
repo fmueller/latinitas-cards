@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-14T09:15:27Z"
+updated_at: "2026-09-15T07:38:37Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-001-cloze-difficulty: Cover cloze difficulty filtering'
-last_verification_result: Not yet run
+next_action: Select the next eligible task
+last_verification_result: pass for T-005-adopt-lefthook-commit-policy-hooks at 2026-09-15T07:38:37Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- Not yet run
+- pass for T-005-adopt-lefthook-commit-policy-hooks at 2026-09-15T07:38:37Z
 
 ## Next Action
 
-- Start task T-001-cloze-difficulty: Cover cloze difficulty filtering
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -52,6 +52,6 @@ continuation_notes:
 
 - todo: 4
 - in_progress: 0
-- completed: 0
+- completed: 1
 - blocked: 0
 - cancelled: 0
