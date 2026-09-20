@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# No authentication or backing services are required for this CLI's dev checks.
+# Tools and dependencies are restored from the snapshot; never reinstall here.
+echo "Orb ready; using the restored development environment"

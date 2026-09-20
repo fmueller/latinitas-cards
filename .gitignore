@@ -214,3 +214,6 @@ __marimo__/
 
 # Taskrail verification artifacts
 planning/artifacts/
+
+# Orb portal metadata
+.amp/portals/*

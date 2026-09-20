@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+
+echo "Installing mise if missing"
+if ! command -v mise >/dev/null 2>&1; then
+  time curl -fsSL https://mise.run | sh
+fi
+
+# Login shells used by Amp and supervised services must see the pinned tools.
+profile_marker="# latinitas-cards orb toolchain"
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<EOF
+
+$profile_marker
+if [[ "\$PWD" == "$repo_root" || "\$PWD" == "$repo_root/"* ]]; then
+  export PATH="\$HOME/.local/bin:\$HOME/.local/share/mise/shims:\$PATH"
+fi
+EOF
+fi
+
+echo "Installing locked tools, Python dependencies, and git hooks"
+mise trust "$repo_root/mise.toml"
+time mise run setup
+mise reshim
+echo "Orb development environment ready"
