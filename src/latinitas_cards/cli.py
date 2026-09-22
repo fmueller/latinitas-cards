@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
@@ -559,7 +559,7 @@ def _read_apkg_notes_dataframe(apkg_path: Path, notetype: str | None = None) -> 
                     field_name = names[idx] if idx < len(names) and names[idx] else f"field_{idx}"
                     built[field_name] = str(value)
                 out.append(built)
-            return pd.DataFrame(out)
+            return cast(pd.DataFrame, pd.DataFrame(out))
         finally:
             con.close()
 
@@ -690,7 +690,7 @@ def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
         apkg_rows = _read_apkg_field_rows(input_path, front_col)
         if not apkg_rows:
             raise ValueError("No notes found in APKG or field could not be resolved.")
-        return pd.DataFrame(apkg_rows)
+        return cast(pd.DataFrame, pd.DataFrame(apkg_rows))
     else:
         # CSV path (existing behavior)
         with open(input_path, newline="", encoding="utf-8") as f:
@@ -839,7 +839,7 @@ def _split_dataframe_rows(
             built.setdefault("source_note_id", str(row.get("note_id", idx)))
             built.setdefault("source_notetype", str(row.get("note_type", "")))
             rows.append(built)
-    return pd.DataFrame(rows)
+    return cast(pd.DataFrame, pd.DataFrame(rows))
 
 
 def _parse_text_corpus(path: Path) -> pd.DataFrame:
@@ -859,9 +859,12 @@ def _parse_text_corpus(path: Path) -> pd.DataFrame:
                     "ref": f"{path.stem}:{idx}",
                 }
             )
-    df = pd.DataFrame(rows)
+    df: pd.DataFrame = cast(pd.DataFrame, pd.DataFrame(rows))
     if df.empty:
-        return pd.DataFrame(columns=["book", "chapter", "verse", "text", "text_norm", "source_path", "ref"])
+        return cast(
+            pd.DataFrame,
+            pd.DataFrame(columns=["book", "chapter", "verse", "text", "text_norm", "source_path", "ref"]),
+        )
     df["text_norm"] = df["text"].apply(normalize_latin)
     return df
 
@@ -870,7 +873,7 @@ def _parse_parallel_csv_corpus(path: Path, latin_column: str) -> pd.DataFrame:
     df = pd.read_csv(path, encoding="utf-8", keep_default_na=False)
     if latin_column not in df.columns:
         raise KeyError(f"Latin column '{latin_column}' not found in corpus CSV. Columns: {list(df.columns)}")
-    out = pd.DataFrame()
+    out: pd.DataFrame = cast(pd.DataFrame, pd.DataFrame())
     out["text"] = df[latin_column].astype(str)
     out["text_norm"] = out["text"].apply(normalize_latin)
     out["book"] = path.stem
