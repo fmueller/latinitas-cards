@@ -1,0 +1,97 @@
+name: Mutation tests
+
+# The full suite runs once per mutant, so keep it out of pull-request CI. Use
+# `mise run test:mutate` for a differential local run while changing logic.
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mutation-tests:
+    name: Mutation Baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: '.python-version'
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      # Preserve results even when mutation execution itself fails. The final
+      # step evaluates both command outcomes and report completeness.
+      - name: Run mutation tests
+        id: mutation
+        continue-on-error: true
+        run: uv run mutmut run
+
+      - name: Collect results
+        id: results
+        if: always()
+        continue-on-error: true
+        run: |
+          uv run mutmut results --all true > mutation-results.txt
+          uv run mutmut export-cicd-stats
+
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            printf '## Mutation testing baseline\n\n'
+            printf 'This workflow currently reports efficacy without enforcing a numerical floor.\n\n'
+            if [ -f mutants/mutmut-cicd-stats.json ]; then
+              printf '| Outcome | Count |\n| --- | ---: |\n'
+              jq -r 'to_entries[] | "| \(.key) | \(.value) |"' mutants/mutmut-cicd-stats.json
+            else
+              printf 'No machine-readable stats file was produced.\n'
+            fi
+            printf '\n### Per-module results\n\n```\n'
+            if [ -f mutation-results.txt ]; then
+              bash scripts/check-mutation-results.sh < mutation-results.txt || true
+            else
+              printf 'No text results file was produced.\n'
+            fi
+            printf '```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: mutation-results
+          path: |
+            mutation-results.txt
+            mutants/mutmut-cicd-stats.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Validate completed baseline
+        if: always()
+        env:
+          MUTATION_OUTCOME: ${{ steps.mutation.outcome }}
+          RESULTS_OUTCOME: ${{ steps.results.outcome }}
+        run: |
+          [ "$MUTATION_OUTCOME" = success ] || {
+            echo "mutation execution failed: $MUTATION_OUTCOME" >&2
+            exit 1
+          }
+          [ "$RESULTS_OUTCOME" = success ] || {
+            echo "mutation result collection failed: $RESULTS_OUTCOME" >&2
+            exit 1
+          }
+          bash scripts/check-mutation-results.sh < mutation-results.txt

@@ -215,5 +215,8 @@ __marimo__/
 # Taskrail verification artifacts
 planning/artifacts/
 
+# Mutation testing state
+mutants/
+
 # Orb portal metadata
 .amp/portals/*

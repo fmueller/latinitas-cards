@@ -31,6 +31,7 @@ dev = [
     "ruff>=0.15.5,<0.16",
     "pytest>=9.0.2,<10",
     "pandas-stubs>=2.2,<4 ; python_full_version >= '3.11'",
+    "mutmut>=3.8.0,<4",
 ]
 
 [tool.uv]
@@ -46,6 +47,13 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mutmut]
+source_paths = ["src/latinitas_cards/"]
+also_copy = ["pyproject.toml"]
 
 [tool.ruff]
 line-length = 120

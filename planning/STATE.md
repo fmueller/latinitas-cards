@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-22T16:10:36Z"
+updated_at: "2026-09-22T17:37:36Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-001-define-deck-profile-contract: Define the deck profile contract'
-last_verification_result: pass for T-008-orb-setup at 2026-09-20T14:24:14Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-015-add-mutation-testing-infrastructure at 2026-09-22T17:37:30Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-008-orb-setup at 2026-09-20T14:24:14Z
+- pass for T-015-add-mutation-testing-infrastructure at 2026-09-22T17:37:30Z
 
 ## Next Action
 
-- Start task T-001-define-deck-profile-contract: Define the deck profile contract
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -52,6 +52,6 @@ continuation_notes:
 
 - todo: 10
 - in_progress: 0
-- completed: 4
+- completed: 5
 - blocked: 0
 - cancelled: 0

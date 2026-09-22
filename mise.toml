@@ -19,6 +19,14 @@ run = [
   "lefthook install --force",
 ]
 
+[tasks."test:mutate"]
+description = "Mutate Python modules changed from BASE (default: main)"
+run = "bash scripts/mutate-diff.sh"
+
+[tasks."test:mutate:gate"]
+description = "Run and validate the complete report-only mutation baseline"
+run = "bash scripts/mutate-all.sh"
+
 [tasks.check]
 description = "Run the full local gate mirroring the CI checks"
 run = [
@@ -29,4 +37,6 @@ run = [
   "bash scripts/check-commit-msg-test.sh",
   "bash scripts/check-push-messages-test.sh",
   "bash scripts/check-author-test.sh",
+  "bash scripts/check-mutation-results-test.sh",
+  "bash scripts/check-mutation-config-test.sh",
 ]
