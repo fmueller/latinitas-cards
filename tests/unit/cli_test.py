@@ -2,12 +2,14 @@ import json
 import sqlite3
 import zipfile
 from pathlib import Path
+from typing import cast
 
 import click
 import pandas as pd
 import pytest
+import typer
 from click.testing import CliRunner
-from typer.main import get_command
+from typer.main import get_command as _typer_get_command
 
 import latinitas_cards.cli as cli_mod
 from latinitas_cards.cli import (
@@ -19,6 +21,11 @@ from latinitas_cards.cli import (
     split_latin_forms,
     strip_anki_field,
 )
+
+
+def get_command(typer_app: typer.Typer) -> click.Command:
+    """Expose Typer's generated command with the Click runner's static type."""
+    return _typer_get_command(typer_app)
 
 
 def _create_anki_db(db_path: Path, notes: list[list[str]], field_names: list[str] | None = None) -> None:
@@ -286,8 +293,7 @@ def test_cli_short_help_option() -> None:
 
 
 def test_command_callbacks_are_split_into_command_modules() -> None:
-    click_app = get_command(app)
-    assert isinstance(click_app, click.Group)
+    click_app = cast(click.Group, get_command(app))
     command_modules = {name: command.callback.__module__ for name, command in click_app.commands.items()}
 
     assert command_modules
