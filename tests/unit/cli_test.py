@@ -25,7 +25,8 @@ from latinitas_cards.cli import (
 
 def get_command(typer_app: typer.Typer) -> click.Command:
     """Expose Typer's generated command with the Click runner's static type."""
-    return _typer_get_command(typer_app)
+    command: object = _typer_get_command(typer_app)
+    return cast(click.Command, command)
 
 
 def _create_anki_db(db_path: Path, notes: list[list[str]], field_names: list[str] | None = None) -> None:
