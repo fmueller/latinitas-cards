@@ -5,9 +5,9 @@ status: todo
 priority: high
 spec_ref: specs/v0.1.0.md#preview-and-deterministic-csv-export
 dependencies:
-    - T-001-assisted-deck-profiles
     - T-002-stable-generated-note-identity
-    - T-003-principal-part-card-generation
+    - T-012-build-assisted-profile-setup
+    - T-013-generate-principal-part-study-cards
 updated_at: "2026-09-21T22:35:11Z"
 ---
 
@@ -31,7 +31,8 @@ UTF-8 Anki-import CSV. Repeated exports update the same logical notes through th
 - Tests prove wording, gloss, HTML, and tag updates retain identity and do not add duplicate
   logical rows.
 - Source CSV/APKG/COLPKG fixtures are unchanged after preview and export.
-- Human-readable output has a machine-readable equivalent suitable for future agents.
+- Preview and export consume an internal typed result that keeps domain behavior separate
+  from terminal rendering; v0.1.0 does not expose it as a stable JSON CLI contract.
 - Documentation demonstrates first import and repeat import settings in supported Anki.
 - `uv run ruff check`, `uv run mypy`, and `uv run pytest -v` pass.
 

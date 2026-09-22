@@ -1,24 +1,22 @@
 ---
-id: T-009-harden-and-release-v0-1-0
-title: Harden and release v0.1.0
+id: T-009-prepare-v0-1-0-release-candidate
+title: Prepare the v0.1.0 release candidate
 status: todo
 priority: medium
 spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
-    - T-001-assisted-deck-profiles
-    - T-002-stable-generated-note-identity
-    - T-003-principal-part-card-generation
     - T-004-preview-and-deterministic-csv-export
-updated_at: "2026-09-21T22:38:31Z"
+    - T-011-validate-the-representative-deck-and-german
+updated_at: "2026-09-22T16:09:47Z"
 ---
 
-# T-009-harden-and-release-v0-1-0 Harden and release v0.1.0
+# T-009-prepare-v0-1-0-release-candidate Prepare the v0.1.0 release candidate
 
 ## Description
 
-Harden the deck-first workflow and cut the first release without presenting existing
-experimental APKG mutation, corpus generation, or grammatical parsing as stable release
-promises.
+Harden the deck-first workflow and prepare an exact release candidate without presenting
+existing experimental APKG mutation, corpus generation, or grammatical parsing as stable
+release promises. Publication is a separate final task.
 
 ## Acceptance
 
@@ -32,7 +30,8 @@ promises.
   exclusions.
 - The exact release commit passes ruff, strict mypy, and the full pytest suite on every
   supported Python version.
-- The `v0.1.0` tag matches `pyproject.toml` and a GitHub release exists for that tag.
+- `pyproject.toml`, release documentation, and the prepared tag version agree on `v0.1.0`.
+- The candidate identifies the exact commit approved for the publication task.
 
 ## Verification Notes
 
@@ -40,4 +39,4 @@ promises.
 
 ## Implementation Notes
 
-- Release publication happens only after all dependencies are completed and verified.
+- Do not create the tag or GitHub release in this task.

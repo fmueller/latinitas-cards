@@ -5,8 +5,9 @@ status: todo
 priority: high
 spec_ref: specs/v0.1.0.md#stable-generated-note-identity
 dependencies:
-    - T-001-assisted-deck-profiles
-updated_at: "2026-09-21T22:35:11Z"
+    - T-001-define-deck-profile-contract
+    - T-010-add-canonical-deck-source-adapters
+updated_at: "2026-09-22T16:09:47Z"
 ---
 
 # T-002-stable-generated-note-identity Define stable generated-note identity
@@ -27,6 +28,11 @@ for CSV inputs.
   identity while semantically distinct exercises receive distinct IDs.
 - APKG/COLPKG readers retain source note GUIDs; CSV profiles require or persist stable
   source IDs.
+- ID-less CSVs use a sidecar manifest that reconciles unchanged rows across reordering.
+  Edited, duplicate, and unmatched rows produce explicit review items; no ambiguous match
+  silently reuses or reassigns an identity.
+- Tests cover row reordering, exact duplicates, mutable-row edits, insertion/removal, stale
+  manifests, and explicit approval of identity reuse or allocation.
 - The generated-note contract separates immutable identity, managed content, provenance,
   recipe metadata, and a user-owned personal-notes field.
 - `LatinitasID` is suitable as the first Anki text-import field; future deterministic Anki

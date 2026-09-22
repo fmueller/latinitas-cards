@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-09-21T22:39:29Z"
+updated_at: "2026-09-22T16:10:36Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-001-assisted-deck-profiles: Add assisted profiles for existing decks'
+next_action: 'Start task T-001-define-deck-profile-contract: Define the deck profile contract'
 last_verification_result: pass for T-008-orb-setup at 2026-09-20T14:24:14Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Start task T-001-assisted-deck-profiles: Add assisted profiles for existing decks
+- Start task T-001-define-deck-profile-contract: Define the deck profile contract
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 5
+- todo: 10
 - in_progress: 0
 - completed: 4
 - blocked: 0
