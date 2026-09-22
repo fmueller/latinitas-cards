@@ -7,7 +7,8 @@ spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
     - T-004-preview-and-deterministic-csv-export
     - T-011-validate-the-representative-deck-and-german
-updated_at: "2026-09-22T16:09:47Z"
+    - T-016-refresh-user-facing-documentation-for-v0-1-0
+updated_at: "2026-09-22T19:04:55Z"
 ---
 
 # T-009-prepare-v0-1-0-release-candidate Prepare the v0.1.0 release candidate
@@ -22,8 +23,6 @@ release promises. Publication is a separate final task.
 
 - A sanitized realistic fixture exercises the complete assisted-profile through
   repeatable-CSV workflow.
-- README and CLI documentation cover profile creation, preview, generation, first import,
-  repeat import, and the experimental status of legacy mutation/corpus commands.
 - `THIRD_PARTY_NOTICES.md` and the dependency-license audit match the current uv lock,
   including CLTK and its runtime dependency graph.
 - `CHANGELOG.md` contains a v0.1.0 entry describing the stable deck-first scope and explicit
