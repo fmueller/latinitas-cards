@@ -33,7 +33,9 @@ points and domain helpers into focused modules.
 
 Some features need runtime resources beyond package installation:
 
-- `annotate` depends on CLTK/Stanza Latin resources.
+- `annotate` depends on CLTK/Stanza Latin resources. CLTK ships in the optional
+  `annotate` extra (`uv sync --extra annotate`); the default dev environment and CI run
+  without it, so tests must not import CLTK.
 - Optional LLM/Ollama analysis requires a running endpoint when enabled.
 
 If a command fails due to missing runtime resources, treat it as an environment/setup

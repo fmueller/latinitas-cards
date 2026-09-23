@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import html
+import importlib.util
 import json
 import os
 import re
@@ -975,10 +976,18 @@ def _resolve_parallel_columns(
     return []
 
 
+def _cltk_is_installed() -> bool:
+    """Return whether the optional CLTK package (``annotate`` extra) is installed."""
+    try:
+        return importlib.util.find_spec("cltk") is not None
+    except ValueError:
+        return False
+
+
 def _ensure_latin_stanza_resources() -> None:
     """Best-effort download/availability check for CLTK's Latin Stanza models."""
     try:
-        import stanza  # type: ignore[import-untyped]
+        import stanza
     except ImportError:
         return
 
@@ -1117,12 +1126,17 @@ def annotate_with_cltk(
         raise KeyError(f"Form column '{form_column}' not found. Available: {list(df.columns)}")
 
     try:
-        from cltk import NLP  # type: ignore[import-untyped]
-        from cltk.alphabet.processes import LatinNormalizeProcess  # type: ignore[import-untyped]
-        from cltk.dependency.processes import LatinStanzaProcess  # type: ignore[import-untyped]
-        from cltk.languages.pipelines import LatinPipeline  # type: ignore[import-untyped]
-    except ImportError as exc:  # pragma: no cover - import guard only
-        raise RuntimeError("CLTK is not installed. Install with `uv add cltk`.") from exc
+        from cltk import NLP
+        from cltk.alphabet.processes import LatinNormalizeProcess
+        from cltk.dependency.processes import LatinStanzaProcess
+        from cltk.languages.pipelines import LatinPipeline
+    except ImportError as exc:
+        if not _cltk_is_installed():
+            raise RuntimeError(
+                "CLTK is not installed. `annotate` needs the optional `annotate` extra: "
+                "run `uv sync --extra annotate` (or `pip install 'latinitas-cards[annotate]'`)."
+            ) from exc
+        raise RuntimeError(f"CLTK is installed but failed to import: {exc}") from exc
 
     _ensure_latin_stanza_resources()
 

@@ -32,6 +32,13 @@ Verify the installation:
 uv run latinitas-cards --help
 ```
 
+The experimental `annotate` command needs the optional `annotate` extra, which installs
+CLTK together with Stanza, PyTorch, and NLTK (several GB):
+
+```bash
+uv sync --extra annotate
+```
+
 ## Quick Start
 
 ```bash
@@ -45,7 +52,7 @@ uv run latinitas-cards split \
   --source-field Konstruktion_Hinweise \
   --split-mode auto
 
-# 3. Annotate grammar and generate cloze cards
+# 3. Annotate grammar (needs `uv sync --extra annotate`) and generate cloze cards
 uv run latinitas-cards annotate --input split.csv --output annotated.csv --form-column form
 uv run latinitas-cards cloze \
   --input annotated.csv \
@@ -95,6 +102,8 @@ uv run latinitas-cards split \
 ```
 
 ### annotate
+
+Requires the optional `annotate` extra (`uv sync --extra annotate`).
 
 ```bash
 uv run latinitas-cards annotate \

@@ -20,6 +20,11 @@ dependencies = [
     "click>=8.1,<8.5",
     "typer>=0.19.2,<0.28.0",
     "zstandard (>=0.25.0,<0.26.0)",
+]
+
+[project.optional-dependencies]
+# Experimental `annotate` command; pulls in Stanza, PyTorch, and NLTK.
+annotate = [
     "cltk (>=1.5.0,<2.0.0)",
 ]
 
@@ -83,3 +88,8 @@ check_untyped_defs = true
 disallow_untyped_calls = true
 disallow_untyped_defs = true
 warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+# Optional `annotate` extra: untyped when installed, absent in default installs.
+module = ["cltk", "cltk.*", "stanza", "stanza.*"]
+ignore_missing_imports = true
