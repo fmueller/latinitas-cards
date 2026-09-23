@@ -33,12 +33,18 @@ uv run latinitas-cards --help
 ```
 
 The experimental `annotate` command needs the optional `annotate` extra, which installs
-CLTK 2 together with Stanza and PyTorch (several GB). The first `annotate` run downloads the
-Latin Stanza models:
+CLTK 2 together with Stanza and CPU-only PyTorch (about 1 GB). The first `annotate` run
+downloads the Latin Stanza models:
 
 ```bash
 uv sync --extra annotate
 ```
+
+> [!WARNING]
+> **Highly experimental:** `uv sync --extra annotate-gpu` installs CUDA PyTorch instead
+> (about 5 GB) and needs a matching NVIDIA driver. It cannot be combined with `annotate`, and
+> it is not tested in CI. The CPU/GPU split relies on uv's PyTorch index configuration; with
+> plain `pip install 'latinitas-cards[annotate]'`, pip installs PyTorch's default build.
 
 ## Quick Start
 
