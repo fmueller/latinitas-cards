@@ -1,11 +1,11 @@
 ---
 id: T-001-define-deck-profile-contract
 title: Define the deck profile contract
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#assisted-deck-profiles
 dependencies: []
-updated_at: "2026-09-22T16:09:47Z"
+updated_at: "2026-09-23T19:38:06Z"
 ---
 
 # T-001-define-deck-profile-contract Define the deck profile contract
@@ -39,3 +39,5 @@ from individual CSV/APKG/COLPKG adapters.
 
 - Keep profile/domain code outside the legacy `cli.py` monolith. Source adapters and the
   assisted confirmation workflow are separate tasks.
+- 2026-09-23T19:37:05Z: verification pass
+- 2026-09-23T19:38:06Z: verification pass

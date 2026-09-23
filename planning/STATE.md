@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-22T19:04:42Z"
+updated_at: "2026-09-23T19:38:06Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-015-add-mutation-testing-infrastructure at 2026-09-22T17:37:30Z
+last_verification_result: pass for T-001-define-deck-profile-contract at 2026-09-23T19:38:06Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-015-add-mutation-testing-infrastructure at 2026-09-22T17:37:30Z
+- pass for T-001-define-deck-profile-contract at 2026-09-23T19:38:06Z
 
 ## Next Action
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 11
+- todo: 10
 - in_progress: 0
-- completed: 5
+- completed: 6
 - blocked: 0
 - cancelled: 0
