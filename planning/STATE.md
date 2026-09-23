@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-09-23T20:44:09Z"
+updated_at: "2026-09-23T21:23:08Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
+next_action: 'Start task T-010-add-canonical-deck-source-adapters: Add canonical deck source adapters'
 last_verification_result: pass for T-019-annotate-cpu-gpu-extras at 2026-09-23T20:44:09Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-010-add-canonical-deck-source-adapters: Add canonical deck source adapters
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 10
+- todo: 16
 - in_progress: 0
 - completed: 9
 - blocked: 0
