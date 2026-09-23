@@ -52,3 +52,7 @@ def test_analyze_cltk_word_tolerates_missing_annotations() -> None:
 
 def test_analyze_cltk_word_keeps_xpos_when_present() -> None:
     assert analyze_cltk_word(_word(xpos="N3|modA")).xpos == "N3|modA"
+
+
+def test_analyze_cltk_word_tolerates_absent_attributes() -> None:
+    assert analyze_cltk_word(SimpleNamespace()) == WordAnalysis(lemma="", upos="", xpos="", morph_features="")
