@@ -1,7 +1,7 @@
 # LatinitasCards
 
 [![CI](https://github.com/fmueller/latinitas-cards/actions/workflows/build.yml/badge.svg)](https://github.com/fmueller/latinitas-cards/actions/workflows/build.yml)
-[![Python 3.13–3.14](https://img.shields.io/badge/python-3.13%E2%80%933.14-blue)](https://www.python.org/)
+[![Python 3.13 | 3.14](https://img.shields.io/badge/python-3.13%20%7C%203.14-blue)](https://www.python.org/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-green)](LICENSE)
 
 A CLI toolkit for building Latin Anki flashcards. Inspect and restructure Anki exports, annotate grammar with [CLTK](https://cltk.org), and generate corpus-based cloze-deletion cards from USFX, plain-text, or parallel CSV corpora — designed for learners studying Latin through spaced repetition.
@@ -18,7 +18,7 @@ A CLI toolkit for building Latin Anki flashcards. Inspect and restructure Anki e
 
 ## Installation
 
-**Prerequisites:** Python 3.13–3.14 and [uv](https://docs.astral.sh/uv/).
+**Prerequisites:** Python 3.13 or 3.14 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/fmueller/latinitas-cards.git
