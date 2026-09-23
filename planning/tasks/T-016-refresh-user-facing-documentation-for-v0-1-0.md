@@ -45,3 +45,5 @@ deck-first release workflow from experimental commands.
 ## Implementation Notes
 
 - Preserve required maintainer and contributor guidance while removing user-facing duplication.
+- Keep the install guidance added by T-017 through T-019: Python 3.13 or 3.14, the CPU-only
+  `annotate` extra, and the highly experimental `annotate-gpu` extra.

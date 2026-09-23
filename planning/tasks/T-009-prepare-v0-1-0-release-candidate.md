@@ -24,7 +24,8 @@ release promises. Publication is a separate final task.
 - A sanitized realistic fixture exercises the complete assisted-profile through
   repeatable-CSV workflow.
 - `THIRD_PARTY_NOTICES.md` and the dependency-license audit match the current uv lock,
-  including CLTK and its runtime dependency graph.
+  including the optional `annotate` and `annotate-gpu` extras (CLTK, Stanza, PyTorch, and
+  the NVIDIA CUDA wheels pulled in by `annotate-gpu`).
 - `CHANGELOG.md` contains a v0.1.0 entry describing the stable deck-first scope and explicit
   exclusions.
 - The exact release commit passes ruff, strict mypy, and the full pytest suite on every
