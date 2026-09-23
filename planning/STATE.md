@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-23T20:21:55Z"
+updated_at: "2026-09-23T20:42:13Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-017-optional-cltk-extra at 2026-09-23T20:21:55Z
+last_verification_result: pass for T-018-python-3-13-cltk-2 at 2026-09-23T20:42:13Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-017-optional-cltk-extra at 2026-09-23T20:21:55Z
+- pass for T-018-python-3-13-cltk-2 at 2026-09-23T20:42:13Z
 
 ## Next Action
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 10
+- todo: 11
 - in_progress: 0
-- completed: 7
+- completed: 8
 - blocked: 0
 - cancelled: 0

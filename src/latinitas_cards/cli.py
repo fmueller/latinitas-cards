@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
@@ -24,6 +24,8 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+
+from .annotation import analyze_cltk_word
 
 stderr_console = Console(stderr=True)
 stdout_console = Console()
@@ -225,7 +227,7 @@ def parse_usfx_to_df(path: Path) -> pd.DataFrame:
         raise ValueError("Parsed zero verses from USFX; check that <v/> ... text ... <ve/> structure is present.")
 
     df["text_norm"] = df["text"].apply(normalize_latin)
-    return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)  # type: ignore[no-any-return]
+    return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)
 
 
 def build_bucket_index(df: pd.DataFrame) -> dict[str, list[int]]:
@@ -560,7 +562,7 @@ def _read_apkg_notes_dataframe(apkg_path: Path, notetype: str | None = None) -> 
                     field_name = names[idx] if idx < len(names) and names[idx] else f"field_{idx}"
                     built[field_name] = str(value)
                 out.append(built)
-            return cast(pd.DataFrame, pd.DataFrame(out))
+            return pd.DataFrame(out)
         finally:
             con.close()
 
@@ -691,7 +693,7 @@ def _load_input_to_dataframe(input_path: Path, front_col: str) -> pd.DataFrame:
         apkg_rows = _read_apkg_field_rows(input_path, front_col)
         if not apkg_rows:
             raise ValueError("No notes found in APKG or field could not be resolved.")
-        return cast(pd.DataFrame, pd.DataFrame(apkg_rows))
+        return pd.DataFrame(apkg_rows)
     else:
         # CSV path (existing behavior)
         with open(input_path, newline="", encoding="utf-8") as f:
@@ -840,7 +842,7 @@ def _split_dataframe_rows(
             built.setdefault("source_note_id", str(row.get("note_id", idx)))
             built.setdefault("source_notetype", str(row.get("note_type", "")))
             rows.append(built)
-    return cast(pd.DataFrame, pd.DataFrame(rows))
+    return pd.DataFrame(rows)
 
 
 def _parse_text_corpus(path: Path) -> pd.DataFrame:
@@ -860,12 +862,9 @@ def _parse_text_corpus(path: Path) -> pd.DataFrame:
                     "ref": f"{path.stem}:{idx}",
                 }
             )
-    df: pd.DataFrame = cast(pd.DataFrame, pd.DataFrame(rows))
+    df: pd.DataFrame = pd.DataFrame(rows)
     if df.empty:
-        return cast(
-            pd.DataFrame,
-            pd.DataFrame(columns=["book", "chapter", "verse", "text", "text_norm", "source_path", "ref"]),
-        )
+        return pd.DataFrame(columns=["book", "chapter", "verse", "text", "text_norm", "source_path", "ref"])
     df["text_norm"] = df["text"].apply(normalize_latin)
     return df
 
@@ -874,7 +873,7 @@ def _parse_parallel_csv_corpus(path: Path, latin_column: str) -> pd.DataFrame:
     df = pd.read_csv(path, encoding="utf-8", keep_default_na=False)
     if latin_column not in df.columns:
         raise KeyError(f"Latin column '{latin_column}' not found in corpus CSV. Columns: {list(df.columns)}")
-    out: pd.DataFrame = cast(pd.DataFrame, pd.DataFrame())
+    out: pd.DataFrame = pd.DataFrame()
     out["text"] = df[latin_column].astype(str)
     out["text_norm"] = out["text"].apply(normalize_latin)
     out["book"] = path.stem
@@ -982,20 +981,6 @@ def _cltk_is_installed() -> bool:
         return importlib.util.find_spec("cltk") is not None
     except ValueError:
         return False
-
-
-def _ensure_latin_stanza_resources() -> None:
-    """Best-effort download/availability check for CLTK's Latin Stanza models."""
-    try:
-        import stanza
-    except ImportError:
-        return
-
-    try:
-        stanza.download("la", package="ittb", processors="tokenize,pos,lemma", verbose=False)
-    except Exception:
-        # Keep this best-effort so offline use still gives a clear downstream error.
-        return
 
 
 def _build_analysis_candidates(
@@ -1127,9 +1112,6 @@ def annotate_with_cltk(
 
     try:
         from cltk import NLP
-        from cltk.alphabet.processes import LatinNormalizeProcess
-        from cltk.dependency.processes import LatinStanzaProcess
-        from cltk.languages.pipelines import LatinPipeline
     except ImportError as exc:
         if not _cltk_is_installed():
             raise RuntimeError(
@@ -1138,14 +1120,13 @@ def annotate_with_cltk(
             ) from exc
         raise RuntimeError(f"CLTK is installed but failed to import: {exc}") from exc
 
-    _ensure_latin_stanza_resources()
-
     try:
-        pipeline = LatinPipeline(processes=[LatinNormalizeProcess, LatinStanzaProcess])
-        nlp = NLP(language="lat", custom_pipeline=pipeline, suppress_banner=True)
+        # CLTK 2 downloads the Latin Stanza models on first use.
+        nlp = NLP(language_code="lat", backend="stanza", suppress_banner=True)
     except Exception as exc:  # pragma: no cover - runtime/model guard
         raise RuntimeError(
-            "Could not initialize CLTK Latin pipeline. Ensure CLTK data/models are available in your environment."
+            "Could not initialize the CLTK Latin pipeline. The first run downloads Latin Stanza models, "
+            f"so check network access and disk space: {exc}"
         ) from exc
 
     lemmas: list[str] = []
@@ -1177,18 +1158,13 @@ def annotate_with_cltk(
                 analysis_count.append(0)
                 analysis_status.append("no-analysis")
                 continue
-            first = words[0]
-            lemma = str(getattr(first, "lemma", "") or "")
-            upos = str(getattr(first, "upos", "") or "")
-            xpos = str(getattr(first, "xpos", "") or "")
-            feats = getattr(first, "features", "")
-            features_text = str(feats or "")
+            analysis = analyze_cltk_word(words[0])
             candidates = _build_analysis_candidates(
                 form=text,
-                lemma=lemma,
-                upos=upos,
-                xpos=xpos,
-                morph_features=features_text,
+                lemma=analysis.lemma,
+                upos=analysis.upos,
+                xpos=analysis.xpos,
+                morph_features=analysis.morph_features,
             )
             selected, status = _select_analysis_candidate(
                 form=text,
@@ -1230,9 +1206,8 @@ def annotate_with_cltk(
     has_success = any(status == "ok" for status in analysis_status)
     if non_empty and not has_success:
         raise RuntimeError(
-            "CLTK produced no successful analyses. Make sure Latin Stanza resources are installed, e.g. run: "
-            "`uv run python -c \"import stanza; stanza.download('la', package='ittb', "
-            "processors='tokenize,pos,lemma')\"`"
+            "CLTK produced no successful analyses. Make sure the Latin Stanza models downloaded, e.g. run: "
+            "`uv run python -c \"from cltk import NLP; NLP(language_code='lat', backend='stanza')\"`"
         )
 
     return out

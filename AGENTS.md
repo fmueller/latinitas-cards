@@ -101,7 +101,7 @@ Use uv for environment and task execution. `mise.toml` pins the rest of the tool
 
 ## Coding Style & Naming Conventions
 
-- Python target: `>=3.10,<3.13`; keep 3.10 compatibility.
+- Python target: `>=3.13,<3.15`; keep 3.13 compatibility.
 - Ruff rules: `E, F, UP, B, SIM, I`; line length `120`.
 - mypy strict mode; type public functions and non-trivial internals explicitly.
 - Use snake_case for functions/variables and lowercase module names.
