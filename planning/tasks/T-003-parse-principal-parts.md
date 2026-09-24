@@ -1,13 +1,13 @@
 ---
 id: T-003-parse-principal-parts
 title: Parse principal parts into semantic roles
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#principal-part-card-generation
 dependencies:
     - T-001-define-deck-profile-contract
     - T-010-add-canonical-deck-source-adapters
-updated_at: "2026-09-22T16:09:47Z"
+updated_at: "2026-09-24T02:19:28Z"
 ---
 
 # T-003-parse-principal-parts Parse principal parts into semantic roles
@@ -39,3 +39,4 @@ from card wording and rendering so both initial recipes share one verified inter
 ## Implementation Notes
 
 - Principal-part completion and recognition recipes are implemented by a dependent task.
+- 2026-09-24T02:19:09Z: verification pass
