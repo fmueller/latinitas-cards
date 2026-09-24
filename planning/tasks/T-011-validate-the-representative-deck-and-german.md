@@ -1,14 +1,14 @@
 ---
 id: T-011-validate-the-representative-deck-and-german
 title: Validate the representative deck and German terminology
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
     - T-001-define-deck-profile-contract
     - T-010-add-canonical-deck-source-adapters
     - T-003-parse-principal-parts
-updated_at: "2026-09-22T16:09:47Z"
+updated_at: "2026-09-24T18:58:19Z"
 ---
 
 # T-011-validate-the-representative-deck-and-german Validate the representative deck and German terminology
@@ -42,3 +42,5 @@ assisted setup and recipe deliverables are finalized.
 
 - Synthetic fixtures may support earlier development, but they do not satisfy this
   acceptance gate.
+- 2026-09-24T18:57:56Z: verification pass
+- 2026-09-24T18:58:19Z: Completed after approved PPP terminology, sanitized representative-fixture validation, review disposition, and full ruff/mypy/pytest verification.

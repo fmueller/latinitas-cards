@@ -39,6 +39,7 @@ Every failure includes a stable `code`, a human-readable `assumption`, and
 source identity/location when the canonical record provides them. Failure
 messages do not echo principal-part field contents.
 
-These are parser fixtures and provisional domain terminology. They do not claim
-that a representative user deck or the initial German terminology has been
-validated; that review belongs to T-011.
+These are parser fixtures and profile-driven parser contracts. T-011 validated the
+representative-deck mapping and initial German terminology recorded in
+`docs/representative-deck-validation.md`; this does not turn the parser into a
+universal morphological analyzer.

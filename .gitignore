@@ -6,6 +6,8 @@ __pycache__/
 # Anki data files (user-specific, may contain personal decks)
 *.apkg
 *.colpkg
+# This fixture is generated from sanitized structural observations only.
+!tests/fixtures/representative-university-latin.apkg
 
 .idea
 
