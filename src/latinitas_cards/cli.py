@@ -2208,6 +2208,7 @@ def _register_commands() -> None:
     from .commands.generate import generate
     from .commands.inspect import inspect
     from .commands.preview import preview
+    from .commands.setup import setup
     from .commands.split import split
     from .commands.validate import validate
 
@@ -2218,6 +2219,7 @@ def _register_commands() -> None:
     app.command()(annotate)
     app.command()(cloze)
     app.command()(validate)
+    app.command()(setup)
 
 
 _register_commands()

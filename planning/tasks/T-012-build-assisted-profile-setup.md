@@ -1,7 +1,7 @@
 ---
 id: T-012-build-assisted-profile-setup
 title: Build assisted profile setup
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#assisted-deck-profiles
 dependencies:
@@ -9,7 +9,7 @@ dependencies:
     - T-010-add-canonical-deck-source-adapters
     - T-003-parse-principal-parts
     - T-011-validate-the-representative-deck-and-german
-updated_at: "2026-09-22T16:09:47Z"
+updated_at: "2026-09-24T20:10:01Z"
 ---
 
 # T-012-build-assisted-profile-setup Build assisted profile setup
@@ -45,3 +45,5 @@ saves a reusable profile.
 - TODO: record verification evidence paths.
 
 ## Implementation Notes
+
+- 2026-09-24T20:09:51Z: verification pass

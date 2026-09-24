@@ -8,8 +8,11 @@ prompting flow or a source adapter.
 from __future__ import annotations
 
 import json
+import os
 import re
+import tempfile
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -418,7 +421,27 @@ class DeckProfile(_ProfileModel):
     to_json = to_human_readable
 
     def save(self, path: str | Path) -> None:
-        Path(path).write_text(self.to_human_readable(), encoding="utf-8")
+        destination = Path(path)
+        temporary_path: str | None = None
+        open_file_descriptor = -1
+        try:
+            open_file_descriptor, temporary_path = tempfile.mkstemp(
+                prefix=f".{destination.name}.",
+                dir=destination.parent,
+            )
+            with os.fdopen(open_file_descriptor, "w", encoding="utf-8") as profile_file:
+                open_file_descriptor = -1
+                profile_file.write(self.to_human_readable())
+                profile_file.flush()
+                os.fsync(profile_file.fileno())
+            os.replace(temporary_path, destination)
+            temporary_path = None
+        finally:
+            if open_file_descriptor >= 0:
+                os.close(open_file_descriptor)
+            if temporary_path is not None:
+                with suppress(FileNotFoundError):
+                    os.unlink(temporary_path)
 
     def apply_overrides(self, overrides: ProfileOverrides | Mapping[str, Any]) -> DeckProfile:
         """Return the deterministic effective profile for one explicit override set."""
@@ -429,6 +452,14 @@ class DeckProfile(_ProfileModel):
         for nested in ("source_identity", "fields", "principal_parts"):
             nested_changes = changes.pop(nested, None)
             if nested_changes is not None:
+                nested_value = getattr(parsed, nested)
+                if (
+                    nested == "fields"
+                    and nested_value is not None
+                    and "meaning_field" in nested_value.model_fields_set
+                    and nested_value.meaning_field is None
+                ):
+                    nested_changes["meaning_field"] = None
                 if nested == "source_identity":
                     source_identity = parsed.source_identity
                     if source_identity is not None:

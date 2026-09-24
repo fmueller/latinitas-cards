@@ -1,3 +1,7 @@
+import os
+from pathlib import Path
+from typing import Any
+
 import pytest
 
 from latinitas_cards.profile import (
@@ -62,6 +66,25 @@ def test_profile_defaults_are_explicit_and_language_tags_are_not_implicit() -> N
         language_tag="en-US",
     )
     assert english_profile.language_tag == "en-US"
+
+
+def test_profile_save_uses_atomic_replace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = _profile()
+    destination = tmp_path / "profile.json"
+    replacements: list[tuple[str, str]] = []
+    original_replace = os.replace
+
+    def record_replace(source: Any, target: Any) -> None:
+        replacements.append((str(source), str(target)))
+        original_replace(source, target)
+
+    monkeypatch.setattr("latinitas_cards.profile.os.replace", record_replace)
+
+    profile.save(destination)
+
+    assert replacements
+    assert str(replacements[-1][1]) == str(destination)
+    assert DeckProfile.from_json(destination.read_text(encoding="utf-8")) == profile
 
 
 def test_effective_profile_applies_explicit_overrides_deterministically() -> None:
