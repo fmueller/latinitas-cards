@@ -15,6 +15,8 @@ A CLI toolkit for building Latin Anki flashcards. Inspect and restructure Anki e
 - **Parallel corpus support** — include EN/DE translations alongside Latin clozes
 - **Difficulty filtering** — control cloze complexity (easy / medium / hard)
 - **APKG rewrite** — update Anki packages in place while preserving originals
+- **Stable generated-note identity** — keep repeat imports tied to logical exercises; see
+  [the identity contract](docs/stable-generated-note-identity.md)
 
 ## Installation
 

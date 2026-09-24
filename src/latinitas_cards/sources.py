@@ -163,6 +163,10 @@ def read_csv_records(
                 source_identity=source_identity,
             )
         )
+    if source_id_field is not None:
+        identities = [record.source_identity for record in records if record.source_identity is not None]
+        if len(set(identities)) != len(identities):
+            raise CanonicalSourceError(path, "configured source-ID column contains duplicate stable identities")
     return tuple(records)
 
 
@@ -350,6 +354,7 @@ def _read_anki_database(
             note_types, field_names = _load_anki_metadata(con, source_path)
             rows = con.execute("SELECT id, mid, flds, guid FROM notes").fetchall()
             records: list[CanonicalSourceRecord] = []
+            seen_guids: set[str] = set()
             for row in rows:
                 record = _build_anki_record(
                     source_path,
@@ -359,6 +364,13 @@ def _read_anki_database(
                     field_names,
                 )
                 if requested_note_type is None or record.note_type == requested_note_type:
+                    if record.source_identity in seen_guids:
+                        raise CanonicalSourceError(
+                            source_path,
+                            "collection notes table contains duplicate source note GUIDs",
+                        )
+                    if record.source_identity is not None:
+                        seen_guids.add(record.source_identity)
                     records.append(record)
             records.sort(
                 key=lambda record: (

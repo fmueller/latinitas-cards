@@ -1,5 +1,4 @@
 import csv
-import hashlib
 import html
 import importlib.util
 import json
@@ -26,6 +25,7 @@ from rich.table import Table
 from rich.text import Text
 
 from .annotation import analyze_cltk_word
+from .identity import derive_anki_guid
 
 stderr_console = Console(stderr=True)
 stdout_console = Console()
@@ -1213,8 +1213,10 @@ def annotate_with_cltk(
     return out
 
 
-def _make_note_guid(seed: str) -> str:
-    return hashlib.sha1(seed.encode("utf-8")).hexdigest()[:10]
+def _make_note_guid(source_identity: str, exercise_key: str) -> str:
+    """Derive an experimental split-note GUID without local Anki IDs."""
+
+    return derive_anki_guid(source_identity, "legacy_split_form", exercise_key)
 
 
 def rewrite_apkg_with_split_cards(
@@ -1278,6 +1280,10 @@ def rewrite_apkg_with_split_cards(
                         clean_anki_field(fields[source_idx], truncate_at_block=True)
                     ):
                         continue
+                    note_columns = tuple(note.keys())
+                    source_guid = str(note["guid"]).strip() if "guid" in note_columns else ""
+                    if not source_guid:
+                        raise RuntimeError("cannot create a stable split-note identity without a source note GUID")
                     cloned_fields = list(fields)
                     cloned_fields[source_idx] = form
                     now = int(time.time())
@@ -1285,7 +1291,7 @@ def rewrite_apkg_with_split_cards(
                     next_note_id += 1
                     note_values = (
                         new_note_id,
-                        _make_note_guid(f"{note_id}:{form}:{new_note_id}"),
+                        _make_note_guid(source_guid, f"{source_field}:{form}"),
                         note_mid,
                         now,
                         int(note["usn"]),

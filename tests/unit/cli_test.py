@@ -798,6 +798,18 @@ def test_split_command_can_rewrite_apkg(tmp_path: Path) -> None:
     assert len(rows) >= 3
 
 
+def test_split_note_guid_uses_source_guid_and_semantic_form_not_allocated_note_id() -> None:
+    first = cli_mod._make_note_guid("source-guid", "Konstruktion_Hinweise:amo")
+    repeated = cli_mod._make_note_guid("source-guid", "Konstruktion_Hinweise:amo")
+    distinct = cli_mod._make_note_guid("source-guid", "Konstruktion_Hinweise:amas")
+    orthography_variant = cli_mod._make_note_guid("source-guid", "Konstruktion_Hinweise:iulius")
+    distinct_orthography_variant = cli_mod._make_note_guid("source-guid", "Konstruktion_Hinweise:julius")
+
+    assert first == repeated
+    assert first != distinct
+    assert orthography_variant != distinct_orthography_variant
+
+
 def test_annotate_command_uses_annotation_pipeline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     csv_path = tmp_path / "split.csv"
     csv_path.write_text("form\namo\n", encoding="utf-8")

@@ -1,13 +1,13 @@
 ---
 id: T-002-stable-generated-note-identity
 title: Define stable generated-note identity
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#stable-generated-note-identity
 dependencies:
     - T-001-define-deck-profile-contract
     - T-010-add-canonical-deck-source-adapters
-updated_at: "2026-09-22T16:09:47Z"
+updated_at: "2026-09-24T01:37:02Z"
 ---
 
 # T-002-stable-generated-note-identity Define stable generated-note identity
@@ -47,3 +47,5 @@ for CSV inputs.
 ## Implementation Notes
 
 - Replace, rather than reuse, the current GUID seed that includes a newly allocated note ID.
+- 2026-09-24T01:36:54Z: verification pass
+- 2026-09-24T01:37:02Z: Implemented stable generated-note identity, manifest reconciliation, ownership contract, duplicate-ID guards, deterministic GUIDs, and automated verification.

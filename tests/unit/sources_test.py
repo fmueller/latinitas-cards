@@ -132,6 +132,14 @@ def test_csv_without_stable_id_exposes_manifest_reconciliation_data(tmp_path: Pa
     assert records[0].provenance.encoding == "utf-8-sig"
 
 
+def test_csv_duplicate_stable_ids_are_rejected(tmp_path: Path) -> None:
+    source = tmp_path / "duplicate-ids.csv"
+    source.write_text("Stable ID,Lemma\nentry-1,amo\nentry-1,dico\n", encoding="utf-8")
+
+    with pytest.raises(CanonicalSourceError, match="duplicate"):
+        read_source_records(source, source_id_field="Stable ID")
+
+
 def test_legacy_colpkg_preserves_guids_and_sorts_multiple_note_types(tmp_path: Path) -> None:
     database = tmp_path / "collection.anki2"
     package = tmp_path / "legacy.colpkg"
@@ -176,6 +184,20 @@ def test_modern_zstd_apkg_inspection_is_deterministic_and_retains_field_names(tm
     ]
     assert inspection.records == records_again
     assert inspection.records[1].fields["German gloss"] == "lieben"
+
+
+def test_anki_duplicate_native_guids_are_rejected(tmp_path: Path) -> None:
+    database = tmp_path / "duplicate-guids.sqlite"
+    package = tmp_path / "duplicate-guids.apkg"
+    _write_modern_database(database)
+    con = sqlite3.connect(database)
+    con.execute("UPDATE notes SET guid = 'same-guid'")
+    con.commit()
+    con.close()
+    _package(package, database, "collection.anki2")
+
+    with pytest.raises(CanonicalSourceError, match="duplicate"):
+        read_source_records(package)
 
 
 def test_malformed_package_error_names_source_and_assumption_without_contents(tmp_path: Path) -> None:
