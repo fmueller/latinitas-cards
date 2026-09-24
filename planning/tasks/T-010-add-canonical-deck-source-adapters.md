@@ -1,11 +1,11 @@
 ---
 id: T-010-add-canonical-deck-source-adapters
 title: Add canonical deck source adapters
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#assisted-deck-profiles
 dependencies: []
-updated_at: "2026-09-22T16:07:56Z"
+updated_at: "2026-09-24T00:48:38Z"
 ---
 
 # T-010-add-canonical-deck-source-adapters Add canonical deck source adapters
@@ -40,3 +40,4 @@ assumptions or modifying the source.
 
 - Reuse validated archive/database mechanics where useful, but do not reuse experimental
   APKG mutation as an output path.
+- 2026-09-24T00:48:26Z: verification pass
