@@ -9,7 +9,7 @@ semantic contract for that source.
 
 | Area | Supported contract | Not inferred |
 | --- | --- | --- |
-| Semantic roles | Any confirmed profile with at least two distinct, non-empty role names. The default roles are `present_1s`, `present_infinitive`, `perfect_1s`, and `supine`. | A position is never renamed from its text, and role names are never guessed from a lemma or ending. |
+| Semantic roles | Any confirmed profile with at least two distinct, non-empty role names. The generic default is `present_1s`, `present_infinitive`, `perfect_1s`, and `supine`; the approved sanitized-fixture profile explicitly uses `perfect_passive_participle` (PPP) in slot four. | A position is never renamed from its text, and role names are never guessed from a lemma or ending. |
 | Complete layout | Exactly one segment for every configured role. | Extra segments are not silently discarded. |
 | Deponent/exceptional layout | A profile may explicitly confirm a shorter layout, such as `present_1s`, `present_infinitive`, `perfect_1s` for `sequor — sequi — secutus sum`. The parser treats the third value as the confirmed third role; it does not detect “deponent” itself. | A four-role profile receiving three unmarked values is not treated as a deponent entry. It is ambiguous because the missing role is not identified. |
 | Reusable separator | A single configured literal separator is reused between every role, for example `(" — ",)` or `(", ")`. | Commas, semicolons, slashes, dashes, and newlines are not accepted as alternatives unless confirmed in the profile. |
@@ -25,6 +25,13 @@ never used to rewrite display content.
 `ParsedPrincipalParts.semantic_roles` and `identity_roles` retain the confirmed
 role names and order. Downstream identity code may use those semantic role keys;
 it must not substitute comparison text or positional guesses.
+
+The generic `supine` default is retained for legacy/profile compatibility. It is not
+interchangeable with the approved sanitized-fixture role
+`perfect_passive_participle` (Partizip Perfekt Passiv, PPP). Role order is changed only
+explicitly during profile confirmation; unsafe source or exercise assignments remain
+structured skip/review outcomes. Structural parser counts do not claim universal
+morphological coverage or prove eligible-verb coverage.
 
 ## Structured outcomes
 

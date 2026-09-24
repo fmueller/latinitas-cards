@@ -1,24 +1,40 @@
-# LatinitasCards
+# Latinitas Cards
 
 [![CI](https://github.com/fmueller/latinitas-cards/actions/workflows/build.yml/badge.svg)](https://github.com/fmueller/latinitas-cards/actions/workflows/build.yml)
 [![Python 3.13 | 3.14](https://img.shields.io/badge/python-3.13%20%7C%203.14-blue)](https://www.python.org/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-green)](LICENSE)
 
-A CLI toolkit for building Latin Anki flashcards. Inspect and restructure Anki exports, annotate grammar with [CLTK](https://cltk.org), and generate corpus-based cloze-deletion cards from USFX, plain-text, or parallel CSV corpora — designed for learners studying Latin through spaced repetition.
+Latinitas Cards is an offline-first CLI for turning an existing Latin Anki deck or
+CSV export into repeatable principal-part study cards. It inspects a source, saves a
+confirmed profile, previews generated cards, and writes a deterministic UTF-8 Anki
+text-import CSV without modifying the source.
 
-## Features
+> **Status:** v0.1.0 is still being prepared. Nothing has been released or published:
+> there is no published package, tag, or GitHub release to install yet.
 
-- **Inspect** Anki deck structure, field names, and sample notes
-- **Split** multi-form cards into one-row-per-form records
-- **Annotate** grammar (lemma, POS, morphology) via CLTK with optional LLM disambiguation
-- **Generate cloze cards** from Latin corpora (USFX XML, plain text, CSV)
-- **Parallel corpus support** — include EN/DE translations alongside Latin clozes
-- **Difficulty filtering** — control cloze complexity (easy / medium / hard)
-- **APKG rewrite** — update Anki packages in place while preserving originals
-- **Stable generated-note identity** — keep repeat imports tied to logical exercises; see
-  [the identity contract](docs/stable-generated-note-identity.md)
-- **Deterministic principal-part CSV export** — preview generated notes and export repeat-importable
-  UTF-8 CSV from a confirmed profile; see [the import workflow](docs/deterministic-csv-export.md)
+## v0.1.0 workflow
+
+The supported workflow is **deck-first**:
+
+1. Inspect a CSV, APKG, or COLPKG source and confirm its field mapping.
+2. Save the human-readable, versioned profile and reuse it on later runs.
+3. Preview principal-part completion and recognition cards.
+4. Generate a deterministic CSV with `LatinitasID` first for repeat imports.
+5. Import the CSV into a prepared Anki note type, then repeat the import with the
+   same note type and first-field matching.
+
+Profiles select recipes explicitly; the approved representative profile uses
+`principal_part_completion` and `principal_part_recognition`. It uses the semantic role
+`perfect_passive_participle` (PPP), not the legacy `supine` role. CLI controls and
+diagnostics are English; generated study content is German with the profile's explicit
+`language_tag` (default `de`).
+
+The profile workflow never mutates the source CSV/APKG/COLPKG. ID-less CSV sources
+require explicit identity reconciliation decisions on first use or when review items
+appear; unchanged rows with a valid manifest are reused automatically. See the focused
+[identity contract](docs/stable-generated-note-identity.md) and
+[CSV/import workflow](docs/deterministic-csv-export.md) for ownership, recovery, and
+Anki setup details.
 
 ## Installation
 
@@ -27,225 +43,132 @@ A CLI toolkit for building Latin Anki flashcards. Inspect and restructure Anki e
 ```bash
 git clone https://github.com/fmueller/latinitas-cards.git
 cd latinitas-cards
-uv sync
-```
-
-Verify the installation:
-
-```bash
+uv sync --locked
 uv run latinitas-cards --help
 ```
 
-The experimental `annotate` command needs the optional `annotate` extra, which installs
-CLTK 2 together with Stanza and CPU-only PyTorch (about 1 GB). The first `annotate` run
-downloads the Latin Stanza models:
+The optional `annotate` command is experimental and needs the CPU-only extra. It
+installs CLTK 2, Stanza, and CPU-only PyTorch; the first run downloads Latin Stanza
+models:
 
 ```bash
-uv sync --extra annotate
+uv sync --locked --extra annotate
 ```
 
 > [!WARNING]
-> **Highly experimental:** `uv sync --extra annotate-gpu` installs CUDA PyTorch instead
-> (about 5 GB) and needs a matching NVIDIA driver. It cannot be combined with `annotate`, and
-> it is not tested in CI. The CPU/GPU split relies on uv's PyTorch index configuration; with
-> plain `pip install 'latinitas-cards[annotate]'`, pip installs PyTorch's default build.
+> **Highly experimental:** `uv sync --locked --extra annotate-gpu` selects CUDA
+> PyTorch instead. It needs a matching NVIDIA driver, is not tested in CI, and cannot
+> be combined with the CPU `annotate` extra. Core deck-first workflows do not require
+> CLTK, Stanza, PyTorch, or network access.
+>
+> `annotate --use-llm` sends source-derived forms and analyses to the configured Ollama
+> endpoint. Do not use a remote endpoint with private deck data without reviewing that
+> endpoint's privacy and retention policy.
 
-## Quick Start
+## Quick start
 
-```bash
-# 1. Inspect your Anki deck
-uv run latinitas-cards inspect --input data/latin_university.apkg --head 5
-
-# 2. Split multi-form entries into individual rows
-uv run latinitas-cards split \
-  --input data/latin_university.apkg \
-  --output split.csv \
-  --source-field Konstruktion_Hinweise \
-  --split-mode auto
-
-# 3. Annotate grammar (needs `uv sync --extra annotate`) and generate cloze cards
-uv run latinitas-cards annotate --input split.csv --output annotated.csv --form-column form
-uv run latinitas-cards cloze \
-  --input annotated.csv \
-  --output cloze.csv \
-  --corpus data/lat-clementine.usfx.xml \
-  --corpus-format auto \
-  --difficulty medium
-```
-
-## CLI Reference
-
-| Command      | Description                                                      |
-|--------------|------------------------------------------------------------------|
-| `inspect`    | Inspect deck schema and show a head-like sample preview          |
-| `split`      | Split multi-form cards into one-row-per-form records             |
-| `annotate`   | Annotate CSV forms with CLTK lemma/POS/morphology metadata       |
-| `cloze`      | Generate corpus-based cloze cards for each form in a CSV input   |
-| `validate`   | Validate USFX parsing integrity and required input columns       |
-| `preview`    | Show a sample of generated clozes without writing output         |
-| `generate`   | Update an Anki CSV or APKG file with cloze examples from a Latin USFX corpus |
-
-### inspect
+The repository's only deck fixture is a committed, sanitized APKG used for smoke
+tests. It is not a private university deck or a product-specific input. Replace the
+fixture path below with your own source when using the workflow:
 
 ```bash
-uv run latinitas-cards inspect --input data/latin_university.apkg --head 5
-```
+workdir="$(mktemp -d)"
+profile="$workdir/profile.json"
+output="$workdir/generated-principal-parts.csv"
+source="tests/fixtures/representative-university-latin.apkg"
 
-### split
+# Propose, explicitly confirm, and save a reusable profile.
+uv run latinitas-cards setup \
+  --input "$source" \
+  --profile "$profile" \
+  --recipe principal_part_completion \
+  --recipe principal_part_recognition \
+  --non-interactive \
+  --confirm \
+  --json
 
-```bash
-uv run latinitas-cards split \
-  --input input.apkg \
-  --output split.csv \
-  --source-field Konstruktion_Hinweise \
-  --split-mode auto
-```
-
-Optional APKG rewrite (keeps originals and adds split cards):
-
-```bash
-uv run latinitas-cards split \
-  --input input.apkg \
-  --output output.apkg \
-  --source-field Konstruktion_Hinweise \
-  --split-mode auto \
-  --output-format apkg
-```
-
-### annotate
-
-Requires the optional `annotate` extra (`uv sync --extra annotate`).
-
-```bash
-uv run latinitas-cards annotate \
-  --input split.csv \
-  --output annotated.csv \
-  --form-column form
-```
-
-With optional Ollama LLM disambiguation:
-
-```bash
-uv run latinitas-cards annotate \
-  --input split.csv \
-  --output annotated_llm.csv \
-  --form-column form \
-  --use-llm \
-  --llm-provider ollama \
-  --llm-model ministral-3:8b \
-  --llm-endpoint http://localhost:11434
-```
-
-### cloze
-
-```bash
-uv run latinitas-cards cloze \
-  --input annotated.csv \
-  --output cloze.csv \
-  --corpus data/lat-clementine.usfx.xml \
-  --corpus-format auto \
-  --difficulty medium
-```
-
-With a parallel corpus (including EN/DE translations):
-
-```bash
-uv run latinitas-cards cloze \
-  --input annotated.csv \
-  --output cloze_parallel.csv \
-  --corpus opus_subset.csv \
-  --corpus-format csv \
-  --latin-column la \
-  --translation-lang en \
-  --translation-lang de \
-  --parallel-mode include
-```
-
-When parallel columns are detected and behavior is unspecified:
-
-- Interactive terminal: `latinitas-cards` prompts you
-- Non-interactive execution: translations are ignored with a warning
-
-### validate
-
-```bash
-uv run latinitas-cards validate \
-  --input data/latin_university.apkg \
-  --usfx data/lat-clementine.usfx.xml
-```
-
-### preview
-
-```bash
+# Preview without writing the generated CSV.
 uv run latinitas-cards preview \
-  --input data/latin_university.apkg \
-  --usfx data/lat-clementine.usfx.xml
+  --input "$source" \
+  --profile "$profile" \
+  --limit 2
+
+# Preview again, then write deterministic UTF-8 Anki text-import CSV.
+uv run latinitas-cards generate \
+  --input "$source" \
+  --profile "$profile" \
+  --output "$output"
 ```
 
-### generate
+For an interactive setup, omit `--non-interactive --confirm`; review the proposed
+examples and answer the confirmation prompt. Repeat `--role` in semantic order when
+correcting a proposal, for example:
 
 ```bash
-uv run latinitas-cards generate \
-  --input data/latin_university.apkg \
-  --output updated.csv \
-  --usfx data/lat-clementine.usfx.xml
-```
-
-### Profile-driven principal-part preview and export
-
-The v0.1.0 profile workflow uses the same `preview` and `generate` commands without `--usfx`:
-
-```bash
-uv run latinitas-cards preview \
-  --input source.csv \
-  --profile .latinitas/profile.json
-
-uv run latinitas-cards generate \
+uv run latinitas-cards setup \
   --input source.csv \
   --profile .latinitas/profile.json \
-  --output generated-principal-parts.csv
+  --role present_infinitive \
+  --role present_1s \
+  --role perfect_1s \
+  --role perfect_passive_participle
 ```
 
-The preview reports representative prompt/answer/provenance values and structured generated,
-skipped, and ambiguous counts before export. The output includes Anki import metadata and
-keeps `LatinitasID` first for repeat updates. First-import and repeat-import setup—including
-the required dedicated note type, HTML setting, and personal-notes mapping—is documented in
-[deterministic CSV export](docs/deterministic-csv-export.md).
+Prepare the generated note type, fields, template, and HTML import setting before the
+first import. For repeat imports, use the same note type with `LatinitasID` as the
+first/matching field and **Ignore field** for `Personal Notes`. The [deterministic CSV
+export guide](docs/deterministic-csv-export.md) has the complete checklist, including
+Anki's native behavior that this project does not verify; test it in a disposable
+collection first.
 
-## Corpora
+Treat setup JSON, terminal previews, generated CSVs, and identity manifests as
+source-derived data: they can contain study text, stable IDs, and provenance. Redact
+them before sharing an issue or other public report.
 
-The bundled corpus `data/lat-clementine.usfx.xml` is a Latin Vulgate (Clementine) Bible in USFX format.
+## Experimental and planned capabilities
 
-Good public sources for additional Latin corpora (including EN/DE parallel data):
+These remain available for legacy workflows, not v0.1.0 release promises:
 
-- [OPUS](https://opus.nlpl.eu/) (recommended starting point)
-  - `bible-uedin` (strong verse-aligned biblical corpus)
-  - `Tatoeba` (sentence-level data)
-  - `WikiMatrix` / `CCMatrix` (broader but noisier)
-- For direct corpus pair discovery via API:
-  - `https://opus.nlpl.eu/opusapi/?corpora=True&source=la&target=en`
-  - `https://opus.nlpl.eu/opusapi/?corpora=True&source=la&target=de`
+- `split --output-format apkg`: experimental APKG mutation and split-note cloning;
+- `cloze` and `preview`/`generate --usfx`: experimental corpus-based generation; and
+- `annotate`: experimental CLTK/Stanza analysis, with optional Ollama disambiguation.
 
-## Contributing
+Structural parser counts do not establish eligible-verb or universal morphological
+coverage; full grammatical parsing and managed live-Anki updates are not implemented.
+PPP and supine remain distinct semantic roles.
 
-See [AGENTS.md](AGENTS.md) for coding style, project structure, and commit conventions.
+## Documentation
 
-Set up the pinned toolchain and the opt-in git hooks with [mise](https://mise.jdx.dev):
+- [Stable generated-note identity](docs/stable-generated-note-identity.md)
+- [Principal-part parser support matrix](docs/principal-part-parsing.md)
+- [Sanitized representative-deck validation](docs/representative-deck-validation.md)
+- [Deterministic CSV export and Anki import](docs/deterministic-csv-export.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)
+- [License compatibility audit](docs/license-compatibility-audit.md)
+
+## Development and contribution
+
+Set up the pinned development toolchain and local hooks with
+[mise](https://mise.jdx.dev):
 
 ```bash
 mise run setup
 ```
 
-Without mise, run `uv sync --locked --dev` and `lefthook install`. The hooks enforce the
-commit message policy described in AGENTS.md.
-
-Before submitting changes, run the validation chain (or `mise run check`):
+Read [AGENTS.md](AGENTS.md) for the project structure, coding conventions, test
+commands, and contribution/commit policy. The required local checks are:
 
 ```bash
 uv run ruff check
 uv run mypy
 uv run pytest -v
 ```
+
+## Support
+
+There is no support SLA or live Anki-collection assistance. Report reproducible issues
+through the [GitHub issue tracker](https://github.com/fmueller/latinitas-cards/issues)
+with sanitized commands and error output; do not upload private decks or credentials.
 
 ## License
 

@@ -93,21 +93,22 @@ def test_fixture_identity_resolution_uses_guid_with_explicit_principal_part_mapp
     assert _profile().fields.principal_parts_field in records[0].fields
 
 
-def test_validation_note_keeps_source_metadata_private_and_bounds_candidate_counts() -> None:
+def test_validation_note_describes_only_the_committed_sanitized_fixture() -> None:
     note = VALIDATION_NOTE.read_text(encoding="utf-8")
+    note_text = " ".join(note.split())
     parser_note = PARSER_NOTE.read_text(encoding="utf-8")
     parser_text = " ".join(parser_note.split())
 
-    assert "source lexical-entry field" in note
-    assert "source German gloss/meaning field" in note
-    assert "source construction/form field" in note
-    assert "a subset of these 37" in note
-    assert "not an additional group" in note
-    assert "structural/lexical-shape candidates" in note
-    assert "perfect_passive_participle" in note
-    assert "Partizip Perfekt Passiv (PPP)" in note
-    assert "None of these counts alone is a count of eligible verbs." in note
-    assert "role assignment comes from the approved profile, not from the isolated form" in note
-    assert "unambiguous public PPP example" not in note
-    assert "supine" not in note.lower()
+    assert "committed sanitized fixture" in note_text
+    assert "tests/fixtures/representative-university-latin.apkg" in note_text
+    assert "five synthetic notes" in note_text
+    assert "Entry" in note_text
+    assert "Construction hints" in note_text
+    assert "perfect_passive_participle" in note_text
+    assert "Partizip Perfekt Passiv (PPP)" in note_text
+    assert "structural parse does not establish eligible verb coverage" in note_text
+    assert "private" not in note_text.lower()
+    assert "user-provided" not in note_text.lower()
+    assert "677" not in note_text
+    assert "152" not in note_text
     assert "T-011 validated the representative-deck mapping and initial German terminology" in parser_text
