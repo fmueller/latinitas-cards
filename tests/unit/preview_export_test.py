@@ -152,6 +152,41 @@ def test_csv_export_escapes_source_identity_for_html_import(tmp_path: Path) -> N
     assert "<img src=x onerror=alert(1)>" not in text
 
 
+def test_csv_export_preserves_completion_and_recognition_html_section_boundaries(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+
+    payload = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
+    header, rows, _ = _parse_export(payload)
+    recipe_index = header.index("Recipe")
+    exercise_index = header.index("Exercise Key")
+    prompt_index = header.index("Prompt")
+    answer_index = header.index("Answer")
+
+    completion = next(
+        row for row in rows if row[recipe_index] == "principal_part_completion" and row[exercise_index] == "perfect_1s"
+    )
+    recognition = next(
+        row for row in rows if row[recipe_index] == "principal_part_recognition" and row[exercise_index] == "perfect_1s"
+    )
+
+    assert completion[prompt_index].startswith(
+        "<div>Ergänze die fehlende Stammform.</div><div><strong>Stammformen</strong></div><div>"
+    )
+    assert completion[prompt_index].endswith("</div><div><strong>Bedeutung:</strong> sagen</div>")
+    assert completion[answer_index] == (
+        "<div><strong>Fehlende Stammform:</strong> dīxī</div>"
+        "<div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
+    )
+    assert recognition[answer_index].startswith(
+        "<div><strong>Lemma:</strong> dīcō</div><div><strong>Stammformen</strong></div><div>"
+    )
+    assert recognition[answer_index].endswith(
+        "</div><div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
+        "<div><strong>Bedeutung:</strong> sagen</div>"
+    )
+
+
 def test_csv_export_encodes_unsafe_controls_without_removing_newlines(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     _write_source(

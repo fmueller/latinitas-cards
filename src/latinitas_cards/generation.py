@@ -231,19 +231,15 @@ def _completion_content(
     *,
     tags: tuple[str, ...],
 ) -> ManagedNoteContent:
-    prompt = "\n".join(
-        (
-            "Ergänze die fehlende Stammform.",
-            "<strong>Stammformen</strong>",
-            _render_parts(parsed.parts, omitted_role=missing.role),
-            f"<strong>Bedeutung:</strong> {_escape(meaning)}",
-        )
+    prompt = (
+        "<div>Ergänze die fehlende Stammform.</div>"
+        "<div><strong>Stammformen</strong></div>"
+        f"<div>{_render_parts(parsed.parts, omitted_role=missing.role)}</div>"
+        f"<div><strong>Bedeutung:</strong> {_escape(meaning)}</div>"
     )
-    answer = "\n".join(
-        (
-            f"<strong>Fehlende Stammform:</strong> {_escape(missing.display or '')}",
-            f"<strong>Rolle:</strong> {_escape(_role_label(missing.role))}",
-        )
+    answer = (
+        f"<div><strong>Fehlende Stammform:</strong> {_escape(missing.display or '')}</div>"
+        f"<div><strong>Rolle:</strong> {_escape(_role_label(missing.role))}</div>"
     )
     return ManagedNoteContent(prompt=prompt, answer=answer, tags=tags)
 
@@ -256,14 +252,12 @@ def _recognition_content(
     tags: tuple[str, ...],
 ) -> ManagedNoteContent:
     prompt = f"Welche Stammform ist „{_escape(supplied.display or '')}“?"
-    answer = "\n".join(
-        (
-            f"<strong>Lemma:</strong> {_escape(parsed.lexical_entry)}",
-            "<strong>Stammformen</strong>",
-            _render_parts(parsed.parts),
-            f"<strong>Rolle:</strong> {_escape(_role_label(supplied.role))}",
-            f"<strong>Bedeutung:</strong> {_escape(meaning)}",
-        )
+    answer = (
+        f"<div><strong>Lemma:</strong> {_escape(parsed.lexical_entry)}</div>"
+        "<div><strong>Stammformen</strong></div>"
+        f"<div>{_render_parts(parsed.parts)}</div>"
+        f"<div><strong>Rolle:</strong> {_escape(_role_label(supplied.role))}</div>"
+        f"<div><strong>Bedeutung:</strong> {_escape(meaning)}</div>"
     )
     return ManagedNoteContent(prompt=prompt, answer=answer, tags=tags)
 

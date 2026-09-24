@@ -41,8 +41,13 @@ uv run latinitas-cards generate \
 Approval row numbers are zero-based source-record indexes. An edited or ambiguous row must
 use an explicit `ROW=SOURCE_ID` reuse approval instead. Unresolved reviews block export; no
 identity is silently transferred or allocated. The CSV and manifest are staged together; if
-either commit fails, the prior output/manifest pair is restored. Use `--manifest` to select a
-different sidecar path.
+either replacement raises a caught process/I/O exception, the exporter attempts to restore
+the prior output/manifest pair. If rollback itself fails, retained `.backup.*` files are
+reported and recovery is required before retrying; inspect the destinations and backups
+instead of blindly retrying or deleting them. The two files are replaced separately, so this
+is not durable pair-atomicity: abrupt process termination or power loss between replacements
+can leave one file new and the other old. There is no journal or automatic crash recovery;
+recover the pair manually before retrying. Use `--manifest` to select a different sidecar path.
 
 ## Anki text import
 

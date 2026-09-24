@@ -84,6 +84,49 @@ def test_completion_uses_only_confirmed_recipe_and_answers_with_form_and_role() 
     assert "Welche Stammform" not in perfect_note.content.prompt
 
 
+def test_generated_completion_and_recognition_html_keep_section_boundaries() -> None:
+    profile = _profile()
+    result = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", profile=profile),),
+        profile,
+    )
+
+    completion = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
+    )
+    recognition = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
+    )
+
+    assert completion.content.prompt == (
+        "<div>Ergänze die fehlende Stammform.</div>"
+        "<div><strong>Stammformen</strong></div>"
+        "<div><strong>Infinitiv:</strong> dīcere<br>"
+        "<strong>Präsens, 1. Person Singular:</strong> dīcō<br>"
+        "<strong>Perfekt, 1. Person Singular:</strong> _____<br>"
+        "<strong>Partizip Perfekt Passiv (PPP):</strong> dictum</div>"
+        "<div><strong>Bedeutung:</strong> sagen</div>"
+    )
+    assert completion.content.answer == (
+        "<div><strong>Fehlende Stammform:</strong> dīxī</div>"
+        "<div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
+    )
+    assert recognition.content.answer == (
+        "<div><strong>Lemma:</strong> dīcō</div>"
+        "<div><strong>Stammformen</strong></div>"
+        "<div><strong>Infinitiv:</strong> dīcere<br>"
+        "<strong>Präsens, 1. Person Singular:</strong> dīcō<br>"
+        "<strong>Perfekt, 1. Person Singular:</strong> dīxī<br>"
+        "<strong>Partizip Perfekt Passiv (PPP):</strong> dictum</div>"
+        "<div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
+        "<div><strong>Bedeutung:</strong> sagen</div>"
+    )
+
+
 def test_recognition_maps_each_latin_form_to_lemma_full_parts_role_and_gloss() -> None:
     profile = _profile(recipes=("principal_part_recognition",))
 
