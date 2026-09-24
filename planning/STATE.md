@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-24T20:10:15Z"
+updated_at: "2026-09-24T20:42:56Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-013-generate-principal-part-study-cards: Generate principal-part study cards'
-last_verification_result: pass for T-012-build-assisted-profile-setup at 2026-09-24T20:09:51Z
+next_action: 'Start task T-004-preview-and-deterministic-csv-export: Preview and export deterministic Anki CSV'
+last_verification_result: pass for T-013-generate-principal-part-study-cards at 2026-09-24T20:42:35Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-012-build-assisted-profile-setup at 2026-09-24T20:09:51Z
+- pass for T-013-generate-principal-part-study-cards at 2026-09-24T20:42:35Z
 
 ## Next Action
 
-- Start task T-013-generate-principal-part-study-cards: Generate principal-part study cards
+- Start task T-004-preview-and-deterministic-csv-export: Preview and export deterministic Anki CSV
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 11
+- todo: 10
 - in_progress: 0
-- completed: 14
+- completed: 15
 - blocked: 0
 - cancelled: 0

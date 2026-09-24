@@ -1,7 +1,7 @@
 ---
 id: T-013-generate-principal-part-study-cards
 title: Generate principal-part study cards
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#principal-part-card-generation
 dependencies:
@@ -9,7 +9,7 @@ dependencies:
     - T-002-stable-generated-note-identity
     - T-003-parse-principal-parts
     - T-011-validate-the-representative-deck-and-german
-updated_at: "2026-09-22T16:09:47Z"
+updated_at: "2026-09-24T20:42:49Z"
 ---
 
 # T-013-generate-principal-part-study-cards Generate principal-part study cards
@@ -43,3 +43,5 @@ the configured German gloss while carrying parser failures forward as structured
 - TODO: record verification evidence paths.
 
 ## Implementation Notes
+
+- 2026-09-24T20:42:35Z: verification pass
