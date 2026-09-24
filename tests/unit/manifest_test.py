@@ -36,6 +36,15 @@ def test_idless_csv_manifest_allocates_only_with_explicit_approval_and_reconcile
     assert reconciled.reviews == ()
 
 
+def test_manifest_allocation_is_stable_when_approval_mapping_order_changes(tmp_path: Path) -> None:
+    records = _records(tmp_path, "source.csv", [("amo", "lieben"), ("dico", "sagen")])
+
+    first = reconcile_csv_manifest(records, None, approved_allocations={0: None, 1: None})
+    reversed_order = reconcile_csv_manifest(records, None, approved_allocations={1: None, 0: None})
+
+    assert first.identities_by_row == reversed_order.identities_by_row
+
+
 def test_manifest_marks_edited_rows_for_explicit_identity_reuse(tmp_path: Path) -> None:
     original = _records(tmp_path, "original.csv", [("amo", "lieben")])
     allocated = reconcile_csv_manifest(original, None, approved_allocations={0})

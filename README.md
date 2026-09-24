@@ -17,6 +17,8 @@ A CLI toolkit for building Latin Anki flashcards. Inspect and restructure Anki e
 - **APKG rewrite** — update Anki packages in place while preserving originals
 - **Stable generated-note identity** — keep repeat imports tied to logical exercises; see
   [the identity contract](docs/stable-generated-note-identity.md)
+- **Deterministic principal-part CSV export** — preview generated notes and export repeat-importable
+  UTF-8 CSV from a confirmed profile; see [the import workflow](docs/deterministic-csv-export.md)
 
 ## Installation
 
@@ -188,6 +190,27 @@ uv run latinitas-cards generate \
   --output updated.csv \
   --usfx data/lat-clementine.usfx.xml
 ```
+
+### Profile-driven principal-part preview and export
+
+The v0.1.0 profile workflow uses the same `preview` and `generate` commands without `--usfx`:
+
+```bash
+uv run latinitas-cards preview \
+  --input source.csv \
+  --profile .latinitas/profile.json
+
+uv run latinitas-cards generate \
+  --input source.csv \
+  --profile .latinitas/profile.json \
+  --output generated-principal-parts.csv
+```
+
+The preview reports representative prompt/answer/provenance values and structured generated,
+skipped, and ambiguous counts before export. The output includes Anki import metadata and
+keeps `LatinitasID` first for repeat updates. First-import and repeat-import setup—including
+the required dedicated note type, HTML setting, and personal-notes mapping—is documented in
+[deterministic CSV export](docs/deterministic-csv-export.md).
 
 ## Corpora
 

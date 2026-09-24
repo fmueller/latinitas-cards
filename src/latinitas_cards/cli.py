@@ -26,6 +26,7 @@ from rich.text import Text
 
 from .annotation import analyze_cltk_word
 from .identity import derive_anki_guid
+from .profile_setup import safe_source_value
 
 stderr_console = Console(stderr=True)
 stdout_console = Console()
@@ -1535,16 +1536,15 @@ def generate_impl(
             readable=True,
         ),
     ],
+    output: Annotated[Path, typer.Option(..., help="Path for the updated CSV output")],
     usfx: Annotated[
-        Path,
+        Path | None,
         typer.Option(
-            ...,
             help="Path to Latin USFX XML corpus (e.g., lat-clementine.usfx.xml)",
             exists=True,
             readable=True,
         ),
-    ],
-    output: Annotated[Path, typer.Option(..., help="Path for the updated CSV output")],
+    ] = None,
     anki_front: Annotated[
         str,
         typer.Option("--anki-front", help="Name of the 'Front' field to match notes for updates"),
@@ -1583,8 +1583,81 @@ def generate_impl(
         ),
     ] = False,
     append: Annotated[bool, typer.Option(help="Append to existing values instead of overwriting")] = False,
+    profile: Annotated[
+        Path | None,
+        typer.Option(
+            help="Confirmed profile for principal-part preview/export; omit for the experimental USFX path",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    manifest: Annotated[
+        Path | None,
+        typer.Option(help="CSV identity manifest path; defaults to <input>.latinitas.json for manifest profiles"),
+    ] = None,
+    target_deck: Annotated[str | None, typer.Option(help="Explicit target deck/subdeck override")] = None,
+    generated_note_type: Annotated[str | None, typer.Option(help="Explicit generated note type override")] = None,
+    tag: Annotated[list[str] | None, typer.Option("--tag", help="Explicit generated tag override; repeatable")] = None,
+    recipe: Annotated[
+        list[str] | None,
+        typer.Option("--recipe", help="Explicit confirmed recipe override; repeatable"),
+    ] = None,
+    approve_reuse: Annotated[
+        list[str] | None,
+        typer.Option(help="Approve ID reuse as ROW=SOURCE_ID for an ID-less CSV; repeatable"),
+    ] = None,
+    approve_allocation: Annotated[
+        list[int] | None,
+        typer.Option(help="Approve new manifest identity allocation for a zero-based CSV row; repeatable"),
+    ] = None,
+    approve_removal: Annotated[
+        list[str] | None,
+        typer.Option(help="Approve removal of a manifest source identity; repeatable"),
+    ] = None,
+    preview_limit: Annotated[int, typer.Option(help="Max representative principal-part notes to print")] = 5,
 ) -> None:
     """Update an Anki CSV or APKG file with cloze examples from a Latin USFX corpus."""
+    if profile is not None:
+        if usfx is not None:
+            raise typer.BadParameter("--usfx cannot be combined with --profile.")
+        try:
+            from .commands.principal_parts import run_principal_part_export
+
+            run_principal_part_export(
+                source_path=input,
+                profile_path=profile,
+                output_path=output,
+                manifest_path=manifest,
+                target_deck=target_deck,
+                generated_note_type=generated_note_type,
+                tags=tag,
+                recipes=recipe,
+                approved_reuse=approve_reuse or (),
+                approved_allocations=approve_allocation or (),
+                approved_removals=approve_removal or (),
+                limit=preview_limit,
+            )
+        except (OSError, ValueError) as error:
+            typer.echo(f"Error: {safe_source_value(str(error), 'error')}", err=True)
+            raise typer.Exit(code=2) from error
+        return
+
+    if any(
+        value
+        for value in (
+            manifest,
+            target_deck,
+            generated_note_type,
+            tag,
+            recipe,
+            approve_reuse,
+            approve_allocation,
+            approve_removal,
+        )
+    ):
+        raise typer.BadParameter("Profile-only options require --profile.")
+    if usfx is None:
+        raise typer.BadParameter("--usfx is required unless --profile is provided.")
     update_csv_with_cloze(
         csv_input=input,
         csv_output=output,
@@ -1613,14 +1686,13 @@ def preview_impl(
         ),
     ],
     usfx: Annotated[
-        Path,
+        Path | None,
         typer.Option(
-            ...,
             help="Path to Latin USFX XML corpus (e.g., lat-clementine.usfx.xml)",
             exists=True,
             readable=True,
         ),
-    ],
+    ] = None,
     anki_front: Annotated[
         str,
         typer.Option("--anki-front", help="Name of the 'Front' field to match notes for updates"),
@@ -1655,8 +1727,79 @@ def preview_impl(
         ),
     ] = False,
     limit: Annotated[int, typer.Option("--limit", help="Max number of preview rows to print")] = 5,
+    profile: Annotated[
+        Path | None,
+        typer.Option(
+            help="Confirmed profile for principal-part preview; omit for the experimental USFX path",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    manifest: Annotated[
+        Path | None,
+        typer.Option(help="CSV identity manifest path; defaults to <input>.latinitas.json for manifest profiles"),
+    ] = None,
+    target_deck: Annotated[str | None, typer.Option(help="Explicit target deck/subdeck override")] = None,
+    generated_note_type: Annotated[str | None, typer.Option(help="Explicit generated note type override")] = None,
+    tag: Annotated[list[str] | None, typer.Option("--tag", help="Explicit generated tag override; repeatable")] = None,
+    recipe: Annotated[
+        list[str] | None,
+        typer.Option("--recipe", help="Explicit confirmed recipe override; repeatable"),
+    ] = None,
+    approve_reuse: Annotated[
+        list[str] | None,
+        typer.Option(help="Approve ID reuse as ROW=SOURCE_ID for an ID-less CSV; repeatable"),
+    ] = None,
+    approve_allocation: Annotated[
+        list[int] | None,
+        typer.Option(help="Approve new manifest identity allocation for a zero-based CSV row; repeatable"),
+    ] = None,
+    approve_removal: Annotated[
+        list[str] | None,
+        typer.Option(help="Approve removal of a manifest source identity; repeatable"),
+    ] = None,
 ) -> None:
     """Show a sample of generated clozes without writing output."""
+    if profile is not None:
+        if usfx is not None:
+            raise typer.BadParameter("--usfx cannot be combined with --profile.")
+        try:
+            from .commands.principal_parts import run_principal_part_preview
+
+            run_principal_part_preview(
+                source_path=input,
+                profile_path=profile,
+                manifest_path=manifest,
+                target_deck=target_deck,
+                generated_note_type=generated_note_type,
+                tags=tag,
+                recipes=recipe,
+                approved_reuse=approve_reuse or (),
+                approved_allocations=approve_allocation or (),
+                approved_removals=approve_removal or (),
+                limit=limit,
+            )
+        except (OSError, ValueError) as error:
+            typer.echo(f"Error: {safe_source_value(str(error), 'error')}", err=True)
+            raise typer.Exit(code=2) from error
+        return
+
+    if any(
+        value
+        for value in (
+            manifest,
+            target_deck,
+            generated_note_type,
+            tag,
+            recipe,
+            approve_reuse,
+            approve_allocation,
+            approve_removal,
+        )
+    ):
+        raise typer.BadParameter("Profile-only options require --profile.")
+    if usfx is None:
+        raise typer.BadParameter("--usfx is required unless --profile is provided.")
     with stderr_console.status("Loading USFX corpus..."):
         bible_df = parse_usfx_to_df(usfx)
         bucket = build_bucket_index(bible_df)

@@ -320,7 +320,7 @@ def reconcile_csv_manifest(
         reviewed_entry_ids.add(source_identity)
 
     next_source_number = base_manifest.next_source_number
-    for row_index in approvals_allocate:
+    for row_index in sorted(approvals_allocate):
         if row_index in assignments:
             raise ManifestError(f"row {row_index} has conflicting reuse and allocation approvals")
         requested_identity = approvals_allocate[row_index]

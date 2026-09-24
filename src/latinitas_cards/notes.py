@@ -11,6 +11,21 @@ from dataclasses import dataclass, replace
 
 from .identity import derive_latinitas_id
 
+GENERATED_NOTE_FIELD_NAMES = (
+    "LatinitasID",
+    "Prompt",
+    "Answer",
+    "Tags",
+    "Source ID",
+    "Source Kind",
+    "Source Location",
+    "Source Path",
+    "Recipe",
+    "Exercise Key",
+    "Recipe Version",
+    "Personal Notes",
+)
+
 
 @dataclass(frozen=True, slots=True)
 class ManagedNoteContent:
@@ -110,25 +125,32 @@ class GeneratedNote:
 
         provenance = self.provenance
         recipe = self.recipe
-        return (
-            ("LatinitasID", self.latinitas_id),
-            ("Prompt", self.content.prompt),
-            ("Answer", self.content.answer),
-            ("Tags", " ".join(self.content.tags)),
-            ("Source ID", provenance.source_identity or ""),
-            ("Source Kind", provenance.source_kind),
-            ("Source Location", provenance.location),
-            ("Source Path", provenance.source_path or ""),
-            ("Recipe", recipe.recipe_identity),
-            ("Exercise Key", recipe.exercise_key),
-            ("Recipe Version", recipe.recipe_version),
-            ("Personal Notes", self.personal_notes),
+        return tuple(
+            zip(
+                GENERATED_NOTE_FIELD_NAMES,
+                (
+                    self.latinitas_id,
+                    self.content.prompt,
+                    self.content.answer,
+                    " ".join(self.content.tags),
+                    provenance.source_identity or "",
+                    provenance.source_kind,
+                    provenance.location,
+                    provenance.source_path or "",
+                    recipe.recipe_identity,
+                    recipe.exercise_key,
+                    recipe.recipe_version,
+                    self.personal_notes,
+                ),
+                strict=True,
+            )
         )
 
 
 __all__ = [
     "GeneratedNote",
     "GeneratedNoteProvenance",
+    "GENERATED_NOTE_FIELD_NAMES",
     "ManagedNoteContent",
     "RecipeMetadata",
 ]

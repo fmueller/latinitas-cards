@@ -1,14 +1,14 @@
 ---
 id: T-004-preview-and-deterministic-csv-export
 title: Preview and export deterministic Anki CSV
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#preview-and-deterministic-csv-export
 dependencies:
     - T-002-stable-generated-note-identity
     - T-012-build-assisted-profile-setup
     - T-013-generate-principal-part-study-cards
-updated_at: "2026-09-21T22:35:11Z"
+updated_at: "2026-09-24T21:59:55Z"
 ---
 
 # T-004-preview-and-deterministic-csv-export Preview and export deterministic Anki CSV
@@ -44,3 +44,4 @@ UTF-8 Anki-import CSV. Repeated exports update the same logical notes through th
 
 - This task does not add live Anki updates or reuse experimental APKG mutation as the new
   output path.
+- 2026-09-24T21:59:42Z: verification pass

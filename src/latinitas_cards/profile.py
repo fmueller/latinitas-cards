@@ -61,7 +61,13 @@ def _validated_language_tag(value: str) -> str:
 
 
 def _validated_tags(value: tuple[str, ...]) -> tuple[str, ...]:
-    tags = tuple(tag.strip() for tag in value)
+    raw_tags = tuple(value)
+    if any(
+        any(character.isspace() or ord(character) < 32 or 0x7F <= ord(character) <= 0x9F for character in tag)
+        for tag in raw_tags
+    ):
+        raise ValueError("tags must not contain whitespace or control characters")
+    tags = tuple(tag.strip() for tag in raw_tags)
     if any(not tag for tag in tags):
         raise ValueError("tags must not contain empty values")
     if len(set(tags)) != len(tags):
@@ -269,10 +275,12 @@ class ProfileOverrides(_ProfileModel):
     def _validate_language_tag(cls, value: str | None) -> str | None:
         return None if value is None else _validated_language_tag(value)
 
-    @field_validator("tags")
+    @field_validator("tags", mode="before")
     @classmethod
-    def _validate_tags(cls, value: tuple[str, ...] | None) -> tuple[str, ...] | None:
-        return None if value is None else _validated_tags(value)
+    def _validate_tags(cls, value: object) -> object:
+        if value is None or not isinstance(value, (tuple, list)) or not all(isinstance(tag, str) for tag in value):
+            return value
+        return _validated_tags(cast(tuple[str, ...], tuple(value)))
 
     @field_validator("selected_recipes")
     @classmethod
@@ -316,10 +324,12 @@ class DeckProfile(_ProfileModel):
     def _validate_language_tag(cls, value: str) -> str:
         return _validated_language_tag(value)
 
-    @field_validator("tags")
+    @field_validator("tags", mode="before")
     @classmethod
-    def _validate_tags(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        return _validated_tags(value)
+    def _validate_tags(cls, value: object) -> object:
+        if not isinstance(value, (tuple, list)) or not all(isinstance(tag, str) for tag in value):
+            return value
+        return _validated_tags(cast(tuple[str, ...], tuple(value)))
 
     @field_validator("selected_recipes")
     @classmethod

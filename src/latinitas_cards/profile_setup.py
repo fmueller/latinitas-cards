@@ -368,12 +368,34 @@ def safe_source_value(value: str, field_name: str, *, limit: int = 160) -> str:
         if character == "\t"
         else f"\\u{ord(character):04x}"
         if ord(character) in _BIDI_CONTROL_CODES
-        else f"\\x{ord(character):02x}"
-        if ord(character) < 32 or ord(character) == 127
+        else (f"\\u{ord(character):04x}" if ord(character) > 0xFF else f"\\x{ord(character):02x}")
+        if (
+            ord(character) < 32
+            or 0x80 <= ord(character) <= 0x9F
+            or ord(character) == 127
+            or ord(character) in {0x2028, 0x2029}
+        )
         else character
         for character in value
     )
     return escaped if len(escaped) <= limit else escaped[: limit - 1] + "…"
+
+
+def encode_unsafe_controls(value: str, *, preserve_line_breaks: bool = True) -> str:
+    """Encode terminal and line-oriented control characters as visible text."""
+
+    encoded: list[str] = []
+    for character in value:
+        codepoint = ord(character)
+        if preserve_line_breaks and character in "\n\r\t":
+            encoded.append(character)
+        elif codepoint < 32 or 0x7F <= codepoint <= 0x9F or codepoint in {0x2028, 0x2029}:
+            encoded.append(f"\\x{codepoint:02x}" if codepoint <= 0xFF else f"\\u{codepoint:04x}")
+        elif codepoint in _BIDI_CONTROL_CODES:
+            encoded.append(f"\\u{codepoint:04x}")
+        else:
+            encoded.append(character)
+    return "".join(encoded)
 
 
 def _select_note_type(note_types: Sequence[str], requested: str | None, source_kind: str) -> str:
@@ -552,4 +574,5 @@ __all__ = [
     "propose_profile",
     "propose_profile_from_inspection",
     "safe_source_value",
+    "encode_unsafe_controls",
 ]

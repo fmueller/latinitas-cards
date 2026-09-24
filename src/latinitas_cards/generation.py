@@ -22,6 +22,7 @@ from .principal_parts import (
     parse_principal_parts,
 )
 from .profile import DeckProfile
+from .profile_setup import encode_unsafe_controls
 from .sources import CanonicalSourceRecord
 
 GenerationSkipStatus = Literal["incomplete", "unsupported", "ambiguous", "identity_error", "collision"]
@@ -285,7 +286,7 @@ def _role_label(role: str) -> str:
 
 
 def _escape(value: str) -> str:
-    return html.escape(value, quote=True)
+    return html.escape(encode_unsafe_controls(value), quote=True)
 
 
 generate_principal_part_notes = generate_principal_part_study_cards
