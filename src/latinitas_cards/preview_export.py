@@ -244,10 +244,26 @@ def write_principal_part_csv(
             )
             if path is not None and preserve
         )
+        affected_destinations = tuple(
+            str(path)
+            for path, restored in (
+                (destination, output_restored),
+                (manifest_destination, manifest_restored),
+            )
+            if path is not None and not restored
+        )
+        recovery_details = []
+        if affected_destinations:
+            recovery_details.append("Recovery is required")
         if retained_backups:
+            recovery_details.append("backups were retained")
+        if affected_destinations:
+            recovery_details.append("affected destinations to check: " + ", ".join(affected_destinations))
+        if retained_backups:
+            recovery_details.append("backup locations: " + ", ".join(retained_backups))
+        if recovery_details:
             message = (
-                "The CSV and identity manifest could not be committed safely. "
-                "Recovery is required; backups were retained: " + ", ".join(retained_backups)
+                "The CSV and identity manifest could not be committed safely. " + "; ".join(recovery_details) + "."
             )
         else:
             message = (

@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-24T22:28:36Z"
+updated_at: "2026-09-24T22:49:41Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-004-preview-and-deterministic-csv-export at 2026-09-24T22:28:36Z
+last_verification_result: pass for T-004-preview-and-deterministic-csv-export at 2026-09-24T22:49:41Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-004-preview-and-deterministic-csv-export at 2026-09-24T22:28:36Z
+- pass for T-004-preview-and-deterministic-csv-export at 2026-09-24T22:49:41Z
 
 ## Next Action
 

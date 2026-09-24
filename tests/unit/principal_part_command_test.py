@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import cast
 
@@ -7,6 +8,7 @@ from click.testing import CliRunner
 from typer.main import get_command as _typer_get_command
 
 from latinitas_cards.cli import app
+from latinitas_cards.preview_export import prepare_principal_part_export, write_principal_part_csv
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 
 
@@ -169,3 +171,66 @@ def test_terminal_preview_bounds_structured_diagnostics(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert "additional structured skips omitted" in result.stdout
     assert result.stdout.count("missing_principal_parts") <= 50
+
+
+def test_terminal_generate_keeps_recovery_status_before_long_destination_details(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    manifest = Path(f"{source}.latinitas.json")
+    output = tmp_path / ("generated-" + "x" * 140 + ".csv")
+    profile = DeckProfile.default(
+        note_type="CSV source",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        meaning_field="German gloss",
+        source_identity=SourceIdentityConfig(strategy="manifest"),
+        principal_part_roles=("present_infinitive", "present_1s", "perfect_1s", "supine"),
+        separators=(",",),
+        selected_recipes=("principal_part_recognition",),
+    )
+    _write_source(source)
+    profile.save(profile_path)
+    prepared = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=manifest,
+        approved_allocations={0},
+    )
+    write_principal_part_csv(prepared, output)
+
+    original_replace = os.replace
+    manifest_failed = False
+
+    def fail_manifest_once(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal manifest_failed
+        if not manifest_failed and not isinstance(destination_name, bytes) and Path(destination_name) == manifest:
+            manifest_failed = True
+            raise OSError("simulated manifest commit failure")
+        original_replace(source_name, destination_name)
+
+    original_unlink = Path.unlink
+
+    def fail_output_unlink(path: Path, *, missing_ok: bool = False) -> None:
+        if path == output:
+            raise OSError("simulated output rollback failure")
+        original_unlink(path, missing_ok=missing_ok)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", fail_manifest_once)
+    monkeypatch.setattr(Path, "unlink", fail_output_unlink)
+
+    result = CliRunner().invoke(
+        _command(),
+        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+    )
+
+    assert result.exit_code == 2
+    assert manifest_failed
+    assert output.exists()
+    assert "Recovery is required" in result.output
+    assert "backups were retained" in result.output
+    assert "No output or manifest was changed" not in result.output

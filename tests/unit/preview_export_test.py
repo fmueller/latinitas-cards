@@ -341,6 +341,56 @@ def test_manifest_commit_failure_restores_existing_or_absent_output_pair(
         assert manifest.read_bytes() == manifest_before
 
 
+def test_manifest_rollback_failure_without_backups_reports_affected_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    manifest = Path(f"{source}.latinitas.json")
+    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    allocated = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=manifest,
+        approved_allocations={0},
+    )
+
+    original_replace = os.replace
+    manifest_failed = False
+
+    def fail_manifest_once(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal manifest_failed
+        if not manifest_failed and not isinstance(destination_name, bytes) and Path(destination_name) == manifest:
+            manifest_failed = True
+            raise OSError("simulated manifest commit failure")
+        original_replace(source_name, destination_name)
+
+    original_unlink = Path.unlink
+
+    def fail_output_unlink(path: Path, *, missing_ok: bool = False) -> None:
+        if path == output:
+            raise OSError("simulated output rollback failure")
+        original_unlink(path, missing_ok=missing_ok)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", fail_manifest_once)
+    monkeypatch.setattr(Path, "unlink", fail_output_unlink)
+
+    with pytest.raises(PrincipalPartExportError) as error:
+        write_principal_part_csv(allocated, output)
+
+    message = str(error.value)
+    assert manifest_failed
+    assert output.exists()
+    assert not manifest.exists()
+    assert "Recovery is required" in message
+    assert str(output) in message
+    assert "No output or manifest was changed" not in message
+
+
 def test_manifest_rollback_failure_retains_backup_for_recovery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
@@ -382,6 +432,59 @@ def test_manifest_rollback_failure_retains_backup_for_recovery(tmp_path: Path, m
     assert manifest_failed
     assert rollback_failed
     assert list(tmp_path.glob(".generated.csv.backup.*"))
+
+
+def test_manifest_rollback_failure_reports_manifest_destination_and_backup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    manifest = Path(f"{source}.latinitas.json")
+    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    allocated = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=manifest,
+        approved_allocations={0},
+    )
+    write_principal_part_csv(allocated, output)
+    output_before = output.read_bytes()
+
+    original_replace = os.replace
+    manifest_failed = False
+    rollback_failed = False
+
+    def fail_manifest_commit_and_rollback(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal manifest_failed, rollback_failed
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if destination == manifest and not manifest_failed:
+            manifest_failed = True
+            raise OSError("simulated manifest commit failure")
+        if destination == manifest and manifest_failed and ".backup." in source_text:
+            rollback_failed = True
+            raise OSError("simulated manifest rollback failure")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", fail_manifest_commit_and_rollback)
+
+    with pytest.raises(PrincipalPartExportError) as error:
+        write_principal_part_csv(allocated, output)
+
+    backup_paths = list(tmp_path.glob(f".{manifest.name}.backup.*"))
+    message = str(error.value)
+    assert manifest_failed
+    assert rollback_failed
+    assert output.read_bytes() == output_before
+    assert not manifest.exists()
+    assert backup_paths
+    assert str(manifest) in message
+    assert str(backup_paths[0]) in message
+    assert "Recovery is required" in message
 
 
 def test_export_rejects_non_regular_output_and_manifest_destinations(tmp_path: Path) -> None:
