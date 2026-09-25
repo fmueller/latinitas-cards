@@ -1,14 +1,14 @@
 ---
 id: T-009-prepare-v0-1-0-release-candidate
 title: Prepare the v0.1.0 release candidate
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
     - T-004-preview-and-deterministic-csv-export
     - T-011-validate-the-representative-deck-and-german
     - T-016-refresh-user-facing-documentation-for-v0-1-0
-updated_at: "2026-09-22T19:04:55Z"
+updated_at: "2026-09-25T01:00:29Z"
 ---
 
 # T-009-prepare-v0-1-0-release-candidate Prepare the v0.1.0 release candidate
@@ -40,3 +40,5 @@ release promises. Publication is a separate final task.
 ## Implementation Notes
 
 - Do not create the tag or GitHub release in this task.
+- 2026-09-25T00:59:18Z: verification pass
+- 2026-09-25T01:00:12Z: verification pass

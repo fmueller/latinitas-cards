@@ -139,6 +139,8 @@ PPP and supine remain distinct semantic roles.
 
 ## Documentation
 
+- [Changelog](CHANGELOG.md)
+- [v0.1.0 release readiness](docs/release-readiness.md)
 - [Stable generated-note identity](docs/stable-generated-note-identity.md)
 - [Principal-part parser support matrix](docs/principal-part-parsing.md)
 - [Sanitized representative-deck validation](docs/representative-deck-validation.md)
