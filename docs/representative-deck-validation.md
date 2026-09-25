@@ -5,6 +5,23 @@ This note documents only the committed sanitized fixture
 created to exercise the source-adapter, profile, and parser boundaries. Reproducing the
 smoke test does not require any external deck or source metadata.
 
+## Provenance and sanitization
+
+The fixture's structural layout and variants were selected from actual user-supplied deck
+observations during T-011. Those observations informed the schema shape and variant
+coverage, but this file is a synthetic replay of the reviewed evidence, not the original
+source.
+
+For sanitization, fixture schema labels, lexical, gloss, and form text, identities, and
+metadata were replaced with neutral/public synthetic examples. No original deck,
+collection database, or media is distributed. No original/private source filename, URL,
+hash, raw note, or source-derived aggregate is included in the fixture or this note.
+
+The representative-deck smoke tests run only against the committed sanitized artifact;
+they do not access or revalidate the original source. The smoke tests therefore
+demonstrate adapter, profile, and parser behavior for selected observed boundaries, not
+source-wide counts or a replay of the original evidence.
+
 ## Fixture observations
 
 The fixture contains one modern APKG note type, five synthetic notes, seven named fields,
@@ -31,6 +48,9 @@ These examples exercise adapter and parser boundaries; a structural parse does n
 establish eligible verb coverage. Pipe alternatives and multiword or formatted values
 remain source data to review, not evidence of universal morphology or automatic semantic
 eligibility.
+
+The blank German gloss and concrete fixture values are synthetic optional-field tests, not
+claims about source behavior.
 
 ## Approved profile boundary
 

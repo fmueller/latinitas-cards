@@ -6,7 +6,7 @@ priority: medium
 spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
     - T-004-preview-and-deterministic-csv-export
-updated_at: "2026-09-24T23:39:15Z"
+updated_at: "2026-09-25T00:02:39Z"
 ---
 
 # T-016-refresh-user-facing-documentation-for-v0-1-0 Refresh user-facing documentation for v0.1.0
@@ -48,3 +48,4 @@ deck-first release workflow from experimental commands.
 - Keep the install guidance added by T-017 through T-019: Python 3.13 or 3.14, the CPU-only
   `annotate` extra, and the highly experimental `annotate-gpu` extra.
 - 2026-09-24T23:39:09Z: verification pass
+- 2026-09-25T00:02:39Z: verification pass
