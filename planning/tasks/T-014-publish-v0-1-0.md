@@ -6,6 +6,9 @@ priority: medium
 spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
     - T-009-prepare-v0-1-0-release-candidate
+    - T-026-render-source-html-safely
+    - T-027-protect-personal-notes-on-repeat-import
+    - T-028-inherit-parent-anki-note-tags
 updated_at: "2026-09-22T16:09:47Z"
 ---
 
@@ -20,6 +23,10 @@ approval, tagging, and GitHub release creation.
 
 - Reconfirm that the candidate commit is the exact commit approved by the readiness task
   and that required CI checks passed on supported Python versions.
+- After T-026, T-027, and T-028, revalidate the revised candidate with the full
+  readiness checks and native Anki first/repeat import and rendering checks.
+  Obtain user approval of that exact candidate; prior candidate checks and
+  approval do not cover these changes automatically.
 - `pyproject.toml`, changelog, release notes, and the annotated `v0.1.0` tag use the same
   version.
 - The tag points to the approved candidate commit.
