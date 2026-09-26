@@ -23,7 +23,7 @@ from .manifest import (
     ManifestReviewItem,
     reconcile_csv_manifest,
 )
-from .notes import GENERATED_NOTE_FIELD_NAMES, GeneratedNote
+from .notes import CSV_EXPORT_FIELD_NAMES, GENERATED_NOTE_FIELD_NAMES, GeneratedNote
 from .profile import DeckProfile
 from .profile_setup import encode_unsafe_controls
 from .sources import read_source_records
@@ -150,7 +150,7 @@ def deterministic_csv_bytes(result: PrincipalPartExportResult) -> bytes:
     output.write(f"#notetype:{result.profile.generated_note_type}\n")
     output.write(f"#deck:{result.profile.target_deck}\n")
     output.write("#tags column:4\n")
-    output.write(f"#columns:{','.join(GENERATED_NOTE_FIELD_NAMES)}\n")
+    output.write(f"#columns:{','.join(CSV_EXPORT_FIELD_NAMES)}\n")
     writer = csv.writer(output, delimiter=",", lineterminator="\n", quoting=csv.QUOTE_MINIMAL)
     for note in notes:
         writer.writerow(_note_values(note))
@@ -317,11 +317,10 @@ def _validate_regular_file_destination(label: str, destination: Path) -> None:
 
 
 def _note_values(note: GeneratedNote) -> tuple[str, ...]:
-    fields = note.to_anki_fields()
-    names = tuple(name for name, _value in fields)
-    if names != GENERATED_NOTE_FIELD_NAMES:
+    fields = dict(note.to_anki_fields())
+    if tuple(fields) != GENERATED_NOTE_FIELD_NAMES:
         raise PrincipalPartExportError("Generated note fields do not match the stable export field order.")
-    return tuple(_export_field_value(name, value) for name, value in fields)
+    return tuple(_export_field_value(name, fields[name]) for name in CSV_EXPORT_FIELD_NAMES)
 
 
 def _export_field_value(name: str, value: str) -> str:

@@ -17,6 +17,9 @@ Status: candidate awaiting user review. No tag or GitHub release has been create
   with semantic role names, provenance, and a `de` language tag.
 - Preview generated, skipped, and ambiguous entries before writing a deterministic UTF-8
   Anki text-import CSV with `LatinitasID` as the first column.
+- Restrict generated CSV columns to managed fields: the note type keeps the user-owned
+  `Personal Notes` field, but repeat imports never see a `Personal Notes` column to
+  overwrite (legacy CSVs map it to Ignore on every import).
 - Reuse the same logical identities when managed wording, HTML, glosses, or tags change;
   leave source inputs and the user-owned `Personal Notes` field untouched.
 - Include a sanitized representative APKG fixture and an end-to-end assisted-profile,

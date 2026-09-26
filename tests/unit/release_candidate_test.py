@@ -28,7 +28,6 @@ EXPECTED_COLUMNS = (
     "Recipe",
     "Exercise Key",
     "Recipe Version",
-    "Personal Notes",
 )
 GPU_PACKAGES = (
     "cuda-bindings",
@@ -194,7 +193,7 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
         "#deck:Latin::Latinitas\n"
         "#tags column:4\n"
         "#columns:LatinitasID,Prompt,Answer,Tags,Source ID,Source Kind,Source Location,Source Path,Recipe,"
-        "Exercise Key,Recipe Version,Personal Notes\n"
+        "Exercise Key,Recipe Version\n"
     )
     assert len(rows) == 24
     assert Counter(row["Recipe"] for row in rows) == {
@@ -232,7 +231,7 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
     )
     assert all(row["Tags"] == "latinitas" for row in rows)
     assert all(row["Source Path"] == "" for row in rows)
-    assert all(row["Personal Notes"] == "" for row in rows)
+    assert all("Personal Notes" not in row for row in rows)
     assert any(
         row["Source ID"] == "fixture-guid-001" and row["Exercise Key"] == "perfect_1s" and "dīxī" in row["Answer"]
         for row in rows

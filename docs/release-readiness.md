@@ -52,13 +52,14 @@ Before publication, the user should perform the remaining manual review in a dis
 Anki collection:
 
 1. Create the dedicated note type named by the profile (`Latinitas Principal Parts`).
-2. Create regular fields for every `#columns` name except `Tags`; `Tags` is Anki metadata,
-   not a regular field.
+2. Create regular fields for every `#columns` name except `Tags`, plus a trailing
+   user-owned `Personal Notes` field; `Tags` is Anki metadata, not a regular field.
 3. Create at least one template and enable **Allow HTML in fields**.
-4. Import the generated CSV, map `LatinitasID` as the first/matching field, map `Tags` to
-   Anki's tags column, and map `Personal Notes` on the first import.
-5. Repeat the import with the same note type and matching policy, map `Personal Notes` to
-   **Ignore field**, and check that managed fields update without creating duplicate notes.
+4. Import the generated CSV, map `LatinitasID` as the first/matching field, and map `Tags`
+   to Anki's tags column. `Personal Notes` has no CSV column, so nothing maps to it.
+5. Repeat the import with the same note type and matching policy; managed fields update
+   without creating duplicate notes and `Personal Notes` stays unmapped by design. Map any
+   legacy `Personal Notes` CSV column to **Ignore field** on every repeat import.
 6. Independently check native rendering, scheduling/deck behavior, and the user's intended
    note-type/template setup.
 

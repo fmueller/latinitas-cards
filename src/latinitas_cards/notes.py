@@ -2,7 +2,9 @@
 
 The contract keeps the immutable logical identity, managed fields, provenance,
 recipe metadata, and user-owned personal notes in separate typed values.  The
-Anki import projection puts ``LatinitasID`` first for repeat imports.
+Anki note type comprises ``GENERATED_NOTE_FIELD_NAMES`` with ``LatinitasID``
+first, while ``CSV_EXPORT_FIELD_NAMES`` restricts generated import data to the
+managed fields so no empty personal value is offered for accidental overwrite.
 """
 
 from __future__ import annotations
@@ -25,6 +27,8 @@ GENERATED_NOTE_FIELD_NAMES = (
     "Recipe Version",
     "Personal Notes",
 )
+
+CSV_EXPORT_FIELD_NAMES = tuple(name for name in GENERATED_NOTE_FIELD_NAMES if name != "Personal Notes")
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,6 +152,7 @@ class GeneratedNote:
 
 
 __all__ = [
+    "CSV_EXPORT_FIELD_NAMES",
     "GeneratedNote",
     "GeneratedNoteProvenance",
     "GENERATED_NOTE_FIELD_NAMES",

@@ -1,5 +1,7 @@
 from latinitas_cards.identity import derive_latinitas_id
 from latinitas_cards.notes import (
+    CSV_EXPORT_FIELD_NAMES,
+    GENERATED_NOTE_FIELD_NAMES,
     GeneratedNote,
     GeneratedNoteProvenance,
     ManagedNoteContent,
@@ -31,6 +33,25 @@ def test_generated_note_separates_identity_managed_content_provenance_recipe_and
     assert ("Source ID", "source-17") in fields
     assert ("Recipe", "principal_part_completion") in fields
     assert ("Exercise Key", "perfect_1s") in fields
+
+
+def test_note_type_retains_personal_notes_while_csv_export_omits_the_user_owned_field() -> None:
+    assert GENERATED_NOTE_FIELD_NAMES[-1] == "Personal Notes"
+    assert "Personal Notes" not in CSV_EXPORT_FIELD_NAMES
+    assert CSV_EXPORT_FIELD_NAMES == (
+        "LatinitasID",
+        "Prompt",
+        "Answer",
+        "Tags",
+        "Source ID",
+        "Source Kind",
+        "Source Location",
+        "Source Path",
+        "Recipe",
+        "Exercise Key",
+        "Recipe Version",
+    )
+    assert CSV_EXPORT_FIELD_NAMES[0] == "LatinitasID"
 
 
 def test_mutable_content_tags_gloss_html_and_recipe_version_do_not_change_identity() -> None:

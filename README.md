@@ -115,11 +115,13 @@ uv run latinitas-cards setup \
 ```
 
 Prepare the generated note type, fields, template, and HTML import setting before the
-first import. For repeat imports, use the same note type with `LatinitasID` as the
-first/matching field and **Ignore field** for `Personal Notes`. The [deterministic CSV
-export guide](docs/deterministic-csv-export.md) has the complete checklist, including
-Anki's native behavior that this project does not verify; test it in a disposable
-collection first.
+first import; the note type keeps a user-owned `Personal Notes` field that generated CSVs
+never contain. For repeat imports, use the same note type with `LatinitasID` as the
+first/matching field; `Personal Notes` stays unmapped because no CSV column exists for it.
+Map a legacy CSV's `Personal Notes` column to **Ignore field** on every repeat import. The
+[deterministic CSV export guide](docs/deterministic-csv-export.md) has the complete
+checklist, including native Anki behavior already verified in a disposable collection;
+retest it there before relying on it.
 
 Treat setup JSON, terminal previews, generated CSVs, and identity manifests as
 source-derived data: they can contain study text, stable IDs, and provenance. Redact

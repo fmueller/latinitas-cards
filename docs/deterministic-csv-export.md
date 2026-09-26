@@ -72,20 +72,23 @@ configured profile tags are emitted in the `Tags` column as Anki's special tags 
 not as a regular note field; provenance fields are included for auditing. `Source Path` is
 intentionally blank to avoid leaking absolute paths. The profile's language tag is explicit
 (`de` for the approved German content); it does not localize CLI controls or diagnostics.
-Generated CSVs and manifests still contain source-derived text, stable IDs, and provenance;
-treat them as sensitive and redact them before sharing.
+The user-owned `Personal Notes` field is deliberately **not** a CSV column: generated import
+data covers only managed fields, so a repeat import can never offer an empty personal value
+for accidental overwrite. Generated CSVs and manifests still contain source-derived text,
+stable IDs, and provenance; treat them as sensitive and redact them before sharing.
 
 Before the first import, create the dedicated note type named by the profile (normally
 `Latinitas Principal Parts`) in Anki. Create regular fields for every `#columns` name except
-`Tags`, which is the special tags column, and create at least one template yourself. CSV
-import headers can preset an existing note type and deck, but they do **not** create note
-types, fields, or templates. The `#deck` header selects or presets the target. The current
-Anki manual documents that header as presetting an existing deck and documents missing-deck
-creation for a deck column; a missing target may still be created in some import flows, but
-do not rely on that when hierarchy or settings matter—pre-create it. The header is not a
-template/schema definition. Enable **Allow HTML in fields**, map `Tags` to
-Anki's tags column rather than to a note field, and map every other regular column to the
-corresponding field. Map `Personal Notes` to its field on the first import.
+`Tags`, which is the special tags column, plus a trailing user-owned `Personal Notes` field,
+and create at least one template yourself. CSV import headers can preset an existing note
+type and deck, but they do **not** create note types, fields, or templates. The `#deck`
+header selects or presets the target. The current Anki manual documents that header as
+presetting an existing deck and documents missing-deck creation for a deck column; a missing
+target may still be created in some import flows, but do not rely on that when hierarchy or
+settings matter—pre-create it. The header is not a template/schema definition. Enable
+**Allow HTML in fields**, map `Tags` to Anki's tags column rather than to a note field, and
+map every other regular column to the corresponding field. `Personal Notes` has no CSV
+column, so the import dialog offers nothing to map to it.
 
 For repeat imports:
 
@@ -94,12 +97,19 @@ For repeat imports:
    first field matches**. Use match scope **note type** (or **note type and deck** when that
    is an intentional local policy).
 3. Map the managed columns (`Prompt`, `Answer`, `Tags`, provenance, and recipe metadata) as
-   before, and set `Personal Notes` to **Ignore field** so existing personal notes are not
-   overwritten.
+   before. `Personal Notes` stays unmapped because the generated CSV never contains it; no
+   remembered Ignore selection is required.
 4. Keep **Allow HTML in fields** enabled. Anki's manual documents that matching notes are
    updated in place, remain in their current decks, and preserve scheduling when updating is
-   enabled. This repository does not run the native Anki client or a live-collection
-   operation; verify those behaviors in a disposable collection before relying on them.
+   enabled. This behavior was verified in a disposable collection with native Anki Desktop
+   26.9.3: repeat imports through freshly opened dialogs updated changed managed content,
+   preserved personal notes, review history and scheduling, kept deck placement and stable
+   `LatinitasID` values, and created no duplicate notes.
+
+Older CSVs generated before this contract may still contain a `Personal Notes` column. When
+importing such a file, map that column to `(Nothing)` / **Ignore field** on **every** repeat
+import; Anki's previous selection may not persist between imports, and a mapped empty value
+would overwrite personal notes.
 
 Anki's authoritative text-import behavior is documented in the
 [Anki Manual: Text Files](https://docs.ankiweb.net/importing/text-files.html), including

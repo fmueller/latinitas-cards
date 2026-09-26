@@ -113,7 +113,7 @@ def test_csv_export_is_utf8_deterministic_and_uses_anki_import_metadata(tmp_path
     assert "#tags column:4\n" in first.decode("utf-8")
     assert (
         "#columns:LatinitasID,Prompt,Answer,Tags,Source ID,Source Kind,Source Location,Source Path,Recipe,"
-        "Exercise Key,Recipe Version,Personal Notes\n" in first.decode("utf-8")
+        "Exercise Key,Recipe Version\n" in first.decode("utf-8")
     )
     header, rows, metadata = _parse_export(first)
     assert metadata.startswith("#separator:Comma\n#html:true\n")
@@ -129,13 +129,26 @@ def test_csv_export_is_utf8_deterministic_and_uses_anki_import_metadata(tmp_path
         "Recipe",
         "Exercise Key",
         "Recipe Version",
-        "Personal Notes",
     ]
     assert len(rows) == 8
     assert rows[0][0].startswith("latinitas-v1-")
     assert rows[0][3] == "latinitas provenance-β"
     assert "sagen" in first.decode("utf-8")
     assert "source.csv" not in first.decode("utf-8")
+
+
+def test_csv_export_omits_the_user_owned_personal_notes_column(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+
+    payload = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
+    text = payload.decode("utf-8")
+    header, rows, _ = _parse_export(payload)
+
+    assert "Personal Notes" not in text
+    assert header[-1] == "Recipe Version"
+    assert len(header) == 11
+    assert all(len(row) == len(header) for row in rows)
 
 
 def test_csv_export_escapes_source_identity_for_html_import(tmp_path: Path) -> None:

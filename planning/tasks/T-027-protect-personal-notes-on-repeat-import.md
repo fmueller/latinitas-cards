@@ -1,11 +1,11 @@
 ---
 id: T-027-protect-personal-notes-on-repeat-import
 title: Protect personal notes during repeat CSV imports
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#preview-and-deterministic-csv-export
 dependencies: []
-updated_at: "2026-09-26T15:42:31Z"
+updated_at: "2026-09-26T18:26:03Z"
 ---
 
 # T-027-protect-personal-notes-on-repeat-import Protect personal notes during repeat CSV imports
@@ -49,3 +49,4 @@ safety gap without attempting to change Anki itself or introducing live writes.
 
 - Anki stores fields on notes, not separately on sibling cards. Preserve the
   existing dedicated note type's user-owned field even if it is absent from CSV.
+- 2026-09-26T18:26:00Z: verification pass
