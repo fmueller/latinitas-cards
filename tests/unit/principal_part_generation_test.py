@@ -283,14 +283,131 @@ def test_manifest_identity_is_used_for_note_identity_and_provenance() -> None:
     assert all(note.provenance.source_identity == "manifest-17" for note in result.notes)
 
 
-def test_untrusted_source_text_is_escaped_before_generated_markup() -> None:
+def test_source_html_meaning_renders_as_readable_text_with_line_boundaries() -> None:
+    profile = _profile()
+    result = generate_principal_part_study_cards(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                meaning="erste Bedeutung<div>zweite <b>Bedeutung</b></div>",
+                profile=profile,
+            ),
+        ),
+        profile,
+    )
+
+    completion = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
+    )
+    recognition = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
+    )
+    expected = "<div><strong>Bedeutung:</strong> erste Bedeutung<br>zweite Bedeutung</div>"
+
+    assert completion.content.prompt.endswith(expected)
+    assert recognition.content.answer.endswith(expected)
+    assert "&lt;div&gt;" not in completion.content.prompt
+    assert "&lt;b&gt;" not in recognition.content.answer
+
+
+def test_source_entities_in_meaning_decode_to_readable_text() -> None:
+    profile = _profile()
+    result = generate_principal_part_study_cards(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                meaning="sagen&nbsp;&amp;&nbsp;machen&lt;br&gt;prüfen",
+                profile=profile,
+            ),
+        ),
+        profile,
+    )
+
+    recognition = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
+    )
+
+    assert recognition.content.answer.endswith("<div><strong>Bedeutung:</strong> sagen &amp; machen<br>prüfen</div>")
+    assert "&amp;nbsp;" not in recognition.content.answer
+    assert "&lt;br&gt;" not in recognition.content.answer
+
+
+def test_plain_text_source_meaning_renders_byte_identical() -> None:
     profile = _profile(recipes=("principal_part_recognition",))
+    result = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", meaning="führen, dīcere — prüfen", profile=profile),),
+        profile,
+    )
+
+    recognition = next(note for note in result.notes if note.recipe.exercise_key == "perfect_1s")
+
+    assert recognition.content.answer.endswith("<div><strong>Bedeutung:</strong> führen, dīcere — prüfen</div>")
+
+
+def test_lexical_and_principal_part_display_html_renders_as_readable_text() -> None:
+    profile = _profile(recipes=("principal_part_recognition",))
+    result = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, <b>dīctum</b>", lexical_entry="<i>dīcō</i>", profile=profile),),
+        profile,
+    )
+
+    participle = next(note for note in result.notes if note.recipe.exercise_key == "perfect_passive_participle")
+
+    assert participle.content.prompt == "Welche Stammform ist „dīctum“?"
+    assert "<div><strong>Lemma:</strong> dīcō</div>" in participle.content.answer
+    assert "&lt;i&gt;" not in participle.content.answer
+    assert "&lt;b&gt;" not in participle.content.answer
+
+
+def test_meaning_markup_normalization_keeps_identity_and_equivalent_content() -> None:
+    profile = _profile(recipes=("principal_part_recognition",))
+    plain = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", meaning="sagen", profile=profile),),
+        profile,
+    )
+    marked = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", meaning="<div>sagen</div>", profile=profile),),
+        profile,
+    )
+
+    assert {note.latinitas_id for note in marked.notes} == {note.latinitas_id for note in plain.notes}
+    assert marked.notes == plain.notes
+
+
+def test_entity_encoded_hostile_markup_in_meaning_is_removed() -> None:
+    profile = _profile(recipes=("principal_part_recognition",))
+    result = generate_principal_part_study_cards(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                meaning="sagen&lt;script&gt;alert(1)&lt;/script&gt;",
+                profile=profile,
+            ),
+        ),
+        profile,
+    )
+
+    recognition = next(note for note in result.notes if note.recipe.exercise_key == "perfect_1s")
+
+    assert recognition.content.answer.endswith("<div><strong>Bedeutung:</strong> sagen</div>")
+    assert "alert(1)" not in recognition.content.answer
+    assert "script" not in recognition.content.answer
+
+
+def test_untrusted_source_text_is_escaped_before_generated_markup() -> None:
+    profile = _profile()
     result = generate_principal_part_study_cards(
         (
             _record(
                 "<img src=x onerror=alert(1)>, <script>dīcō</script>, dīxī, dictum",
                 lexical_entry="<script>alert(1)</script>",
-                meaning="<b>sagen</b>",
+                meaning="<b>sagen</b><script>steal()</script>",
                 profile=profile,
             ),
         ),
@@ -300,9 +417,132 @@ def test_untrusted_source_text_is_escaped_before_generated_markup() -> None:
     rendered = "\n".join(note.content.prompt + note.content.answer for note in result.notes)
     assert "<script>" not in rendered
     assert "<img" not in rendered
-    assert "&lt;script&gt;" in rendered
-    assert "&lt;img" in rendered
-    assert "&lt;b&gt;sagen&lt;/b&gt;" in rendered
+    assert "&lt;script&gt;" not in rendered
+    assert "&lt;img" not in rendered
+    assert "&lt;b&gt;" not in rendered
+    assert "alert(1)" not in rendered
+    assert "steal()" not in rendered
+    assert "sagen" in rendered
+
+
+def test_meaning_entities_decode_exactly_once_in_both_recipes() -> None:
+    profile = _profile()
+    result = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", meaning="a &amp;amp; b", profile=profile),),
+        profile,
+    )
+
+    completion = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
+    )
+    recognition = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
+    )
+    expected = "<div><strong>Bedeutung:</strong> a &amp;amp; b</div>"
+
+    assert completion.content.prompt.endswith(expected)
+    assert recognition.content.answer.endswith(expected)
+
+
+def test_meaning_attribute_markup_with_quoted_greater_than_renders_text_only() -> None:
+    profile = _profile()
+    result = generate_principal_part_study_cards(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                meaning='<span title="a > b">sagen</span>',
+                profile=profile,
+            ),
+        ),
+        profile,
+    )
+
+    completion = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
+    )
+    recognition = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
+    )
+    expected = "<div><strong>Bedeutung:</strong> sagen</div>"
+
+    assert completion.content.prompt.endswith(expected)
+    assert recognition.content.answer.endswith(expected)
+    rendered = "\n".join(
+        (completion.content.prompt, completion.content.answer, recognition.content.prompt, recognition.content.answer)
+    )
+    assert "title" not in rendered
+    assert "&quot;&gt;" not in rendered
+
+
+def test_encoded_comments_are_dropped_from_meaning_in_both_recipes() -> None:
+    profile = _profile()
+    result = generate_principal_part_study_cards(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                meaning="erste Bedeutung&lt;!-- versteckt --&gt; weitere Bedeutung",
+                profile=profile,
+            ),
+        ),
+        profile,
+    )
+
+    completion = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
+    )
+    recognition = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
+    )
+    expected = "<div><strong>Bedeutung:</strong> erste Bedeutung weitere Bedeutung</div>"
+
+    assert completion.content.prompt.endswith(expected)
+    assert recognition.content.answer.endswith(expected)
+    for content in (completion.content.prompt, recognition.content.answer):
+        assert "versteckt" not in content
+        assert "&lt;!--" not in content
+
+
+def test_multiline_lexical_and_part_display_render_line_breaks_in_both_recipes() -> None:
+    profile = _profile()
+    result = generate_principal_part_study_cards(
+        (
+            _record(
+                "dīcere, dīcō, dīxī<br>poet., dictum",
+                lexical_entry="dīcō<div>alt</div>",
+                profile=profile,
+            ),
+        ),
+        profile,
+    )
+
+    completion = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
+    )
+    recognition = next(
+        note
+        for note in result.notes
+        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
+    )
+
+    assert "Welche Stammform ist „dīxī<br>poet.“?" in recognition.content.prompt
+    assert "<div><strong>Lemma:</strong> dīcō<br>alt</div>" in recognition.content.answer
+    assert "<strong>Perfekt, 1. Person Singular:</strong> dīxī<br>poet." in recognition.content.answer
+    assert "<div><strong>Fehlende Stammform:</strong> dīxī<br>poet.</div>" in completion.content.answer
+    assert "<strong>Perfekt, 1. Person Singular:</strong> _____" in completion.content.prompt
 
 
 def test_generated_provenance_does_not_expose_an_absolute_source_path() -> None:

@@ -187,6 +187,55 @@ def test_csv_export_preserves_completion_and_recognition_html_section_boundaries
     )
 
 
+def test_csv_export_renders_source_html_as_safe_readable_text_in_both_recipes(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    _write_source(
+        source,
+        [
+            (
+                "entry-html",
+                "<i>dīcō</i>",
+                "dīcere, dīcō, dīxī, dictum",
+                "erste Bedeutung<div>zweite <b>Bedeutung</b>&lt;br&gt;dritte</div>"
+                "<script>alert(1)</script><img src=x onerror=alert(2)>",
+            )
+        ],
+    )
+    source_before = source.read_bytes()
+
+    first = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
+    second = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
+
+    assert first == second
+    text = first.decode("utf-8")
+    header, rows, _metadata = _parse_export(first)
+    recipe_index = header.index("Recipe")
+    exercise_index = header.index("Exercise Key")
+    prompt_index = header.index("Prompt")
+    answer_index = header.index("Answer")
+    expected_meaning = "<div><strong>Bedeutung:</strong> erste Bedeutung<br>zweite Bedeutung<br>dritte</div>"
+    completion = next(
+        row for row in rows if row[recipe_index] == "principal_part_completion" and row[exercise_index] == "perfect_1s"
+    )
+    recognition = next(
+        row for row in rows if row[recipe_index] == "principal_part_recognition" and row[exercise_index] == "supine"
+    )
+
+    assert completion[prompt_index].endswith(expected_meaning)
+    assert recognition[answer_index].endswith(expected_meaning)
+    assert recognition[prompt_index] == "Welche Stammform ist „dictum“?"
+    assert "<div><strong>Lemma:</strong> dīcō</div>" in recognition[answer_index]
+    assert "&lt;div&gt;" not in text
+    assert "&lt;b&gt;" not in text
+    assert "&lt;br&gt;" not in text
+    assert "&lt;i&gt;" not in text
+    assert "alert(1)" not in text
+    assert "alert(2)" not in text
+    assert "<script" not in text
+    assert "<img" not in text
+    assert source.read_bytes() == source_before
+
+
 def test_csv_export_encodes_unsafe_controls_without_removing_newlines(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     _write_source(

@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
+from .html_text import source_html_to_text
 from .identity import IdentityError, resolve_source_identity
 from .notes import GeneratedNote, GeneratedNoteProvenance, ManagedNoteContent, RecipeMetadata
 from .principal_parts import (
@@ -235,10 +236,10 @@ def _completion_content(
         "<div>Ergänze die fehlende Stammform.</div>"
         "<div><strong>Stammformen</strong></div>"
         f"<div>{_render_parts(parsed.parts, omitted_role=missing.role)}</div>"
-        f"<div><strong>Bedeutung:</strong> {_escape(meaning)}</div>"
+        f"<div><strong>Bedeutung:</strong> {_escape_multiline(meaning)}</div>"
     )
     answer = (
-        f"<div><strong>Fehlende Stammform:</strong> {_escape(missing.display or '')}</div>"
+        f"<div><strong>Fehlende Stammform:</strong> {_escape_multiline(missing.display or '')}</div>"
         f"<div><strong>Rolle:</strong> {_escape(_role_label(missing.role))}</div>"
     )
     return ManagedNoteContent(prompt=prompt, answer=answer, tags=tags)
@@ -251,13 +252,13 @@ def _recognition_content(
     *,
     tags: tuple[str, ...],
 ) -> ManagedNoteContent:
-    prompt = f"Welche Stammform ist „{_escape(supplied.display or '')}“?"
+    prompt = f"Welche Stammform ist „{_escape_multiline(supplied.display or '')}“?"
     answer = (
-        f"<div><strong>Lemma:</strong> {_escape(parsed.lexical_entry)}</div>"
+        f"<div><strong>Lemma:</strong> {_escape_multiline(parsed.lexical_entry)}</div>"
         "<div><strong>Stammformen</strong></div>"
         f"<div>{_render_parts(parsed.parts)}</div>"
         f"<div><strong>Rolle:</strong> {_escape(_role_label(supplied.role))}</div>"
-        f"<div><strong>Bedeutung:</strong> {_escape(meaning)}</div>"
+        f"<div><strong>Bedeutung:</strong> {_escape_multiline(meaning)}</div>"
     )
     return ManagedNoteContent(prompt=prompt, answer=answer, tags=tags)
 
@@ -266,7 +267,7 @@ def _render_parts(parts: Sequence[PrincipalPartValue], *, omitted_role: str | No
     lines = []
     for part in parts:
         value = "_____" if part.role == omitted_role else (part.display if part.display is not None else "—")
-        lines.append(f"<strong>{_escape(_role_label(part.role))}:</strong> {_escape(value)}")
+        lines.append(f"<strong>{_escape(_role_label(part.role))}:</strong> {_escape_multiline(value)}")
     return "<br>".join(lines)
 
 
@@ -280,6 +281,14 @@ def _role_label(role: str) -> str:
 
 
 def _escape(value: str) -> str:
+    return _escape_text(source_html_to_text(value))
+
+
+def _escape_multiline(value: str) -> str:
+    return "<br>".join(_escape_text(line) for line in source_html_to_text(value).split("\n"))
+
+
+def _escape_text(value: str) -> str:
     return html.escape(encode_unsafe_controls(value), quote=True)
 
 
