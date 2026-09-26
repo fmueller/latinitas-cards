@@ -52,10 +52,12 @@ class CanonicalSourceRecord:
     provenance: SourceProvenance
     source_identity: str | None
     note_guid: str | None = None
+    source_tags: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         copied_fields = MappingProxyType(dict(self.fields))
         object.__setattr__(self, "fields", cast(Mapping[str, str], copied_fields))
+        object.__setattr__(self, "source_tags", tuple(self.source_tags))
 
     @property
     def available_note_type(self) -> str | None:
@@ -78,6 +80,7 @@ class CanonicalSourceRecord:
                 self.provenance,
                 self.source_identity,
                 self.note_guid,
+                self.source_tags,
             )
         )
 
@@ -351,8 +354,10 @@ def _read_anki_database(
                 )
             if "guid" not in note_columns:
                 raise CanonicalSourceError(source_path, "collection notes table is missing the required GUID column")
+            if "tags" not in note_columns:
+                raise CanonicalSourceError(source_path, "collection notes table is missing the required tags column")
             note_types, field_names = _load_anki_metadata(con, source_path)
-            rows = con.execute("SELECT id, mid, flds, guid FROM notes").fetchall()
+            rows = con.execute("SELECT id, mid, flds, guid, tags FROM notes").fetchall()
             records: list[CanonicalSourceRecord] = []
             seen_guids: set[str] = set()
             for row in rows:
@@ -506,6 +511,15 @@ def _build_anki_record(
         note_guid = str(raw_guid) if raw_guid is not None else ""
     if not note_guid.strip():
         raise CanonicalSourceError(source_path, "notes table contains a missing or empty GUID")
+    raw_tags = row["tags"]
+    if isinstance(raw_tags, bytes):
+        try:
+            tags_text = raw_tags.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise CanonicalSourceError(source_path, "notes table contains invalid tag text") from error
+    else:
+        tags_text = "" if raw_tags is None else str(raw_tags)
+    source_tags = tuple(tag for tag in tags_text.split(" ") if tag)
     return CanonicalSourceRecord(
         source_kind=source_kind,
         note_type=note_type,
@@ -518,6 +532,7 @@ def _build_anki_record(
         ),
         source_identity=note_guid,
         note_guid=note_guid,
+        source_tags=source_tags,
     )
 
 

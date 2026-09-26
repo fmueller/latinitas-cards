@@ -2,6 +2,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from latinitas_cards.generation import PrincipalPartGenerationResult, generate_principal_part_study_cards
+from latinitas_cards.notes import GeneratedNote
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 from latinitas_cards.sources import CanonicalSourceRecord, SourceProvenance
 
@@ -40,6 +41,7 @@ def _record(
     meaning: str = "sagen",
     source_identity: str = "entry-17",
     profile: DeckProfile | None = None,
+    source_tags: tuple[str, ...] = (),
 ) -> CanonicalSourceRecord:
     resolved_profile = profile or _profile()
     return CanonicalSourceRecord(
@@ -53,7 +55,152 @@ def _record(
         },
         provenance=SourceProvenance(source_path=Path("fixture.csv"), location="row 2", row_number=2),
         source_identity=source_identity,
+        source_tags=source_tags,
     )
+
+
+def test_generated_notes_inherit_all_valid_parent_tags_additively_for_both_recipes() -> None:
+    profile = _profile(tags=("latinitas", "latin"))
+    records = (
+        _record(
+            "dīcere, dīcō, dīxī, dictum",
+            source_identity="entry-a",
+            profile=profile,
+            source_tags=("latin", "verb::irregular", "Vokabeln-Übung", "latin"),
+        ),
+        _record("amāre, amō, amāvī, amātum", source_identity="entry-b", profile=profile, source_tags=("grammar",)),
+        _record("ferre, ferō, tulī, lātum", source_identity="entry-c", profile=profile),
+    )
+
+    result = generate_principal_part_study_cards(records, profile)
+
+    assert not result.skips
+    expected_tags_by_parent = {
+        "entry-a": ("latin", "verb::irregular", "Vokabeln-Übung", "latinitas"),
+        "entry-b": ("grammar", "latinitas", "latin"),
+        "entry-c": ("latinitas", "latin"),
+    }
+    notes_by_parent: dict[str, list[GeneratedNote]] = {}
+    for note in result.notes:
+        notes_by_parent.setdefault(note.provenance.source_identity or "", []).append(note)
+    assert set(notes_by_parent) == set(expected_tags_by_parent)
+    for parent_identity, expected_tags in expected_tags_by_parent.items():
+        parent_notes = notes_by_parent[parent_identity]
+        assert len(parent_notes) == 8
+        assert {note.recipe.recipe_identity for note in parent_notes} == {
+            "principal_part_completion",
+            "principal_part_recognition",
+        }
+        assert all(note.content.tags == expected_tags for note in parent_notes)
+        assert all(("Tags", " ".join(expected_tags)) in note.to_anki_fields() for note in parent_notes)
+
+
+def test_tag_membership_and_order_changes_never_change_identities() -> None:
+    profile = _profile(recipes=("principal_part_recognition",), tags=("configured",))
+    before = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", source_identity="entry-a", profile=profile, source_tags=("a", "b")),),
+        profile,
+    )
+    after = generate_principal_part_study_cards(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                source_identity="entry-a",
+                profile=profile,
+                source_tags=("c", "b", "a"),
+            ),
+        ),
+        profile,
+    )
+
+    assert [note.latinitas_id for note in after.notes] == [note.latinitas_id for note in before.notes]
+    assert [note.provenance.source_identity for note in after.notes] == [
+        note.provenance.source_identity for note in before.notes
+    ]
+    assert {note.content.tags for note in after.notes} == {("c", "b", "a", "configured")}
+
+
+def test_invalid_inherited_tags_skip_the_parent_with_actionable_diagnostics() -> None:
+    profile = _profile()
+    records = (
+        _record(
+            "dīcere, dīcō, dīxī, dictum",
+            source_identity="entry-invalid",
+            profile=profile,
+            source_tags=("latin", "bad\x9btag"),
+        ),
+        _record("ferre, ferō, tulī, lātum", source_identity="entry-ok", profile=profile, source_tags=("grammar",)),
+    )
+
+    result = generate_principal_part_study_cards(records, profile)
+
+    assert [note.provenance.source_identity for note in result.notes] == ["entry-ok"] * 8
+    assert all(note.content.tags == ("grammar", "latinitas") for note in result.notes)
+    invalid_skips = [skip for skip in result.skips if skip.code == "invalid_source_tags"]
+    assert len(invalid_skips) == 1
+    skip = invalid_skips[0]
+    assert skip.status == "unsupported"
+    assert skip.source_identity == "entry-invalid"
+    assert skip.source_location == "row 2"
+    assert "tag" in skip.message.lower()
+    assert "position 2" in skip.message
+    assert "bad" not in skip.message
+
+
+def test_invalid_inherited_tag_whitespace_is_flagged_not_silently_split() -> None:
+    profile = _profile(recipes=("principal_part_recognition",))
+
+    result = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", source_identity="entry-tab", profile=profile, source_tags=("a\tb",)),),
+        profile,
+    )
+
+    assert result.notes == ()
+    skip = result.skips[0]
+    assert skip.code == "invalid_source_tags"
+    assert "whitespace" in skip.message or "control" in skip.message
+    assert "a\tb" not in skip.message
+
+
+def test_markup_unsafe_inherited_tags_are_skipped_without_live_markup() -> None:
+    profile = _profile()
+    records = (
+        _record(
+            "dīcere, dīcō, dīxī, dictum",
+            source_identity="entry-hostile",
+            profile=profile,
+            source_tags=("<img/src=x/onerror=alert(1)>",),
+        ),
+        _record("ferre, ferō, tulī, lātum", source_identity="entry-amp", profile=profile, source_tags=("rock&roll",)),
+        _record("amāre, amō, amāvī, amātum", source_identity="entry-ok", profile=profile, source_tags=("latin",)),
+    )
+
+    result = generate_principal_part_study_cards(records, profile)
+
+    assert [note.provenance.source_identity for note in result.notes] == ["entry-ok"] * 8
+    hostile_skips = [skip for skip in result.skips if skip.code == "invalid_source_tags"]
+    assert len(hostile_skips) == 2
+    assert {skip.source_identity for skip in hostile_skips} == {"entry-hostile", "entry-amp"}
+    for skip in hostile_skips:
+        assert "export" in skip.message.lower()
+        assert "'&', '<', or '>'" in skip.message
+    rendered = "\n".join(skip.message for skip in hostile_skips)
+    assert "onerror" not in rendered
+    assert "rock" not in rendered
+    exported = "\n".join(str(tuple(note.to_anki_fields())) for note in result.notes)
+    assert "<img" not in exported
+
+
+def test_configured_tags_keep_existing_markup_semantics_for_trusted_input() -> None:
+    profile = _profile(recipes=("principal_part_recognition",), tags=("rock&roll", "latinitas"))
+
+    result = generate_principal_part_study_cards(
+        (_record("dīcere, dīcō, dīxī, dictum", source_identity="entry-17", profile=profile),),
+        profile,
+    )
+
+    assert all(note.content.tags == ("rock&roll", "latinitas") for note in result.notes)
+    assert all(("Tags", "rock&roll latinitas") in note.to_anki_fields() for note in result.notes)
 
 
 def test_completion_uses_only_confirmed_recipe_and_answers_with_form_and_role() -> None:

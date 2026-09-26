@@ -22,7 +22,7 @@ from .principal_parts import (
     PrincipalPartValue,
     parse_principal_parts,
 )
-from .profile import DeckProfile
+from .profile import DeckProfile, tag_character_violation
 from .profile_setup import encode_unsafe_controls
 from .sources import CanonicalSourceRecord
 
@@ -138,6 +138,23 @@ def generate_principal_part_study_cards(
             )
             continue
 
+        invalid_tag = _first_invalid_tag(record.source_tags)
+        if invalid_tag is not None:
+            position, reason = invalid_tag
+            skipped.append(
+                GenerationSkip(
+                    status="unsupported",
+                    code="invalid_source_tags",
+                    message=(
+                        f"The source note has an invalid tag at position {position} containing {reason}; "
+                        "fix the tag in the source deck."
+                    ),
+                    source_identity=source_identity,
+                    source_location=record.provenance.location,
+                )
+            )
+            continue
+
         parsed = parse_principal_parts(record, profile)
         if isinstance(parsed, PrincipalPartParseFailure):
             skipped.append(_parse_failure_skip(parsed, record, source_identity))
@@ -198,6 +215,21 @@ def _parse_failure_skip(
     )
 
 
+def _first_invalid_tag(source_tags: tuple[str, ...]) -> tuple[int, str] | None:
+    for position, tag in enumerate(source_tags, start=1):
+        if tag_character_violation(tag) is not None:
+            return position, "whitespace or control characters"
+        if any(character in tag for character in "&<>"):
+            return position, "the characters '&', '<', or '>' which cannot be exported safely"
+    return None
+
+
+def _combined_tags(record: CanonicalSourceRecord, profile: DeckProfile) -> tuple[str, ...]:
+    """Combine inherited parent tags first with configured tags, without duplicates."""
+
+    return tuple(dict.fromkeys((*record.source_tags, *profile.tags)))
+
+
 def _render_note(
     record: CanonicalSourceRecord,
     parsed: ParsedPrincipalParts,
@@ -208,10 +240,11 @@ def _render_note(
     profile: DeckProfile,
 ) -> GeneratedNote:
     meaning = _meaning(record, profile)
+    tags = _combined_tags(record, profile)
     if recipe_identity == "principal_part_completion":
-        content = _completion_content(parsed, part, meaning, tags=profile.tags)
+        content = _completion_content(parsed, part, meaning, tags=tags)
     else:
-        content = _recognition_content(parsed, part, meaning, tags=profile.tags)
+        content = _recognition_content(parsed, part, meaning, tags=tags)
     return GeneratedNote.create(
         source_identity=source_identity,
         provenance=GeneratedNoteProvenance(

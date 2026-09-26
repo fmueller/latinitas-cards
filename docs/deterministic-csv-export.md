@@ -62,6 +62,58 @@ replacements can leave one file new and the other old. If rollback fails, inspec
 destinations and retained `.backup.*` files, recover manually, and do not blindly retry or
 delete them. Use `--manifest` to select another sidecar path.
 
+## Source tag inheritance
+
+For APKG/COLPKG sources, every generated completion and recognition note inherits
+all valid tags of its parent Anki note. Inherited tags are read from the source
+note's own tag metadata only; they are never inferred from neighboring notes or
+unioned across the source deck. Configured tags (profile defaults, saved profile
+values, or `--tag` CLI overrides) are additive: they are appended after the
+inherited tags and never replace them. The combined list removes exact duplicates
+deterministically, keeping first occurrence, and preserves source order,
+hierarchy separators (`::`), case, and Unicode names. An untagged parent keeps
+the existing configured-tags-only behavior.
+
+Tags are metadata, not identity: changing tag membership or order never changes
+`LatinitasID` values or source identities, and repeated generation stays
+byte-deterministic. The preview `Tags:` line and the exported `Tags` column are
+produced from the same combined list.
+
+A source tag that contains whitespace or control characters cannot be inherited
+safely. Such a parent is skipped with a structured `invalid_source_tags` skip
+that names the source identity, the note location, and the offending tag
+position; nothing is dropped silently. Fix the tag in the source deck and rerun.
+The same skip applies to inherited tags containing `&`, `<`, or `>`: the export
+enables Anki's Allow-HTML import mode, and a tag carrying live markup would be
+stored verbatim and rendered unescaped by Anki's `{{Tags}}` template filter.
+These characters are rejected with an actionable diagnostic rather than escaped,
+because Anki stores tag names verbatim and escaping would silently rename the
+tag. Locally configured tags are authored input and keep their existing
+semantics; only tags inherited from an untrusted source package are subject to
+the stricter check.
+
+Supported source-tag boundary: only native APKG/COLPKG note tags are inherited.
+CSV rows keep configured tags only — no CSV column is guessed to be Anki tag
+metadata, and CSV profile mappings are unchanged.
+
+Native tag-import verification (v0.1.0, Anki 26.09.3): combined
+inherited + configured tags were verified against a native Anki 26.09.3
+collection by importing the generated CSV through Anki's own import backend
+(`get_csv_metadata` + `import_csv` with `#html` and `#tags column` honored),
+the same calls the import dialog makes; the dialog's UI was not click-driven
+during this run. On the first import, all 24 generated notes were created with
+exactly the combined tag sets from the `Tags` column, `LatinitasID` values
+matched the CSV, and no duplicates existed. Anki stores note tags in its own
+canonical order (padding the stored tag string with spaces), so stored tag
+order differs from the CSV column order while the tag sets are identical. On a
+repeat import with update-when-first-field-matches and match scope note type,
+no duplicate notes were created and every `LatinitasID` stayed stable, but the
+imported `Tags` column replaces each note's tag set instead of merging it: a
+tag manually added to a note before the repeat import was removed by the
+import, and a combined tag manually removed from a note was restored from the
+CSV. Repeat imports therefore re-assert the generated tag set; unrelated
+manual tags on generated notes do not survive a repeat import.
+
 ## Anki text import
 
 The output is UTF-8 CSV with deterministic `\n` line endings. It uses Anki text-file headers

@@ -1,7 +1,10 @@
 import csv
+import hashlib
 import io
 import os
 import shutil
+import sqlite3
+import zipfile
 from dataclasses import replace
 from pathlib import Path
 
@@ -75,6 +78,56 @@ def _parse_export(payload: bytes) -> tuple[list[str], list[list[str]], str]:
     return header, list(reader), metadata
 
 
+def _write_tagged_package(package_path: Path, member_name: str, *, tags_by_guid: dict[str, str] | None = None) -> None:
+    work = package_path.with_suffix("")
+    work.mkdir(exist_ok=True)
+    database_path = work / "collection.anki2"
+    database_path.unlink(missing_ok=True)
+    con = sqlite3.connect(database_path)
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, tags TEXT, flds TEXT)")
+    con.execute("CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT)")
+    con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT)")
+    con.execute("INSERT INTO notetypes (id, name) VALUES (10, 'Latin Vocabulary')")
+    con.executemany(
+        "INSERT INTO fields (ntid, ord, name) VALUES (?, ?, ?)",
+        ((10, 0, "Lemma"), (10, 1, "Forms"), (10, 2, "German gloss")),
+    )
+    default_tags = {
+        "guid-a": "latin verb::irregular Vokabeln-Übung",
+        "guid-b": "grammar grammar latinitas",
+        "guid-c": "",
+    }
+    tags = {**default_tags, **(tags_by_guid or {})}
+    con.executemany(
+        "INSERT INTO notes (id, guid, mid, tags, flds) VALUES (?, ?, ?, ?, ?)",
+        (
+            (1, "guid-a", 10, tags["guid-a"], "dīcō\x1fdīcere, dīcō, dīxī, dictum\x1fsagen"),
+            (2, "guid-b", 10, tags["guid-b"], "amāre\x1famāre, amō, amāvī, amātum\x1flieben"),
+            (3, "guid-c", 10, tags["guid-c"], "ferō\x1fferre, ferō, tulī, lātum\x1ftragen"),
+        ),
+    )
+    con.commit()
+    con.close()
+    with zipfile.ZipFile(package_path, "w") as archive:
+        archive.write(database_path, member_name)
+
+
+def _tagged_package_profile() -> DeckProfile:
+    return DeckProfile.default(
+        note_type="Latin Vocabulary",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        meaning_field="German gloss",
+        source_identity=SourceIdentityConfig(strategy="note_guid"),
+        principal_part_roles=("present_infinitive", "present_1s", "perfect_1s", "supine"),
+        separators=(",",),
+        generated_note_type="Latinitas Principal Parts",
+        target_deck="Latin::Latinitas::Review",
+        tags=("latinitas", "latin"),
+        selected_recipes=("principal_part_completion", "principal_part_recognition"),
+    )
+
+
 def test_preview_result_reports_representative_notes_and_structured_counts(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     _write_source(
@@ -95,6 +148,84 @@ def test_preview_result_reports_representative_notes_and_structured_counts(tmp_p
     assert result.generation.notes[0].provenance.source_identity == "entry-β"
     assert any(skip.code == "unmarked_omission" and skip.status == "ambiguous" for skip in result.generation.skips)
     assert any(skip.code == "separator_mismatch" for skip in result.generation.skips)
+
+
+def test_anki_source_tags_reach_every_descendant_and_the_serialized_tags_column(tmp_path: Path) -> None:
+    for package_name in ("tagged-package.apkg", "tagged-package.colpkg"):
+        package = tmp_path / package_name
+        _write_tagged_package(package, "collection.anki2")
+        original_digest = hashlib.sha256(package.read_bytes()).digest()
+        profile = _tagged_package_profile()
+
+        first = deterministic_csv_bytes(prepare_principal_part_export(package, profile))
+        second = deterministic_csv_bytes(prepare_principal_part_export(package, profile))
+
+        assert first == second
+        assert hashlib.sha256(package.read_bytes()).digest() == original_digest
+        header, rows, _metadata = _parse_export(first)
+        assert header[3] == "Tags"
+        expected_tags_by_source = {
+            "guid-a": "latin verb::irregular Vokabeln-Übung latinitas",
+            "guid-b": "grammar latinitas latin",
+            "guid-c": "latinitas latin",
+        }
+        tags_by_source: dict[str, set[str]] = {}
+        for row in rows:
+            source_id = row[header.index("Source ID")]
+            tags_by_source.setdefault(source_id, set()).add(row[3])
+        assert set(tags_by_source) == set(expected_tags_by_source)
+        assert len(rows) == 24
+        for source_id, expected_tags in expected_tags_by_source.items():
+            assert tags_by_source[source_id] == {expected_tags}
+
+
+def test_untagged_anki_source_keeps_configured_tags_only_in_serialized_output(tmp_path: Path) -> None:
+    package = tmp_path / "untagged.apkg"
+    _write_tagged_package(package, "collection.anki2", tags_by_guid={"guid-a": "", "guid-b": "", "guid-c": ""})
+    profile = _tagged_package_profile()
+
+    payload = deterministic_csv_bytes(prepare_principal_part_export(package, profile))
+
+    _header, rows, _metadata = _parse_export(payload)
+    assert {row[3] for row in rows} == {"latinitas latin"}
+
+
+def test_invalid_source_tags_block_export_with_actionable_skip(tmp_path: Path) -> None:
+    package = tmp_path / "invalid-tags.apkg"
+    _write_tagged_package(package, "collection.anki2", tags_by_guid={"guid-a": "latin bad\x9btag"})
+    profile = _tagged_package_profile()
+
+    result = prepare_principal_part_export(package, profile)
+
+    skip_codes = {skip.code for skip in result.generation.skips}
+    assert "invalid_source_tags" in skip_codes
+    invalid_skip = next(skip for skip in result.generation.skips if skip.code == "invalid_source_tags")
+    assert invalid_skip.source_identity == "guid-a"
+    assert invalid_skip.source_location == "note 1"
+    assert "bad" not in invalid_skip.message
+    assert {note.provenance.source_identity for note in result.generation.notes} == {"guid-b", "guid-c"}
+    _header, rows, _metadata = _parse_export(deterministic_csv_bytes(result))
+    assert {row[3] for row in rows} == {"grammar latinitas latin", "latinitas latin"}
+
+
+def test_markup_unsafe_inherited_tags_never_reach_the_serialized_tags_column(tmp_path: Path) -> None:
+    package = tmp_path / "hostile-tags.apkg"
+    _write_tagged_package(
+        package,
+        "collection.anki2",
+        tags_by_guid={"guid-a": "<img/src=x/onerror=alert(1)> latin"},
+    )
+    profile = _tagged_package_profile()
+
+    result = prepare_principal_part_export(package, profile)
+    payload = deterministic_csv_bytes(result).decode("utf-8")
+
+    assert {note.provenance.source_identity for note in result.generation.notes} == {"guid-b", "guid-c"}
+    hostile_skip = next(skip for skip in result.generation.skips if skip.code == "invalid_source_tags")
+    assert hostile_skip.source_identity == "guid-a"
+    assert "onerror" not in hostile_skip.message
+    assert "<img" not in payload
+    assert "onerror" not in payload
 
 
 def test_csv_export_is_utf8_deterministic_and_uses_anki_import_metadata(tmp_path: Path) -> None:

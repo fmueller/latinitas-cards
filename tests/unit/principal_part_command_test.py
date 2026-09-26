@@ -1,4 +1,8 @@
+import csv
+import io
 import os
+import sqlite3
+import zipfile
 from pathlib import Path
 from typing import cast
 
@@ -58,6 +62,121 @@ def test_profile_preview_renders_counts_prompt_answer_and_provenance_without_out
     assert "Bedeutung" in result.stdout
     assert "csv row 2" in result.stdout
     assert "Output:" not in result.stdout
+
+
+def test_profile_preview_and_generate_render_combined_tags_matching_the_csv(tmp_path: Path) -> None:
+    database = tmp_path / "tagged.anki2"
+    con = sqlite3.connect(database)
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, tags TEXT, flds TEXT)")
+    con.execute("CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT)")
+    con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT)")
+    con.execute("INSERT INTO notetypes (id, name) VALUES (10, 'CSV source')")
+    con.executemany(
+        "INSERT INTO fields (ntid, ord, name) VALUES (?, ?, ?)",
+        ((10, 0, "Lemma"), (10, 1, "Forms"), (10, 2, "German gloss")),
+    )
+    con.execute(
+        "INSERT INTO notes (id, guid, mid, tags, flds) VALUES (1, 'guid-a', 10, 'latin verb::irregular',"
+        " 'dīcō\x1fdīcere, dīcō, dīxī, dictum\x1fsagen')"
+    )
+    con.commit()
+    con.close()
+    source = tmp_path / "tagged.apkg"
+    with zipfile.ZipFile(source, "w") as archive:
+        archive.write(database, "collection.anki2")
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    DeckProfile.default(
+        note_type="CSV source",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        meaning_field="German gloss",
+        source_identity=SourceIdentityConfig(strategy="note_guid"),
+        principal_part_roles=("present_infinitive", "present_1s", "perfect_1s", "supine"),
+        separators=(",",),
+        selected_recipes=("principal_part_recognition",),
+        generated_note_type="Latinitas Principal Parts",
+        target_deck="Latin::Latinitas::Review",
+        tags=("latinitas", "latin"),
+    ).save(profile_path)
+
+    previewed = CliRunner().invoke(
+        _command(),
+        ["preview", "--input", str(source), "--profile", str(profile_path), "--limit", "1"],
+    )
+    generated = CliRunner().invoke(
+        _command(),
+        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+    )
+
+    expected_tags = "latin verb::irregular latinitas"
+    assert previewed.exit_code == 0
+    assert f"Tags: {expected_tags}" in previewed.stdout
+    assert generated.exit_code == 0
+    assert f"Tags: {expected_tags}" in generated.stdout
+    rows = list(csv.reader(io.StringIO(output.read_text(encoding="utf-8"))))
+    tag_rows = [row for row in rows if row and row[0].startswith("latinitas-v1-")]
+    assert tag_rows
+    assert all(row[3] == expected_tags for row in tag_rows)
+
+
+def test_profile_preview_tags_line_matches_the_csv_beyond_the_default_limit(tmp_path: Path) -> None:
+    long_parent_tags = " ".join(f"chapter::{number:03d}" for number in range(1, 21))
+    database = tmp_path / "long-tags.anki2"
+    con = sqlite3.connect(database)
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, tags TEXT, flds TEXT)")
+    con.execute("CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT)")
+    con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT)")
+    con.execute("INSERT INTO notetypes (id, name) VALUES (10, 'CSV source')")
+    con.executemany(
+        "INSERT INTO fields (ntid, ord, name) VALUES (?, ?, ?)",
+        ((10, 0, "Lemma"), (10, 1, "Forms"), (10, 2, "German gloss")),
+    )
+    con.execute(
+        "INSERT INTO notes (id, guid, mid, tags, flds) VALUES (1, 'guid-a', 10, ?,"
+        " 'dīcō\x1fdīcere, dīcō, dīxī, dictum\x1fsagen')",
+        (long_parent_tags,),
+    )
+    con.commit()
+    con.close()
+    source = tmp_path / "long-tags.apkg"
+    with zipfile.ZipFile(source, "w") as archive:
+        archive.write(database, "collection.anki2")
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    DeckProfile.default(
+        note_type="CSV source",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        meaning_field="German gloss",
+        source_identity=SourceIdentityConfig(strategy="note_guid"),
+        principal_part_roles=("present_infinitive", "present_1s", "perfect_1s", "supine"),
+        separators=(",",),
+        selected_recipes=("principal_part_recognition",),
+        generated_note_type="Latinitas Principal Parts",
+        target_deck="Latin::Latinitas::Review",
+        tags=("latinitas",),
+    ).save(profile_path)
+    expected_tags = f"{long_parent_tags} latinitas"
+    assert len(expected_tags) > 160
+
+    previewed = CliRunner().invoke(
+        _command(),
+        ["preview", "--input", str(source), "--profile", str(profile_path), "--limit", "1"],
+    )
+    generated = CliRunner().invoke(
+        _command(),
+        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+    )
+
+    assert previewed.exit_code == 0
+    assert f"Tags: {expected_tags}" in previewed.stdout
+    assert generated.exit_code == 0
+    assert f"Tags: {expected_tags}" in generated.stdout
+    rows = list(csv.reader(io.StringIO(output.read_text(encoding="utf-8"))))
+    tag_rows = [row for row in rows if row and row[0].startswith("latinitas-v1-")]
+    assert tag_rows
+    assert all(row[3] == expected_tags for row in tag_rows)
 
 
 def test_profile_generate_renders_preview_before_writing_deterministic_output(tmp_path: Path) -> None:

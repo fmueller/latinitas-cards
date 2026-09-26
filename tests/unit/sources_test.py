@@ -18,17 +18,17 @@ from latinitas_cards.sources import (
 def _write_legacy_database(path: Path) -> None:
     con = sqlite3.connect(path)
     con.execute("CREATE TABLE col (id INTEGER PRIMARY KEY, models TEXT)")
-    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, flds TEXT)")
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, tags TEXT, flds TEXT)")
     models = {
         "20": {"name": "Zeta", "flds": [{"name": "Front"}, {"name": "Back"}]},
         "10": {"name": "Alpha", "flds": [{"name": "Lemma"}, {"name": "Meaning"}]},
     }
     con.execute("INSERT INTO col (id, models) VALUES (1, ?)", (json.dumps(models),))
     con.executemany(
-        "INSERT INTO notes (id, guid, mid, flds) VALUES (?, ?, ?, ?)",
+        "INSERT INTO notes (id, guid, mid, tags, flds) VALUES (?, ?, ?, ?, ?)",
         (
-            (200, "zeta-guid", 20, "zeta front\x1fzeta back"),
-            (100, "alpha-guid", 10, "amo\x1flove"),
+            (200, "zeta-guid", 20, "zeta-tag", "zeta front\x1fzeta back"),
+            (100, "alpha-guid", 10, "", "amo\x1flove"),
         ),
     )
     con.commit()
@@ -37,7 +37,7 @@ def _write_legacy_database(path: Path) -> None:
 
 def _write_modern_database(path: Path) -> None:
     con = sqlite3.connect(path)
-    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, flds TEXT)")
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, tags TEXT, flds TEXT)")
     con.execute("CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT)")
     con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT)")
     con.executemany(
@@ -54,11 +54,11 @@ def _write_modern_database(path: Path) -> None:
         ),
     )
     con.executemany(
-        "INSERT INTO notes (id, guid, mid, flds) VALUES (?, ?, ?, ?)",
+        "INSERT INTO notes (id, guid, mid, tags, flds) VALUES (?, ?, ?, ?, ?)",
         (
-            (2, "vocab-b", 300, "video\x1fsehen"),
-            (1, "grammar-a", 100, "amat\x1f3sg present"),
-            (3, "vocab-a", 300, "amo\x1flieben"),
+            (2, "vocab-b", 300, "", "video\x1fsehen"),
+            (1, "grammar-a", 100, "", "amat\x1f3sg present"),
+            (3, "vocab-a", 300, "", "amo\x1flieben"),
         ),
     )
     con.commit()
@@ -67,12 +67,46 @@ def _write_modern_database(path: Path) -> None:
 
 def _write_database_without_guid(path: Path) -> None:
     con = sqlite3.connect(path)
-    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, mid INTEGER, flds TEXT)")
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, mid INTEGER, tags TEXT, flds TEXT)")
     con.execute("CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT)")
     con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT)")
     con.execute("INSERT INTO notetypes (id, name) VALUES (1, 'Vocabulary')")
     con.execute("INSERT INTO fields (ntid, ord, name) VALUES (1, 0, 'Entry')")
-    con.execute("INSERT INTO notes (id, mid, flds) VALUES (1, 1, 'private entry')")
+    con.execute("INSERT INTO notes (id, mid, tags, flds) VALUES (1, 1, '', 'private entry')")
+    con.commit()
+    con.close()
+
+
+def _write_database_without_tags(path: Path) -> None:
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, flds TEXT)")
+    con.execute("CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT)")
+    con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT)")
+    con.execute("INSERT INTO notetypes (id, name) VALUES (1, 'Vocabulary')")
+    con.execute("INSERT INTO fields (ntid, ord, name) VALUES (1, 0, 'Entry')")
+    con.execute("INSERT INTO notes (id, guid, mid, flds) VALUES (1, 'entry-guid', 1, 'private entry')")
+    con.commit()
+    con.close()
+
+
+def _write_tagged_database(path: Path) -> None:
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, guid TEXT, mid INTEGER, tags TEXT, flds TEXT)")
+    con.execute("CREATE TABLE notetypes (id INTEGER PRIMARY KEY, name TEXT)")
+    con.execute("CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT)")
+    con.execute("INSERT INTO notetypes (id, name) VALUES (10, 'Latin Vocabulary')")
+    con.executemany(
+        "INSERT INTO fields (ntid, ord, name) VALUES (?, ?, ?)",
+        ((10, 0, "Lemma"), (10, 1, "Forms"), (10, 2, "German gloss")),
+    )
+    con.executemany(
+        "INSERT INTO notes (id, guid, mid, tags, flds) VALUES (?, ?, ?, ?, ?)",
+        (
+            (1, "guid-a", 10, "latin verb::irregular Vokabeln-Übung", "dīcō\x1fdīcere, dīcō, dīxī, dictum\x1fsagen"),
+            (2, "guid-b", 10, "grammar  grammar", "amāre\x1famāre, amō, amāvī, amātum\x1flieben"),
+            (3, "guid-c", 10, "", "ferō\x1fferre, ferō, tulī, lātum\x1ftragen"),
+        ),
+    )
     con.commit()
     con.close()
 
@@ -184,6 +218,61 @@ def test_modern_zstd_apkg_inspection_is_deterministic_and_retains_field_names(tm
     ]
     assert inspection.records == records_again
     assert inspection.records[1].fields["German gloss"] == "lieben"
+
+
+def test_apkg_and_colpkg_retain_parent_note_tags_without_cross_parent_leakage(tmp_path: Path) -> None:
+    database = tmp_path / "tagged.anki2"
+    _write_tagged_database(database)
+    apkg = tmp_path / "tagged.apkg"
+    colpkg = tmp_path / "tagged.colpkg"
+    _package(apkg, database, "collection.anki2")
+    _package(colpkg, database, "collection.anki2")
+
+    apkg_records = read_source_records(apkg)
+    colpkg_records = read_source_records(colpkg)
+
+    assert [(record.source_identity, record.source_tags) for record in apkg_records] == [
+        ("guid-a", ("latin", "verb::irregular", "Vokabeln-Übung")),
+        ("guid-b", ("grammar", "grammar")),
+        ("guid-c", ()),
+    ]
+    assert [(record.source_identity, record.source_tags) for record in colpkg_records] == [
+        (record.source_identity, record.source_tags) for record in apkg_records
+    ]
+    assert all("tags" not in record.fields and "Tags" not in record.fields for record in apkg_records)
+    assert all(record.provenance.content_hash == sources_module._hash_fields(record.fields) for record in apkg_records)
+
+
+def test_source_tags_are_record_metadata_but_never_identity_inputs(tmp_path: Path) -> None:
+    database = tmp_path / "identity.anki2"
+    _write_tagged_database(database)
+    package = tmp_path / "identity.apkg"
+    _package(package, database, "collection.anki2")
+
+    records = read_source_records(package)
+    retagged = tuple(replace(record, source_tags=("other-tag",)) for record in records)
+
+    assert [record.provenance.content_hash for record in retagged] == [
+        record.provenance.content_hash for record in records
+    ]
+    assert [record.source_identity for record in retagged] == [record.source_identity for record in records]
+    assert retagged != records
+    assert len({*records, *retagged}) == 6
+
+
+def test_anki_without_tags_column_is_rejected_without_note_contents(tmp_path: Path) -> None:
+    database = tmp_path / "missing-tags.sqlite"
+    package = tmp_path / "missing-tags.apkg"
+    _write_database_without_tags(database)
+    _package(package, database, "collection.anki2")
+
+    with pytest.raises(CanonicalSourceError) as raised:
+        read_source_records(package)
+
+    message = str(raised.value)
+    assert "missing-tags.apkg" in message
+    assert "tags" in message.lower()
+    assert "private entry" not in message
 
 
 def test_anki_duplicate_native_guids_are_rejected(tmp_path: Path) -> None:

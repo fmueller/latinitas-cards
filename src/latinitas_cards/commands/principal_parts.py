@@ -102,6 +102,7 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
         field_context = _preview_field_context(result)
         typer.echo(f"  Prompt: {safe_source_value(note.content.prompt, field_context, limit=512)}")
         typer.echo(f"  Answer: {safe_source_value(note.content.answer, field_context, limit=512)}")
+        typer.echo(f"  Tags: {safe_source_value(' '.join(note.content.tags), field_context, limit=512)}")
         typer.echo(
             "  Provenance: "
             + safe_source_value(

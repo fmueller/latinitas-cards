@@ -60,16 +60,22 @@ def _validated_language_tag(value: str) -> str:
     return value
 
 
+def tag_character_violation(tag: str) -> str | None:
+    """Return the first whitespace or control character a tag must not contain."""
+
+    for character in tag:
+        if character.isspace() or ord(character) < 32 or 0x7F <= ord(character) <= 0x9F:
+            return character
+    return None
+
+
 def _validated_tags(value: tuple[str, ...]) -> tuple[str, ...]:
     raw_tags = tuple(value)
-    if any(
-        any(character.isspace() or ord(character) < 32 or 0x7F <= ord(character) <= 0x9F for character in tag)
-        for tag in raw_tags
-    ):
+    if any(tag_character_violation(tag) for tag in raw_tags):
         raise ValueError("tags must not contain whitespace or control characters")
     tags = tuple(tag.strip() for tag in raw_tags)
     if any(not tag for tag in tags):
-        raise ValueError("tags must not contain empty values")
+        raise ValueError("tags must not be empty")
     if len(set(tags)) != len(tags):
         raise ValueError("tags must be distinct")
     return tags

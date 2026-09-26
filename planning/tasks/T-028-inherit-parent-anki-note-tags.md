@@ -1,11 +1,11 @@
 ---
 id: T-028-inherit-parent-anki-note-tags
 title: Inherit parent Anki note tags on generated cards
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#principal-part-card-generation
 dependencies: []
-updated_at: "2026-09-26T15:42:31Z"
+updated_at: "2026-09-26T20:45:45Z"
 ---
 
 # T-028-inherit-parent-anki-note-tags Inherit parent Anki note tags on generated cards
@@ -56,3 +56,4 @@ does not read `notes.tags`, canonical records have no tag metadata, and
 
 - Keep tag metadata outside semantic identity inputs. Reuse canonical adapters,
   generation, and existing tag validation rather than adding a separate path.
+- 2026-09-26T20:45:40Z: verification pass
