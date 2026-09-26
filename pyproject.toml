@@ -14,7 +14,7 @@ classifiers = [
 ]
 dependencies = [
     "pydantic (>=2.11.9,<3.0.0)",
-    "pandas (>=2.3.3,<3.0.0)",
+    "pandas>=2.3.3,<4.0.0",
     "rich>=13.9.4,<16.0.0",
     "click>=8.1,<8.5",
     "typer>=0.19.2,<0.28.0",
