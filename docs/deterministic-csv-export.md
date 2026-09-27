@@ -224,8 +224,11 @@ stable IDs, and provenance; treat them as sensitive and redact them before shari
 
 Before the first import, create the dedicated note type named by the profile (normally
 `Latinitas Principal Parts`) in Anki. Create regular fields for every `#columns` name except
-`Tags`, which is the special tags column, plus a trailing user-owned `Personal Notes` field,
-and create at least one template yourself. CSV import headers can preset an existing note
+`Tags`, which is the special tags column, plus a trailing user-owned `Personal Notes` field.
+The exact versioned field list, the copyable guarded front/back templates and CSS for all ten
+card slots, synthetic missing-form examples, and the safe first/repeat import checklist are
+published in [reference-note-type.md](reference-note-type.md); that reference setup is checked
+against this export contract by tests. CSV import headers can preset an existing note
 type and deck, but they do **not** create note types, fields, or templates. The `#deck`
 header selects or presets the target. The current Anki manual documents that header as
 presetting an existing deck and documents missing-deck creation for a deck column; a missing

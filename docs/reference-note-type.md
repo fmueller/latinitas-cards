@@ -1,0 +1,444 @@
+# Reference note type and safe import
+
+This is the manual reference setup for the Latinitas multi-card learning-object model:
+the exact versioned fields, the stable template-slot registry, copyable guarded
+front/back templates and CSS for both initial recipes, and the safe first/repeat
+import guidance. The setup is consumed from — and checked against — the same
+authoritative note-schema and slot contract the exporter uses
+(`latinitas_cards.notes` / `latinitas_cards.cards`); there is no second field or
+slot definition here. The exporter side of that contract, including the
+deterministic CSV headers and the prior-export checkpoint, is documented in
+[deterministic-csv-export.md](deterministic-csv-export.md).
+
+This is a **manual reference setup**: you create the note type and templates in
+Anki yourself. General automated note-type/template provisioning is v0.6.0
+roadmap work, and broad cross-platform/Anki-version compatibility certification
+is v0.9.0 roadmap work (see `specs/v0.1.0.md`).
+
+## How the note type is organized
+
+One generated CSV row is one coherent learning object rendered as **one note**
+with zero or more eligible **cards** — never one row per card. The note's fields
+split by ownership:
+
+- **Managed regular fields** (`LatinitasID`, `Lemma`, `Principal Parts`,
+  `Meaning`, provenance, generation metadata, and each card's
+  `Enabled`/`Prompt`/`Answer` triple) are owned by regeneration and may be
+  updated by a repeat import.
+- **`Personal Notes`** is user-owned, note-level, and shared by every card of the
+  note. It is deliberately absent from the generated CSV columns: generated
+  import data never offers a personal value, so an import cannot accidentally
+  overwrite it.
+- **Tags** are note-level metadata shared by every card of the note. In the CSV,
+  `Tags` is the special transport column (column 5, directed by
+  `#tags column:5`), **not** a regular note field, and it is not a field of this
+  note type at all.
+
+All cards of a note are genuine siblings: they share the note's fields, Personal
+Notes, and tags, but each keeps its own Anki card ID, review history, and FSRS
+scheduling state. Latinitas does not implement or change scheduling.
+
+Because of that split, keep the counts separate too. The CLI preview reports
+`Source entries`, `Objects`, `Notes`, `Cards`, `Zero-eligible notes`, `Skipped`,
+and `Ambiguous` as distinct numbers; do not read a CSV row count as a card
+count.
+
+## The reference setup
+
+The block below is generated from the authoritative contract (note schema and
+frozen template registry, with the registry digest) and is verified verbatim by
+a test; it changes only when that contract changes.
+
+<!-- latinitas-reference-setup begin -->
+Reference setup for note schema `3` and template registry `v1` (digest `card-registry-sha256:b1e7709e3db8ac17645c0254d9cecfa2d558a105b9b40e87bfcc329ef0adb96d`).
+This block is generated from the authoritative contract; a test fails if this
+published copy drifts from it. Do not hand-edit inside the markers.
+
+### Reference fields (43, exact order)
+
+Create exactly these fields, in this order, on the dedicated note type.
+`LatinitasID` must stay the first field: Anki matches notes for update by the
+first field. `Personal Notes` stays last. `Tags` is deliberately absent: it is
+the special CSV transport column, never a note-type field.
+
+```text
+LatinitasID
+Lemma
+Principal Parts
+Meaning
+Source ID
+Source Scope
+Source Kind
+Source Location
+Source Path
+Note Schema
+Generator
+Profile
+CompletionPresentEnabled
+CompletionPresentPrompt
+CompletionPresentAnswer
+CompletionInfinitiveEnabled
+CompletionInfinitivePrompt
+CompletionInfinitiveAnswer
+CompletionPerfectEnabled
+CompletionPerfectPrompt
+CompletionPerfectAnswer
+CompletionPPPEnabled
+CompletionPPPPrompt
+CompletionPPPAnswer
+CompletionSupineEnabled
+CompletionSupinePrompt
+CompletionSupineAnswer
+RecognitionPresentEnabled
+RecognitionPresentPrompt
+RecognitionPresentAnswer
+RecognitionInfinitiveEnabled
+RecognitionInfinitivePrompt
+RecognitionInfinitiveAnswer
+RecognitionPerfectEnabled
+RecognitionPerfectPrompt
+RecognitionPerfectAnswer
+RecognitionPPPEnabled
+RecognitionPPPPrompt
+RecognitionPPPAnswer
+RecognitionSupineEnabled
+RecognitionSupinePrompt
+RecognitionSupineAnswer
+Personal Notes
+```
+
+### Card templates (10, frozen registry order)
+
+Create one card template per entry below with exactly this name, front, and
+back. Every front is wholly guarded by its per-card `Enabled` field, so a form
+the exporter marks ineligible renders an empty front and creates no card
+instead of a blank or label-only card. Every back is guarded the same way and
+renders the managed answer, shared managed context (`Lemma`, `Principal Parts`,
+optional `Meaning`), and the note-level, user-owned `Personal Notes`.
+
+#### `Completion Present` &#8212; ordinal 0 &#8212; `principal_part_completion:present_1s`
+
+Front:
+
+```html
+{{#CompletionPresentEnabled}}{{CompletionPresentPrompt}}{{/CompletionPresentEnabled}}
+```
+
+Back:
+
+```html
+{{#CompletionPresentEnabled}}
+<div class="latinitas-answer">{{CompletionPresentAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/CompletionPresentEnabled}}
+```
+
+#### `Completion Infinitive` &#8212; ordinal 1 &#8212; `principal_part_completion:present_infinitive`
+
+Front:
+
+```html
+{{#CompletionInfinitiveEnabled}}{{CompletionInfinitivePrompt}}{{/CompletionInfinitiveEnabled}}
+```
+
+Back:
+
+```html
+{{#CompletionInfinitiveEnabled}}
+<div class="latinitas-answer">{{CompletionInfinitiveAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/CompletionInfinitiveEnabled}}
+```
+
+#### `Completion Perfect` &#8212; ordinal 2 &#8212; `principal_part_completion:perfect_1s`
+
+Front:
+
+```html
+{{#CompletionPerfectEnabled}}{{CompletionPerfectPrompt}}{{/CompletionPerfectEnabled}}
+```
+
+Back:
+
+```html
+{{#CompletionPerfectEnabled}}
+<div class="latinitas-answer">{{CompletionPerfectAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/CompletionPerfectEnabled}}
+```
+
+#### `Completion PPP` &#8212; ordinal 3 &#8212; `principal_part_completion:perfect_passive_participle`
+
+Front:
+
+```html
+{{#CompletionPPPEnabled}}{{CompletionPPPPrompt}}{{/CompletionPPPEnabled}}
+```
+
+Back:
+
+```html
+{{#CompletionPPPEnabled}}
+<div class="latinitas-answer">{{CompletionPPPAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/CompletionPPPEnabled}}
+```
+
+#### `Completion Supine` &#8212; ordinal 4 &#8212; `principal_part_completion:supine`
+
+Front:
+
+```html
+{{#CompletionSupineEnabled}}{{CompletionSupinePrompt}}{{/CompletionSupineEnabled}}
+```
+
+Back:
+
+```html
+{{#CompletionSupineEnabled}}
+<div class="latinitas-answer">{{CompletionSupineAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/CompletionSupineEnabled}}
+```
+
+#### `Recognition Present` &#8212; ordinal 5 &#8212; `principal_part_recognition:present_1s`
+
+Front:
+
+```html
+{{#RecognitionPresentEnabled}}{{RecognitionPresentPrompt}}{{/RecognitionPresentEnabled}}
+```
+
+Back:
+
+```html
+{{#RecognitionPresentEnabled}}
+<div class="latinitas-answer">{{RecognitionPresentAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/RecognitionPresentEnabled}}
+```
+
+#### `Recognition Infinitive` &#8212; ordinal 6 &#8212; `principal_part_recognition:present_infinitive`
+
+Front:
+
+```html
+{{#RecognitionInfinitiveEnabled}}{{RecognitionInfinitivePrompt}}{{/RecognitionInfinitiveEnabled}}
+```
+
+Back:
+
+```html
+{{#RecognitionInfinitiveEnabled}}
+<div class="latinitas-answer">{{RecognitionInfinitiveAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/RecognitionInfinitiveEnabled}}
+```
+
+#### `Recognition Perfect` &#8212; ordinal 7 &#8212; `principal_part_recognition:perfect_1s`
+
+Front:
+
+```html
+{{#RecognitionPerfectEnabled}}{{RecognitionPerfectPrompt}}{{/RecognitionPerfectEnabled}}
+```
+
+Back:
+
+```html
+{{#RecognitionPerfectEnabled}}
+<div class="latinitas-answer">{{RecognitionPerfectAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/RecognitionPerfectEnabled}}
+```
+
+#### `Recognition PPP` &#8212; ordinal 8 &#8212; `principal_part_recognition:perfect_passive_participle`
+
+Front:
+
+```html
+{{#RecognitionPPPEnabled}}{{RecognitionPPPPrompt}}{{/RecognitionPPPEnabled}}
+```
+
+Back:
+
+```html
+{{#RecognitionPPPEnabled}}
+<div class="latinitas-answer">{{RecognitionPPPAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/RecognitionPPPEnabled}}
+```
+
+#### `Recognition Supine` &#8212; ordinal 9 &#8212; `principal_part_recognition:supine`
+
+Front:
+
+```html
+{{#RecognitionSupineEnabled}}{{RecognitionSupinePrompt}}{{/RecognitionSupineEnabled}}
+```
+
+Back:
+
+```html
+{{#RecognitionSupineEnabled}}
+<div class="latinitas-answer">{{RecognitionSupineAnswer}}</div>
+<div class="latinitas-context">{{Lemma}} &#183; {{Principal Parts}}{{#Meaning}} &#183; {{Meaning}}{{/Meaning}}</div>
+{{#Personal Notes}}<div class="latinitas-personal-notes">{{Personal Notes}}</div>{{/Personal Notes}}
+{{/RecognitionSupineEnabled}}
+```
+
+### Shared styling (paste once into the note type's Styling)
+
+```css
+.card {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  text-align: center;
+  color: #1a1a1a;
+  background-color: #ffffff;
+}
+
+.latinitas-answer {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.latinitas-context {
+  margin-top: 0.6em;
+  font-size: 18px;
+  color: #444444;
+}
+
+.latinitas-personal-notes {
+  margin-top: 1em;
+  padding-top: 0.5em;
+  border-top: 1px solid #cccccc;
+  font-size: 16px;
+  font-style: italic;
+  color: #666666;
+  text-align: left;
+}
+```
+<!-- latinitas-reference-setup end -->
+
+Both recipes follow the same shape: the **completion** front shows the
+principal-part series with the target blanked (`____`) and asks for the missing
+form; the **recognition** front shows one form and asks which role it is. The
+backs render the managed answer plus the shared context and Personal Notes.
+
+## Synthetic missing-form examples
+
+These synthetic examples show how missing forms behave. Each row is one note;
+"eligible templates" lists exactly the templates whose `Enabled` field is `1`
+(every other slot renders an empty front and creates no card):
+
+| Forms value | Confirmed roles | Eligible templates |
+| --- | --- | --- |
+| `ferō — ferre — tulī — lātum` | present_1s, present_infinitive, perfect_1s, supine | Completion Present, Completion Infinitive, Completion Perfect, Completion Supine, Recognition Present, Recognition Infinitive, Recognition Perfect, Recognition Supine |
+| `ferō — ferre —  — ` | present_1s, present_infinitive, perfect_1s, perfect_passive_participle | Completion Present, Completion Infinitive, Recognition Present, Recognition Infinitive |
+| `amō — amāre — <b></b> — amātum` | present_1s, present_infinitive, perfect_1s, supine | Completion Present, Completion Infinitive, Completion Supine, Recognition Present, Recognition Infinitive, Recognition Supine |
+
+- An absent form guards its own cards off without shifting any positional
+  meaning: the remaining prompts keep every confirmed position and show the
+  omitted position as an em dash (`—`).
+- A markup-only value such as `<b></b>` normalizes once to empty before
+  eligibility (the T-032 fix); it produces no card and is not treated as a
+  present answer. Source HTML elsewhere is rendered under the existing safe-HTML
+  contract: display text is escaped once at export, never re-decoded.
+- An object whose roles yield zero eligible cards stays a valid object but is
+  omitted from the CSV (native import would otherwise create a blank note) and
+  reported as a distinct `Zero-eligible notes` count, separate from parser
+  skips.
+
+## Eligibility loss at the export checkpoint
+
+Regeneration compares current card eligibility against the retained prior-export
+checkpoint beside the source (`source.csv.latinitas-cards.json`). When a
+previously exported card key is no longer eligible — data loss, recipe
+deselection, or a shared-field change that removes required data — the exporter
+**withholds the whole affected note row** and reports it under
+`Card eligibility reviews`. It never exports emptied `Enabled` fields, deletes
+cards, or resets schedules: clearing a guard on import would let Anki drop the
+existing card, so the row is withheld for review instead. Missing, corrupt, or
+incompatible checkpoint state is a review gate requiring recovery/review or an
+explicit `--approve-fresh-import` confirmation; a read-only preview never
+advances the checkpoint. Until managed retirement in v0.2.0, you retain the
+existing notes or explicitly suspend affected cards in a backed-up manual
+workflow. Details: [deterministic-csv-export.md](deterministic-csv-export.md).
+
+## Read this before the first import and before every reimport
+
+> **Warning: a mapped `Tags` column replaces destination-only manual tags.**
+> When `Tags` is mapped — and it must be mapped to Anki's tags column, not to a
+> field — a native Anki CSV Update **replaces** each matched note's tag set with
+> the exported tags, **even when every other managed field is unchanged**. A tag
+> you added manually to a note in the destination collection is removed by the
+> import; an exported tag you removed manually is restored. Tags inherited from
+> the source parent are part of the exported set — inheritance is not
+> preservation of destination edits. Before the first import and before every
+> reimport: **back up the collection** (and export the destination tags you
+> care about), or **defer the import**. v0.1.0 performs no destination-aware
+> tag merging; a destination-aware update workflow is planned for v0.2.0 and
+> does not exist today.
+
+The tag-replacement mechanism was observed with a native Anki Desktop 26.9.3
+collection for the earlier per-exercise model (see the "Native tag-import
+verification" notes in [deterministic-csv-export.md](deterministic-csv-export.md));
+treat it as a property of Anki's CSV Update, not of a specific Latinitas model.
+Native verification of this multi-card model is tracked in T-035.
+
+## First and repeat import checklist
+
+1. **Back up the collection**, and use a disposable profile to verify the
+   reference schema first.
+2. Create the **dedicated Latinitas note type** (named by the profile, normally
+   `Latinitas Principal Parts`) from the exact reference fields and templates
+   above; keep `LatinitasID` first. Do not modify source note types and do not
+   reuse legacy exercise types.
+3. Choose the configured **target deck**; enable **Allow HTML in fields**; match
+   on the **first field** with **Note Type** match scope; for repeat imports
+   choose **Update existing notes when first field matches**. Verify the mapping
+   in the native import dialog before applying.
+4. Map managed fields and `Tags` deliberately (`Tags` to the tags column); leave
+   **`Personal Notes` unmapped** — the generated CSV has no such column, so the
+   dialog offers nothing to map to it; confirm that stays true. Accept the
+   manual-tag replacement warning above first.
+5. Check the preview **counts separately**: source entries, objects/notes,
+   eligible cards, skipped/review cases. Do not confuse one CSV row with one
+   card.
+6. Inspect **both card sides** and the sibling relationships; repeat an
+   unchanged import and a controlled managed-field update. For updates compare
+   full card/review-log tables, and for no-op imports full
+   note/card/review-log tables — not a scheduling-column subset.
+7. Enable the desired Anki **sibling-burying** settings manually (see below);
+   verify the cards schedule independently and observe burying with synthetic
+   siblings, without claiming to validate Anki's scheduler.
+
+## Sibling burying and independent schedules
+
+Anki owns FSRS scheduling and burying; Latinitas neither implements scheduling
+nor changes your burying settings. If you want the ten potential siblings of one
+note not to surface together, enable the deck options' bury-siblings controls
+(new/review/interday-learning siblings, per Anki version) yourself on the target
+deck. All cards of a note remain independent cards with separate review
+histories and scheduling states; enabling or disabling a recipe changes only
+which cards are eligible, never note identity, slot order, or ordinals.
+
+## Ownership and drift boundaries
+
+Source-specific field inference, profile preparation, and raw provenance stay
+with the source adapters; CSV metadata, headers, and escaping belong to the
+transport serialization in the exporter. This document consumes the frozen
+contract rather than redefining it, so a schema or registry change must be
+republished here through `reference_setup_markdown()` (a test fails on drift).
+Legacy APKG mutation and corpus commands remain experimental and are not part
+of this workflow.

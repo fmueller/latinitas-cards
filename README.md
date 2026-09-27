@@ -152,6 +152,7 @@ PPP and supine remain distinct semantic roles.
 - [Principal-part parser support matrix](docs/principal-part-parsing.md)
 - [Sanitized representative-deck validation](docs/representative-deck-validation.md)
 - [Deterministic CSV export and Anki import](docs/deterministic-csv-export.md)
+- [Reference note type and safe import](docs/reference-note-type.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
 - [License compatibility audit](docs/license-compatibility-audit.md)
 

@@ -1,12 +1,12 @@
 ---
 id: T-033-publish-reference-multi-card-templates-and-safe
 title: Publish reference multi-card templates and safe import guidance
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#reference-note-type-and-import-safety
 dependencies:
     - T-030-generate-conditional-sibling-cards-with-stable
-updated_at: "2026-09-27T09:36:15Z"
+updated_at: "2026-09-27T16:40:38Z"
 ---
 
 # T-033-publish-reference-multi-card-templates-and-safe Publish reference multi-card templates and safe import guidance
@@ -48,3 +48,4 @@ for the new model. General automated provisioning remains v0.6.0.
 
 ## Implementation Notes
 - Depends on final field and slot choices in T-030; no automated provisioning required.
+- 2026-09-27T16:40:38Z: verification pass
