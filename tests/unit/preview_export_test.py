@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from latinitas_cards.checkpoint import PriorExportCheckpoint
 from latinitas_cards.identity import derive_latinitas_id
 from latinitas_cards.manifest import CsvIdentityManifest, allocate_source_scope, reconcile_csv_manifest
 from latinitas_cards.notes import TAGS_CSV_COLUMN
@@ -40,6 +41,36 @@ EXPECTED_EXPORT_COLUMNS = (
     "Note Schema",
     "Generator",
     "Profile",
+    "CompletionPresentEnabled",
+    "CompletionPresentPrompt",
+    "CompletionPresentAnswer",
+    "CompletionInfinitiveEnabled",
+    "CompletionInfinitivePrompt",
+    "CompletionInfinitiveAnswer",
+    "CompletionPerfectEnabled",
+    "CompletionPerfectPrompt",
+    "CompletionPerfectAnswer",
+    "CompletionPPPEnabled",
+    "CompletionPPPPrompt",
+    "CompletionPPPAnswer",
+    "CompletionSupineEnabled",
+    "CompletionSupinePrompt",
+    "CompletionSupineAnswer",
+    "RecognitionPresentEnabled",
+    "RecognitionPresentPrompt",
+    "RecognitionPresentAnswer",
+    "RecognitionInfinitiveEnabled",
+    "RecognitionInfinitivePrompt",
+    "RecognitionInfinitiveAnswer",
+    "RecognitionPerfectEnabled",
+    "RecognitionPerfectPrompt",
+    "RecognitionPerfectAnswer",
+    "RecognitionPPPEnabled",
+    "RecognitionPPPPrompt",
+    "RecognitionPPPAnswer",
+    "RecognitionSupineEnabled",
+    "RecognitionSupinePrompt",
+    "RecognitionSupineAnswer",
 )
 
 
@@ -446,8 +477,8 @@ def test_anki_source_tags_reach_the_object_note_and_the_serialized_tags_column(t
         original_digest = hashlib.sha256(package.read_bytes()).digest()
         profile = _tagged_package_profile()
 
-        first = deterministic_csv_bytes(prepare_principal_part_export(package, profile))
-        second = deterministic_csv_bytes(prepare_principal_part_export(package, profile))
+        first = deterministic_csv_bytes(prepare_principal_part_export(package, profile, approve_fresh_import=True))
+        second = deterministic_csv_bytes(prepare_principal_part_export(package, profile, approve_fresh_import=True))
 
         assert first == second
         assert hashlib.sha256(package.read_bytes()).digest() == original_digest
@@ -474,7 +505,7 @@ def test_untagged_anki_source_keeps_configured_tags_only_in_serialized_output(tm
     _write_tagged_package(package, "collection.anki2", tags_by_guid={"guid-a": "", "guid-b": "", "guid-c": ""})
     profile = _tagged_package_profile()
 
-    payload = deterministic_csv_bytes(prepare_principal_part_export(package, profile))
+    payload = deterministic_csv_bytes(prepare_principal_part_export(package, profile, approve_fresh_import=True))
 
     _header, rows, _metadata = _parse_export(payload)
     assert {row[4] for row in rows} == {"latinitas latin"}
@@ -485,7 +516,7 @@ def test_invalid_source_tags_block_export_with_actionable_skip(tmp_path: Path) -
     _write_tagged_package(package, "collection.anki2", tags_by_guid={"guid-a": "latin bad\x9btag"})
     profile = _tagged_package_profile()
 
-    result = prepare_principal_part_export(package, profile)
+    result = prepare_principal_part_export(package, profile, approve_fresh_import=True)
 
     skip_codes = {skip.code for skip in result.generation.skips}
     assert "invalid_source_tags" in skip_codes
@@ -507,7 +538,7 @@ def test_markup_unsafe_inherited_tags_never_reach_the_serialized_tags_column(tmp
     )
     profile = _tagged_package_profile()
 
-    result = prepare_principal_part_export(package, profile)
+    result = prepare_principal_part_export(package, profile, approve_fresh_import=True)
     payload = deterministic_csv_bytes(result).decode("utf-8")
 
     assert {note.provenance.source_identity for note in result.generation.notes} == {"guid-b", "guid-c"}
@@ -556,8 +587,9 @@ def test_csv_export_omits_the_user_owned_personal_notes_column(tmp_path: Path) -
     header, rows, _ = _parse_export(payload)
 
     assert "Personal Notes" not in text
-    assert header[-1] == "Profile"
-    assert len(header) == 13
+    assert header[-1] == "RecognitionSupineAnswer"
+    assert header[13] == "CompletionPresentEnabled"
+    assert len(header) == 43
     assert all(len(row) == len(header) for row in rows)
 
 
@@ -628,6 +660,81 @@ def test_csv_export_encodes_unsafe_controls_without_removing_newlines(tmp_path: 
     assert "sagen" in text and "prüfen" in text
 
 
+def _unsupported_role_profile() -> DeckProfile:
+    return _profile().apply_overrides({"principal_parts": {"roles": ["stem_a", "stem_b"], "separators": [" — "]}})
+
+
+def test_export_reports_source_entries_objects_cards_and_zero_eligible_notes_separately(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(
+        source,
+        [
+            ("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen"),
+            ("entry-2", "sum", "sum, esse, fuī, ", "sein"),
+            ("entry-3", "ferō", "ferre, ferō, tulī", "tragen"),
+        ],
+    )
+
+    result = prepare_principal_part_export(
+        source,
+        _profile(),
+        manifest_path=state,
+        approve_new_scope=True,
+    )
+
+    assert result.source_entry_count == 3
+    assert result.object_count == 2
+    assert result.exported_note_count == 2
+    assert result.card_count == 14
+    assert result.zero_card_note_count == 0
+    assert result.skipped_count == 2
+    assert any(skip.code == "omitted_principal_part" for skip in result.generation.skips)
+    assert any(skip.code == "unmarked_omission" for skip in result.generation.skips)
+
+
+def test_csv_export_omits_zero_eligible_notes_instead_of_blank_native_cards(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(
+        source,
+        [
+            ("entry-1", "ferō", "ferō — ferre", "tragen"),
+            ("entry-2", "sum", "sum — esse", "sein"),
+        ],
+    )
+
+    result = prepare_principal_part_export(
+        source,
+        _unsupported_role_profile(),
+        manifest_path=state,
+        approve_new_scope=True,
+    )
+
+    assert result.source_entry_count == 2
+    assert result.object_count == 2
+    assert result.zero_card_note_count == 2
+    assert result.exported_note_count == 0
+    assert result.card_count == 0
+    assert {note.provenance.source_identity for note in result.zero_card_notes} == {"entry-1", "entry-2"}
+    header, rows, _metadata = _parse_export(deterministic_csv_bytes(result))
+    assert rows == []
+    assert header == list(EXPECTED_EXPORT_COLUMNS)
+
+
+def test_exported_rows_always_carry_at_least_one_enabled_card_guard(tmp_path: Path) -> None:
+    result, _source, _state, _output = _committed_scoped_export(
+        tmp_path,
+        rows=[("entry-1", "sum", "sum, esse, fuī, ", "sein")],
+    )
+
+    header, rows, _metadata = _parse_export(deterministic_csv_bytes(result))
+
+    enabled_values = [rows[0][index] for index, name in enumerate(header) if name.endswith("Enabled")]
+    assert enabled_values.count("1") == 6
+    assert set(enabled_values) == {"1", ""}
+
+
 @pytest.mark.parametrize("suffix", [".apkg", ".colpkg"])
 def test_package_preview_and_export_leave_source_bytes_unchanged(tmp_path: Path, suffix: str) -> None:
     source = tmp_path / f"representative{suffix}"
@@ -635,7 +742,7 @@ def test_package_preview_and_export_leave_source_bytes_unchanged(tmp_path: Path,
     shutil.copyfile(FIXTURE, source)
     source_before = source.read_bytes()
 
-    result = prepare_principal_part_export(source, _representative_profile())
+    result = prepare_principal_part_export(source, _representative_profile(), approve_fresh_import=True)
     assert result.generated_count > 0
     assert not result.scope_pending
     assert source.read_bytes() == source_before
@@ -798,7 +905,7 @@ def test_manifest_commit_failure_restores_existing_or_absent_output_pair(
 
     monkeypatch.setattr("latinitas_cards.preview_export.os.replace", fail_manifest_once)
 
-    with pytest.raises(PrincipalPartExportError, match="No output or manifest was changed"):
+    with pytest.raises(PrincipalPartExportError, match="No output or committed state was changed"):
         write_principal_part_csv(allocated, output)
 
     assert failed
@@ -857,7 +964,7 @@ def test_manifest_rollback_failure_without_backups_reports_affected_destination(
     assert not state.exists()
     assert "Recovery is required" in message
     assert str(output) in message
-    assert "No output or manifest was changed" not in message
+    assert "No output or committed state was changed" not in message
 
 
 def test_manifest_rollback_failure_retains_backup_for_recovery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1033,6 +1140,7 @@ def test_keyboard_interrupt_after_backup_moves_restores_prior_pair_and_identitie
     write_principal_part_csv(allocated, output)
     output_before = output.read_bytes()
     state_before = state.read_bytes()
+    checkpoint_before = Path(f"{source}.latinitas-cards.json").read_bytes()
     source_before = source.read_bytes()
     second = prepare_principal_part_export(source, profile, manifest_path=state)
 
@@ -1053,8 +1161,10 @@ def test_keyboard_interrupt_after_backup_moves_restores_prior_pair_and_identitie
     with pytest.raises(KeyboardInterrupt):
         write_principal_part_csv(second, output)
 
+    checkpoint = Path(f"{source}.latinitas-cards.json")
     assert output.read_bytes() == output_before
     assert state.read_bytes() == state_before
+    assert checkpoint.read_bytes() == checkpoint_before
     assert source.read_bytes() == source_before
     assert list(tmp_path.glob(".*.tmp")) == []
 
@@ -1095,6 +1205,7 @@ def test_keyboard_interrupt_during_first_scoped_export_keeps_scope_state_uncommi
 
     assert not output.exists()
     assert not state.exists()
+    assert not Path(f"{source}.latinitas-cards.json").exists()
     assert list(tmp_path.glob(".*.tmp")) == []
 
     monkeypatch.undo()
@@ -1106,6 +1217,8 @@ def test_keyboard_interrupt_during_first_scoped_export_keeps_scope_state_uncommi
     write_principal_part_csv(retried, output)
     persisted = CsvIdentityManifest.load(state)
     assert persisted.source_scope == retried.source_scope
+    checkpoint = PriorExportCheckpoint.load(Path(f"{source}.latinitas-cards.json"))
+    assert checkpoint.source_scope == retried.source_scope
     assert deterministic_csv_bytes(retried).startswith(b"#separator:Comma\n")
 
 
@@ -1218,6 +1331,93 @@ def test_keyboard_interrupt_around_each_destructive_move_restores_the_prior_pair
     assert list(tmp_path.glob(".*.tmp")) == []
 
 
+@pytest.mark.parametrize("perform", [False, True], ids=["before-move", "after-move"])
+@pytest.mark.parametrize(
+    "injection",
+    ["backup-checkpoint", "commit-checkpoint"],
+)
+@pytest.mark.parametrize("prior_state", ["committed", "fresh"], ids=["state-present", "state-absent"])
+def test_keyboard_interrupt_around_checkpoint_moves_restores_the_prior_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    prior_state: str,
+    injection: str,
+    perform: bool,
+) -> None:
+    if injection == "backup-checkpoint" and prior_state == "fresh":
+        pytest.skip("the checkpoint backup move never runs without an existing checkpoint")
+
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    state = Path(f"{source}.latinitas.json")
+    checkpoint_file = Path(f"{source}.latinitas-cards.json")
+    profile = _profile()
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    if prior_state == "committed":
+        committed = prepare_principal_part_export(source, profile, manifest_path=state, approve_new_scope=True)
+        write_principal_part_csv(committed, output)
+        prepared = prepare_principal_part_export(source, profile, manifest_path=state)
+        checkpoint_before = checkpoint_file.read_bytes()
+        output_before = output.read_bytes()
+        state_before = state.read_bytes()
+    else:
+        prepared = prepare_principal_part_export(source, profile, manifest_path=state, approve_new_scope=True)
+        checkpoint_before = b""
+        output_before = b""
+        state_before = b""
+    source_before = source.read_bytes()
+
+    original_replace = os.replace
+    hits = 0
+
+    def interrupting_replace(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal hits
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if injection == "backup-checkpoint":
+            matches = Path(source_text) == checkpoint_file
+        else:
+            matches = destination == checkpoint_file and _is_staged_commit(source_text)
+        if matches:
+            hits += 1
+            if perform:
+                original_replace(source_name, destination_name)
+            raise KeyboardInterrupt("simulated interruption")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", interrupting_replace)
+
+    with pytest.raises(KeyboardInterrupt):
+        write_principal_part_csv(prepared, output)
+
+    assert hits == 1
+    if prior_state == "committed":
+        assert checkpoint_file.read_bytes() == checkpoint_before
+        assert output.read_bytes() == output_before
+        assert state.read_bytes() == state_before
+    else:
+        assert not checkpoint_file.exists()
+        assert not state.exists()
+        assert not output.exists()
+    assert source.read_bytes() == source_before
+    assert list(tmp_path.glob(".*.tmp")) == []
+
+    monkeypatch.undo()
+    retry = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=state,
+        approve_new_scope=prior_state == "fresh",
+    )
+    write_principal_part_csv(retry, output)
+    advanced = PriorExportCheckpoint.load(checkpoint_file)
+    assert advanced.source_scope == retry.source_scope
+    assert advanced.objects
+
+
 def test_keyboard_interrupt_during_recovery_retains_both_backups(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1225,6 +1425,8 @@ def test_keyboard_interrupt_during_recovery_retains_both_backups(
     second, source, output, state, output_before, state_before, source_before = (
         _prepare_committed_pair_for_interruption(tmp_path)
     )
+    checkpoint_file = Path(f"{source}.latinitas-cards.json")
+    checkpoint_before = checkpoint_file.read_bytes()
 
     original_replace = os.replace
     interrupted_commit = False
@@ -1251,10 +1453,13 @@ def test_keyboard_interrupt_during_recovery_retains_both_backups(
     assert error.value.args == ("simulated interruption during recovery",)
     assert not output.exists()
     assert not state.exists()
+    assert not checkpoint_file.exists()
     output_backups = list(tmp_path.glob(f".{output.name}.backup.*"))
     state_backups = list(tmp_path.glob(f".{state.name}.backup.*"))
+    checkpoint_backups = list(tmp_path.glob(f".{checkpoint_file.name}.backup.*"))
     assert len(output_backups) == 1 and output_backups[0].read_bytes() == output_before
     assert len(state_backups) == 1 and state_backups[0].read_bytes() == state_before
+    assert len(checkpoint_backups) == 1 and checkpoint_backups[0].read_bytes() == checkpoint_before
     assert source.read_bytes() == source_before
 
 

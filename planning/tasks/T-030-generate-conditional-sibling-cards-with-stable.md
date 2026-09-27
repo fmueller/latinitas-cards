@@ -1,13 +1,13 @@
 ---
 id: T-030-generate-conditional-sibling-cards-with-stable
 title: Generate conditional sibling cards with stable template slots
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#conditional-sibling-cards
 dependencies:
     - T-029-model-coherent-learning-objects-with-stable-note
     - T-032-review-extraction-coverage-and-correct
-updated_at: "2026-09-27T09:36:15Z"
+updated_at: "2026-09-27T15:51:27Z"
 ---
 
 # T-030-generate-conditional-sibling-cards-with-stable Generate conditional sibling cards with stable template slots
@@ -57,3 +57,4 @@ note, using stable semantic recipe/role keys and non-repurposed template ordinal
 
 ## Implementation Notes
 - Adapt existing generation/rendering boundaries and preserve T-026/T-027/T-028 behavior.
+- 2026-09-27T15:51:23Z: verification pass

@@ -18,9 +18,18 @@ import os
 import tempfile
 from collections.abc import Iterable, Mapping
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
+from .checkpoint import (
+    GLOBAL_SOURCE_SCOPE,
+    CardEligibilityReview,
+    CheckpointError,
+    PriorExportCheckpoint,
+    advance_checkpoint,
+    compare_export_with_checkpoint,
+    export_fingerprint,
+)
 from .generation import LearningObjectGenerationResult, generate_learning_object_notes
 from .manifest import (
     CsvIdentityManifest,
@@ -32,6 +41,8 @@ from .notes import CSV_EXPORT_FIELD_NAMES, GENERATED_NOTE_FIELD_NAMES, TAGS_CSV_
 from .profile import DeckProfile
 from .profile_setup import encode_unsafe_controls
 from .sources import CanonicalSourceRecord, read_source_records
+
+CHECKPOINT_SUFFIX = ".latinitas-cards.json"
 
 
 class PrincipalPartExportError(ValueError):
@@ -52,6 +63,15 @@ class PrincipalPartExportResult:
     loaded_manifest: CsvIdentityManifest | None = None
     source_scope: str | None = None
     scope_pending: bool = False
+    source_entry_count: int = 0
+    checkpoint_path: Path | None = None
+    loaded_checkpoint: PriorExportCheckpoint | None = None
+    checkpoint_scope_binding: str | None = None
+    withheld_note_ids: frozenset[str] = frozenset()
+    card_eligibility_reviews: tuple[CardEligibilityReview, ...] = ()
+    checkpoint_pending: bool = False
+    fresh_import_approved: bool = False
+    approved_prior_checkpoint: PriorExportCheckpoint | None = None
 
     @property
     def generated_count(self) -> int:
@@ -66,6 +86,40 @@ class PrincipalPartExportResult:
         generation_ambiguities = sum(1 for skip in self.generation.skips if skip.status == "ambiguous")
         return generation_ambiguities + len(self.manifest_reviews)
 
+    @property
+    def object_count(self) -> int:
+        """Learning objects that were confirmed and generated as notes."""
+
+        return len(self.generation.notes)
+
+    @property
+    def zero_card_notes(self) -> tuple[GeneratedNote, ...]:
+        """Domain-valid objects that currently have no eligible card."""
+
+        return tuple(note for note in self.generation.notes if not note.card_keys)
+
+    @property
+    def zero_card_note_count(self) -> int:
+        return len(self.zero_card_notes)
+
+    @property
+    def exportable_notes(self) -> tuple[GeneratedNote, ...]:
+        """Notes that are safe to serialize: eligible cards and no withheld row."""
+
+        return tuple(
+            note for note in self.generation.notes if note.card_keys and note.latinitas_id not in self.withheld_note_ids
+        )
+
+    @property
+    def exported_note_count(self) -> int:
+        return len(self.exportable_notes)
+
+    @property
+    def card_count(self) -> int:
+        """Eligible cards across the notes that would be exported."""
+
+        return sum(len(note.card_keys) for note in self.exportable_notes)
+
 
 def prepare_principal_part_export(
     source_path: str | Path,
@@ -77,6 +131,8 @@ def prepare_principal_part_export(
     approved_reuse: Mapping[int, str] | None = None,
     approved_allocations: Mapping[int, str | None] | Iterable[int] | None = None,
     approved_removals: Iterable[str] | None = None,
+    checkpoint_path: str | Path | None = None,
+    approve_fresh_import: bool = False,
 ) -> PrincipalPartExportResult:
     """Read immutable input and build a typed generation result without writing files."""
 
@@ -89,23 +145,32 @@ def prepare_principal_part_export(
         if source.suffix.lower() != ".csv":
             raise PrincipalPartExportError("manifest source identity is supported only for CSV input")
         manifest_file = manifest_file or Path(f"{source}.latinitas.json")
-        _reject_input_aliases(source, profile_file, manifest_file)
+        checkpoint_file = _resolve_checkpoint_path(source, checkpoint_path)
+        _reject_input_aliases(source, profile_file, manifest_file, checkpoint_file)
         return _prepare_scoped_csv(
             source,
             profile,
             profile_file=profile_file,
             state_file=manifest_file,
+            checkpoint_file=checkpoint_file,
             reconcile_rows=True,
             approve_new_scope=approve_new_scope,
             approved_reuse=approved_reuse,
             approved_allocations=approved_allocations,
             approved_removals=approved_removals,
+            approve_fresh_import=approve_fresh_import,
         )
 
-    _reject_input_aliases(source, profile_file, manifest_file)
+    package_checkpoint_file = Path(f"{source}{CHECKPOINT_SUFFIX}")
+    _reject_input_aliases(source, profile_file, manifest_file, package_checkpoint_file)
     uses_csv_state = source.suffix.lower() == ".csv" and strategy == "source_id_field"
     if not uses_csv_state and (
-        manifest_file is not None or approve_new_scope or approved_reuse or approved_allocations or approved_removals
+        manifest_file is not None
+        or checkpoint_path is not None
+        or approve_new_scope
+        or approved_reuse
+        or approved_allocations
+        or approved_removals
     ):
         raise PrincipalPartExportError(
             "identity state and approvals are valid only for a CSV source using the manifest "
@@ -118,24 +183,43 @@ def prepare_principal_part_export(
                 "using the explicit source-ID identity strategy."
             )
         manifest_file = manifest_file or Path(f"{source}.latinitas.json")
+        checkpoint_file = _resolve_checkpoint_path(source, checkpoint_path)
+        _reject_input_aliases(source, profile_file, manifest_file, checkpoint_file)
         return _prepare_scoped_csv(
             source,
             profile,
             profile_file=profile_file,
             state_file=manifest_file,
+            checkpoint_file=checkpoint_file,
             reconcile_rows=False,
             approve_new_scope=approve_new_scope,
+            approve_fresh_import=approve_fresh_import,
         )
 
     source_id_field = profile.source_identity.field if strategy == "source_id_field" else None
     records = read_source_records(source, source_id_field=source_id_field)
     generation = generate_learning_object_notes(records, profile)
-    return PrincipalPartExportResult(
+    package_result = PrincipalPartExportResult(
         source_path=source,
         profile=profile,
         generation=generation,
         profile_path=profile_file,
+        source_entry_count=len(records),
     )
+    return _apply_prior_export_evidence(
+        package_result,
+        checkpoint_file=package_checkpoint_file,
+        approve_fresh_import=approve_fresh_import,
+        missing_checkpoint_reason=(
+            "Package sources keep no local record that proves a first export, so a missing prior-export "
+            "checkpoint cannot be read as an empty prior card set."
+        ),
+        scope_binding=GLOBAL_SOURCE_SCOPE,
+    )
+
+
+def _resolve_checkpoint_path(source: Path, override: str | Path | None) -> Path:
+    return Path(override) if override is not None else Path(f"{source}{CHECKPOINT_SUFFIX}")
 
 
 def _prepare_scoped_csv(
@@ -144,8 +228,10 @@ def _prepare_scoped_csv(
     *,
     profile_file: Path | None,
     state_file: Path,
+    checkpoint_file: Path,
     reconcile_rows: bool,
     approve_new_scope: bool,
+    approve_fresh_import: bool = False,
     approved_reuse: Mapping[int, str] | None = None,
     approved_allocations: Mapping[int, str | None] | Iterable[int] | None = None,
     approved_removals: Iterable[str] | None = None,
@@ -155,6 +241,7 @@ def _prepare_scoped_csv(
     identity_field = profile.source_identity.field if profile.source_identity.strategy == "source_id_field" else None
     records = read_source_records(source, source_id_field=identity_field)
     saved_state = _load_identity_state(state_file)
+    scope_previously_committed = saved_state is not None and saved_state.is_scoped
 
     if saved_state is None or not saved_state.is_scoped:
         if not approve_new_scope:
@@ -168,6 +255,7 @@ def _prepare_scoped_csv(
                 profile_file=profile_file,
                 state_file=state_file,
                 legacy_state=saved_state,
+                source_entry_count=len(records),
             )
         scope = allocate_source_scope()
         if saved_state is None:
@@ -197,29 +285,106 @@ def _prepare_scoped_csv(
             manifest_identities=identities,
             source_scope=scope,
         )
-        return PrincipalPartExportResult(
-            source_path=source,
-            profile=profile,
-            generation=generation,
-            profile_path=profile_file,
-            manifest_path=state_file,
-            manifest_reviews=reconciliation.reviews,
-            candidate_manifest=reconciliation.manifest,
-            loaded_manifest=saved_state,
-            source_scope=scope,
-        )
-
-    generation = generate_learning_object_notes(records, profile, source_scope=scope)
-    return PrincipalPartExportResult(
+        manifest_reviews = reconciliation.reviews
+        candidate_manifest = reconciliation.manifest
+    else:
+        generation = generate_learning_object_notes(records, profile, source_scope=scope)
+        manifest_reviews = ()
+        candidate_manifest = base_state
+    prepared = PrincipalPartExportResult(
         source_path=source,
         profile=profile,
         generation=generation,
         profile_path=profile_file,
         manifest_path=state_file,
-        manifest_reviews=(),
-        candidate_manifest=base_state,
+        manifest_reviews=manifest_reviews,
+        candidate_manifest=candidate_manifest,
         loaded_manifest=saved_state,
         source_scope=scope,
+        source_entry_count=len(records),
+    )
+    return _apply_prior_export_evidence(
+        prepared,
+        checkpoint_file=checkpoint_file,
+        approve_fresh_import=approve_fresh_import,
+        missing_checkpoint_reason=(
+            "A committed source scope exists without a prior-export checkpoint; earlier exports cannot be ruled out."
+            if scope_previously_committed
+            else None
+        ),
+        scope_binding=scope,
+    )
+
+
+def _apply_prior_export_evidence(
+    result: PrincipalPartExportResult,
+    *,
+    checkpoint_file: Path,
+    approve_fresh_import: bool,
+    missing_checkpoint_reason: str | None,
+    scope_binding: str,
+) -> PrincipalPartExportResult:
+    """Bind retained prior-export evidence to a prepared result.
+
+    Missing, corrupt, or incompatible checkpoint state is a review gate, never
+    an assumed empty prior card set: without an explicit fresh-import
+    confirmation the outcome stays read-only.  ``missing_checkpoint_reason``
+    states why an absent checkpoint cannot prove a first export: a scoped CSV
+    source with a committed scope has exported before, and package sources keep
+    no local record that could prove one at all.  Compatible evidence withholds
+    whole note rows that lost previously exported card keys.
+    """
+
+    prior: PriorExportCheckpoint | None = None
+    pending_reason: str | None = None
+    if checkpoint_file.exists():
+        try:
+            prior = PriorExportCheckpoint.load(checkpoint_file)
+        except (OSError, CheckpointError):
+            pending_reason = "The prior-export checkpoint cannot be read and its evidence must not be assumed empty."
+        else:
+            incompatibility = prior.incompatibility(source_scope=scope_binding)
+            if incompatibility is not None:
+                pending_reason = f"The prior-export checkpoint is incompatible: {incompatibility}."
+    elif missing_checkpoint_reason is not None:
+        pending_reason = missing_checkpoint_reason
+    if pending_reason is not None:
+        if not approve_fresh_import:
+            review = CardEligibilityReview(
+                kind="checkpoint_confirmation",
+                latinitas_id=None,
+                source_identity=None,
+                card_keys=(),
+                message=(
+                    pending_reason
+                    + " Recover or review the checkpoint, or explicitly approve a fresh import to proceed."
+                ),
+            )
+            return replace(
+                result,
+                checkpoint_path=checkpoint_file,
+                checkpoint_scope_binding=scope_binding,
+                checkpoint_pending=True,
+                card_eligibility_reviews=(review,),
+            )
+        return replace(
+            result,
+            checkpoint_path=checkpoint_file,
+            checkpoint_scope_binding=scope_binding,
+            checkpoint_pending=True,
+            loaded_checkpoint=None,
+            fresh_import_approved=True,
+            approved_prior_checkpoint=prior,
+        )
+    withheld_ids, reviews = compare_export_with_checkpoint(prior, result.generation.notes)
+    return replace(
+        result,
+        checkpoint_path=checkpoint_file,
+        checkpoint_scope_binding=scope_binding,
+        loaded_checkpoint=prior,
+        withheld_note_ids=withheld_ids,
+        card_eligibility_reviews=reviews,
+        fresh_import_approved=approve_fresh_import,
     )
 
 
@@ -230,6 +395,7 @@ def _scope_pending_result(
     profile_file: Path | None,
     state_file: Path,
     legacy_state: CsvIdentityManifest | None,
+    source_entry_count: int,
 ) -> PrincipalPartExportResult:
     if legacy_state is None:
         message = (
@@ -261,6 +427,7 @@ def _scope_pending_result(
         candidate_manifest=None,
         source_scope=None,
         scope_pending=True,
+        source_entry_count=source_entry_count,
     )
 
 
@@ -288,8 +455,13 @@ def deterministic_csv_bytes(result: PrincipalPartExportResult) -> bytes:
         raise PrincipalPartExportError(
             "Cannot export before explicit identity review resolves all manifest review items."
         )
+    if result.checkpoint_pending and not result.fresh_import_approved:
+        raise PrincipalPartExportError(
+            "Cannot export without usable prior-export checkpoint evidence: recover or review the "
+            "checkpoint, or explicitly approve a fresh import."
+        )
 
-    notes = result.generation.notes
+    notes = result.exportable_notes
     note_ids = [note.latinitas_id for note in notes]
     if len(note_ids) != len(set(note_ids)):
         raise PrincipalPartExportError("Cannot export duplicate logical LatinitasID values.")
@@ -313,13 +485,38 @@ def deterministic_csv_bytes(result: PrincipalPartExportResult) -> bytes:
     return output.getvalue().encode("utf-8")
 
 
+@dataclass
+class _CommitArtifact:
+    """One destination committed with the output through the recovery boundary."""
+
+    destination: Path
+    payload: bytes
+    staged: Path | None = None
+    backup: Path | None = None
+    existed_before: bool = False
+
+
+def _candidate_checkpoint(result: PrincipalPartExportResult, payload: bytes) -> PriorExportCheckpoint | None:
+    """Build the checkpoint to commit with this output, if state is persisted."""
+
+    if result.checkpoint_path is None or result.checkpoint_scope_binding is None or result.scope_pending:
+        return None
+    prior = None if result.checkpoint_pending else result.loaded_checkpoint
+    return advance_checkpoint(
+        prior,
+        source_scope=result.checkpoint_scope_binding,
+        exported_notes=result.exportable_notes,
+        export_fingerprint=export_fingerprint(payload),
+    )
+
+
 def write_principal_part_csv(
     result: PrincipalPartExportResult,
     output_path: str | Path,
     *,
     profile_path: str | Path | None = None,
 ) -> None:
-    """Commit generated CSV and its identity manifest as one recoverable pair."""
+    """Commit generated CSV, identity state, and checkpoint as one recoverable unit."""
 
     destination = Path(output_path)
     profile_override = None if profile_path is None else Path(profile_path)
@@ -334,12 +531,16 @@ def write_principal_part_csv(
         result.profile_path,
         profile_override,
         result.manifest_path,
+        result.checkpoint_path,
     )
     if any(path is not None and _same_path(destination, path) for path in protected_paths):
-        raise PrincipalPartExportError("The output path must not overwrite the input, profile, or manifest.")
+        raise PrincipalPartExportError("The output path must not overwrite the input, profile, or state.")
     _validate_regular_file_destination("output", destination)
     if result.candidate_manifest is not None and result.manifest_path is not None:
         _validate_regular_file_destination("manifest", result.manifest_path)
+    candidate_checkpoint_path = result.checkpoint_path if not result.scope_pending else None
+    if candidate_checkpoint_path is not None:
+        _validate_regular_file_destination("checkpoint", candidate_checkpoint_path)
     if not destination.parent.is_dir():
         raise PrincipalPartExportError("The output directory does not exist; no output was written.")
     if (
@@ -348,57 +549,57 @@ def write_principal_part_csv(
         and not result.manifest_path.parent.is_dir()
     ):
         raise PrincipalPartExportError("The manifest directory does not exist; no output was written.")
+    if candidate_checkpoint_path is not None and not candidate_checkpoint_path.parent.is_dir():
+        raise PrincipalPartExportError("The checkpoint directory does not exist; no output was written.")
 
     payload = deterministic_csv_bytes(result)
+    candidate_checkpoint = _candidate_checkpoint(result, payload)
     manifest_destination = result.manifest_path if result.candidate_manifest is not None else None
     _reject_changed_identity_state(result, manifest_destination)
-    staged_output: Path | None = None
-    staged_manifest: Path | None = None
-    output_backup: Path | None = None
-    manifest_backup: Path | None = None
-    preserve_backups = False
-    output_existed = destination.exists()
-    manifest_existed = manifest_destination is not None and manifest_destination.exists()
-    try:
-        staged_output = _stage_bytes(destination, payload)
-        if result.candidate_manifest is not None and manifest_destination is not None:
-            staged_manifest = _stage_bytes(
-                manifest_destination,
-                result.candidate_manifest.to_json().encode("utf-8"),
+    checkpoint_destination = candidate_checkpoint_path if candidate_checkpoint is not None else None
+    _reject_changed_checkpoint_state(result, checkpoint_destination)
+
+    artifacts: list[_CommitArtifact] = [_CommitArtifact(destination=destination, payload=payload)]
+    if result.candidate_manifest is not None and manifest_destination is not None:
+        artifacts.append(
+            _CommitArtifact(
+                destination=manifest_destination,
+                payload=result.candidate_manifest.to_json().encode("utf-8"),
             )
-
-        output_backup = _prepare_backup_slot(destination)
-        if output_backup is not None:
-            os.replace(destination, output_backup)
-        if manifest_destination is not None:
-            manifest_backup = _prepare_backup_slot(manifest_destination)
-            if manifest_backup is not None:
-                os.replace(manifest_destination, manifest_backup)
-
-        os.replace(staged_output, destination)
-        staged_output = None
-        if staged_manifest is not None and manifest_destination is not None:
-            os.replace(staged_manifest, manifest_destination)
-            staged_manifest = None
+        )
+    if candidate_checkpoint is not None and checkpoint_destination is not None:
+        artifacts.append(
+            _CommitArtifact(destination=checkpoint_destination, payload=candidate_checkpoint.to_json().encode("utf-8"))
+        )
+    preserve_backups = False
+    try:
+        for artifact in artifacts:
+            artifact.existed_before = artifact.destination.exists()
+            artifact.staged = _stage_bytes(artifact.destination, artifact.payload)
+        for artifact in artifacts:
+            artifact.backup = _prepare_backup_slot(artifact.destination)
+            if artifact.backup is not None:
+                os.replace(artifact.destination, artifact.backup)
+        for artifact in artifacts:
+            if artifact.staged is None:
+                continue
+            os.replace(artifact.staged, artifact.destination)
+            artifact.staged = None
     except BaseException as error:
         preserve_backups = True
-        output_restored = _restore_after_failed_commit(destination, output_backup, output_existed)
-        manifest_restored = True
-        if manifest_destination is not None:
-            manifest_restored = _restore_after_failed_commit(manifest_destination, manifest_backup, manifest_existed)
+        restored: dict[Path, bool] = {}
+        for artifact in artifacts:
+            restored[artifact.destination] = _restore_after_failed_commit(
+                artifact.destination, artifact.backup, artifact.existed_before
+            )
         retained_backups = tuple(
-            str(path) for path in (output_backup, manifest_backup) if path is not None and path.exists()
+            str(artifact.backup) for artifact in artifacts if artifact.backup is not None and artifact.backup.exists()
         )
         affected_destinations = tuple(
-            str(path)
-            for path, restored in (
-                (destination, output_restored),
-                (manifest_destination, manifest_restored),
-            )
-            if path is not None and not restored
+            str(artifact.destination) for artifact in artifacts if not restored[artifact.destination]
         )
         message = _recovery_failure_message(affected_destinations, retained_backups)
-        restoration_incomplete = not (output_restored and manifest_restored)
+        restoration_incomplete = not all(restored.values())
         if isinstance(error, OSError):
             raise PrincipalPartExportError(message) from error
         if isinstance(error, KeyboardInterrupt) and restoration_incomplete:
@@ -407,11 +608,10 @@ def write_principal_part_csv(
             error.add_note(message)
         raise
     finally:
-        _remove_temporary_path(staged_output)
-        _remove_temporary_path(staged_manifest)
-        if not preserve_backups:
-            _remove_temporary_path(output_backup)
-            _remove_temporary_path(manifest_backup)
+        for artifact in artifacts:
+            _remove_temporary_path(artifact.staged)
+            if not preserve_backups:
+                _remove_temporary_path(artifact.backup)
 
 
 def _reject_changed_identity_state(
@@ -431,7 +631,7 @@ def _reject_changed_identity_state(
     if manifest_destination.exists():
         if result.loaded_manifest is None:
             try:
-                current = CsvIdentityManifest.load(manifest_destination)
+                CsvIdentityManifest.load(manifest_destination)
             except (OSError, ValueError):
                 return
             raise PrincipalPartExportError(
@@ -454,13 +654,65 @@ def _reject_changed_identity_state(
         )
 
 
-def _reject_input_aliases(source: Path, profile: Path | None, manifest: Path | None) -> None:
-    paths = (source, profile, manifest)
+def _reject_changed_checkpoint_state(
+    result: PrincipalPartExportResult,
+    checkpoint_destination: Path | None,
+) -> None:
+    """Abort when retained card evidence changed since prepare.
+
+    A parseable checkpoint other than the one prepare loaded, or one that
+    appeared for a run that prepared without one, must be re-prepared so its
+    evidence is compared rather than silently dropped — including a checkpoint
+    bound to another scope, whose retained evidence an overwrite would destroy.
+    This also covers an explicitly approved fresh import: its approval covered
+    only the state observed at prepare (no file, unreadable bytes, or exactly
+    the incompatible checkpoint recorded as the approved prior), not valid or
+    different evidence committed afterwards.  Unreadable prior bytes keep the
+    ordinary backup/restore semantics.
+    """
+
+    if checkpoint_destination is None:
+        return
+    if checkpoint_destination.exists():
+        if result.loaded_checkpoint is None:
+            try:
+                appeared = PriorExportCheckpoint.load(checkpoint_destination)
+            except (OSError, CheckpointError):
+                return
+            if appeared != result.approved_prior_checkpoint:
+                raise PrincipalPartExportError(
+                    "The prior-export checkpoint changed since preparation: another export committed this "
+                    "source. Re-run the preview and export again before writing."
+                )
+            return
+        try:
+            current = PriorExportCheckpoint.load(checkpoint_destination)
+        except (OSError, CheckpointError):
+            return
+        if current != result.loaded_checkpoint:
+            raise PrincipalPartExportError(
+                "The prior-export checkpoint changed since preparation: another export committed this "
+                "source. Re-run the preview and export again before writing."
+            )
+    elif result.loaded_checkpoint is not None:
+        raise PrincipalPartExportError(
+            "The prior-export checkpoint disappeared since preparation. Recover the retained export "
+            "evidence or explicitly approve a fresh import before writing."
+        )
+
+
+def _reject_input_aliases(
+    source: Path,
+    profile: Path | None,
+    manifest: Path | None,
+    checkpoint: Path | None = None,
+) -> None:
+    paths = (source, profile, manifest, checkpoint)
     existing = [path for path in paths if path is not None]
     for index, first in enumerate(existing):
         for second in existing[index + 1 :]:
             if _same_path(first, second):
-                raise PrincipalPartExportError("The input, profile, and manifest paths must be distinct.")
+                raise PrincipalPartExportError("The input, profile, and state paths must be distinct.")
 
 
 def _same_path(first: Path, second: Path) -> bool:
@@ -558,8 +810,15 @@ def _recovery_failure_message(affected_destinations: tuple[str, ...], retained_b
     if retained_backups:
         recovery_details.append("backup locations: " + ", ".join(retained_backups))
     if recovery_details:
-        return "The CSV and identity manifest could not be committed safely. " + "; ".join(recovery_details) + "."
-    return "No output or manifest was changed because the CSV and identity manifest could not be committed safely."
+        return (
+            "The output, identity state, and card-evidence checkpoint could not be committed safely. "
+            + ("; ".join(recovery_details))
+            + "."
+        )
+    return (
+        "No output or committed state was changed because the output, identity state, and card-evidence "
+        "checkpoint could not be committed safely."
+    )
 
 
 def _restore_after_failed_commit(destination: Path, backup: Path | None, existed_before: bool) -> bool:

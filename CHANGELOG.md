@@ -19,6 +19,15 @@ Status: candidate awaiting user review. No tag or GitHub release has been create
   exercises.
 - Generate explicitly selected German principal-part completion and recognition exercises
   with semantic role names, provenance, and a `de` language tag.
+- Render both initial recipes as conditional sibling cards of one shared learning-object
+  note: frozen template slots with per-card `Enabled`/`Prompt`/`Answer` fields, wholly
+  guarded fronts, stable semantic keys that never feed note identity, and zero-eligible
+  objects omitted from the CSV and reported separately instead of becoming blank cards.
+- Persist a versioned prior-export card-evidence checkpoint beside scoped CSV sources and
+  commit it with the output and identity manifest; withhold whole note rows that lost a
+  previously exported card key, retain last-safe evidence for absent or parse-failed
+  objects, and require explicit `--approve-fresh-import` confirmation when the checkpoint
+  is missing, corrupt, or incompatible.
 - Preview generated, skipped, and ambiguous entries before writing a deterministic UTF-8
   Anki text-import CSV with `LatinitasID` as the first column.
 - Restrict generated CSV columns to managed fields: the note type keeps the user-owned

@@ -102,12 +102,12 @@ def test_card_keys_cover_selected_recipes_and_available_roles_only() -> None:
     )
 
     assert both.notes[0].card_keys == (
-        "principal_part_completion:present_infinitive",
         "principal_part_completion:present_1s",
+        "principal_part_completion:present_infinitive",
         "principal_part_completion:perfect_1s",
         "principal_part_completion:perfect_passive_participle",
-        "principal_part_recognition:present_infinitive",
         "principal_part_recognition:present_1s",
+        "principal_part_recognition:present_infinitive",
         "principal_part_recognition:perfect_1s",
         "principal_part_recognition:perfect_passive_participle",
     )

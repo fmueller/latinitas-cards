@@ -67,7 +67,8 @@ def test_profile_preview_requests_csv_scope_confirmation_without_minted_output(t
     )
 
     assert result.exit_code == 0
-    assert "Generated: 0" in result.stdout
+    assert "Objects: 0" in result.stdout
+    assert "Cards: 0" in result.stdout
     assert "source scope" in result.stdout.lower()
     assert "scope confirmation" in result.stdout.lower()
     assert "latinitas-v2-" not in result.stdout
@@ -131,7 +132,7 @@ def test_generate_with_scope_approval_commits_state_and_object_output(tmp_path: 
     )
 
     assert result.exit_code == 0
-    assert result.stdout.index("Generated: 1") < result.stdout.index("Output:")
+    assert result.stdout.index("Notes: 1") < result.stdout.index("Output:")
     assert "LatinitasID: latinitas-v2-" in result.stdout
     assert output.read_bytes().startswith(b"#separator:Comma\n")
     assert state.exists()
@@ -142,6 +143,131 @@ def test_generate_with_scope_approval_commits_state_and_object_output(tmp_path: 
     )
     assert repeat.exit_code == 0
     assert "source scope" not in repeat.stdout.lower()
+
+
+def _write_csv_source(path: Path, forms: str) -> None:
+    path.write_text(
+        f'Stable ID,Lemma,Forms,German gloss\nentry-1,dīcō,"{forms}",sagen\n',
+        encoding="utf-8",
+    )
+
+
+def test_preview_reports_withheld_rows_and_card_reviews_without_writing_output(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    _write_csv_source(source, "dīcere, dīcō, dīxī, dictum")
+    _profile().save(profile_path)
+    committed = CliRunner().invoke(
+        _command(),
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+            "--approve-scope",
+        ],
+    )
+    assert committed.exit_code == 0
+    _write_csv_source(source, "dīcere, dīcō, , dictum")
+
+    previewed = CliRunner().invoke(
+        _command(),
+        ["preview", "--input", str(source), "--profile", str(profile_path), "--limit", "1"],
+    )
+    withheld = CliRunner().invoke(
+        _command(),
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert previewed.exit_code == 0
+    assert "Notes: 0" in previewed.stdout
+    assert "Zero-eligible notes: 0" in previewed.stdout
+    assert "Card eligibility reviews:" in previewed.stdout
+    assert "withheld" in previewed.stdout
+    assert "perfect_1s" in previewed.stdout
+    assert withheld.exit_code == 0
+    rows = [row for row in csv.reader(io.StringIO(output.read_text(encoding="utf-8"))) if row]
+    assert all(row[0].startswith("#") for row in rows)
+
+
+def test_generate_requires_fresh_import_approval_for_a_damaged_checkpoint(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    checkpoint = Path(f"{source}.latinitas-cards.json")
+    _write_csv_source(source, "dīcere, dīcō, dīxī, dictum")
+    _profile().save(profile_path)
+    first = CliRunner().invoke(
+        _command(),
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+            "--approve-scope",
+        ],
+    )
+    assert first.exit_code == 0
+    checkpoint.write_text("{damaged", encoding="utf-8")
+
+    gated = CliRunner().invoke(
+        _command(),
+        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+    )
+    fresh = CliRunner().invoke(
+        _command(),
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+            "--approve-fresh-import",
+        ],
+    )
+
+    assert gated.exit_code != 0
+    assert "fresh" in click.unstyle(gated.output).lower()
+    assert gated.exception is not None
+    assert fresh.exit_code == 0
+    assert "Notes: 1" in fresh.stdout
+    from latinitas_cards.checkpoint import PriorExportCheckpoint
+
+    restored = PriorExportCheckpoint.load(checkpoint)
+    assert restored.source_scope
+    assert restored.objects and all(keys for _note_id, keys in restored.objects)
+
+
+def test_read_only_preview_rejects_fresh_import_approval(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_csv_source(source, "dīcere, dīcō, dīxī, dictum")
+    _profile().save(profile_path)
+
+    result = CliRunner().invoke(
+        _command(),
+        ["preview", "--input", str(source), "--profile", str(profile_path), "--approve-fresh-import"],
+    )
+
+    assert result.exit_code != 0
+    assert "approve-fresh-import" in click.unstyle(result.output)
 
 
 def test_profile_preview_and_generate_render_combined_tags_matching_the_csv(tmp_path: Path) -> None:
@@ -186,13 +312,23 @@ def test_profile_preview_and_generate_render_combined_tags_matching_the_csv(tmp_
     )
     generated = CliRunner().invoke(
         _command(),
-        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+            "--approve-fresh-import",
+        ],
     )
 
     expected_tags = "latin verb::irregular latinitas"
     assert previewed.exit_code == 0
     assert f"Tags: {expected_tags}" in previewed.stdout
-    assert "Generated: 1" in previewed.stdout
+    assert "Notes: 1" in previewed.stdout
+    assert "Cards: 4" in previewed.stdout
     assert generated.exit_code == 0
     assert f"Tags: {expected_tags}" in generated.stdout
     rows = list(csv.reader(io.StringIO(output.read_text(encoding="utf-8"))))
@@ -247,7 +383,16 @@ def test_profile_preview_tags_line_matches_the_csv_beyond_the_default_limit(tmp_
     )
     generated = CliRunner().invoke(
         _command(),
-        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+            "--approve-fresh-import",
+        ],
     )
 
     assert previewed.exit_code == 0
@@ -284,7 +429,7 @@ def test_profile_generate_renders_preview_before_writing_deterministic_output(tm
     )
 
     assert result.exit_code == 0
-    assert result.stdout.index("Generated: 1") < result.stdout.index("Output:")
+    assert result.stdout.index("Notes: 1") < result.stdout.index("Output:")
     assert output.read_bytes().startswith(b"#separator:Comma\n")
     assert source.read_bytes() == source_before
     assert profile_path.read_bytes() == profile_before
@@ -450,4 +595,4 @@ def test_terminal_generate_keeps_recovery_status_before_long_destination_details
     assert output.exists()
     assert "Recovery is required" in result.output
     assert "backups were retained" in result.output
-    assert "No output or manifest was changed" not in result.output
+    assert "No output or committed state was changed" not in result.output

@@ -18,14 +18,23 @@ uv run latinitas-cards generate \
 ```
 
 Both commands use the same typed generation result. `preview` shows representative lemma,
-principal-parts, and provenance values before any output is written, followed by generated,
-skipped, and ambiguous counts. Structured skip and manifest-review reasons identify the source row and
+principal-parts, and provenance values before any output is written, followed by source
+entry, object, exported-note, card, zero-eligible-note, skipped, and ambiguous counts.
+Structured skip and manifest-review reasons identify the source row and
 failed assumption. `generate` renders that same preview first and writes only after the result
 is safe to export. The structured result is internal in v0.1.0; it is not a stable JSON CLI
 format.
 
 One CSV row is one coherent learning object (one note with zero or more eligible cards), not
-one exercise: do not confuse a row count with a card count.
+one exercise: do not confuse a row count with a card count. Both initial recipes render as
+conditional sibling cards of that one shared note: each card has a frozen semantic key
+(recipe plus confirmed role) mapped to a documented template slot with its own
+`Enabled`/`Prompt`/`Answer` note fields, and the entire card front is guarded by the
+per-card `Enabled` field so static labels never create blank cards. Profile recipe
+selection changes card eligibility only — never note identity, slot order, or template
+ordinals. Notes whose layout roles have no supported slot stay valid objects but yield zero
+eligible cards; they are omitted from the CSV (native import would otherwise create a blank
+note) and reported as a distinct zero-eligible count, separate from parser skips.
 
 ## CSV source-scope bootstrap
 
@@ -81,16 +90,62 @@ uv run latinitas-cards generate \
 Use `--approve-allocation ROW` when the row should receive a new source identity instead.
 Both options are repeatable. Unresolved reviews block export; no identity is silently
 transferred or allocated. Keep the generated CSV and the source-side manifest together
-when backing up or moving a project. The CSV and manifest are staged together.
+when backing up or moving a project. The CSV, manifest, and card-evidence checkpoint are
+staged together.
 For caught process/I/O failures and catchable interruptions such as Ctrl-C, the exporter
-makes a best-effort attempt to restore the prior pair before the failure or cancellation
-is re-raised. Rollback is not durable pair-atomicity: a crash or power loss between the two
-replacements can leave one file new and the other old. Backups are deleted only after a
+makes a best-effort attempt to restore the prior state before the failure or cancellation
+is re-raised. Rollback is not durable pair-atomicity: a crash or power loss between the
+replacements can leave one file new and the others old. Backups are deleted only after a
 confirmed commit or confirmed recovery. If rollback fails, the error or interruption message
 reports the affected destinations and retained backup locations; if rollback is itself
 interrupted, no message may be emitted, and the retained `.backup.*` files in the output and
-manifest directories hold the recoverable prior bytes. Recover manually from those files
+state directories hold the recoverable prior bytes. Recover manually from those files
 and do not blindly retry or delete them. Use `--manifest` to select another sidecar path.
+
+## Prior-export card-evidence checkpoint
+
+Scoped CSV sources and package (APKG/COLPKG) sources persist a versioned prior-export
+checkpoint beside the source — `source.csv.latinitas-cards.json` or
+`deck.apkg.latinitas-cards.json`. It is committed with the output and the identity
+manifest through the same recovery boundary and records exported state only: the source
+scope, note family/schema, and template-slot registry it is bound to, each exported
+object's `LatinitasID` with its eligible card keys, and the fingerprint of the committed
+CSV. It is evidence about what Latinitas exported, never proof that a destination
+collection imported it or still contains those cards; the destination-aware baseline is
+v0.2.0 work. Package sources commit the checkpoint without an identity manifest; their
+globally scoped GUID identities keep one shared binding.
+
+Because a package source keeps no local record that could prove a first export, a missing
+checkpoint next to one is never read as an empty prior card set: the first package export,
+like every recovery from missing, corrupt, or incompatible state, requires the same
+explicit fresh-import confirmation below. Renaming or re-downloading a package source does
+not carry the sidecar along, so the confirmation is asked for again rather than silently
+exporting against assumed-empty evidence.
+
+Regeneration compares current eligibility against this retained evidence. When a previously
+exported card key is no longer eligible — through data loss, recipe deselection, or a
+shared-field change that removes a card's required data — the whole affected note row is
+withheld from the output and reported under `Card eligibility reviews` instead of clearing
+fronts, deleting cards, or resetting schedules. Wording and gloss updates that keep every
+exported key eligible still export normally, and adding a supported recipe enriches the
+same note while surviving keys keep their slots. Objects absent from the current export
+(removed rows, parser failures) keep their last safe evidence; a partial export never
+asserts their cards disappeared. A read-only `preview` never advances the checkpoint.
+
+A missing, corrupt, or incompatible checkpoint is never read as an empty prior card set:
+the export stays review-only until you either recover/review the state or explicitly
+confirm a fresh import:
+
+```bash
+uv run latinitas-cards generate \
+  --input source.csv \
+  --profile .latinitas/profile.json \
+  --output generated-principal-parts.csv \
+  --approve-fresh-import
+```
+
+`preview` rejects `--approve-fresh-import` for the same reason it rejects
+`--approve-scope`: a read-only preview cannot commit or replace retained state.
 
 ## Source tag inheritance
 
@@ -155,7 +210,9 @@ persisted CSV source scope where applicable, and the reviewed learning-object ke
 recipe selection, card roles, prompt text, glosses, HTML, tags, or local Anki IDs. The export
 columns are derived from the authoritative note schema:
 `LatinitasID, Lemma, Principal Parts, Meaning, Tags, Source ID, Source Scope, Source Kind,
-Source Location, Source Path, Note Schema, Generator, Profile`. The configured and inherited
+Source Location, Source Path, Note Schema, Generator, Profile`, followed by one
+`Enabled`/`Prompt`/`Answer` triple per frozen template slot of the two initial recipes.
+The configured and inherited
 tags are emitted in the `Tags` column (column 5) as Anki's special tags metadata,
 not as a regular note field; provenance fields are included for auditing. `Source Path` is
 intentionally blank to avoid leaking absolute paths. The profile's language tag is explicit

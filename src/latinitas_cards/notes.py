@@ -7,6 +7,11 @@ regular note field).  The Anki note type comprises ``GENERATED_NOTE_FIELD_NAMES`
 with ``LatinitasID`` first, while ``CSV_EXPORT_FIELD_NAMES`` and the tags-column
 directive are derived from the same schema so generated import data never
 offers the user-owned field for accidental overwrite.
+
+The conditional sibling-card slots of :mod:`latinitas_cards.cards` extend this
+same schema with their frozen guard/prompt/answer fields; they are regular
+managed fields appended after the provenance fields and before Personal Notes,
+so existing slots and the Tags column position are never repurposed.
 """
 
 from __future__ import annotations
@@ -14,10 +19,11 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Literal
 
+from .cards import TEMPLATE_REGISTRY, RenderedCard
 from .identity import derive_latinitas_id
 
-NOTE_SCHEMA_VERSION = "2"
-GENERATOR_VERSION = "2"
+NOTE_SCHEMA_VERSION = "3"
+GENERATOR_VERSION = "3"
 
 FieldOwnership = Literal["managed", "personal", "transport"]
 
@@ -31,7 +37,7 @@ class NoteFieldSpec:
     exported: bool
 
 
-AUTHORITATIVE_NOTE_FIELDS: tuple[NoteFieldSpec, ...] = (
+_BASE_NOTE_FIELDS: tuple[NoteFieldSpec, ...] = (
     NoteFieldSpec("LatinitasID", "managed", True),
     NoteFieldSpec("Lemma", "managed", True),
     NoteFieldSpec("Principal Parts", "managed", True),
@@ -45,6 +51,17 @@ AUTHORITATIVE_NOTE_FIELDS: tuple[NoteFieldSpec, ...] = (
     NoteFieldSpec("Note Schema", "managed", True),
     NoteFieldSpec("Generator", "managed", True),
     NoteFieldSpec("Profile", "managed", True),
+)
+
+_CARD_NOTE_FIELDS: tuple[NoteFieldSpec, ...] = tuple(
+    NoteFieldSpec(name, "managed", True)
+    for slot in TEMPLATE_REGISTRY
+    for name in (slot.enabled_field, slot.prompt_field, slot.answer_field)
+)
+
+AUTHORITATIVE_NOTE_FIELDS: tuple[NoteFieldSpec, ...] = (
+    *_BASE_NOTE_FIELDS,
+    *_CARD_NOTE_FIELDS,
     NoteFieldSpec("Personal Notes", "personal", False),
 )
 
@@ -110,7 +127,7 @@ class GeneratedNote:
     content: ManagedNoteContent
     provenance: GeneratedNoteProvenance
     metadata: GenerationMetadata
-    card_keys: tuple[str, ...] = ()
+    cards: tuple[RenderedCard, ...] = ()
     personal_notes: str = ""
 
     def __post_init__(self) -> None:
@@ -127,6 +144,12 @@ class GeneratedNote:
         if self.latinitas_id != expected:
             raise ValueError("LatinitasID does not match the note's immutable logical identity")
 
+    @property
+    def card_keys(self) -> tuple[str, ...]:
+        """Return the eligible card semantic keys in registry slot order."""
+
+        return tuple(card.slot.semantic_key for card in self.cards if card.eligible)
+
     @classmethod
     def create(
         cls,
@@ -136,7 +159,7 @@ class GeneratedNote:
         object_key: str,
         metadata: GenerationMetadata,
         content: ManagedNoteContent,
-        card_keys: tuple[str, ...] = (),
+        cards: tuple[RenderedCard, ...] = (),
         personal_notes: str = "",
         source_scope: str | None = None,
     ) -> GeneratedNote:
@@ -153,7 +176,7 @@ class GeneratedNote:
             content=content,
             provenance=resolved_provenance,
             metadata=metadata,
-            card_keys=tuple(card_keys),
+            cards=tuple(cards),
             personal_notes=personal_notes,
         )
 
@@ -167,10 +190,10 @@ class GeneratedNote:
 
         return replace(self, metadata=metadata)
 
-    def with_card_keys(self, card_keys: tuple[str, ...]) -> GeneratedNote:
-        """Update the eligible card semantic keys without changing note identity."""
+    def with_cards(self, cards: tuple[RenderedCard, ...]) -> GeneratedNote:
+        """Update the rendered cards without changing note identity."""
 
-        return replace(self, card_keys=tuple(card_keys))
+        return replace(self, cards=tuple(cards))
 
     def to_anki_fields(self) -> tuple[tuple[str, str], ...]:
         """Return deterministic Anki text-import fields with identity first."""
@@ -193,7 +216,11 @@ class GeneratedNote:
             "Profile": metadata.profile_digest,
             "Personal Notes": self.personal_notes,
         }
-        return tuple((name, values[name]) for name in GENERATED_NOTE_FIELD_NAMES)
+        for card in self.cards:
+            values[card.slot.enabled_field] = card.guard
+            values[card.slot.prompt_field] = card.prompt
+            values[card.slot.answer_field] = card.answer
+        return tuple((name, values.get(name, "")) for name in GENERATED_NOTE_FIELD_NAMES)
 
 
 __all__ = [

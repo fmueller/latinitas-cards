@@ -66,6 +66,7 @@ def run_principal_part_export(
     approved_allocations: Iterable[int],
     approved_removals: Iterable[str],
     approve_new_scope: bool,
+    approve_fresh_import: bool,
     limit: int,
 ) -> None:
     """Render a preview and then write the deterministic CSV output."""
@@ -84,6 +85,7 @@ def run_principal_part_export(
         approved_allocations=approved_allocations,
         approved_removals=approved_removals,
         approve_new_scope=approve_new_scope,
+        approve_fresh_import=approve_fresh_import,
     )
     render_principal_part_preview(result, limit=limit)
     write_principal_part_csv(result, output_path, profile_path=profile_path)
@@ -94,7 +96,11 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
     """Render bounded, terminal-safe representative notes and structured reasons."""
 
     typer.echo("Principal-part preview")
-    typer.echo(f"Generated: {result.generated_count}")
+    typer.echo(f"Source entries: {result.source_entry_count}")
+    typer.echo(f"Objects: {result.object_count}")
+    typer.echo(f"Notes: {result.exported_note_count}")
+    typer.echo(f"Cards: {result.card_count}")
+    typer.echo(f"Zero-eligible notes: {result.zero_card_note_count}")
     typer.echo(f"Skipped: {result.skipped_count}")
     typer.echo(f"Ambiguous: {result.ambiguous_count}")
     if result.scope_pending:
@@ -143,6 +149,21 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
                 )
             )
         _render_omitted_count("manifest reviews", len(result.manifest_reviews))
+    if result.card_eligibility_reviews:
+        typer.echo("Card eligibility reviews:")
+        for card_review in result.card_eligibility_reviews[:_MAX_DIAGNOSTIC_ROWS]:
+            note_id = "none" if card_review.latinitas_id is None else card_review.latinitas_id
+            identity = "none" if card_review.source_identity is None else card_review.source_identity
+            keys = ", ".join(card_review.card_keys) or "none"
+            typer.echo(
+                "  "
+                + safe_source_value(
+                    f"{card_review.kind}: note={note_id}; source={identity}; affected keys={keys}; "
+                    f"{card_review.message}",
+                    field_context,
+                )
+            )
+        _render_omitted_count("card eligibility reviews", len(result.card_eligibility_reviews))
 
 
 def _prepare(
@@ -158,6 +179,7 @@ def _prepare(
     approved_allocations: Iterable[int],
     approved_removals: Iterable[str],
     approve_new_scope: bool = False,
+    approve_fresh_import: bool = False,
 ) -> PrincipalPartExportResult:
     profile = _effective_profile(
         profile_path,
@@ -175,6 +197,7 @@ def _prepare(
         approved_reuse=_parse_reuse_approvals(approved_reuse),
         approved_allocations=tuple(approved_allocations),
         approved_removals=tuple(approved_removals),
+        approve_fresh_import=approve_fresh_import,
     )
 
 

@@ -19,11 +19,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
+from .cards import render_cards, role_display_label
 from .html_text import source_html_to_text
 from .identity import (
     IdentityError,
     ResolvedSourceIdentity,
-    derive_card_semantic_key,
     resolve_source_identity,
 )
 from .notes import (
@@ -47,14 +47,6 @@ GenerationSkipStatus = Literal["incomplete", "unsupported", "ambiguous", "identi
 
 SINGLE_LEXEME_OBJECT_KEY = "lexeme-1"
 _MULTI_OBJECT_SPLIT = re.compile(r"[,;\n\t|]| / | — | - ")
-
-_ROLE_LABELS = {
-    "present_infinitive": "Infinitiv",
-    "present_1s": "Präsens, 1. Person Singular",
-    "perfect_1s": "Perfekt, 1. Person Singular",
-    "perfect_passive_participle": "Partizip Perfekt Passiv (PPP)",
-    "supine": "Supinum",
-}
 
 
 @dataclass(frozen=True, slots=True)
@@ -305,19 +297,15 @@ def _render_note(
     metadata: GenerationMetadata,
 ) -> GeneratedNote:
     meaning = _meaning(record, profile)
+    meaning_text = source_html_to_text(meaning)
     tags = _combined_tags(record, profile)
     content = ManagedNoteContent(
         lemma=_escape_normalized_lines(parsed.lexical_entry),
         principal_parts=_render_parts(parsed.parts),
-        meaning=_escape_source_lines(meaning),
+        meaning=_escape_normalized_lines(meaning_text),
         tags=tags,
     )
-    card_keys = tuple(
-        derive_card_semantic_key(recipe_identity, part.role)
-        for recipe_identity in profile.selected_recipes
-        for part in parsed.parts
-        if not part.is_omitted
-    )
+    cards = render_cards(parsed, selected_recipes=profile.selected_recipes, meaning=meaning_text)
     return GeneratedNote.create(
         source_identity=source_identity.value,
         source_scope=source_identity.scope,
@@ -329,7 +317,7 @@ def _render_note(
         object_key=SINGLE_LEXEME_OBJECT_KEY,
         metadata=metadata,
         content=content,
-        card_keys=card_keys,
+        cards=cards,
     )
 
 
@@ -337,21 +325,13 @@ def _render_parts(parts: Sequence[PrincipalPartValue]) -> str:
     lines = []
     for part in parts:
         value = "—" if part.is_omitted else _escape_normalized_lines(part.display or "")
-        lines.append(f"<strong>{_escape_text(_role_label(part.role))}:</strong> {value}")
+        lines.append(f"<strong>{_escape_text(role_display_label(part.role))}:</strong> {value}")
     return "<br>".join(lines)
 
 
 def _meaning(record: CanonicalSourceRecord, profile: DeckProfile) -> str:
     field = profile.fields.meaning_field
     return "" if field is None else record.fields.get(field, "").strip()
-
-
-def _role_label(role: str) -> str:
-    return _ROLE_LABELS.get(role, role)
-
-
-def _escape_source_lines(value: str) -> str:
-    return _escape_normalized_lines(source_html_to_text(value))
 
 
 def _escape_normalized_lines(value: str) -> str:

@@ -1636,6 +1636,16 @@ def generate_impl(
             ),
         ),
     ] = False,
+    approve_fresh_import: Annotated[
+        bool,
+        typer.Option(
+            "--approve-fresh-import",
+            help=(
+                "Explicitly confirm a fresh import when the prior-export card-evidence checkpoint is "
+                "missing, corrupt, or incompatible; without it the damaged checkpoint stays review-only"
+            ),
+        ),
+    ] = False,
     preview_limit: Annotated[int, typer.Option(help="Max representative principal-part notes to print")] = 5,
 ) -> None:
     """Update an Anki CSV or APKG file with cloze examples from a Latin USFX corpus."""
@@ -1658,6 +1668,7 @@ def generate_impl(
                 approved_allocations=approve_allocation or (),
                 approved_removals=approve_removal or (),
                 approve_new_scope=approve_scope,
+                approve_fresh_import=approve_fresh_import,
                 limit=preview_limit,
             )
         except (OSError, ValueError) as error:
@@ -1677,6 +1688,7 @@ def generate_impl(
             approve_allocation,
             approve_removal,
             approve_scope,
+            approve_fresh_import,
         )
     ):
         raise typer.BadParameter("Profile-only options require --profile.")
@@ -1789,6 +1801,13 @@ def preview_impl(
             help="Rejected for read-only preview: scope approval commits state with generate only",
         ),
     ] = False,
+    approve_fresh_import: Annotated[
+        bool,
+        typer.Option(
+            "--approve-fresh-import",
+            help="Rejected for read-only preview: fresh-import approval commits state with generate only",
+        ),
+    ] = False,
 ) -> None:
     """Show a sample of generated clozes without writing output."""
     if profile is not None:
@@ -1797,6 +1816,11 @@ def preview_impl(
         if approve_scope:
             raise typer.BadParameter(
                 "--approve-scope commits identity state; it is available on generate, not on a read-only preview."
+            )
+        if approve_fresh_import:
+            raise typer.BadParameter(
+                "--approve-fresh-import replaces retained card-evidence state; it is available on "
+                "generate, not on a read-only preview."
             )
         try:
             from .commands.principal_parts import run_principal_part_preview
@@ -1831,6 +1855,7 @@ def preview_impl(
             approve_allocation,
             approve_removal,
             approve_scope,
+            approve_fresh_import,
         )
     ):
         raise typer.BadParameter("Profile-only options require --profile.")

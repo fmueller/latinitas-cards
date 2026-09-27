@@ -30,6 +30,36 @@ EXPECTED_COLUMNS = (
     "Note Schema",
     "Generator",
     "Profile",
+    "CompletionPresentEnabled",
+    "CompletionPresentPrompt",
+    "CompletionPresentAnswer",
+    "CompletionInfinitiveEnabled",
+    "CompletionInfinitivePrompt",
+    "CompletionInfinitiveAnswer",
+    "CompletionPerfectEnabled",
+    "CompletionPerfectPrompt",
+    "CompletionPerfectAnswer",
+    "CompletionPPPEnabled",
+    "CompletionPPPPrompt",
+    "CompletionPPPAnswer",
+    "CompletionSupineEnabled",
+    "CompletionSupinePrompt",
+    "CompletionSupineAnswer",
+    "RecognitionPresentEnabled",
+    "RecognitionPresentPrompt",
+    "RecognitionPresentAnswer",
+    "RecognitionInfinitiveEnabled",
+    "RecognitionInfinitivePrompt",
+    "RecognitionInfinitiveAnswer",
+    "RecognitionPerfectEnabled",
+    "RecognitionPerfectPrompt",
+    "RecognitionPerfectAnswer",
+    "RecognitionPPPEnabled",
+    "RecognitionPPPPrompt",
+    "RecognitionPPPAnswer",
+    "RecognitionSupineEnabled",
+    "RecognitionSupinePrompt",
+    "RecognitionSupineAnswer",
 )
 GPU_PACKAGES = (
     "cuda-bindings",
@@ -164,25 +194,42 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
     preview = _invoke(["preview", "--input", str(source), "--profile", str(profile), "--limit", "2"])
 
     assert preview.returncode == 0
-    assert "Generated: 3" in preview.stdout
+    assert "Objects: 3" in preview.stdout
+    assert "Cards: 24" in preview.stdout
     assert "Skipped: 2" in preview.stdout
     assert "Ambiguous: 0" in preview.stdout
     assert "Partizip Perfekt Passiv (PPP)" in preview.stdout
     assert "Output:" not in preview.stdout
     assert source.read_bytes() == source_before
 
+    gated = _invoke(
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile),
+            "--output",
+            str(first_output),
+        ]
+    )
+    assert gated.returncode != 0
+    assert "fresh import" in gated.stderr or "fresh import" in gated.stdout
+    assert not first_output.exists()
+
     for output in (first_output, second_output):
-        generated = _invoke(
-            [
-                "generate",
-                "--input",
-                str(source),
-                "--profile",
-                str(profile),
-                "--output",
-                str(output),
-            ]
-        )
+        arguments = [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile),
+            "--output",
+            str(output),
+        ]
+        if output is first_output:
+            arguments.append("--approve-fresh-import")
+        generated = _invoke(arguments)
         assert generated.returncode == 0
         assert "Output:" in generated.stdout
 
@@ -193,9 +240,7 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
         "#html:true\n"
         "#notetype:Latinitas Principal Parts\n"
         "#deck:Latin::Latinitas\n"
-        "#tags column:5\n"
-        "#columns:LatinitasID,Lemma,Principal Parts,Meaning,Tags,Source ID,Source Scope,Source Kind,"
-        "Source Location,Source Path,Note Schema,Generator,Profile\n"
+        f"#tags column:5\n#columns:{','.join(EXPECTED_COLUMNS)}\n"
     )
     assert len(rows) == 3
     expected_source_locations = {
