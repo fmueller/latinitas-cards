@@ -1,4 +1,5 @@
 import json
+import unicodedata
 from pathlib import Path
 from typing import cast
 
@@ -400,3 +401,427 @@ def test_setup_rejects_unsupported_saved_profile_schema_without_overwriting_it(t
     assert result.exit_code != 0
     assert "Unsupported profile schema version 99" in result.output
     assert profile_path.read_bytes() == before
+
+
+def _write_lesson_code_csv(path: Path) -> None:
+    path.write_text(
+        "LatinumB_Lektion,Latein,LatinumB_Formen\n"
+        '12,amō,"amāre, amō, amāvī, amātum"\n'
+        '13,ferō,"ferre, ferō, tulī, lātum"\n',
+        encoding="utf-8",
+    )
+
+
+def _write_renamed_lesson_code_csv(path: Path) -> None:
+    path.write_text(
+        'Spalte A,Spalte B,Spalte C\n12,amō,"amāre, amō, amāvī, amātum"\n13,ferō,"ferre, ferō, tulī, lātum"\n',
+        encoding="utf-8",
+    )
+
+
+def _write_misleading_name_csv(path: Path) -> None:
+    path.write_text(
+        "Latein Vokabel,Lektion Nr,Formen der Wörter\n"
+        '12,amō,"amāre, amō, amāvī, amātum"\n'
+        '13,ferō,"ferre, ferō, tulī, lātum"\n',
+        encoding="utf-8",
+    )
+
+
+def _write_tied_lexical_csv(path: Path) -> None:
+    path.write_text(
+        'Wort A,Wort B,Formen\namō,amō,"amāre, amō, amāvī, amātum"\nferō,ferō,"ferre, ferō, tulī, lātum"\n',
+        encoding="utf-8",
+    )
+
+
+def _write_sparse_lexical_csv(path: Path) -> None:
+    path.write_text(
+        "Lektion,Wort,Formen\n"
+        '7,amō,"amāre, amō, amāvī, amātum"\n'
+        '8,,"ferre, ferō, tulī, lātum"\n'
+        '9,,"tollere, tollō, sustulī, lātum"\n',
+        encoding="utf-8",
+    )
+
+
+def test_lesson_code_values_do_not_outrank_latin_content_for_lexical_entry(tmp_path: Path) -> None:
+    source = tmp_path / "lesson-codes.csv"
+    _write_lesson_code_csv(source)
+
+    proposal = propose_profile(source)
+
+    assert proposal.profile.fields.lexical_entry_field == "Latein"
+    assert proposal.profile.fields.principal_parts_field == "LatinumB_Formen"
+    assert proposal.field_choices_required == ()
+
+    by_field = {candidate.field: candidate for candidate in proposal.field_candidates}
+    lexical = by_field["Latein"]
+    assert lexical.role == "lexical_entry"
+    assert "amō" in lexical.sample_values and "ferō" in lexical.sample_values
+    assert any("match a principal-part form" in reason for reason in lexical.evidence)
+
+    lesson = by_field["LatinumB_Lektion"]
+    assert lesson.role == "unmapped"
+    assert any("numeric" in reason for reason in lesson.evidence)
+    assert any("0/2" in reason for reason in lesson.evidence)
+    assert lesson.sample_values == ("12", "13")
+
+
+def test_equivalent_renamed_fixture_selects_the_same_fields(tmp_path: Path) -> None:
+    source = tmp_path / "renamed.csv"
+    _write_renamed_lesson_code_csv(source)
+
+    proposal = propose_profile(source)
+
+    assert proposal.profile.fields.lexical_entry_field == "Spalte B"
+    assert proposal.profile.fields.principal_parts_field == "Spalte C"
+    assert proposal.field_choices_required == ()
+
+
+def test_misleading_field_names_lose_to_content_evidence(tmp_path: Path) -> None:
+    source = tmp_path / "misleading.csv"
+    _write_misleading_name_csv(source)
+
+    proposal = propose_profile(source)
+
+    assert proposal.profile.fields.lexical_entry_field == "Lektion Nr"
+    assert proposal.profile.fields.principal_parts_field == "Formen der Wörter"
+    assert proposal.field_choices_required == ()
+
+
+def test_tied_lexical_evidence_requires_explicit_choice_before_saving(tmp_path: Path) -> None:
+    source = tmp_path / "tied.csv"
+    _write_tied_lexical_csv(source)
+
+    proposal = propose_profile(source)
+
+    assert proposal.profile.fields.lexical_entry_field in {"Wort A", "Wort B"}
+    assert len(proposal.field_choices_required) == 1
+    required = proposal.field_choices_required[0]
+    assert required.role == "lexical_entry"
+    assert required.candidates == ("Wort A", "Wort B")
+    assert "tie" in required.reason.lower()
+
+
+def test_tied_lexical_evidence_blocks_confirmed_save_and_explicit_choice_saves_and_reloads(
+    tmp_path: Path,
+) -> None:
+    runner = CliRunner()
+    source = tmp_path / "tied.csv"
+    profile_path = tmp_path / "tied-profile.json"
+    _write_tied_lexical_csv(source)
+
+    rejected = _command(
+        runner,
+        ["--input", str(source), "--profile", str(profile_path), "--non-interactive", "--confirm"],
+    )
+    assert rejected.exit_code != 0
+    assert "explicit" in rejected.output.lower()
+    assert not profile_path.exists()
+
+    cancelled = _command(
+        runner,
+        ["--input", str(source), "--profile", str(profile_path), "--non-interactive"],
+    )
+    assert cancelled.exit_code == 0
+    assert "cancelled" in cancelled.stdout.lower()
+    assert "field choice required" in cancelled.stdout.lower()
+    assert not profile_path.exists()
+
+    cancelled_json = _command(
+        runner,
+        ["--input", str(source), "--profile", str(profile_path), "--non-interactive", "--json"],
+    )
+    assert cancelled_json.exit_code == 0
+    cancelled_payload = json.loads(cancelled_json.stdout)
+    assert cancelled_payload["status"] == "cancelled"
+    assert [choice["role"] for choice in cancelled_payload["field_choices_required"]] == ["lexical_entry"]
+    assert not profile_path.exists()
+
+    saved = _command(
+        runner,
+        [
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--lexical-entry-field",
+            "Wort B",
+            "--non-interactive",
+            "--confirm",
+        ],
+    )
+    assert saved.exit_code == 0
+    persisted = DeckProfile.from_json(profile_path.read_text(encoding="utf-8"))
+    assert persisted.fields.lexical_entry_field == "Wort B"
+
+    reused = _command(
+        runner,
+        ["--input", str(source), "--profile", str(profile_path), "--non-interactive", "--json"],
+    )
+    assert reused.exit_code == 0
+    assert json.loads(reused.stdout)["status"] == "reused"
+
+
+def test_sparse_lexical_evidence_requires_explicit_choice_before_saving(tmp_path: Path) -> None:
+    runner = CliRunner()
+    source = tmp_path / "sparse.csv"
+    profile_path = tmp_path / "sparse-profile.json"
+    _write_sparse_lexical_csv(source)
+
+    proposal = propose_profile(source)
+    assert len(proposal.field_choices_required) == 1
+    required = proposal.field_choices_required[0]
+    assert required.role == "lexical_entry"
+    assert "sparse" in required.reason.lower()
+
+    rejected = _command(
+        runner,
+        ["--input", str(source), "--profile", str(profile_path), "--non-interactive", "--confirm"],
+    )
+    assert rejected.exit_code != 0
+    assert "explicit" in rejected.output.lower()
+    assert not profile_path.exists()
+
+    saved = _command(
+        runner,
+        [
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--lexical-entry-field",
+            "Wort",
+            "--non-interactive",
+            "--confirm",
+        ],
+    )
+    assert saved.exit_code == 0
+    assert DeckProfile.from_json(profile_path.read_text(encoding="utf-8")).fields.lexical_entry_field == "Wort"
+
+
+def test_interactive_tied_setup_requires_typing_an_explicit_field_choice(tmp_path: Path) -> None:
+    source = tmp_path / "tied.csv"
+    profile_path = tmp_path / "interactive-tied.json"
+    _write_tied_lexical_csv(source)
+
+    saved = CliRunner().invoke(
+        cast(click.Command, _typer_get_command(app)),
+        ["setup", "--input", str(source), "--profile", str(profile_path)],
+        input="Wort A\n" + "\n" * 11 + "y\n",
+    )
+
+    assert saved.exit_code == 0
+    assert "Field choice required" in saved.output
+    assert DeckProfile.from_json(profile_path.read_text(encoding="utf-8")).fields.lexical_entry_field == "Wort A"
+
+    empty_choice_path = tmp_path / "interactive-empty.json"
+    rejected = CliRunner().invoke(
+        cast(click.Command, _typer_get_command(app)),
+        ["setup", "--input", str(source), "--profile", str(empty_choice_path)],
+        input="\n" + "\n" * 11 + "y\n",
+    )
+
+    assert rejected.exit_code != 0
+    assert "explicit" in rejected.output.lower()
+    assert not empty_choice_path.exists()
+
+
+def test_interactive_rejected_final_confirmation_writes_nothing(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "rejected.json"
+    _write_csv(source)
+
+    result = CliRunner().invoke(
+        cast(click.Command, _typer_get_command(app)),
+        ["setup", "--input", str(source), "--profile", str(profile_path)],
+        input="\n" * 11 + "n\n",
+    )
+
+    assert result.exit_code == 0
+    assert "cancelled" in result.output.lower()
+    assert not profile_path.exists()
+
+
+def test_proposal_output_shows_candidate_values_and_reasons(tmp_path: Path) -> None:
+    source = tmp_path / "lesson-codes.csv"
+    profile_path = tmp_path / "reasons.json"
+    _write_lesson_code_csv(source)
+
+    result = _command(CliRunner(), ["--input", str(source), "--profile", str(profile_path), "--non-interactive"])
+
+    assert result.exit_code == 0
+    assert "Field-candidate evidence:" in result.stdout
+    assert "Latein -> lexical_entry" in result.stdout
+    assert "LatinumB_Lektion -> unmapped" in result.stdout
+    assert "match a principal-part form" in result.stdout
+    assert "'12'" in result.stdout
+
+
+def _write_tied_principal_csv(path: Path) -> None:
+    path.write_text(
+        "Wort,Formen A,Formen B\n"
+        'amō,"amāre, amō, amāvī, amātum","amāre, amō, amāvī, amātum"\n'
+        'ferō,"ferre, ferō, tulī, lātum","ferre, ferō, tulī, lātum"\n',
+        encoding="utf-8",
+    )
+
+
+def test_tied_principal_evidence_requires_explicit_choice_and_flag_remedy_saves(tmp_path: Path) -> None:
+    runner = CliRunner()
+    source = tmp_path / "tied-principal.csv"
+    profile_path = tmp_path / "tied-principal-profile.json"
+    _write_tied_principal_csv(source)
+
+    proposal = propose_profile(source)
+    assert proposal.profile.fields.principal_parts_field in {"Formen A", "Formen B"}
+    assert [required.role for required in proposal.field_choices_required] == ["principal_parts"]
+    assert "principal-part structure" in proposal.field_choices_required[0].reason
+    assert proposal.field_choices_required[0].candidates == ("Formen A", "Formen B")
+
+    rejected = _command(
+        runner,
+        ["--input", str(source), "--profile", str(profile_path), "--non-interactive", "--confirm"],
+    )
+    assert rejected.exit_code != 0
+    assert "explicit" in rejected.output.lower()
+    assert not profile_path.exists()
+
+    saved = _command(
+        runner,
+        [
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--principal-parts-field",
+            "Formen A",
+            "--non-interactive",
+            "--confirm",
+        ],
+    )
+    assert saved.exit_code == 0
+    assert DeckProfile.from_json(profile_path.read_text(encoding="utf-8")).fields.principal_parts_field == "Formen A"
+
+
+def test_missing_principal_structure_requires_explicit_principal_choice(tmp_path: Path) -> None:
+    source = tmp_path / "no-structure.csv"
+    source.write_text("Eintrag,Notiz\namo,kurze Notiz\n", encoding="utf-8")
+    profile_path = tmp_path / "no-structure.json"
+
+    proposal = propose_profile(source)
+
+    assert [required.role for required in proposal.field_choices_required] == ["principal_parts"]
+    assert "separator pattern" in proposal.field_choices_required[0].reason
+
+    result = _command(
+        CliRunner(),
+        ["--input", str(source), "--profile", str(profile_path), "--non-interactive", "--confirm"],
+    )
+    assert result.exit_code != 0
+    assert "explicit" in result.output.lower()
+    assert not profile_path.exists()
+
+
+def test_interactive_principal_choice_prompt_rejects_empty_and_unknown_answers(tmp_path: Path) -> None:
+    source = tmp_path / "tied-principal.csv"
+    profile_path = tmp_path / "interactive-principal.json"
+    _write_tied_principal_csv(source)
+
+    saved = CliRunner().invoke(
+        cast(click.Command, _typer_get_command(app)),
+        ["setup", "--input", str(source), "--profile", str(profile_path)],
+        input="FormenA\nFormen A\n" + "\n" * 11 + "y\n",
+    )
+
+    assert saved.exit_code == 0
+    assert "Unknown field" in saved.output
+    assert DeckProfile.from_json(profile_path.read_text(encoding="utf-8")).fields.principal_parts_field == "Formen A"
+
+    rejected_path = tmp_path / "interactive-principal-empty.json"
+    rejected = CliRunner().invoke(
+        cast(click.Command, _typer_get_command(app)),
+        ["setup", "--input", str(source), "--profile", str(rejected_path)],
+        input="\n" + "\n" * 11 + "y\n",
+    )
+
+    assert rejected.exit_code != 0
+    assert "explicit" in rejected.output.lower()
+    assert not rejected_path.exists()
+
+
+def test_bogus_explicit_field_override_reports_clean_validation_error(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "bogus.json"
+    _write_csv(source)
+
+    result = _command(
+        CliRunner(),
+        [
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--principal-parts-field",
+            "Bogus",
+            "--non-interactive",
+            "--confirm",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert not isinstance(result.exception, StopIteration)
+    assert "configured principal-parts field is missing from the source" in result.output
+    assert not profile_path.exists()
+
+
+def _record_with_fields(note_type: str, identity: str, fields: dict[str, str]) -> CanonicalSourceRecord:
+    return CanonicalSourceRecord(
+        source_kind="apkg",
+        note_type=note_type,
+        fields=fields,
+        provenance=SourceProvenance(source_path=Path("multi.apkg"), location=f"note {identity}"),
+        source_identity=identity,
+        note_guid=identity,
+    )
+
+
+def test_note_type_override_with_disjoint_fields_rebuilds_evidence_safely() -> None:
+    inspection = SourceInspection(
+        records=(
+            _record_with_fields("Alpha", "alpha-guid", {"Latein": "amō", "Forms": "amāre, amō, amāvī, amātum"}),
+            _record_with_fields("Beta", "beta-guid", {"Lemma": "ferō", "Forms": "ferre, ferō, tulī, lātum"}),
+        ),
+        note_types=("Alpha", "Beta"),
+        fields_by_note_type={
+            "Alpha": ("Latein", "Forms"),
+            "Beta": ("Lemma", "Forms"),
+        },
+    )
+
+    proposal = propose_profile_from_inspection(inspection, Path("multi.apkg"), note_type="Alpha")
+    corrected = apply_profile_overrides(proposal, {"note_type": "Beta"})
+
+    assert corrected.record_count == 1
+    assert corrected.fields == ("Forms", "Lemma")
+
+    empty = apply_profile_overrides(proposal, {"note_type": "Gamma"})
+
+    assert empty.record_count == 0
+    assert empty.fields == ()
+
+
+def test_nfd_decomposed_values_still_rank_by_content(tmp_path: Path) -> None:
+    source = tmp_path / "nfd.csv"
+    source.write_text(
+        "Lektion,Latein,Formen\n"
+        f'12,{unicodedata.normalize("NFD", "amō")},"amāre, amō, amāvī, amātum"\n'
+        f'13,{unicodedata.normalize("NFD", "ferō")},"ferre, ferō, tulī, lātum"\n',
+        encoding="utf-8",
+    )
+
+    proposal = propose_profile(source)
+
+    assert proposal.profile.fields.lexical_entry_field == "Latein"
+    assert proposal.field_choices_required == ()

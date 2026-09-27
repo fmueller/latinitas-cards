@@ -1,12 +1,12 @@
 ---
 id: T-031-require-evidence-backed-field-suggestions-and
 title: Require evidence-backed field suggestions and ambiguity confirmation
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#mapping-evidence-and-confirmation
 dependencies:
     - T-012-build-assisted-profile-setup
-updated_at: "2026-09-27T09:36:15Z"
+updated_at: "2026-09-27T12:24:33Z"
 ---
 
 # T-031-require-evidence-backed-field-suggestions-and Require evidence-backed field suggestions and ambiguity confirmation
@@ -37,3 +37,4 @@ hard-coding user field names.
 - Medium priority lets interruption recovery (T-036) and scoped identity (T-029) run
   first without inventing a technical dependency. T-032 then supplies normalized
   eligibility before T-030; mapping remains a mandatory v0.1.0 release gate.
+- 2026-09-27T12:24:30Z: verification pass

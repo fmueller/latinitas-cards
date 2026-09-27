@@ -8,7 +8,8 @@ claiming that a syntactic principal-part match is a confirmed verb.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+import unicodedata
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Literal
@@ -22,6 +23,7 @@ from .profile import (
     DEFAULT_TAGS,
     DEFAULT_TARGET_DECK,
     DeckProfile,
+    FieldOverrides,
     ProfileOverrides,
     SourceIdentityConfig,
     resolve_profile,
@@ -44,8 +46,15 @@ _LEXICAL_NAME_HINTS = ("entry", "lemma", "lexical", "latin", "latein", "word", "
 _PRINCIPAL_NAME_HINTS = ("principal", "part", "form", "construction", "hint", "stamm")
 _MEANING_NAME_HINTS = ("meaning", "gloss", "german", "deutsch", "translation", "definition", "bedeutung")
 _IDENTITY_NAME_HINTS = ("id", "guid", "identity", "sourceid", "stableid", "noteid")
+_LEXICAL_OVERLAP_WEIGHT = 50
+_LEXICAL_WORD_WEIGHT = 5
+_LEXICAL_NAME_WEIGHT = 5
+_LEXICAL_SAMPLE_LIMIT = 2
+_SINGLE_WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+_NUMERIC_CODE_RE = re.compile(r"\d+(?:[.,/\-–—]\d+)*")
 
 SetupStatus = Literal["success", "incomplete", "unsupported", "ambiguous"]
+FieldChoiceRole = Literal["lexical_entry", "principal_parts"]
 
 
 class ProfileSetupError(ValueError):
@@ -54,12 +63,13 @@ class ProfileSetupError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class FieldCandidate:
-    """One named source field and the evidence supporting its proposed role."""
+    """One named source field, sanitized sample values, and the evidence for its role."""
 
     field: str
     role: str
     score: int
     evidence: tuple[str, ...]
+    sample_values: tuple[str, ...] = ()
 
     def to_machine_readable(self) -> dict[str, Any]:
         return {
@@ -67,6 +77,23 @@ class FieldCandidate:
             "role": self.role,
             "score": self.score,
             "evidence": list(self.evidence),
+            "sample_values": list(self.sample_values),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class RequiredFieldChoice:
+    """One field role whose evidence is too weak or tied to save without an explicit choice."""
+
+    role: FieldChoiceRole
+    reason: str
+    candidates: tuple[str, ...]
+
+    def to_machine_readable(self) -> dict[str, Any]:
+        return {
+            "role": self.role,
+            "reason": self.reason,
+            "candidates": list(self.candidates),
         }
 
 
@@ -107,27 +134,47 @@ class ProfileSetupProposal:
     examples: tuple[RepresentativeExample, ...]
     uncertainties: tuple[str, ...]
     recipe_suggestions: tuple[str, ...]
+    field_choices_required: tuple[RequiredFieldChoice, ...] = ()
 
-    def with_profile(self, profile: DeckProfile) -> ProfileSetupProposal:
+    # The proposal keeps records private to avoid making source rows part of the
+    # serialized profile contract.  This attribute is attached by the factory.
+    _records_for_examples: tuple[CanonicalSourceRecord, ...] = ()
+
+    def with_profile(
+        self,
+        profile: DeckProfile,
+        *,
+        explicit_fields: frozenset[str] = frozenset(),
+    ) -> ProfileSetupProposal:
         records = _records_for_profile(self._records_for_examples, profile)
         fields = tuple(sorted({field for record in records for field in record.fields}))
+        separator = profile.principal_parts.separators[0]
+        principal_evidences = _principal_field_evidences(records, fields)
+        lexical_evidences = _lexical_field_evidences(records, fields, profile.fields.principal_parts_field, separator)
         return replace(
             self,
             record_count=len(records),
             fields=fields,
             profile=profile,
             field_candidates=_field_candidates(
+                records,
                 fields,
-                profile.fields.lexical_entry_field,
-                profile.fields.principal_parts_field,
-                profile.fields.meaning_field,
+                lexical_evidences=lexical_evidences,
+                principal_evidences=principal_evidences,
+                lexical_field=profile.fields.lexical_entry_field,
+                principal_field=profile.fields.principal_parts_field,
+                meaning_field=profile.fields.meaning_field,
+                separator=separator,
+            ),
+            field_choices_required=_field_choice_requirements(
+                lexical_evidences,
+                principal_evidences,
+                lexical_field=profile.fields.lexical_entry_field,
+                principal_field=profile.fields.principal_parts_field,
+                explicit_fields=explicit_fields,
             ),
             examples=build_representative_examples(self._records_for_examples, profile),
         )
-
-    # The proposal keeps records private to avoid making source rows part of the
-    # serialized profile contract.  This attribute is attached by the factory.
-    _records_for_examples: tuple[CanonicalSourceRecord, ...] = ()
 
     def to_machine_readable(self) -> dict[str, Any]:
         return {
@@ -140,6 +187,7 @@ class ProfileSetupProposal:
             "examples": [example.to_machine_readable() for example in self.examples],
             "uncertainties": list(self.uncertainties),
             "recipe_suggestions": list(self.recipe_suggestions),
+            "field_choices_required": [choice.to_machine_readable() for choice in self.field_choices_required],
         }
 
 
@@ -176,8 +224,10 @@ def propose_profile_from_inspection(
     if len(fields) < 2:
         raise ProfileSetupError("The source must expose at least two named fields for profile setup.")
 
-    principal_field, separator, role_count, principal_score = _choose_principal_field(records, fields)
-    lexical_field = _choose_lexical_field(records, fields, principal_field)
+    principal_evidences = _principal_field_evidences(records, fields)
+    principal_field, separator, role_count, principal_score = _choose_principal_field(principal_evidences)
+    lexical_evidences = _lexical_field_evidences(records, fields, principal_field, separator)
+    lexical_field = _choose_lexical_field(lexical_evidences)
     meaning_field = _choose_meaning_field(records, fields, lexical_field, principal_field)
     source_identity = _propose_source_identity(source_kind, records, fields)
 
@@ -199,7 +249,16 @@ def propose_profile_from_inspection(
         selected_recipes=DEFAULT_SELECTED_RECIPES,
     )
 
-    field_candidates = _field_candidates(fields, lexical_field, principal_field, meaning_field)
+    field_candidates = _field_candidates(
+        records,
+        fields,
+        lexical_evidences=lexical_evidences,
+        principal_evidences=principal_evidences,
+        lexical_field=lexical_field,
+        principal_field=principal_field,
+        meaning_field=meaning_field,
+        separator=separator,
+    )
     examples = build_representative_examples(records, profile)
     uncertainties = _uncertainties(
         inspection,
@@ -218,6 +277,13 @@ def propose_profile_from_inspection(
         examples=examples,
         uncertainties=uncertainties,
         recipe_suggestions=DEFAULT_SELECTED_RECIPES,
+        field_choices_required=_field_choice_requirements(
+            lexical_evidences,
+            principal_evidences,
+            lexical_field=lexical_field,
+            principal_field=principal_field,
+            explicit_fields=frozenset(),
+        ),
         _records_for_examples=inspection.records,
     )
 
@@ -230,7 +296,35 @@ def apply_profile_overrides(
 
     if overrides is None:
         return proposal
-    return proposal.with_profile(resolve_profile(proposal.profile, overrides))
+    parsed = overrides if isinstance(overrides, ProfileOverrides) else ProfileOverrides.from_mapping(overrides)
+    explicit_fields = _explicit_field_choices(parsed)
+    meaning_field = proposal.profile.fields.meaning_field
+    if meaning_field is not None and meaning_field in explicit_fields and not _meaning_field_explicitly_set(parsed):
+        parsed = _with_meaning_field_cleared(parsed)
+    return proposal.with_profile(resolve_profile(proposal.profile, parsed), explicit_fields=explicit_fields)
+
+
+def _explicit_field_choices(overrides: ProfileOverrides) -> frozenset[str]:
+    fields = overrides.fields
+    if fields is None:
+        return frozenset()
+    chosen = (fields.lexical_entry_field, fields.principal_parts_field)
+    return frozenset(name for name in chosen if name is not None)
+
+
+def _meaning_field_explicitly_set(overrides: ProfileOverrides) -> bool:
+    return overrides.fields is not None and "meaning_field" in overrides.fields.model_fields_set
+
+
+def _with_meaning_field_cleared(overrides: ProfileOverrides) -> ProfileOverrides:
+    values: dict[str, str | None] = {}
+    if overrides.fields is not None:
+        if overrides.fields.lexical_entry_field is not None:
+            values["lexical_entry_field"] = overrides.fields.lexical_entry_field
+        if overrides.fields.principal_parts_field is not None:
+            values["principal_parts_field"] = overrides.fields.principal_parts_field
+    values["meaning_field"] = None
+    return overrides.model_copy(update={"fields": FieldOverrides.model_validate(values)})
 
 
 def build_representative_examples(
@@ -410,51 +504,158 @@ def _select_note_type(note_types: Sequence[str], requested: str | None, source_k
     return "Source note type"
 
 
-def _choose_principal_field(
+@dataclass(frozen=True, slots=True)
+class _LexicalFieldEvidence:
+    """Content-derived ranking evidence for one lexical-entry candidate field."""
+
+    field: str
+    sampled: int
+    non_empty: int
+    word_like: int
+    overlap: int
+    numeric_codes: int
+    content_score: int
+    total_score: int
+    samples: tuple[str, ...]
+    reasons: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _PrincipalFieldEvidence:
+    """Structural ranking evidence for one (field, separator) principal-parts candidate."""
+
+    field: str
+    separator: str
+    separator_index: int
+    sampled: int
+    exact_count: int
+    three_count: int
+    name_score: int
+    score: int
+
+
+def _lexical_field_evidences(
     records: Sequence[CanonicalSourceRecord],
     fields: Sequence[str],
-) -> tuple[str, str, int, int]:
-    best: tuple[int, int, int, str, str] | None = None
+    principal_field: str,
+    separator: str,
+) -> tuple[_LexicalFieldEvidence, ...]:
+    return tuple(
+        _lexical_field_evidence(field, records, principal_field, separator)
+        for field in fields
+        if field != principal_field
+    )
+
+
+def _lexical_field_evidence(
+    field: str,
+    records: Sequence[CanonicalSourceRecord],
+    principal_field: str,
+    separator: str,
+) -> _LexicalFieldEvidence:
+    values = tuple(unicodedata.normalize("NFC", record.fields.get(field, "")) for record in records)
+    non_empty_values = [value for value in values if value.strip()]
+    word_like = sum(1 for value in non_empty_values if _SINGLE_WORD_RE.fullmatch(value.strip()))
+    overlap = sum(
+        1
+        for record in records
+        if _matches_principal_part(
+            record.fields.get(field, ""),
+            record.fields.get(principal_field, ""),
+            separator,
+        )
+    )
+    numeric_codes = sum(1 for value in non_empty_values if _NUMERIC_CODE_RE.fullmatch(value.strip()))
+    sampled = len(values)
+    non_empty = len(non_empty_values)
+    content_score = overlap * _LEXICAL_OVERLAP_WEIGHT + word_like * _LEXICAL_WORD_WEIGHT + non_empty
+    name_bonus = _name_score(field, _LEXICAL_NAME_HINTS) * _LEXICAL_NAME_WEIGHT
+
+    reasons = [
+        f"{non_empty}/{sampled} sampled values are non-empty",
+        f"{word_like}/{sampled} sampled values are single alphabetic words",
+        f"{overlap}/{sampled} sampled values match a principal-part form of the same record",
+    ]
+    if numeric_codes:
+        reasons.append(f"{numeric_codes}/{sampled} sampled values are numeric codes only")
+    if name_bonus:
+        reasons.append("field name resembles a lexical-entry field name")
+
+    return _LexicalFieldEvidence(
+        field=field,
+        sampled=sampled,
+        non_empty=non_empty,
+        word_like=word_like,
+        overlap=overlap,
+        numeric_codes=numeric_codes,
+        content_score=content_score,
+        total_score=content_score + name_bonus,
+        samples=_sample_values(values, field),
+        reasons=tuple(reasons),
+    )
+
+
+def _matches_principal_part(value: str, principal_value: str, separator: str) -> bool:
+    folded = unicodedata.normalize("NFC", value).strip().casefold()
+    if not folded:
+        return False
+    parts = {
+        unicodedata.normalize("NFC", part).strip().casefold()
+        for part in principal_value.split(separator)
+        if part.strip()
+    }
+    return folded in parts
+
+
+def _principal_field_evidences(
+    records: Sequence[CanonicalSourceRecord],
+    fields: Sequence[str],
+) -> tuple[_PrincipalFieldEvidence, ...]:
+    evidences: list[_PrincipalFieldEvidence] = []
     for field in fields:
         values = tuple(record.fields.get(field, "") for record in records)
         name_score = _name_score(field, _PRINCIPAL_NAME_HINTS)
         for separator_index, separator in enumerate(_CANDIDATE_SEPARATORS):
             exact_count = sum(1 for value in values if value.strip() and value.count(separator) == 3)
             three_count = sum(1 for value in values if value.strip() and value.count(separator) == 2)
-            score = exact_count * 100 + three_count * 15 + name_score * 4
-            candidate = (score, exact_count, -separator_index, field, separator)
-            if best is None or candidate > best:
-                best = candidate
-    if best is None:
+            evidences.append(
+                _PrincipalFieldEvidence(
+                    field=field,
+                    separator=separator,
+                    separator_index=separator_index,
+                    sampled=len(values),
+                    exact_count=exact_count,
+                    three_count=three_count,
+                    name_score=name_score,
+                    score=exact_count * 100 + three_count * 15 + name_score * 4,
+                )
+            )
+    return tuple(evidences)
+
+
+def _choose_principal_field(
+    evidences: Sequence[_PrincipalFieldEvidence],
+) -> tuple[str, str, int, int]:
+    if not evidences:
         raise ProfileSetupError("The source has no candidate principal-parts field.")
+    best = max(
+        evidences,
+        key=lambda evidence: (
+            evidence.score,
+            evidence.exact_count,
+            -evidence.separator_index,
+            evidence.field,
+            evidence.separator,
+        ),
+    )
+    role_count = 4 if best.exact_count else (3 if best.three_count else 4)
+    return best.field, best.separator, role_count, best.score
 
-    _score, exact_count, _separator_order, field, separator = best
-    role_count = 4 if exact_count else 3
-    if not exact_count:
-        role_count = 3 if any(record.fields.get(field, "").count(separator) == 2 for record in records) else 4
-    return field, separator, role_count, best[0]
 
-
-def _choose_lexical_field(
-    records: Sequence[CanonicalSourceRecord],
-    fields: Sequence[str],
-    principal_field: str,
-) -> str:
-    candidates: list[tuple[int, str]] = []
-    for field in fields:
-        if field == principal_field:
-            continue
-        values = tuple(record.fields.get(field, "") for record in records)
-        non_empty = sum(bool(value.strip()) for value in values)
-        no_separators = sum(
-            bool(value.strip()) and not any(separator in value for separator in _CANDIDATE_SEPARATORS[:-1])
-            for value in values
-        )
-        score = _name_score(field, _LEXICAL_NAME_HINTS) * 20 + non_empty * 2 + no_separators
-        candidates.append((score, field))
-    if not candidates:
+def _choose_lexical_field(evidences: Sequence[_LexicalFieldEvidence]) -> str:
+    if not evidences:
         raise ProfileSetupError("The source has no candidate lexical-entry field.")
-    return max(candidates)[1]
+    return max(evidences, key=lambda evidence: (evidence.total_score, evidence.field)).field
 
 
 def _choose_meaning_field(
@@ -468,8 +669,12 @@ def _choose_meaning_field(
         if field in {lexical_field, principal_field} or _looks_like_identity_field(field):
             continue
         values = tuple(record.fields.get(field, "") for record in records)
-        non_empty = sum(bool(value.strip()) for value in values)
-        score = _name_score(field, _MEANING_NAME_HINTS) * 20 + non_empty
+        non_empty_values = [value.strip() for value in values if value.strip()]
+        name_score = _name_score(field, _MEANING_NAME_HINTS)
+        numeric_only = all(_NUMERIC_CODE_RE.fullmatch(value) for value in non_empty_values)
+        if non_empty_values and name_score == 0 and numeric_only:
+            continue
+        score = name_score * 20 + len(non_empty_values)
         if score:
             candidates.append((score, field))
     return max(candidates)[1] if candidates else None
@@ -495,31 +700,183 @@ def _propose_source_identity(
 
 
 def _field_candidates(
+    records: Sequence[CanonicalSourceRecord],
     fields: Sequence[str],
+    *,
+    lexical_evidences: Sequence[_LexicalFieldEvidence],
+    principal_evidences: Sequence[_PrincipalFieldEvidence],
     lexical_field: str,
     principal_field: str,
     meaning_field: str | None,
+    separator: str,
 ) -> tuple[FieldCandidate, ...]:
+    lexical_by_field = {evidence.field: evidence for evidence in lexical_evidences}
+    principal_evidence = next(
+        (
+            evidence
+            for evidence in principal_evidences
+            if evidence.field == principal_field and evidence.separator == separator
+        ),
+        None,
+    )
     candidates: list[FieldCandidate] = []
     for field in fields:
-        if field == lexical_field:
-            role = "lexical_entry"
-            score = _name_score(field, _LEXICAL_NAME_HINTS)
-            evidence = ("name and observed values fit a lexical-entry field",)
-        elif field == principal_field:
+        if field == principal_field:
             role = "principal_parts"
-            score = _name_score(field, _PRINCIPAL_NAME_HINTS)
-            evidence = ("observed values contain repeated candidate role separators",)
-        elif field == meaning_field:
-            role = "meaning"
-            score = _name_score(field, _MEANING_NAME_HINTS)
-            evidence = ("field name and non-empty text fit an optional meaning/gloss field",)
+            samples = _sample_values((record.fields.get(field, "") for record in records), field)
+            if principal_evidence is None:
+                score = 0
+                reasons = ["proposed separator is not among the separators observed in the sampled values"]
+            else:
+                score = principal_evidence.score
+                reasons = [
+                    f"{principal_evidence.exact_count}/{principal_evidence.sampled} sampled values split into "
+                    "four parts by the proposed separator",
+                    f"{principal_evidence.three_count}/{principal_evidence.sampled} sampled values split into "
+                    "three parts by the proposed separator",
+                ]
+                if principal_evidence.name_score:
+                    reasons.append("field name resembles a principal-parts field name")
         else:
-            role = "unmapped"
-            score = 0
-            evidence = ("retained as an unmapped source field",)
-        candidates.append(FieldCandidate(field=field, role=role, score=score, evidence=evidence))
+            lexical = lexical_by_field[field]
+            if field == lexical_field:
+                role = "lexical_entry"
+                score = lexical.total_score
+                reasons = [*lexical.reasons, "strongest observed content evidence for the lexical-entry role"]
+            elif field == meaning_field:
+                role = "meaning"
+                score = _name_score(field, _MEANING_NAME_HINTS) * 20 + lexical.non_empty
+                reasons = [
+                    f"{lexical.non_empty}/{lexical.sampled} sampled values are non-empty",
+                    "field name and non-empty text fit an optional meaning/gloss field",
+                ]
+            else:
+                role = "unmapped"
+                score = 0
+                reasons = [*lexical.reasons, "retained as an unmapped source field"]
+            samples = lexical.samples
+        candidates.append(
+            FieldCandidate(field=field, role=role, score=score, evidence=tuple(reasons), sample_values=samples)
+        )
     return tuple(candidates)
+
+
+def _sample_values(values: Iterable[str], field: str) -> tuple[str, ...]:
+    samples: list[str] = []
+    for value in values:
+        if not value.strip():
+            continue
+        sanitized = safe_source_value(value, field)
+        if sanitized not in samples:
+            samples.append(sanitized)
+        if len(samples) == _LEXICAL_SAMPLE_LIMIT:
+            break
+    return tuple(samples)
+
+
+def _field_choice_requirements(
+    lexical_evidences: Sequence[_LexicalFieldEvidence],
+    principal_evidences: Sequence[_PrincipalFieldEvidence],
+    *,
+    lexical_field: str,
+    principal_field: str,
+    explicit_fields: frozenset[str],
+) -> tuple[RequiredFieldChoice, ...]:
+    requirements: list[RequiredFieldChoice] = []
+
+    if lexical_field not in explicit_fields:
+        lexical = _lexical_choice_requirement(lexical_evidences, lexical_field)
+        if lexical is not None:
+            requirements.append(lexical)
+
+    if principal_field not in explicit_fields:
+        principal = _principal_choice_requirement(principal_evidences)
+        if principal is not None:
+            requirements.append(principal)
+
+    return tuple(requirements)
+
+
+def _lexical_choice_requirement(
+    evidences: Sequence[_LexicalFieldEvidence],
+    chosen_field: str,
+) -> RequiredFieldChoice | None:
+    if not evidences:
+        return None
+    by_field = {evidence.field: evidence for evidence in evidences}
+    chosen = by_field.get(chosen_field)
+    if chosen is None:
+        return None
+    candidate_fields = tuple(sorted(by_field))
+
+    top_content = max(evidence.content_score for evidence in evidences)
+    tied = sorted(evidence.field for evidence in evidences if evidence.content_score == top_content)
+    if len(tied) > 1:
+        return RequiredFieldChoice(
+            role="lexical_entry",
+            reason=(
+                f"content evidence ties between the fields {', '.join(repr(name) for name in tied)}; "
+                "an explicit lexical-entry field choice is required"
+            ),
+            candidates=tuple(tied),
+        )
+
+    if chosen.overlap + chosen.word_like == 0:
+        return RequiredFieldChoice(
+            role="lexical_entry",
+            reason=(
+                f"field {chosen.field!r} shows no sampled Latin-word or principal-part-match evidence "
+                f"({chosen.overlap}/{chosen.sampled} sampled values match a principal-part form); "
+                "an explicit lexical-entry field choice is required"
+            ),
+            candidates=candidate_fields,
+        )
+
+    if chosen.non_empty * 2 < chosen.sampled:
+        return RequiredFieldChoice(
+            role="lexical_entry",
+            reason=(
+                f"field {chosen.field!r} has sparse evidence "
+                f"({chosen.non_empty}/{chosen.sampled} sampled values are non-empty); "
+                "an explicit lexical-entry field choice is required"
+            ),
+            candidates=candidate_fields,
+        )
+    return None
+
+
+def _principal_choice_requirement(
+    evidences: Sequence[_PrincipalFieldEvidence],
+) -> RequiredFieldChoice | None:
+    structural: dict[str, tuple[int, int]] = {}
+    for evidence in evidences:
+        counts = (evidence.exact_count, evidence.three_count)
+        structural[evidence.field] = max(structural.get(evidence.field, (0, 0)), counts)
+
+    if not structural:
+        return None
+    top = max(structural.values())
+    candidate_fields = tuple(sorted(structural))
+    if top == (0, 0):
+        return RequiredFieldChoice(
+            role="principal_parts",
+            reason=(
+                "no sampled value in any field shows a repeated principal-part separator pattern; "
+                "an explicit principal-parts field choice is required"
+            ),
+            candidates=candidate_fields,
+        )
+    tied = sorted(name for name, counts in structural.items() if counts == top)
+    if len(tied) > 1:
+        return RequiredFieldChoice(
+            role="principal_parts",
+            reason=(
+                f"equally strong principal-part structure in the fields {', '.join(repr(name) for name in tied)}; "
+                "an explicit principal-parts field choice is required"
+            ),
+            candidates=tuple(tied),
+        )
+    return None
 
 
 def _uncertainties(
@@ -568,6 +925,7 @@ __all__ = [
     "ProfileSetupError",
     "ProfileSetupProposal",
     "RepresentativeExample",
+    "RequiredFieldChoice",
     "apply_profile_overrides",
     "build_representative_examples",
     "profile_source_issues",

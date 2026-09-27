@@ -101,7 +101,12 @@ uv run latinitas-cards generate \
 ```
 
 For an interactive setup, omit `--non-interactive --confirm`; review the proposed
-examples and answer the confirmation prompt. Repeat `--role` in semantic order when
+examples and answer the confirmation prompt. Field suggestions rank sampled content
+(values matching principal-part forms, single-word shapes) alongside field names, and
+the proposal shows sample values and the reason for each suggestion. When the evidence
+ties, conflicts, or is too sparse, setup requires an explicit field choice — pass
+`--lexical-entry-field`/`--principal-parts-field` or answer the interactive choice
+prompt — before a profile can be saved. Repeat `--role` in semantic order when
 correcting a proposal, for example:
 
 ```bash

@@ -12,6 +12,7 @@ import typer
 
 from .profile import ProfileOverrides, ProfileValidationError, load_profile, resolve_profile
 from .profile_setup import (
+    FieldChoiceRole,
     ProfileSetupError,
     ProfileSetupProposal,
     apply_profile_overrides,
@@ -21,6 +22,11 @@ from .profile_setup import (
     safe_source_value,
 )
 from .sources import CanonicalSourceError, SourceInspection, inspect_source
+
+_FIELD_CHOICE_PROMPTS: dict[FieldChoiceRole, tuple[str, str]] = {
+    "lexical_entry": ("lexical-entry", "lexical_entry_field"),
+    "principal_parts": ("principal-parts", "principal_parts_field"),
+}
 
 
 def setup(
@@ -155,6 +161,12 @@ def setup(
         proposal = apply_profile_overrides(proposal, explicit_overrides)
         if not json_output:
             _print_proposal(proposal, status="proposal")
+        if proposal.field_choices_required and not non_interactive and not confirm:
+            proposal = _prompt_for_field_choices(proposal)
+            if not json_output:
+                _print_proposal(proposal, status="corrected")
+        if proposal.field_choices_required and confirm:
+            raise ProfileSetupError(_field_choice_error(proposal))
         if not non_interactive and not confirm:
             proposal = _prompt_for_corrections(proposal)
             if not json_output:
@@ -168,7 +180,11 @@ def setup(
 
     if not confirm and (non_interactive or not typer.confirm("Save this confirmed profile?", default=False)):
         _emit(
-            {"status": "cancelled", "profile_path": str(profile)},
+            {
+                "status": "cancelled",
+                "profile_path": str(profile),
+                "field_choices_required": [choice.to_machine_readable() for choice in proposal.field_choices_required],
+            },
             json_output,
             "Profile setup cancelled; no profile was saved.",
         )
@@ -298,6 +314,36 @@ def _build_overrides(
     return ProfileOverrides.from_mapping(values)
 
 
+def _field_choice_error(proposal: ProfileSetupProposal) -> str:
+    reasons = "; ".join(f"{required.role}: {required.reason}" for required in proposal.field_choices_required)
+    return (
+        "The proposed field mapping needs an explicit choice before a profile can be saved: "
+        f"{reasons}. Re-run with --lexical-entry-field or --principal-parts-field."
+    )
+
+
+def _prompt_for_field_choices(proposal: ProfileSetupProposal) -> ProfileSetupProposal:
+    fields: dict[str, str] = {}
+    for required in sorted(proposal.field_choices_required, key=lambda choice: choice.role):
+        label, override_key = _FIELD_CHOICE_PROMPTS[required.role]
+        candidates = ", ".join(repr(name) for name in required.candidates)
+        while True:
+            answer = typer.prompt(
+                f"Explicit {label} field choice (candidates: {candidates})",
+                default="",
+                show_default=False,
+            ).strip()
+            if not answer:
+                raise ProfileSetupError(
+                    f"An explicit {label} field choice is required before the profile can be saved."
+                )
+            if answer in required.candidates:
+                break
+            typer.echo(f"Unknown field {answer!r}; choose one of: {candidates}.", err=True)
+        fields[override_key] = answer
+    return apply_profile_overrides(proposal, {"fields": fields})
+
+
 def _prompt_for_corrections(proposal: ProfileSetupProposal) -> ProfileSetupProposal:
     current = proposal.profile
     note_type = typer.prompt("Source note type", default=current.note_type)
@@ -378,6 +424,21 @@ def _print_proposal(proposal: ProfileSetupProposal, *, status: str) -> None:
     typer.echo(f"Tags: {safe_source_value(', '.join(profile.tags), 'tags')}")
     typer.echo(f"Generated-content language tag: {safe_source_value(profile.language_tag, 'language tag')}")
     typer.echo(f"Compatible recipes: {safe_source_value(', '.join(proposal.recipe_suggestions), 'recipes')}")
+    if proposal.field_candidates:
+        typer.echo("Field-candidate evidence:")
+        for candidate in proposal.field_candidates:
+            typer.echo(
+                f"  {safe_source_value(candidate.field, candidate.field)} -> {candidate.role} (score {candidate.score})"
+            )
+            if candidate.sample_values:
+                typer.echo("    samples: " + ", ".join(f"'{value}'" for value in candidate.sample_values))
+            for reason in candidate.evidence:
+                typer.echo(f"    - {reason}")
+    if proposal.field_choices_required:
+        typer.echo("Field choice required:")
+        for required in proposal.field_choices_required:
+            candidates = ", ".join(repr(name) for name in required.candidates)
+            typer.echo(f"  - {required.role}: {required.reason} (candidates: {candidates})")
     typer.echo("Representative examples:")
     for example in proposal.examples:
         typer.echo(
@@ -397,6 +458,8 @@ def _result_payload(status: str, profile_path: Path, proposal: ProfileSetupPropo
         "profile_path": str(profile_path),
         "profile": effective,
         "effective_profile": effective,
+        "field_candidates": [candidate.to_machine_readable() for candidate in proposal.field_candidates],
+        "field_choices_required": [choice.to_machine_readable() for choice in proposal.field_choices_required],
         "examples": [example.to_machine_readable() for example in proposal.examples],
         "uncertainties": list(proposal.uncertainties),
         "compatible_recipes": list(proposal.recipe_suggestions),

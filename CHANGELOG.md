@@ -11,6 +11,10 @@ Status: candidate awaiting user review. No tag or GitHub release has been create
 
 - Inspect an existing CSV, APKG, or COLPKG source and confirm an assisted, human-readable
   profile.
+- Rank setup field suggestions from representative sample values as well as names, show
+  candidate sample values and reasons, and require an explicit field choice before
+  saving when evidence ties, conflicts, or is sparse; saved profiles still reload
+  deterministically without repeating setup prompts.
 - Preserve stable source identities and derive immutable `LatinitasID` values for generated
   exercises.
 - Generate explicitly selected German principal-part completion and recognition exercises
