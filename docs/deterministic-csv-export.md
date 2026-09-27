@@ -221,11 +221,27 @@ canonical order (padding the stored tag string with spaces), so stored tag
 order differs from the CSV column order while the tag sets are identical. On a
 repeat import with update-when-first-field-matches and match scope note type,
 no duplicate notes were created and every `LatinitasID` stayed stable, but the
-imported `Tags` column replaces each note's tag set instead of merging it: a
+imported `Tags` column replaced each note's tag set instead of merging it: a
 tag manually added to a note before the repeat import was removed by the
 import, and a combined tag manually removed from a note was restored from the
-CSV. Repeat imports therefore re-assert the generated tag set; unrelated
-manual tags on generated notes do not survive a repeat import.
+CSV. That backend-path observation did not isolate a tag-only change, so it
+does not by itself establish what happens when every managed field is
+unchanged.
+
+Native tag-boundary verification (v0.1.0, Anki 26.09.3, current learning-object
+model): the release gate re-probed this boundary through Anki's native import
+dialog on a disposable synthetic collection of the two complete objects
+(dīcere and ferre; Debian Linux). A tag-only reimport whose CSV row was
+unchanged in every managed field was reported by Anki as Skipped and left the
+manually added destination-only tag in place — notes, cards, and review logs
+stayed identical. A follow-up reimport whose row also changed a managed gloss
+updated that note and removed the manually added tag, while every card and
+review-log row stayed identical and the other note's Personal Notes were
+preserved. The manual-tag removal on a managed-field change is reproduced; the
+tag-only Skipped outcome is an observed Anki 26.09.3 dialog boundary, not a
+LatinitasCards guarantee. Users must still treat every reimport as
+tag-destructive, because any row that changes a managed field re-asserts the
+exported tag set.
 
 ## Anki text import
 
@@ -276,7 +292,7 @@ For repeat imports:
 4. Keep **Allow HTML in fields** enabled. Anki's manual documents that matching notes are
    updated in place, remain in their current decks, and preserve scheduling when updating is
    enabled. This behavior was verified in a disposable collection with native Anki Desktop
-   26.9.3: repeat imports through freshly opened dialogs updated changed managed content,
+   26.09.3: repeat imports through freshly opened dialogs updated changed managed content,
    preserved personal notes, review history and scheduling, kept deck placement and stable
    `LatinitasID` values, and created no duplicate notes.
 

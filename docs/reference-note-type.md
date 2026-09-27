@@ -377,24 +377,34 @@ workflow. Details: [deterministic-csv-export.md](deterministic-csv-export.md).
 
 ## Read this before the first import and before every reimport
 
-> **Warning: a mapped `Tags` column replaces destination-only manual tags.**
+> **Warning: a mapped `Tags` column can replace destination-only manual tags.**
 > When `Tags` is mapped — and it must be mapped to Anki's tags column, not to a
-> field — a native Anki CSV Update **replaces** each matched note's tag set with
-> the exported tags, **even when every other managed field is unchanged**. A tag
-> you added manually to a note in the destination collection is removed by the
-> import; an exported tag you removed manually is restored. Tags inherited from
-> the source parent are part of the exported set — inheritance is not
-> preservation of destination edits. Before the first import and before every
-> reimport: **back up the collection** (and export the destination tags you
-> care about), or **defer the import**. v0.1.0 performs no destination-aware
-> tag merging; a destination-aware update workflow is planned for v0.2.0 and
-> does not exist today.
+> field — a native Anki CSV Update re-asserts the exported tag set on every row
+> it updates: it removes a manually added tag and restores a removed exported
+> tag. Native verification on this multi-card model (Anki 26.09.3) reproduced
+> that removal when the reimported row also changed a managed field, while a
+> tag-only reimport whose row is unchanged in every managed field is reported by
+> Anki as **Skipped** and retains the manual tag. Do not rely on either
+> direction: treat every reimport as tag-destructive. Tags inherited from the
+> source parent are part of the exported set — inheritance is not preservation
+> of destination edits. Before the first import and before every reimport:
+> **back up the collection** (and export the destination tags you care about),
+> or **defer the import**. v0.1.0 performs no destination-aware tag merging; a
+> destination-aware update workflow is planned for v0.2.0 and does not exist
+> today.
 
-The tag-replacement mechanism was observed with a native Anki Desktop 26.9.3
-collection for the earlier per-exercise model (see the "Native tag-import
-verification" notes in [deterministic-csv-export.md](deterministic-csv-export.md));
-treat it as a property of Anki's CSV Update, not of a specific Latinitas model.
-Native verification of this multi-card model is tracked in T-035.
+The tag-replacement mechanism was first observed with a native Anki Desktop 26.09.3
+collection for the earlier per-exercise model through Anki's import backend (see
+the "Native tag-import verification" notes in
+[deterministic-csv-export.md](deterministic-csv-export.md)); the release-gate
+verification then probed the boundary above against this multi-card model
+through Anki's native import dialog on 26.09.3 with synthetic disposable
+collections. The historical backend observation did not isolate a tag-only
+change, and the dialog run observed the tag-only row reported Skipped with the
+manual tag retained; the cause of that difference is not established, so both
+outcomes are recorded as Anki CSV Update behavior rather than a property of a
+specific Latinitas model, and the backup-or-defer warning above stays the
+contract.
 
 ## First and repeat import checklist
 

@@ -23,6 +23,7 @@ from latinitas_cards.reference_templates import (
 from latinitas_cards.sources import CanonicalSourceRecord, SourceProvenance
 
 DOCS_PATH = Path(__file__).parents[2] / "docs" / "reference-note-type.md"
+EXPORT_DOCS_PATH = Path(__file__).parents[2] / "docs" / "deterministic-csv-export.md"
 README_PATH = Path(__file__).parents[2] / "README.md"
 
 EXPECTED_NOTE_TYPE_FIELDS = (
@@ -252,3 +253,44 @@ def test_missing_form_examples_match_generated_eligibility_and_the_published_tab
 def test_readme_documents_the_reference_setup_guide() -> None:
     readme = README_PATH.read_text(encoding="utf-8")
     assert "[Reference note type and safe import](docs/reference-note-type.md)" in readme
+
+
+TAG_WARNING_REFERENCE_PINS = (
+    "can replace destination-only manual tags",
+    "removes a manually added tag and restores a removed exported tag",
+    "tag-only reimport whose row is unchanged in every managed field is reported by",
+    "Anki as **Skipped** and retains the manual tag",
+    "Do not rely on either direction: treat every reimport as tag-destructive",
+    "back up the collection",
+    "destination-aware tag merging",
+)
+
+TAG_WARNING_EXPORT_PINS = (
+    "Native tag-boundary verification (v0.1.0, Anki 26.09.3, current learning-object model)",
+    "a disposable synthetic collection of the two complete objects",
+    "was reported by Anki as Skipped and left the manually added destination-only tag in place",
+    "updated that note and removed the manually added tag",
+    "every card and review-log row stayed identical",
+    "the other note's Personal Notes were preserved",
+    "treat every reimport as tag-destructive",
+)
+
+OVERSTATED_TAG_CLAIM = re.compile(r"even (when|if) (every )?(other )?managed fields? (is|are) unchanged")
+
+
+def _normalized_docs(text: str) -> str:
+    unwrapped = "\n".join(line.removeprefix("> ") for line in text.splitlines())
+    return " ".join(unwrapped.split())
+
+
+def test_docs_record_the_native_tag_replacement_boundary_instead_of_a_universal_claim() -> None:
+    reference = _normalized_docs(DOCS_PATH.read_text(encoding="utf-8"))
+    export_text = _normalized_docs(EXPORT_DOCS_PATH.read_text(encoding="utf-8"))
+    for pin in TAG_WARNING_REFERENCE_PINS:
+        assert pin in reference, pin
+    for pin in TAG_WARNING_EXPORT_PINS:
+        assert pin in export_text, pin
+    assert not OVERSTATED_TAG_CLAIM.search(reference), "reference-note-type.md"
+    assert not OVERSTATED_TAG_CLAIM.search(export_text), "deterministic-csv-export.md"
+    assert "26.9.3" not in reference, "reference-note-type.md"
+    assert "26.9.3" not in export_text, "deterministic-csv-export.md"
