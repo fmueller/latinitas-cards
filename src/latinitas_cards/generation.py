@@ -198,8 +198,7 @@ def generate_learning_object_notes(
             skipped.append(_parse_failure_skip(parsed, record, source_identity.value))
             continue
 
-        lemma_text = source_html_to_text(parsed.value.lexical_entry)
-        if _names_multiple_lexemes(lemma_text):
+        if _names_multiple_lexemes(parsed.value.lexical_entry):
             skipped.append(
                 GenerationSkip(
                     status="ambiguous",
@@ -308,9 +307,9 @@ def _render_note(
     meaning = _meaning(record, profile)
     tags = _combined_tags(record, profile)
     content = ManagedNoteContent(
-        lemma=_escape_multiline(parsed.lexical_entry),
+        lemma=_escape_normalized_lines(parsed.lexical_entry),
         principal_parts=_render_parts(parsed.parts),
-        meaning=_escape_multiline(meaning),
+        meaning=_escape_source_lines(meaning),
         tags=tags,
     )
     card_keys = tuple(
@@ -337,8 +336,8 @@ def _render_note(
 def _render_parts(parts: Sequence[PrincipalPartValue]) -> str:
     lines = []
     for part in parts:
-        value = "—" if part.is_omitted else (part.display or "")
-        lines.append(f"<strong>{_escape(_role_label(part.role))}:</strong> {_escape_multiline(value)}")
+        value = "—" if part.is_omitted else _escape_normalized_lines(part.display or "")
+        lines.append(f"<strong>{_escape_text(_role_label(part.role))}:</strong> {value}")
     return "<br>".join(lines)
 
 
@@ -351,12 +350,12 @@ def _role_label(role: str) -> str:
     return _ROLE_LABELS.get(role, role)
 
 
-def _escape(value: str) -> str:
-    return _escape_text(source_html_to_text(value))
+def _escape_source_lines(value: str) -> str:
+    return _escape_normalized_lines(source_html_to_text(value))
 
 
-def _escape_multiline(value: str) -> str:
-    return "<br>".join(_escape_text(line) for line in source_html_to_text(value).split("\n"))
+def _escape_normalized_lines(value: str) -> str:
+    return "<br>".join(_escape_text(line) for line in value.split("\n"))
 
 
 def _escape_text(value: str) -> str:

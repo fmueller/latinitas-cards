@@ -15,12 +15,16 @@ semantic contract for that source.
 | Reusable separator | A single configured literal separator is reused between every role, for example `(" — ",)` or `(", ")`. | Commas, semicolons, slashes, dashes, and newlines are not accepted as alternatives unless confirmed in the profile. |
 | Position-specific separators | Exactly `role_count - 1` configured literal separators, in order, for example `(", ", "; ", " / ")`. | The parser does not reorder or substitute separators. |
 | Explicit omission | A blank delimited slot is preserved as an omitted role, for example `sum — esse — fui — `. Non-leading omissions return success with `display=None` and `comparison=None`. | The first two roles are required; an explicitly blank leading role returns `incomplete`. |
+| Normalized display | Semantic display text is normalized exactly once in the parser from the raw source value: source markup is flattened structurally, comments and active elements are dropped, entities are decoded exactly once, and whitespace is collapsed per the safe-HTML text contract. A value with no readable text (markup-only such as `<b></b>`, comment-only, or encoded-whitespace-only such as `&nbsp;`) is an omitted role exactly like an explicit blank slot. | Normalization never selects between alternatives, renames a role, or infers a missing form; rendering escapes this text again but never decodes entities a second time. |
+| Raw provenance | The raw unnormalized source segment is preserved separately on every `PrincipalPartValue.raw`, and the raw lexical entry on `ParsedPrincipalParts.raw_lexical_entry`, for provenance and review only. | Raw provenance never feeds display, comparison, eligibility, or identity. |
 
-Display values are trimmed only at delimiter boundaries. Internal spacing,
-capitalization, Unicode, macrons, and other display content are preserved. The
-comparison value is separate: it uses case-folding, Unicode decomposition with
-combining marks removed, and whitespace collapsing. Comparison normalization is
-never used to rewrite display content.
+Display values are semantic text normalized once at delimiter-boundary segment
+level: internal whitespace runs collapse to single spaces, capitalization,
+Unicode, macrons, and other display content are preserved, and multiline source
+markup keeps its line boundaries. The comparison value is derived from the
+normalized display: it uses case-folding, Unicode decomposition with combining
+marks removed, and whitespace collapsing. Comparison normalization is never used
+to rewrite display content.
 
 `ParsedPrincipalParts.semantic_roles` and `identity_roles` retain the confirmed
 role names and order. Downstream identity code may use those semantic role keys;

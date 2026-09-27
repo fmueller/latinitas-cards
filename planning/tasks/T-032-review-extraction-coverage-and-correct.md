@@ -1,12 +1,12 @@
 ---
 id: T-032-review-extraction-coverage-and-correct
 title: Review extraction coverage and correct demonstrated contract defects
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#extraction-content-review
 dependencies:
     - T-031-require-evidence-backed-field-suggestions-and
-updated_at: "2026-09-27T08:56:30Z"
+updated_at: "2026-09-27T13:17:08Z"
 ---
 
 # T-032-review-extraction-coverage-and-correct Review extraction coverage and correct demonstrated contract defects
@@ -46,3 +46,4 @@ normalization contract before expanding parsing. Fix only demonstrated in-contra
 
 ## Implementation Notes
 - Use improved confirmed mapping from T-031; do not import or commit private deck outputs.
+- 2026-09-27T13:17:08Z: verification pass

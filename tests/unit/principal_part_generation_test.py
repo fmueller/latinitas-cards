@@ -1,4 +1,5 @@
 from dataclasses import replace
+from html import unescape
 from pathlib import Path
 from typing import Any
 
@@ -521,3 +522,128 @@ def test_generated_note_knowledge_uses_role_labels_for_every_confirmed_role() ->
         "<strong>Perfekt, 1. Person Singular:</strong> tulī<br>"
         "<strong>Supinum:</strong> lātum"
     )
+
+
+def _markup_only_profile() -> DeckProfile:
+    return _profile(
+        roles=("present_1s", "present_infinitive", "perfect_1s", "supine"),
+        separators=(" — ",),
+    )
+
+
+def _markup_only_record(
+    principal_parts: str,
+    *,
+    lexical_entry: str = "amō",
+    source_identity: str,
+) -> CanonicalSourceRecord:
+    return _record(
+        principal_parts,
+        lexical_entry=lexical_entry,
+        source_identity=source_identity,
+        profile=_markup_only_profile(),
+    )
+
+
+def test_markup_only_part_keeps_the_note_but_omits_blank_answers_and_cards() -> None:
+    profile = _markup_only_profile()
+
+    result = _generate(
+        (_markup_only_record("amo — amare — <b></b> — amatum", source_identity="entry-amo"),),
+        profile,
+    )
+
+    assert len(result.notes) == 1
+    note = result.notes[0]
+    omission_skips = [skip for skip in result.skips if skip.code == "omitted_principal_part"]
+    assert len(omission_skips) == 1
+    assert omission_skips[0].status == "incomplete"
+    assert omission_skips[0].source_identity == "entry-amo"
+    assert "perfect_1s" in omission_skips[0].message
+    assert note.card_keys == (
+        "principal_part_completion:present_1s",
+        "principal_part_completion:present_infinitive",
+        "principal_part_completion:supine",
+        "principal_part_recognition:present_1s",
+        "principal_part_recognition:present_infinitive",
+        "principal_part_recognition:supine",
+    )
+    assert "<strong>Perfekt, 1. Person Singular:</strong> —" in note.content.principal_parts
+    for expected_answer in ("amo", "amare", "amatum"):
+        assert expected_answer in note.content.principal_parts
+    assert "<b>" not in note.content.principal_parts
+
+
+def test_historical_markup_only_batch_never_emits_blank_perfect_answers() -> None:
+    profile = _markup_only_profile()
+    records = (
+        _markup_only_record("amo — amare — <b></b> — amatum", source_identity="entry-1"),
+        _markup_only_record("amō — amāre — <b class='x'></b> — amātum", source_identity="entry-2"),
+        _markup_only_record("amō — amāre — <!-- unbekannt --> — amātum", source_identity="entry-3"),
+        _markup_only_record("amō — amāre — &nbsp; — amātum", source_identity="entry-4"),
+        _markup_only_record("moneō — monēre — <i></i> — monitum", lexical_entry="moneō", source_identity="entry-5"),
+        _markup_only_record("regō — regere — <span> </span> — rectum", lexical_entry="regō", source_identity="entry-6"),
+        _markup_only_record(
+            "audiō — audīre — <b></b><!-- x --> — audītum", lexical_entry="audiō", source_identity="entry-7"
+        ),
+        _markup_only_record("dīcō — dīcere — dīxī — dictum", lexical_entry="dīcō", source_identity="entry-8"),
+    )
+
+    result = _generate(records, profile)
+
+    assert len(result.notes) == 8
+    omission_skips = [skip for skip in result.skips if skip.code == "omitted_principal_part"]
+    assert len(omission_skips) == 7
+    assert all(skip.status == "incomplete" for skip in omission_skips)
+    assert {skip.source_identity for skip in omission_skips} == {f"entry-{index}" for index in range(1, 8)}
+    for note in result.notes:
+        perfect_lines = [line for line in note.content.principal_parts.split("<br>") if "Perfekt" in line]
+        assert len(perfect_lines) == 1
+        perfect_answer = perfect_lines[0].split("</strong>")[-1]
+        identity = note.provenance.source_identity or ""
+        if identity == "entry-8":
+            assert perfect_answer == " dīxī"
+            assert "principal_part_completion:perfect_1s" in note.card_keys
+        else:
+            assert perfect_answer == " —"
+            assert "principal_part_completion:perfect_1s" not in note.card_keys
+            assert "principal_part_recognition:perfect_1s" not in note.card_keys
+        rendered_answers = [line.split("</strong>")[-1].strip() for line in note.content.principal_parts.split("<br>")]
+        eligible_answers = [answer for answer in rendered_answers if answer != "—"]
+        assert eligible_answers and all(answer for answer in eligible_answers)
+
+
+def test_markup_only_lexical_entry_is_a_structured_skip_not_a_crash() -> None:
+    profile = _markup_only_profile()
+
+    result = _generate(
+        (
+            _markup_only_record(
+                "legō — legere — lēgī — lēctum", lexical_entry="<i></i>", source_identity="entry-blank-lemma"
+            ),
+            _markup_only_record("dīcō — dīcere — dīxī — dictum", lexical_entry="dīcō", source_identity="entry-ok"),
+        ),
+        profile,
+    )
+
+    assert [note.provenance.source_identity for note in result.notes] == ["entry-ok"]
+    blank_lemma_skips = [skip for skip in result.skips if skip.code == "missing_lexical_entry"]
+    assert len(blank_lemma_skips) == 1
+    assert blank_lemma_skips[0].status == "incomplete"
+    assert blank_lemma_skips[0].source_identity == "entry-blank-lemma"
+
+
+def test_rendering_does_not_double_decode_normalized_display_text() -> None:
+    profile = _markup_only_profile()
+
+    result = _generate(
+        (_markup_only_record("discō — discere — did&amp;#x12B;cī — doctum", source_identity="entry-double-entity"),),
+        profile,
+    )
+
+    note = result.notes[0]
+    perfect_line = next(line for line in note.content.principal_parts.split("<br>") if "Perfekt" in line)
+    assert perfect_line.endswith("did&amp;#x12B;cī")
+    assert unescape(perfect_line).endswith("did&#x12B;cī")
+    assert "didīcī" not in unescape(perfect_line)
+    assert "didīcī" not in note.content.principal_parts

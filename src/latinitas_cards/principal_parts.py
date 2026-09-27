@@ -1,9 +1,11 @@
 """Parse confirmed principal-part fields into semantic roles.
 
 The parser is deliberately limited to the layout confirmed in a
-:class:`~latinitas_cards.profile.DeckProfile`.  It preserves display text while
-exposing a comparison-only normalization and never chooses a semantic role for
-an unmarked omission.
+:class:`~latinitas_cards.profile.DeckProfile`.  Source markup is normalized to
+semantic display text exactly once here, while the raw source segments are
+preserved separately as provenance; comparison normalization stays a separate
+derived value and the parser never chooses a semantic role for an unmarked
+omission.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Literal
 
+from .html_text import source_html_to_text
 from .profile import DeckProfile, PrincipalPartLayout
 from .sources import CanonicalSourceRecord
 
@@ -29,6 +32,7 @@ class PrincipalPartValue:
     role: str
     display: str | None
     comparison: str | None
+    raw: str = ""
 
     def __post_init__(self) -> None:
         if not self.role.strip():
@@ -56,6 +60,7 @@ class ParsedPrincipalParts:
     parts: tuple[PrincipalPartValue, ...]
     source_identity: str | None = None
     source_location: str | None = None
+    raw_lexical_entry: str = ""
     _by_role: Mapping[str, PrincipalPartValue] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -139,8 +144,8 @@ def parse_principal_parts(record: CanonicalSourceRecord, profile: DeckProfile) -
             source_identity=source_identity,
             source_location=source_location,
         )
-    lexical_entry = _display_value(record.fields[lexical_field])
-    if lexical_entry is None:
+    raw_lexical_entry = record.fields[lexical_field]
+    if not raw_lexical_entry.strip():
         return _failure(
             "incomplete",
             "missing_lexical_entry",
@@ -162,7 +167,7 @@ def parse_principal_parts(record: CanonicalSourceRecord, profile: DeckProfile) -
     return parse_principal_part_value(
         record.fields[principal_parts_field],
         profile.principal_parts,
-        lexical_entry=lexical_entry,
+        lexical_entry=raw_lexical_entry,
         source_identity=source_identity,
         source_location=source_location,
     )
@@ -183,8 +188,8 @@ def parse_principal_part_value(
         return _failure(
             "incomplete",
             "missing_lexical_entry",
-            "the confirmed lexical-entry value is non-empty",
-            "The lexical-entry value is empty.",
+            "the confirmed lexical-entry value contains readable text",
+            "The lexical-entry value carries no readable text.",
             source_identity=source_identity,
             source_location=source_location,
         )
@@ -229,14 +234,17 @@ def parse_principal_part_value(
             expected_count=len(layout.roles),
         )
 
-    values = tuple(
-        PrincipalPartValue(
-            role=role,
-            display=display,
-            comparison=None if display is None else normalize_principal_part_for_comparison(display),
+    values: list[PrincipalPartValue] = []
+    for role, segment in zip(layout.roles, segments, strict=True):
+        display = _display_value(segment)
+        values.append(
+            PrincipalPartValue(
+                role=role,
+                display=display,
+                comparison=None if display is None else normalize_principal_part_for_comparison(display),
+                raw=segment,
+            )
         )
-        for role, display in zip(layout.roles, (_display_value(segment) for segment in segments), strict=True)
-    )
     if any(value.is_omitted for value in values[:2]):
         return _failure(
             "incomplete",
@@ -253,9 +261,10 @@ def parse_principal_part_value(
         ParsedPrincipalParts(
             lexical_entry=display_lexical_entry,
             lexical_entry_comparison=normalize_principal_part_for_comparison(display_lexical_entry),
-            parts=values,
+            parts=tuple(values),
             source_identity=source_identity,
             source_location=source_location,
+            raw_lexical_entry=lexical_entry,
         )
     )
 
@@ -345,8 +354,15 @@ def _has_unconfigured_separator(value: str, configured: tuple[str, ...]) -> bool
 
 
 def _display_value(value: str) -> str | None:
-    stripped = value.strip()
-    return stripped or None
+    """Normalize source markup to semantic display text exactly once.
+
+    A value that carries no readable text (markup-only, comment-only, or
+    encoded-whitespace-only content) has no semantic display and represents an
+    omitted role, exactly like an explicit blank slot.
+    """
+
+    normalized = source_html_to_text(value)
+    return normalized or None
 
 
 def _failure(

@@ -1,6 +1,8 @@
 from dataclasses import replace
 from pathlib import Path
 
+import pytest
+
 from latinitas_cards.principal_parts import (
     PrincipalPartParseFailure,
     PrincipalPartParseSuccess,
@@ -240,3 +242,111 @@ def test_record_parser_uses_profile_field_names_instead_of_positional_fields() -
 
     assert isinstance(result, PrincipalPartParseSuccess)
     assert result.value.lexical_entry == "dīcō"
+
+
+@pytest.mark.parametrize(
+    ("segment", "raw"),
+    [
+        pytest.param("<b></b>", "<b></b>", id="markup-only"),
+        pytest.param("<!-- Form unklar -->", "<!-- Form unklar -->", id="comment-only"),
+        pytest.param("&nbsp;", "&nbsp;", id="encoded-whitespace"),
+    ],
+)
+def test_non_readable_segment_is_an_omitted_role_with_raw_provenance(segment: str, raw: str) -> None:
+    profile = _profile()
+
+    result = parse_principal_parts(_record(f"amō — amāre — {segment} — amātum", profile=profile), profile)
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    perfect = result.value.by_role["perfect_1s"]
+    assert perfect.display is None
+    assert perfect.comparison is None
+    assert perfect.is_omitted
+    assert perfect.raw == raw
+    assert result.value.by_role["present_1s"].display == "amō"
+    assert result.value.by_role["supine"].display == "amātum"
+
+
+def test_leading_markup_only_role_is_incomplete_like_an_explicit_blank_slot() -> None:
+    profile = _profile()
+
+    result = parse_principal_parts(
+        _record("<b></b> — amāre — amāvī — amātum", profile=profile),
+        profile,
+    )
+
+    assert isinstance(result, PrincipalPartParseFailure)
+    assert result.status == "incomplete"
+    assert result.code == "required_role_omitted"
+
+
+def test_markup_only_lexical_entry_is_incomplete() -> None:
+    profile = _profile()
+
+    result = parse_principal_parts(
+        _record("amō — amāre — amāvī — amātum", lexical_entry="<i></i>", profile=profile),
+        profile,
+    )
+
+    assert isinstance(result, PrincipalPartParseFailure)
+    assert result.status == "incomplete"
+    assert result.code == "missing_lexical_entry"
+    assert "readable text" in result.message
+    assert "empty" not in result.message
+
+
+def test_display_text_normalizes_source_markup_once() -> None:
+    profile = _profile(separators=(",",))
+
+    result = parse_principal_part_value(
+        "<b>audīre</b>, audiō, <i>audīvī</i>, audītum",
+        profile.principal_parts,
+        lexical_entry="audīre",
+    )
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    assert [part.display for part in result.value.parts] == ["audīre", "audiō", "audīvī", "audītum"]
+    assert result.value.by_role["perfect_1s"].raw == " <i>audīvī</i>"
+    assert result.value.lexical_entry == "audīre"
+    assert result.value.raw_lexical_entry == "audīre"
+
+
+def test_encoded_entities_in_display_decode_exactly_once() -> None:
+    profile = _profile(separators=(",",))
+
+    result = parse_principal_part_value(
+        "vēndere, vēnd&#x14D;, vēndidī, vēnditum",
+        profile.principal_parts,
+        lexical_entry="vēndō",
+    )
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    assert result.value.by_role["present_infinitive"].display == "vēndō"
+    assert result.value.by_role["present_infinitive"].comparison == "vendo"
+
+
+def test_double_encoded_entities_stay_literal_after_one_decode() -> None:
+    profile = _profile(separators=(",",))
+
+    result = parse_principal_part_value(
+        "discere, discō, did&amp;#x12B;cī, doctum",
+        profile.principal_parts,
+        lexical_entry="discō",
+    )
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    perfect = result.value.by_role["perfect_1s"]
+    assert perfect.display == "did&#x12B;cī"
+    assert perfect.comparison == "did&#x12b;ci"
+
+
+def test_comparison_is_derived_from_normalized_display_text() -> None:
+    profile = _profile()
+
+    result = parse_principal_parts(_record("dīcō — dīcere — dīxī<br>poet. — dictum", profile=profile), profile)
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    perfect = result.value.by_role["perfect_1s"]
+    assert perfect.display == "dīxī\npoet."
+    assert perfect.comparison == "dixi poet."
+    assert perfect.raw == "dīxī<br>poet."

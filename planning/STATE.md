@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-27T12:24:33Z"
+updated_at: "2026-09-27T13:17:08Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -9,7 +9,7 @@ status_summary: blocked
 blockers:
     - 'T-014-publish-v0-1-0: Publication is gated by T-035-verify-the-revised-note-architecture-before and its T-029 through T-034 dependencies. Unblock only after the revised architecture gate passes and the owner approves the exact candidate; old single-card readiness evidence is not approval for this model.'
 next_action: Resolve blocker on T-014-publish-v0-1-0
-last_verification_result: pass for T-031-require-evidence-backed-field-suggestions-and at 2026-09-27T12:24:30Z
+last_verification_result: pass for T-032-review-extraction-coverage-and-correct at 2026-09-27T13:17:08Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,7 +35,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-031-require-evidence-backed-field-suggestions-and at 2026-09-27T12:24:30Z
+- pass for T-032-review-extraction-coverage-and-correct at 2026-09-27T13:17:08Z
 
 ## Next Action
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 11
+- todo: 10
 - in_progress: 0
-- completed: 24
+- completed: 25
 - blocked: 1
 - cancelled: 0
