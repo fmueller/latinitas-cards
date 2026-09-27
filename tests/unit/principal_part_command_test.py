@@ -87,7 +87,7 @@ def test_read_only_preview_rejects_scope_approval(tmp_path: Path) -> None:
     )
 
     assert result.exit_code != 0
-    assert "approve-scope" in result.output
+    assert "approve-scope" in click.unstyle(result.output)
 
 
 def test_generate_requires_scope_approval_before_writing_csv_sources(tmp_path: Path) -> None:
