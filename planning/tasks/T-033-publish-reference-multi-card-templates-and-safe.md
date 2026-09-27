@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.1.0.md#reference-note-type-and-import-safety
 dependencies:
     - T-030-generate-conditional-sibling-cards-with-stable
-updated_at: "2026-09-27T08:56:30Z"
+updated_at: "2026-09-27T09:36:15Z"
 ---
 
 # T-033-publish-reference-multi-card-templates-and-safe Publish reference multi-card templates and safe import guidance
@@ -21,10 +21,11 @@ for the new model. General automated provisioning remains v0.6.0.
 - Provide exact versioned fields, stable slot registry, copyable guarded front/back
   templates and CSS for both recipes and synthetic missing-form examples, aligned with
   exported columns. Explain shared Personal Notes/tags and independent card schedules.
-- Establish one small authoritative generated-schema contract for managed regular fields,
-  user-owned Personal Notes, and transport metadata. Tags is a special CSV transport
-  column, not a regular note field. Derive column positions/directives and reference
-  template fields from the contract; independently assert external ordering/tag mapping,
+- Consume and publish T-029/T-030's authoritative generated-schema and slot contract for
+  managed regular fields, user-owned Personal Notes, and transport metadata; do not
+  introduce a second definition. Tags is a special CSV transport column, not a regular
+  note field. Check derived column positions/directives and reference template fields
+  against the contract; independently assert external ordering/tag mapping,
   exclusion of personal data, and conditional fronts against explicit expectations.
 - Keep source field inference/profile preparation/raw provenance with source adapters;
   CSV metadata and escaping belong to transport serialization. This is drift prevention,
