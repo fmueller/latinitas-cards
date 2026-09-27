@@ -37,6 +37,14 @@ Status: candidate awaiting user review. No tag or GitHub release has been create
   leave source inputs and the user-owned `Personal Notes` field untouched.
 - Include a sanitized representative APKG fixture and an end-to-end assisted-profile,
   preview, export, and repeatability regression contract.
+- Guard legacy note-model transitions explicitly: pre-release per-exercise notes
+  (note schema 1/2, `latinitas-v1-` identities, legacy split clones) are never silently
+  reinterpreted, remain read-only review outcomes, and their only supported option is an
+  explicitly approved, backed-up fresh start of disposable data into a new dedicated note
+  type with new schedules; valuable review history and conflicting personal annotations
+  retain the old collection, ordinary CSV consolidation carries no history guarantee, and
+  compatible regeneration of current-model notes stays a separate identity-preserving
+  operation.
 
 ### Explicit exclusions
 

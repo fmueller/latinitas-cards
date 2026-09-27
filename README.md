@@ -128,6 +128,11 @@ Map a legacy CSV's `Personal Notes` column to **Ignore field** on every repeat i
 checklist, including native Anki behavior already verified in a disposable collection;
 retest it there before relying on it.
 
+Collections from earlier pre-release Latinitas models are never silently converted: the
+[legacy transition policy](docs/legacy-transition.md) keeps such data read-only, retains
+collections with valuable history or personal annotations, and offers only an explicitly
+approved, backed-up fresh start into a new dedicated note type for disposable data.
+
 Treat setup JSON, terminal previews, generated CSVs, and identity manifests as
 source-derived data: they can contain study text, stable IDs, and provenance. Redact
 them before sharing an issue or other public report.
@@ -153,6 +158,7 @@ PPP and supine remain distinct semantic roles.
 - [Sanitized representative-deck validation](docs/representative-deck-validation.md)
 - [Deterministic CSV export and Anki import](docs/deterministic-csv-export.md)
 - [Reference note type and safe import](docs/reference-note-type.md)
+- [Legacy note-model transitions](docs/legacy-transition.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
 - [License compatibility audit](docs/license-compatibility-audit.md)
 

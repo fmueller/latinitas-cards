@@ -1,12 +1,12 @@
 ---
 id: T-034-guard-legacy-note-model-transitions-with-explicit
 title: Guard legacy note-model transitions with explicit safe options
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#pre-release-note-model-migration
 dependencies:
     - T-030-generate-conditional-sibling-cards-with-stable
-updated_at: "2026-09-27T08:56:30Z"
+updated_at: "2026-09-27T17:12:32Z"
 ---
 
 # T-034-guard-legacy-note-model-transitions-with-explicit Guard legacy note-model transitions with explicit safe options
@@ -40,3 +40,4 @@ history-preserving merger or destructive collection changes.
 
 ## Implementation Notes
 - Complex migration solely for unreleased data is not required; no silent conversion.
+- 2026-09-27T17:12:29Z: verification pass
