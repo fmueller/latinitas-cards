@@ -1,7 +1,7 @@
 ---
 id: T-035-verify-the-revised-note-architecture-before
 title: Verify the revised note architecture before publication
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#revised-architecture-release-gate
 dependencies:
@@ -12,7 +12,7 @@ dependencies:
     - T-033-publish-reference-multi-card-templates-and-safe
     - T-034-guard-legacy-note-model-transitions-with-explicit
     - T-036-preserve-csv-and-manifest-recovery-on-interruption
-updated_at: "2026-09-27T08:56:30Z"
+updated_at: "2026-09-27T20:02:44Z"
 ---
 
 # T-035-verify-the-revised-note-architecture-before Verify the revised note architecture before publication
@@ -57,3 +57,4 @@ until this gate passes and the owner approves the exact candidate for publicatio
 ## Implementation Notes
 - T-026/T-027/T-028 remain closed. This tests changed architecture, not resolved process
   defects. General provisioning and broad compatibility remain outside v0.1.0.
+- 2026-09-27T20:02:41Z: verification pass

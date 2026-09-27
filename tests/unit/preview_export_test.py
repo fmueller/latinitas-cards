@@ -13,6 +13,7 @@ import pytest
 
 from latinitas_cards.checkpoint import PriorExportCheckpoint
 from latinitas_cards.identity import derive_latinitas_id
+from latinitas_cards.legacy_transition import LegacyTransitionError
 from latinitas_cards.manifest import CsvIdentityManifest, allocate_source_scope, reconcile_csv_manifest
 from latinitas_cards.notes import TAGS_CSV_COLUMN
 from latinitas_cards.preview_export import (
@@ -22,7 +23,7 @@ from latinitas_cards.preview_export import (
     prepare_principal_part_export,
     write_principal_part_csv,
 )
-from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
+from latinitas_cards.profile import DeckProfile, SourceIdentityConfig, load_profile, resolve_profile
 from latinitas_cards.sources import read_csv_records
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "representative-university-latin.apkg"
@@ -439,6 +440,71 @@ def test_legacy_unscoped_manifest_requires_explicit_fresh_start(tmp_path: Path) 
     write_principal_part_csv(fresh, tmp_path / "generated.csv")
     persisted = CsvIdentityManifest.load(state)
     assert persisted.source_scope == fresh.source_scope
+
+
+def test_prepare_rejects_a_generated_note_type_declared_legacy_before_any_work(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    profile = _profile()
+
+    with pytest.raises(LegacyTransitionError) as rejected:
+        prepare_principal_part_export(
+            source,
+            profile,
+            legacy_note_types=(profile.generated_note_type,),
+        )
+
+    assert "legacy note model" in str(rejected.value)
+    assert not Path(f"{source}.latinitas.json").exists()
+    assert not Path(f"{source}.latinitas-cards.json").exists()
+
+    with pytest.raises(LegacyTransitionError):
+        prepare_principal_part_export(
+            tmp_path / "missing.csv",
+            profile,
+            legacy_note_types=(profile.generated_note_type,),
+        )
+
+
+def test_prepare_allows_export_when_declared_legacy_types_do_not_match(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    profile = _profile()
+
+    result = prepare_principal_part_export(
+        source,
+        profile,
+        legacy_note_types=("Latinitas Legacy Exercise", "Legacy Split"),
+        approve_new_scope=True,
+    )
+
+    assert not result.scope_pending
+    assert result.source_scope
+
+
+def test_padded_generated_note_type_profiles_cannot_bypass_the_declared_legacy_guard(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    raw = _profile().to_machine_readable()
+    raw["generated_note_type"] = "Latinitas Principal Parts  "
+    profile_path.write_text(json.dumps(raw, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(LegacyTransitionError):
+        prepare_principal_part_export(
+            source,
+            load_profile(profile_path),
+            legacy_note_types=("Latinitas Principal Parts",),
+        )
+
+    with pytest.raises(LegacyTransitionError):
+        prepare_principal_part_export(
+            source,
+            resolve_profile(load_profile(profile_path), {"generated_note_type": " Latinitas Principal Parts "}),
+            legacy_note_types=("Latinitas Principal Parts",),
+        )
 
 
 def test_legacy_unscoped_manifest_migration_preserves_matching_row_assignments(tmp_path: Path) -> None:

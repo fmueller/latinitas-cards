@@ -1646,10 +1646,22 @@ def generate_impl(
             ),
         ),
     ] = False,
+    legacy_note_type: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--legacy-note-type",
+            help=(
+                "Declare a legacy note type from your destination inventory; repeatable. The export is "
+                "rejected when the profile's generated note type matches one"
+            ),
+        ),
+    ] = None,
     preview_limit: Annotated[int, typer.Option(help="Max representative principal-part notes to print")] = 5,
 ) -> None:
     """Update an Anki CSV or APKG file with cloze examples from a Latin USFX corpus."""
     if profile is not None:
+        if legacy_note_type is not None and any(not name.strip() for name in legacy_note_type):
+            raise typer.BadParameter("--legacy-note-type requires a non-empty note type name.")
         if usfx is not None:
             raise typer.BadParameter("--usfx cannot be combined with --profile.")
         try:
@@ -1669,6 +1681,7 @@ def generate_impl(
                 approved_removals=approve_removal or (),
                 approve_new_scope=approve_scope,
                 approve_fresh_import=approve_fresh_import,
+                legacy_note_types=legacy_note_type or (),
                 limit=preview_limit,
             )
         except (OSError, ValueError) as error:
@@ -1689,6 +1702,7 @@ def generate_impl(
             approve_removal,
             approve_scope,
             approve_fresh_import,
+            legacy_note_type,
         )
     ):
         raise typer.BadParameter("Profile-only options require --profile.")
@@ -1808,9 +1822,21 @@ def preview_impl(
             help="Rejected for read-only preview: fresh-import approval commits state with generate only",
         ),
     ] = False,
+    legacy_note_type: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--legacy-note-type",
+            help=(
+                "Declare a legacy note type from your destination inventory; repeatable. The preview is "
+                "rejected when the profile's generated note type matches one"
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Show a sample of generated clozes without writing output."""
     if profile is not None:
+        if legacy_note_type is not None and any(not name.strip() for name in legacy_note_type):
+            raise typer.BadParameter("--legacy-note-type requires a non-empty note type name.")
         if usfx is not None:
             raise typer.BadParameter("--usfx cannot be combined with --profile.")
         if approve_scope:
@@ -1836,6 +1862,7 @@ def preview_impl(
                 approved_reuse=approve_reuse or (),
                 approved_allocations=approve_allocation or (),
                 approved_removals=approve_removal or (),
+                legacy_note_types=legacy_note_type or (),
                 limit=limit,
             )
         except (OSError, ValueError) as error:
@@ -1856,6 +1883,7 @@ def preview_impl(
             approve_removal,
             approve_scope,
             approve_fresh_import,
+            legacy_note_type,
         )
     ):
         raise typer.BadParameter("Profile-only options require --profile.")

@@ -31,6 +31,7 @@ def run_principal_part_preview(
     approved_reuse: Sequence[str],
     approved_allocations: Iterable[int],
     approved_removals: Iterable[str],
+    legacy_note_types: Sequence[str] = (),
     limit: int,
 ) -> None:
     """Prepare and render a profile-driven preview without writing output."""
@@ -48,6 +49,7 @@ def run_principal_part_preview(
         approved_reuse=approved_reuse,
         approved_allocations=approved_allocations,
         approved_removals=approved_removals,
+        legacy_note_types=legacy_note_types,
     )
     render_principal_part_preview(result, limit=limit)
 
@@ -67,6 +69,7 @@ def run_principal_part_export(
     approved_removals: Iterable[str],
     approve_new_scope: bool,
     approve_fresh_import: bool,
+    legacy_note_types: Sequence[str] = (),
     limit: int,
 ) -> None:
     """Render a preview and then write the deterministic CSV output."""
@@ -86,6 +89,7 @@ def run_principal_part_export(
         approved_removals=approved_removals,
         approve_new_scope=approve_new_scope,
         approve_fresh_import=approve_fresh_import,
+        legacy_note_types=legacy_note_types,
     )
     render_principal_part_preview(result, limit=limit)
     write_principal_part_csv(result, output_path, profile_path=profile_path)
@@ -180,6 +184,7 @@ def _prepare(
     approved_removals: Iterable[str],
     approve_new_scope: bool = False,
     approve_fresh_import: bool = False,
+    legacy_note_types: Sequence[str] = (),
 ) -> PrincipalPartExportResult:
     profile = _effective_profile(
         profile_path,
@@ -198,6 +203,7 @@ def _prepare(
         approved_allocations=tuple(approved_allocations),
         approved_removals=tuple(approved_removals),
         approve_fresh_import=approve_fresh_import,
+        legacy_note_types=legacy_note_types,
     )
 
 

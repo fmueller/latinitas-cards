@@ -21,9 +21,13 @@ The old recipe/role-derived IDs and per-exercise notes are **never silently
 reinterpreted**: the current model is identity version `v2` with
 `Note Schema` `3`, a `latinitas-v1-` identity is never treated as a
 `latinitas-v2-` object identity, legacy IDs are never reused for a different
-object, and old note types are never reused for new-model rows. A profile
-whose generated note type is a legacy note type is rejected outright
-(`LegacyTransitionError`).
+object, and old note types are never reused for new-model rows. Exporting is
+rejected outright (`LegacyTransitionError`) when the effective profile's
+generated note type matches a legacy note type you declare on the supported
+`preview`/`generate --profile` path with `--legacy-note-type` (repeatable);
+the same rejection is raised by `plan_legacy_transition` for library callers.
+Latinitas has no destination awareness in v0.1.0, so it cannot detect legacy
+note types on its own: declare them from the inventory in step 2 below.
 
 ## The four decisions
 
@@ -70,7 +74,9 @@ start, and only for data the owner confirms is disposable:
 3. **Create a new dedicated note type.** Build it from
    [reference-note-type.md](reference-note-type.md) — never reuse or modify a
    legacy exercise note type, and never point the export profile's generated
-   note type at one (that is rejected as an incompatible legacy profile).
+   note type at one (declare your legacy note types with
+   `--legacy-note-type` on `preview`/`generate --profile`; a match is rejected
+   as an incompatible legacy profile).
 4. **Approve explicitly.** A fresh start requires all four confirmations: an
    existing non-empty backup file, a new dedicated note type distinct from every
    legacy note type, confirmation that the legacy data is disposable, and

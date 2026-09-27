@@ -57,6 +57,32 @@ unscoped sidecar is never silently replaced: `--approve-scope` is also the
 explicit fresh-start or legacy-migration confirmation. `preview` rejects
 `--approve-scope` because a read-only preview cannot commit identity state.
 
+## Declared legacy note types
+
+Pre-release collections may still carry notes from the retired per-exercise
+model (see [legacy-transition.md](legacy-transition.md)). Exporting new-model
+rows into one of those note types would silently reinterpret the legacy model,
+so both `preview` and `generate` accept a repeatable `--legacy-note-type`
+option naming legacy note types from your destination inventory:
+
+```bash
+uv run latinitas-cards generate \
+  --input source.csv \
+  --profile .latinitas/profile.json \
+  --output generated-principal-parts.csv \
+  --legacy-note-type "Latinitas Legacy Exercise" \
+  --approve-scope
+```
+
+When the effective profile's generated note type matches a declared legacy
+note type, the run is rejected outright before any output, identity state, or
+checkpoint is written. Latinitas cannot detect your destination's note types
+in v0.1.0; the guard covers exactly the note types you declare. A declaration
+protects you only when it matches the generated note type exactly apart from
+leading/trailing whitespace (the comparison is case-sensitive and interior
+spacing matters), so copy the name from your destination inventory rather
+than retyping it.
+
 ## ID-less CSV manifests
 
 Profiles using the `manifest` source-identity strategy default to the sidecar

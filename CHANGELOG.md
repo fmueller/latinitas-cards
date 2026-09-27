@@ -44,7 +44,10 @@ Status: candidate awaiting user review. No tag or GitHub release has been create
   type with new schedules; valuable review history and conflicting personal annotations
   retain the old collection, ordinary CSV consolidation carries no history guarantee, and
   compatible regeneration of current-model notes stays a separate identity-preserving
-  operation.
+  operation. `preview`/`generate --profile` reject an effective generated note type that
+  matches a note type declared with `--legacy-note-type` before writing any output, and
+  reject blank `--legacy-note-type` declarations as usage errors; a declaration protects
+  only on an exact, case-sensitive name match (padding is ignored).
 
 ### Explicit exclusions
 

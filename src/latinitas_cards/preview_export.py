@@ -31,6 +31,7 @@ from .checkpoint import (
     export_fingerprint,
 )
 from .generation import LearningObjectGenerationResult, generate_learning_object_notes
+from .legacy_transition import plan_legacy_transition
 from .manifest import (
     CsvIdentityManifest,
     ManifestReviewItem,
@@ -133,9 +134,11 @@ def prepare_principal_part_export(
     approved_removals: Iterable[str] | None = None,
     checkpoint_path: str | Path | None = None,
     approve_fresh_import: bool = False,
+    legacy_note_types: Iterable[str] = (),
 ) -> PrincipalPartExportResult:
     """Read immutable input and build a typed generation result without writing files."""
 
+    plan_legacy_transition(profile, (), legacy_note_types=legacy_note_types)
     source = Path(source_path)
     profile_file = None if profile_path is None else Path(profile_path)
     manifest_file = None if manifest_path is None else Path(manifest_path)

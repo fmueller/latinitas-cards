@@ -109,6 +109,111 @@ def test_generate_requires_scope_approval_before_writing_csv_sources(tmp_path: P
     assert not Path(f"{source}.latinitas.json").exists()
 
 
+def test_generate_rejects_a_generated_note_type_declared_legacy_before_writing(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    _write_source(source)
+    _profile().save(profile_path)
+
+    result = CliRunner().invoke(
+        _command(),
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+            "--legacy-note-type",
+            "Latinitas Principal Parts",
+        ],
+    )
+
+    assert result.exit_code == 2
+    rendered = click.unstyle(result.output)
+    assert "legacy note model" in rendered
+    assert "Latinitas Principal Parts" in rendered
+    assert not output.exists()
+    assert not Path(f"{source}.latinitas.json").exists()
+
+
+def test_preview_rejects_a_generated_note_type_declared_legacy_without_minting_state(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_source(source)
+    _profile().save(profile_path)
+
+    result = CliRunner().invoke(
+        _command(),
+        [
+            "preview",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--legacy-note-type",
+            "Latinitas Principal Parts",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "legacy note model" in click.unstyle(result.output)
+    assert not Path(f"{source}.latinitas.json").exists()
+
+
+@pytest.mark.parametrize("command_name", ["generate", "preview"])
+def test_legacy_note_type_option_requires_profile(tmp_path: Path, command_name: str) -> None:
+    source = tmp_path / "source.csv"
+    _write_source(source)
+    arguments = [
+        command_name,
+        "--input",
+        str(source),
+        "--legacy-note-type",
+        "Latinitas Legacy Exercise",
+    ]
+    if command_name == "generate":
+        arguments.extend(["--output", str(tmp_path / "generated.csv")])
+
+    result = CliRunner().invoke(_command(), arguments)
+
+    assert result.exit_code != 0
+    assert "Profile-only options require --profile." in click.unstyle(result.output)
+
+
+@pytest.mark.parametrize("command_name", ["generate", "preview"])
+@pytest.mark.parametrize("declared", ["", "   "])
+def test_legacy_note_type_rejects_blank_declarations(tmp_path: Path, command_name: str, declared: str) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    _write_source(source)
+    _profile().save(profile_path)
+    arguments = [
+        command_name,
+        "--input",
+        str(source),
+        "--profile",
+        str(profile_path),
+        "--legacy-note-type",
+        declared,
+    ]
+    if command_name == "generate":
+        arguments.extend(["--output", str(output)])
+
+    result = CliRunner().invoke(_command(), arguments)
+
+    assert result.exit_code == 2
+    assert "--legacy-note-type requires a non-empty note type name." in click.unstyle(result.output)
+    assert not output.exists()
+    assert not Path(f"{source}.latinitas.json").exists()
+    assert not Path(f"{source}.latinitas-cards.json").exists()
+
+
 def test_generate_with_scope_approval_commits_state_and_object_output(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     profile_path = tmp_path / "profile.json"
