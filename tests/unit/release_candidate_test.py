@@ -7,27 +7,29 @@ import subprocess
 import sys
 import tomllib
 from collections import Counter
-from itertools import product
 from pathlib import Path
 
+from latinitas_cards.generation import SINGLE_LEXEME_OBJECT_KEY
 from latinitas_cards.identity import derive_latinitas_id
-from latinitas_cards.notes import GeneratedNote, GeneratedNoteProvenance, ManagedNoteContent, RecipeMetadata
+from latinitas_cards.notes import GeneratedNote, GeneratedNoteProvenance, GenerationMetadata, ManagedNoteContent
 
 ROOT = Path(__file__).parents[2]
 FIXTURE = ROOT / "tests" / "fixtures" / "representative-university-latin.apkg"
 T014_TASK = ROOT / "planning" / "tasks" / "T-014-publish-v0-1-0.md"
 EXPECTED_COLUMNS = (
     "LatinitasID",
-    "Prompt",
-    "Answer",
+    "Lemma",
+    "Principal Parts",
+    "Meaning",
     "Tags",
     "Source ID",
+    "Source Scope",
     "Source Kind",
     "Source Location",
     "Source Path",
-    "Recipe",
-    "Exercise Key",
-    "Recipe Version",
+    "Note Schema",
+    "Generator",
+    "Profile",
 )
 GPU_PACKAGES = (
     "cuda-bindings",
@@ -162,7 +164,7 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
     preview = _invoke(["preview", "--input", str(source), "--profile", str(profile), "--limit", "2"])
 
     assert preview.returncode == 0
-    assert "Generated: 24" in preview.stdout
+    assert "Generated: 3" in preview.stdout
     assert "Skipped: 2" in preview.stdout
     assert "Ambiguous: 0" in preview.stdout
     assert "Partizip Perfekt Passiv (PPP)" in preview.stdout
@@ -191,77 +193,35 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
         "#html:true\n"
         "#notetype:Latinitas Principal Parts\n"
         "#deck:Latin::Latinitas\n"
-        "#tags column:4\n"
-        "#columns:LatinitasID,Prompt,Answer,Tags,Source ID,Source Kind,Source Location,Source Path,Recipe,"
-        "Exercise Key,Recipe Version\n"
+        "#tags column:5\n"
+        "#columns:LatinitasID,Lemma,Principal Parts,Meaning,Tags,Source ID,Source Scope,Source Kind,"
+        "Source Location,Source Path,Note Schema,Generator,Profile\n"
     )
-    assert len(rows) == 24
-    assert Counter(row["Recipe"] for row in rows) == {
-        "principal_part_completion": 12,
-        "principal_part_recognition": 12,
-    }
-    assert {row["Exercise Key"] for row in rows} == {
-        "present_infinitive",
-        "present_1s",
-        "perfect_1s",
-        "perfect_passive_participle",
-    }
+    assert len(rows) == 3
     expected_source_locations = {
         "fixture-guid-001": "note 1001",
         "fixture-guid-002": "note 1002",
         "fixture-guid-005": "note 1005",
     }
-    expected_tuples = {
-        (source_id, recipe, exercise_key)
-        for source_id, recipe, exercise_key in product(
-            expected_source_locations,
-            ("principal_part_completion", "principal_part_recognition"),
-            ("present_infinitive", "present_1s", "perfect_1s", "perfect_passive_participle"),
-        )
-    }
-    assert {(row["Source ID"], row["Recipe"], row["Exercise Key"]) for row in rows} == expected_tuples
+    assert {row["Source ID"] for row in rows} == set(expected_source_locations)
     assert len({row["LatinitasID"] for row in rows}) == len(rows)
     assert all(row["Source ID"] in expected_source_locations for row in rows)
     assert all(row["Source Kind"] == "apkg" for row in rows)
+    assert all(row["Source Scope"] == "" for row in rows)
     assert all(expected_source_locations[row["Source ID"]] == row["Source Location"] for row in rows)
-    assert all(row["Recipe Version"] == "1" for row in rows)
-    assert all(row["LatinitasID"].startswith("latinitas-v1-") for row in rows)
-    assert all(
-        row["LatinitasID"] == derive_latinitas_id(row["Source ID"], row["Recipe"], row["Exercise Key"]) for row in rows
-    )
+    assert all(row["Note Schema"] == rows[0]["Note Schema"] for row in rows)
+    assert all(row["Generator"] == rows[0]["Generator"] for row in rows)
+    assert all(row["Profile"].startswith("profile-sha256:") for row in rows)
+    assert all(row["LatinitasID"].startswith("latinitas-v2-") for row in rows)
+    assert all(row["LatinitasID"] == derive_latinitas_id(row["Source ID"], SINGLE_LEXEME_OBJECT_KEY) for row in rows)
     assert all(row["Tags"] == "latinitas" for row in rows)
     assert all(row["Source Path"] == "" for row in rows)
     assert all("Personal Notes" not in row for row in rows)
-    assert any(
-        row["Source ID"] == "fixture-guid-001" and row["Exercise Key"] == "perfect_1s" and "dīxī" in row["Answer"]
-        for row in rows
-    )
-    assert any(
-        row["Recipe"] == "principal_part_recognition"
-        and row["Exercise Key"] == "perfect_1s"
-        and row["Prompt"] == "Welche Stammform ist „dīxī“?"
-        for row in rows
-    )
-    ppp_completion = next(
-        row
-        for row in rows
-        if row["Source ID"] == "fixture-guid-001"
-        and row["Recipe"] == "principal_part_completion"
-        and row["Exercise Key"] == "perfect_passive_participle"
-    )
-    ppp_recognition = next(
-        row
-        for row in rows
-        if row["Source ID"] == "fixture-guid-001"
-        and row["Recipe"] == "principal_part_recognition"
-        and row["Exercise Key"] == "perfect_passive_participle"
-    )
-    assert "<div>" in ppp_completion["Prompt"] and "<strong>" in ppp_completion["Prompt"]
-    assert "Partizip Perfekt Passiv (PPP)" in ppp_completion["Prompt"]
-    assert "<strong>Fehlende Stammform:</strong> dictum" in ppp_completion["Answer"]
-    assert ppp_recognition["Prompt"] == "Welche Stammform ist „dictum“?"
-    assert "<strong>Partizip Perfekt Passiv (PPP):</strong> dictum" in ppp_recognition["Answer"]
-    assert "<div><strong>Bedeutung:</strong> sagen</div>" in ppp_recognition["Answer"]
+    dico = next(row for row in rows if row["Source ID"] == "fixture-guid-001")
+    assert dico["Lemma"] == "dīcere"
+    assert "<strong>Partizip Perfekt Passiv (PPP):</strong> dictum" in dico["Principal Parts"]
+    assert dico["Meaning"] == "sagen"
+    assert "<div>" not in dico["Principal Parts"] or "<br>" in dico["Principal Parts"]
 
     changed_profile = tmp_path / "changed-profile.json"
     changed_profile_payload = json.loads(profile.read_text(encoding="utf-8"))
@@ -288,7 +248,8 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
     assert changed_output.read_bytes() != first_output.read_bytes()
     assert [row["LatinitasID"] for row in changed_rows] == [row["LatinitasID"] for row in rows]
     assert {row["Tags"] for row in changed_rows} == {"reviewed-v2"}
-    assert any("<strong>Bedeutung:</strong> lesson-a" in row["Prompt"] for row in changed_rows)
+    assert any(row["Meaning"] == "lesson-a" for row in changed_rows)
+    assert {row["Profile"] for row in changed_rows} != {row["Profile"] for row in rows}
     assert source.read_bytes() == source_before
 
 
@@ -296,13 +257,24 @@ def test_release_candidate_managed_updates_preserve_user_owned_notes() -> None:
     note = GeneratedNote.create(
         source_identity="fixture-guid-001",
         provenance=GeneratedNoteProvenance(source_kind="apkg", location="note 1001"),
-        recipe=RecipeMetadata(recipe_identity="principal_part_completion", exercise_key="perfect_1s"),
-        content=ManagedNoteContent(prompt="original", answer="dīxī", tags=("latinitas",)),
+        object_key=SINGLE_LEXEME_OBJECT_KEY,
+        metadata=GenerationMetadata(profile_digest="profile-sha256:original"),
+        content=ManagedNoteContent(
+            lemma="dīcō",
+            principal_parts="original",
+            meaning="sagen",
+            tags=("latinitas",),
+        ),
         personal_notes="Review this next week",
     )
 
     changed = note.with_managed_content(
-        ManagedNoteContent(prompt="updated", answer="dīxī (sagen)", tags=("reviewed-v2",))
+        ManagedNoteContent(
+            lemma="dīcō",
+            principal_parts="updated",
+            meaning="sagen; aussprechen",
+            tags=("reviewed-v2",),
+        )
     )
 
     assert changed.latinitas_id == note.latinitas_id

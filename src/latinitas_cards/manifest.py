@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import secrets
 import tempfile
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
@@ -20,9 +21,28 @@ from typing import Literal, cast
 
 from .sources import CanonicalSourceRecord
 
-MANIFEST_SCHEMA_VERSION = 1
-ManifestReviewKind = Literal["stale_manifest", "edited", "duplicate", "unmatched", "removed"]
+MANIFEST_SCHEMA_VERSION = 2
+SUPPORTED_MANIFEST_SCHEMA_VERSIONS = (1, 2)
+ManifestReviewKind = Literal[
+    "stale_manifest",
+    "edited",
+    "duplicate",
+    "unmatched",
+    "removed",
+    "scope_confirmation",
+]
 AssignmentAction = Literal["reused", "approved_reuse", "allocated"]
+
+
+def allocate_source_scope() -> str:
+    """Allocate a unique, content-independent source scope token.
+
+    Scope tokens are random so two independent bootstrap operations never
+    collide merely because their source contents are identical; they become
+    identity material only once persisted and reused.
+    """
+
+    return f"scope-{secrets.token_hex(16)}"
 
 
 class ManifestError(ValueError):
@@ -49,14 +69,15 @@ class ManifestEntry:
 
 @dataclass(frozen=True, slots=True)
 class CsvIdentityManifest:
-    """Human-readable, persistent assignments for an ID-less CSV."""
+    """Human-readable, persistent assignments and scope for a CSV source."""
 
     source_columns: tuple[str, ...]
     entries: tuple[ManifestEntry, ...] = ()
     source_digest: str = ""
     next_source_number: int = 1
-    schema_version: int = MANIFEST_SCHEMA_VERSION
+    schema_version: int = 1
     mapping_digest: str = ""
+    source_scope: str = ""
 
     def __post_init__(self) -> None:
         columns = tuple(self.source_columns)
@@ -70,14 +91,46 @@ class CsvIdentityManifest:
             raise ManifestError("manifest source identities must be distinct")
         if self.next_source_number < 1:
             raise ManifestError("manifest allocation counter must be positive")
+        if self.schema_version not in SUPPORTED_MANIFEST_SCHEMA_VERSIONS:
+            raise ManifestError(f"unsupported manifest schema version {self.schema_version}")
+        if self.schema_version == 2 and not self.source_scope:
+            raise ManifestError("manifest schema 2 requires a non-empty source_scope")
+        if self.schema_version == 1 and self.source_scope:
+            raise ManifestError("legacy manifest schema 1 must not carry a source_scope")
         object.__setattr__(self, "source_columns", columns)
         object.__setattr__(self, "entries", entries)
 
+    @property
+    def is_scoped(self) -> bool:
+        """Report whether this manifest already carries a committed scope."""
+
+        return bool(self.source_scope)
+
     @classmethod
     def empty(cls, source_columns: Sequence[str]) -> CsvIdentityManifest:
-        """Create an empty manifest for a validated CSV header."""
+        """Create an unscoped, empty manifest for a validated CSV header."""
 
         return cls(source_columns=tuple(source_columns))
+
+    @classmethod
+    def scoped(cls, source_columns: Sequence[str], source_scope: str) -> CsvIdentityManifest:
+        """Create an empty schema-2 manifest bound to one committed scope."""
+
+        return cls(source_columns=tuple(source_columns), source_scope=source_scope, schema_version=2)
+
+    def with_scope(self, source_scope: str) -> CsvIdentityManifest:
+        """Return this manifest under an explicitly committed scope.
+
+        Carrying over the persisted entries keeps fingerprint-based row reuse
+        working; the caller must only reach this method through an explicit
+        fresh-start or bootstrap approval, never silently.
+        """
+
+        if not isinstance(source_scope, str) or not source_scope.strip():
+            raise ManifestError("a committed source scope must be non-empty")
+        if self.is_scoped and self.source_scope != source_scope:
+            raise ManifestError("manifest already carries a different committed source scope")
+        return replace(self, source_scope=source_scope, schema_version=2)
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, object]) -> CsvIdentityManifest:
@@ -117,6 +170,7 @@ class CsvIdentityManifest:
         next_source_number = value.get("next_source_number", 1)
         source_digest = value.get("source_digest", "")
         mapping_digest = value.get("mapping_digest", "")
+        source_scope = value.get("source_scope", "")
         if not isinstance(schema_version, int) or isinstance(schema_version, bool):
             raise ManifestError("manifest schema_version must be an integer")
         if not isinstance(next_source_number, int) or isinstance(next_source_number, bool):
@@ -125,6 +179,8 @@ class CsvIdentityManifest:
             raise ManifestError("manifest source_digest must be a string")
         if not isinstance(mapping_digest, str):
             raise ManifestError("manifest mapping_digest must be a string")
+        if not isinstance(source_scope, str):
+            raise ManifestError("manifest source_scope must be a string")
         return cls(
             source_columns=tuple(cast(list[str], raw_columns)),
             entries=tuple(entries),
@@ -132,6 +188,7 @@ class CsvIdentityManifest:
             next_source_number=next_source_number,
             schema_version=schema_version,
             mapping_digest=mapping_digest,
+            source_scope=source_scope,
         )
 
     @classmethod
@@ -152,6 +209,7 @@ class CsvIdentityManifest:
         return {
             "schema_version": self.schema_version,
             "source_columns": list(self.source_columns),
+            "source_scope": self.source_scope,
             "source_digest": self.source_digest,
             "mapping_digest": self.mapping_digest,
             "next_source_number": self.next_source_number,
@@ -230,6 +288,7 @@ def reconcile_csv_manifest(
     records: Sequence[CanonicalSourceRecord],
     manifest: CsvIdentityManifest | None,
     *,
+    source_scope: str | None = None,
     approved_reuse: Mapping[int, str] | None = None,
     approved_allocations: Mapping[int, str | None] | Iterable[int] | None = None,
     approved_removals: Iterable[str] | None = None,
@@ -241,6 +300,11 @@ def reconcile_csv_manifest(
     explicitly authorizes a new ID; its value may provide the ID or be ``None``
     to allocate the next manifest ID. Removed identities remain reviewable until
     their source identity is listed in ``approved_removals``.
+
+    ``source_scope`` commits or verifies the persisted scope: an unscoped
+    (legacy or empty) manifest is carried into schema 2 under that scope, and a
+    scoped manifest must already carry exactly that scope.  Passing a scope is
+    the explicit bootstrap/fresh-start decision; it is never applied silently.
     """
 
     rows = tuple(records)
@@ -248,6 +312,8 @@ def reconcile_csv_manifest(
     current_fingerprints = tuple(_record_fingerprint(record) for record in rows)
     current_digest = _fingerprint_digest(current_fingerprints)
     base_manifest = manifest or CsvIdentityManifest.empty(columns)
+    if source_scope is not None:
+        base_manifest = base_manifest.with_scope(source_scope)
     if manifest is not None and not columns:
         columns = manifest.source_columns
 
@@ -269,8 +335,7 @@ def reconcile_csv_manifest(
     manifest_snapshot_digest = _fingerprint_digest(entry.fingerprint for entry in active_entries)
     manifest_mapping_digest = _mapping_digest(base_manifest.entries)
     structurally_stale = (
-        base_manifest.schema_version != MANIFEST_SCHEMA_VERSION
-        or not columns_match
+        not columns_match
         or (bool(base_manifest.entries) and base_manifest.source_digest != manifest_snapshot_digest)
         or (bool(base_manifest.entries) and base_manifest.mapping_digest != manifest_mapping_digest)
     )
@@ -526,7 +591,7 @@ def _updated_manifest(
         digest = current_digest
         mapping_digest = _mapping_digest(updated_entries)
         output_columns = columns
-        output_schema_version = MANIFEST_SCHEMA_VERSION
+        output_schema_version = 2 if base.source_scope else 1
     else:
         digest = base.source_digest
         mapping_digest = base.mapping_digest
@@ -539,6 +604,7 @@ def _updated_manifest(
         next_source_number=next_source_number,
         schema_version=output_schema_version,
         mapping_digest=mapping_digest,
+        source_scope=base.source_scope,
     )
 
 
@@ -552,6 +618,7 @@ __all__ = [
     "ManifestError",
     "ManifestReconciliation",
     "ManifestReviewItem",
+    "allocate_source_scope",
     "reconcile_csv_manifest",
     "reconcile_manifest",
 ]

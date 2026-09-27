@@ -1,47 +1,72 @@
 """Ownership-aware generated-note contracts.
 
-The contract keeps the immutable logical identity, managed fields, provenance,
-recipe metadata, and user-owned personal notes in separate typed values.  The
-Anki note type comprises ``GENERATED_NOTE_FIELD_NAMES`` with ``LatinitasID``
-first, while ``CSV_EXPORT_FIELD_NAMES`` restricts generated import data to the
-managed fields so no empty personal value is offered for accidental overwrite.
+The authoritative note schema declares every field of the generated learning
+object note together with its ownership category: regular managed fields,
+user-owned Personal Notes, and special transport metadata (Tags is not a
+regular note field).  The Anki note type comprises ``GENERATED_NOTE_FIELD_NAMES``
+with ``LatinitasID`` first, while ``CSV_EXPORT_FIELD_NAMES`` and the tags-column
+directive are derived from the same schema so generated import data never
+offers the user-owned field for accidental overwrite.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from typing import Literal
 
 from .identity import derive_latinitas_id
 
-GENERATED_NOTE_FIELD_NAMES = (
-    "LatinitasID",
-    "Prompt",
-    "Answer",
-    "Tags",
-    "Source ID",
-    "Source Kind",
-    "Source Location",
-    "Source Path",
-    "Recipe",
-    "Exercise Key",
-    "Recipe Version",
-    "Personal Notes",
+NOTE_SCHEMA_VERSION = "2"
+GENERATOR_VERSION = "2"
+
+FieldOwnership = Literal["managed", "personal", "transport"]
+
+
+@dataclass(frozen=True, slots=True)
+class NoteFieldSpec:
+    """One authoritative note field and its ownership category."""
+
+    name: str
+    ownership: FieldOwnership
+    exported: bool
+
+
+AUTHORITATIVE_NOTE_FIELDS: tuple[NoteFieldSpec, ...] = (
+    NoteFieldSpec("LatinitasID", "managed", True),
+    NoteFieldSpec("Lemma", "managed", True),
+    NoteFieldSpec("Principal Parts", "managed", True),
+    NoteFieldSpec("Meaning", "managed", True),
+    NoteFieldSpec("Tags", "transport", True),
+    NoteFieldSpec("Source ID", "managed", True),
+    NoteFieldSpec("Source Scope", "managed", True),
+    NoteFieldSpec("Source Kind", "managed", True),
+    NoteFieldSpec("Source Location", "managed", True),
+    NoteFieldSpec("Source Path", "managed", True),
+    NoteFieldSpec("Note Schema", "managed", True),
+    NoteFieldSpec("Generator", "managed", True),
+    NoteFieldSpec("Profile", "managed", True),
+    NoteFieldSpec("Personal Notes", "personal", False),
 )
 
-CSV_EXPORT_FIELD_NAMES = tuple(name for name in GENERATED_NOTE_FIELD_NAMES if name != "Personal Notes")
+GENERATED_NOTE_FIELD_NAMES = tuple(field.name for field in AUTHORITATIVE_NOTE_FIELDS)
+CSV_EXPORT_FIELD_NAMES = tuple(field.name for field in AUTHORITATIVE_NOTE_FIELDS if field.exported)
+TAGS_CSV_COLUMN = CSV_EXPORT_FIELD_NAMES.index("Tags") + 1
 
 
 @dataclass(frozen=True, slots=True)
 class ManagedNoteContent:
-    """Fields that a future generation run may replace."""
+    """Structured knowledge fields that a future generation run may replace."""
 
-    prompt: str
-    answer: str
+    lemma: str
+    principal_parts: str
+    meaning: str = ""
     tags: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
-        if not self.prompt.strip() or not self.answer.strip():
-            raise ValueError("managed note prompt and answer must be non-empty")
+        if not self.lemma.strip():
+            raise ValueError("managed note lemma must be non-empty")
+        if not self.principal_parts.strip():
+            raise ValueError("managed note principal parts must be non-empty")
         if any(not tag.strip() for tag in self.tags):
             raise ValueError("managed note tags must not be empty")
 
@@ -54,6 +79,7 @@ class GeneratedNoteProvenance:
     location: str
     source_path: str | None = None
     source_identity: str | None = None
+    source_scope: str | None = None
 
     def __post_init__(self) -> None:
         if not self.source_kind.strip() or not self.location.strip():
@@ -61,33 +87,43 @@ class GeneratedNoteProvenance:
 
 
 @dataclass(frozen=True, slots=True)
-class RecipeMetadata:
-    """Recipe identity and descriptive generation metadata."""
+class GenerationMetadata:
+    """Descriptive generation metadata that never feeds note identity."""
 
-    recipe_identity: str
-    exercise_key: str
-    recipe_version: str = "1"
+    profile_digest: str = ""
+    note_schema: str = NOTE_SCHEMA_VERSION
+    generator: str = GENERATOR_VERSION
 
     def __post_init__(self) -> None:
-        if not self.recipe_identity.strip() or not self.exercise_key.strip() or not self.recipe_version.strip():
-            raise ValueError("recipe metadata values must be non-empty")
+        if not self.profile_digest.strip():
+            raise ValueError("generation metadata requires the effective profile digest")
+        if not self.note_schema.strip() or not self.generator.strip():
+            raise ValueError("generation metadata versions must be non-empty")
 
 
 @dataclass(frozen=True, slots=True)
 class GeneratedNote:
-    """One generated note with explicit field ownership boundaries."""
+    """One coherent learning-object note with explicit field ownership."""
 
     latinitas_id: str
+    object_key: str
     content: ManagedNoteContent
     provenance: GeneratedNoteProvenance
-    recipe: RecipeMetadata
+    metadata: GenerationMetadata
+    card_keys: tuple[str, ...] = ()
     personal_notes: str = ""
 
     def __post_init__(self) -> None:
         source_identity = self.provenance.source_identity
         if source_identity is None or not source_identity.strip():
             raise ValueError("generated note provenance requires a stable source identity")
-        expected = derive_latinitas_id(source_identity, self.recipe.recipe_identity, self.recipe.exercise_key)
+        if not self.object_key.strip():
+            raise ValueError("generated note object key must be non-empty")
+        expected = derive_latinitas_id(
+            source_identity,
+            self.object_key,
+            source_scope=self.provenance.source_scope,
+        )
         if self.latinitas_id != expected:
             raise ValueError("LatinitasID does not match the note's immutable logical identity")
 
@@ -97,20 +133,27 @@ class GeneratedNote:
         *,
         source_identity: str,
         provenance: GeneratedNoteProvenance,
-        recipe: RecipeMetadata,
+        object_key: str,
+        metadata: GenerationMetadata,
         content: ManagedNoteContent,
+        card_keys: tuple[str, ...] = (),
         personal_notes: str = "",
+        source_scope: str | None = None,
     ) -> GeneratedNote:
         """Create a note while deriving its identity from immutable inputs."""
 
         if provenance.source_identity is not None and provenance.source_identity != source_identity:
             raise ValueError("provenance source identity does not match the generated note source identity")
-        resolved_provenance = replace(provenance, source_identity=source_identity)
+        if provenance.source_scope != source_scope:
+            raise ValueError("provenance source scope does not match the generated note source scope")
+        resolved_provenance = replace(provenance, source_identity=source_identity, source_scope=source_scope)
         return cls(
-            latinitas_id=derive_latinitas_id(source_identity, recipe.recipe_identity, recipe.exercise_key),
+            latinitas_id=derive_latinitas_id(source_identity, object_key, source_scope=source_scope),
+            object_key=object_key,
             content=content,
             provenance=resolved_provenance,
-            recipe=recipe,
+            metadata=metadata,
+            card_keys=tuple(card_keys),
             personal_notes=personal_notes,
         )
 
@@ -119,43 +162,50 @@ class GeneratedNote:
 
         return replace(self, content=content)
 
-    def with_recipe_metadata(self, recipe: RecipeMetadata) -> GeneratedNote:
-        """Update descriptive recipe metadata without changing logical exercise identity."""
+    def with_metadata(self, metadata: GenerationMetadata) -> GeneratedNote:
+        """Update descriptive generation metadata without changing note identity."""
 
-        return replace(self, recipe=recipe)
+        return replace(self, metadata=metadata)
+
+    def with_card_keys(self, card_keys: tuple[str, ...]) -> GeneratedNote:
+        """Update the eligible card semantic keys without changing note identity."""
+
+        return replace(self, card_keys=tuple(card_keys))
 
     def to_anki_fields(self) -> tuple[tuple[str, str], ...]:
         """Return deterministic Anki text-import fields with identity first."""
 
         provenance = self.provenance
-        recipe = self.recipe
-        return tuple(
-            zip(
-                GENERATED_NOTE_FIELD_NAMES,
-                (
-                    self.latinitas_id,
-                    self.content.prompt,
-                    self.content.answer,
-                    " ".join(self.content.tags),
-                    provenance.source_identity or "",
-                    provenance.source_kind,
-                    provenance.location,
-                    provenance.source_path or "",
-                    recipe.recipe_identity,
-                    recipe.exercise_key,
-                    recipe.recipe_version,
-                    self.personal_notes,
-                ),
-                strict=True,
-            )
-        )
+        metadata = self.metadata
+        values = {
+            "LatinitasID": self.latinitas_id,
+            "Lemma": self.content.lemma,
+            "Principal Parts": self.content.principal_parts,
+            "Meaning": self.content.meaning,
+            "Tags": " ".join(self.content.tags),
+            "Source ID": provenance.source_identity or "",
+            "Source Scope": provenance.source_scope or "",
+            "Source Kind": provenance.source_kind,
+            "Source Location": provenance.location,
+            "Source Path": provenance.source_path or "",
+            "Note Schema": metadata.note_schema,
+            "Generator": metadata.generator,
+            "Profile": metadata.profile_digest,
+            "Personal Notes": self.personal_notes,
+        }
+        return tuple((name, values[name]) for name in GENERATED_NOTE_FIELD_NAMES)
 
 
 __all__ = [
+    "AUTHORITATIVE_NOTE_FIELDS",
     "CSV_EXPORT_FIELD_NAMES",
+    "GENERATED_NOTE_FIELD_NAMES",
     "GeneratedNote",
     "GeneratedNoteProvenance",
-    "GENERATED_NOTE_FIELD_NAMES",
+    "GenerationMetadata",
+    "GENERATOR_VERSION",
     "ManagedNoteContent",
-    "RecipeMetadata",
+    "NOTE_SCHEMA_VERSION",
+    "NoteFieldSpec",
+    "TAGS_CSV_COLUMN",
 ]

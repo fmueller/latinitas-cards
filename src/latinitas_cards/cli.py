@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import html
 import importlib.util
 import json
@@ -25,7 +26,6 @@ from rich.table import Table
 from rich.text import Text
 
 from .annotation import analyze_cltk_word
-from .identity import derive_anki_guid
 from .profile_setup import safe_source_value
 
 stderr_console = Console(stderr=True)
@@ -1215,9 +1215,21 @@ def annotate_with_cltk(
 
 
 def _make_note_guid(source_identity: str, exercise_key: str) -> str:
-    """Derive an experimental split-note GUID without local Anki IDs."""
+    """Derive an experimental split-note GUID without local Anki IDs.
 
-    return derive_anki_guid(source_identity, "legacy_split_form", exercise_key)
+    The legacy ``split`` path predates the learning-object identity model; it
+    keeps its own domain-separated digest so the experimental transport GUID
+    never depends on, or mints, learning-object note identities.
+    """
+
+    payload = json.dumps(
+        {"exercise_key": exercise_key, "source_identity": source_identity},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    digest = hashlib.sha256(b"latinitas-legacy-split-guid-v1\0" + payload).hexdigest()
+    return f"legacy-split-guid-v1-{digest}"
 
 
 def rewrite_apkg_with_split_cards(
@@ -1614,6 +1626,16 @@ def generate_impl(
         list[str] | None,
         typer.Option(help="Approve removal of a manifest source identity; repeatable"),
     ] = None,
+    approve_scope: Annotated[
+        bool,
+        typer.Option(
+            "--approve-scope",
+            help=(
+                "Approve allocating and committing a unique CSV source scope with this export "
+                "(first export, fresh start after lost state, or legacy unscoped manifest migration)"
+            ),
+        ),
+    ] = False,
     preview_limit: Annotated[int, typer.Option(help="Max representative principal-part notes to print")] = 5,
 ) -> None:
     """Update an Anki CSV or APKG file with cloze examples from a Latin USFX corpus."""
@@ -1635,6 +1657,7 @@ def generate_impl(
                 approved_reuse=approve_reuse or (),
                 approved_allocations=approve_allocation or (),
                 approved_removals=approve_removal or (),
+                approve_new_scope=approve_scope,
                 limit=preview_limit,
             )
         except (OSError, ValueError) as error:
@@ -1653,6 +1676,7 @@ def generate_impl(
             approve_reuse,
             approve_allocation,
             approve_removal,
+            approve_scope,
         )
     ):
         raise typer.BadParameter("Profile-only options require --profile.")
@@ -1758,11 +1782,22 @@ def preview_impl(
         list[str] | None,
         typer.Option(help="Approve removal of a manifest source identity; repeatable"),
     ] = None,
+    approve_scope: Annotated[
+        bool,
+        typer.Option(
+            "--approve-scope",
+            help="Rejected for read-only preview: scope approval commits state with generate only",
+        ),
+    ] = False,
 ) -> None:
     """Show a sample of generated clozes without writing output."""
     if profile is not None:
         if usfx is not None:
             raise typer.BadParameter("--usfx cannot be combined with --profile.")
+        if approve_scope:
+            raise typer.BadParameter(
+                "--approve-scope commits identity state; it is available on generate, not on a read-only preview."
+            )
         try:
             from .commands.principal_parts import run_principal_part_preview
 
@@ -1795,6 +1830,7 @@ def preview_impl(
             approve_reuse,
             approve_allocation,
             approve_removal,
+            approve_scope,
         )
     ):
         raise typer.BadParameter("Profile-only options require --profile.")

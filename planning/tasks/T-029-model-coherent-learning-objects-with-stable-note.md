@@ -1,14 +1,14 @@
 ---
 id: T-029-model-coherent-learning-objects-with-stable-note
 title: Model coherent learning objects with stable note identities
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#coherent-learning-objects-and-identities
 dependencies:
     - T-002-stable-generated-note-identity
     - T-013-generate-principal-part-study-cards
     - T-036-preserve-csv-and-manifest-recovery-on-interruption
-updated_at: "2026-09-27T09:36:15Z"
+updated_at: "2026-09-27T11:25:23Z"
 ---
 
 # T-029-model-coherent-learning-objects-with-stable-note Model coherent learning objects with stable note identities
@@ -66,3 +66,4 @@ rather than introducing a parallel stack. The linked spec supersedes the old con
 ## Implementation Notes
 - T-036 establishes safe recovery before this task extends persisted identity state.
   Conditional template implementation follows in T-030.
+- 2026-09-27T11:25:16Z: verification pass

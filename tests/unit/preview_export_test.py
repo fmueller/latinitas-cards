@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import io
+import json
 import os
 import shutil
 import sqlite3
@@ -10,6 +11,9 @@ from pathlib import Path
 
 import pytest
 
+from latinitas_cards.identity import derive_latinitas_id
+from latinitas_cards.manifest import CsvIdentityManifest, allocate_source_scope, reconcile_csv_manifest
+from latinitas_cards.notes import TAGS_CSV_COLUMN
 from latinitas_cards.preview_export import (
     PrincipalPartExportError,
     PrincipalPartExportResult,
@@ -18,8 +22,25 @@ from latinitas_cards.preview_export import (
     write_principal_part_csv,
 )
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
+from latinitas_cards.sources import read_csv_records
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "representative-university-latin.apkg"
+
+EXPECTED_EXPORT_COLUMNS = (
+    "LatinitasID",
+    "Lemma",
+    "Principal Parts",
+    "Meaning",
+    "Tags",
+    "Source ID",
+    "Source Scope",
+    "Source Kind",
+    "Source Location",
+    "Source Path",
+    "Note Schema",
+    "Generator",
+    "Profile",
+)
 
 
 def _profile(
@@ -129,8 +150,37 @@ def _tagged_package_profile() -> DeckProfile:
     )
 
 
-def test_preview_result_reports_representative_notes_and_structured_counts(tmp_path: Path) -> None:
+def _manifest_profile() -> DeckProfile:
+    return _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+
+
+def _committed_scoped_export(
+    tmp_path: Path,
+    *,
+    rows: list[tuple[str, str, str, str]] | None = None,
+    profile: DeckProfile | None = None,
+    source_name: str = "source.csv",
+    output_name: str = "generated.csv",
+    approve: bool = True,
+) -> tuple[PrincipalPartExportResult, Path, Path, Path]:
+    source = tmp_path / source_name
+    resolved_profile = profile or _profile()
+    _write_source(source, rows or [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    state = Path(f"{source}.latinitas.json")
+    result = prepare_principal_part_export(
+        source,
+        resolved_profile,
+        manifest_path=state,
+        approve_new_scope=approve,
+    )
+    output = tmp_path / output_name
+    write_principal_part_csv(result, output)
+    return result, source, state, output
+
+
+def test_preview_result_reports_representative_objects_and_structured_counts(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
     _write_source(
         source,
         [
@@ -140,9 +190,14 @@ def test_preview_result_reports_representative_notes_and_structured_counts(tmp_p
         ],
     )
 
-    result = prepare_principal_part_export(source, _profile())
+    result = prepare_principal_part_export(
+        source,
+        _profile(),
+        manifest_path=state,
+        approve_new_scope=True,
+    )
 
-    assert result.generated_count == 8
+    assert result.generated_count == 1
     assert result.skipped_count == 2
     assert result.ambiguous_count == 1
     assert result.generation.notes[0].provenance.source_path is None
@@ -151,7 +206,240 @@ def test_preview_result_reports_representative_notes_and_structured_counts(tmp_p
     assert any(skip.code == "separator_mismatch" for skip in result.generation.skips)
 
 
-def test_anki_source_tags_reach_every_descendant_and_the_serialized_tags_column(tmp_path: Path) -> None:
+def test_read_only_preview_requests_scope_confirmation_without_minting_ids_or_writing_state(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+
+    pending = prepare_principal_part_export(source, _profile(), manifest_path=state)
+
+    assert pending.scope_pending
+    assert pending.source_scope is None
+    assert pending.generation.notes == ()
+    assert any(review.kind == "scope_confirmation" for review in pending.manifest_reviews)
+    assert not state.exists()
+    with pytest.raises(PrincipalPartExportError, match="scope"):
+        deterministic_csv_bytes(pending)
+    assert not state.exists()
+
+
+def test_unapproved_export_writes_neither_output_nor_scope_state(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    output = tmp_path / "generated.csv"
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+
+    pending = prepare_principal_part_export(source, _profile(), manifest_path=state)
+
+    with pytest.raises(PrincipalPartExportError, match="scope"):
+        write_principal_part_csv(pending, output)
+    assert not output.exists()
+    assert not state.exists()
+
+
+def test_first_approved_export_commits_scope_assignments_and_output_together(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    output = tmp_path / "generated.csv"
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    profile = _profile()
+
+    approved = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=state,
+        approve_new_scope=True,
+    )
+
+    assert not approved.scope_pending
+    assert approved.source_scope
+    assert approved.source_scope.startswith("scope-")
+    assert not state.exists()
+    write_principal_part_csv(approved, output)
+
+    assert output.exists()
+    persisted = CsvIdentityManifest.load(state)
+    assert persisted.source_scope == approved.source_scope
+    assert persisted.schema_version == 2
+
+    retry = prepare_principal_part_export(source, profile, manifest_path=state)
+    assert not retry.scope_pending
+    assert retry.source_scope == approved.source_scope
+    assert deterministic_csv_bytes(retry) == deterministic_csv_bytes(approved)
+    assert {note.latinitas_id for note in retry.generation.notes} == {
+        note.latinitas_id for note in approved.generation.notes
+    }
+
+
+def test_independent_sources_with_identical_content_and_local_ids_never_share_ids(tmp_path: Path) -> None:
+    amo_dir = tmp_path / "amo"
+    fero_dir = tmp_path / "fero"
+    amo_dir.mkdir()
+    fero_dir.mkdir()
+    identical_rows = [
+        ("ignored-a", "ferō", "ferre, ferō, tulī, lātum", "tragen"),
+        ("ignored-b", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen"),
+    ]
+
+    amo_ids: dict[str, str] = {}
+    fero_ids: dict[str, str] = {}
+    for directory, ids in ((amo_dir, amo_ids), (fero_dir, fero_ids)):
+        source = directory / "source.csv"
+        state = Path(f"{source}.latinitas.json")
+        _write_source(source, identical_rows)
+        result = prepare_principal_part_export(
+            source,
+            _manifest_profile(),
+            manifest_path=state,
+            approved_allocations={0, 1},
+            approve_new_scope=True,
+        )
+        write_principal_part_csv(result, directory / "generated.csv")
+        persisted = CsvIdentityManifest.load(state)
+        assert persisted.source_scope
+        ids.update(
+            {
+                entry.source_identity: note.latinitas_id
+                for entry, note in zip(
+                    sorted(persisted.entries, key=lambda item: item.source_identity),
+                    sorted(result.generation.notes, key=lambda note: note.provenance.source_identity or ""),
+                    strict=True,
+                )
+            }
+        )
+
+    assert set(amo_ids) == set(fero_ids) == {"csv-source-000001", "csv-source-000002"}
+    assert amo_ids != fero_ids
+    assert len([*amo_ids.values(), *fero_ids.values()]) == len({*amo_ids.values(), *fero_ids.values()})
+
+
+def test_moving_or_copying_persisted_state_keeps_the_same_scope_and_ids(tmp_path: Path) -> None:
+    result, source, state, _output = _committed_scoped_export(tmp_path)
+
+    moved = tmp_path / "moved"
+    moved.mkdir()
+    moved_source = moved / "renamed.csv"
+    moved_state = Path(f"{moved_source}.latinitas.json")
+    shutil.copyfile(source, moved_source)
+    shutil.copyfile(state, moved_state)
+
+    copied = prepare_principal_part_export(moved_source, result.profile, manifest_path=moved_state)
+
+    assert copied.source_scope == result.source_scope
+    assert {note.latinitas_id for note in copied.generation.notes} == {
+        note.latinitas_id for note in result.generation.notes
+    }
+
+
+def test_explicit_csv_ids_are_scoped_and_require_bootstrap(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source, [("L001", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+
+    pending = prepare_principal_part_export(source, _profile(), manifest_path=state)
+    assert pending.scope_pending
+    assert pending.generation.notes == ()
+    assert not state.exists()
+
+    scoped = prepare_principal_part_export(
+        source,
+        _profile(),
+        manifest_path=state,
+        approve_new_scope=True,
+    )
+    note = scoped.generation.notes[0]
+    assert note.provenance.source_identity == "L001"
+    assert note.provenance.source_scope == scoped.source_scope
+    assert note.latinitas_id != derive_latinitas_id("L001", note.object_key)
+
+    other_dir = tmp_path / "other"
+    other_dir.mkdir()
+    other_source = other_dir / "source.csv"
+    _write_source(other_source, [("L001", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    other = prepare_principal_part_export(
+        other_source,
+        _profile(),
+        manifest_path=Path(f"{other_source}.latinitas.json"),
+        approve_new_scope=True,
+    )
+    assert other.generation.notes[0].latinitas_id != note.latinitas_id
+
+
+def test_legacy_unscoped_manifest_requires_explicit_fresh_start(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    legacy_state = {
+        "schema_version": 1,
+        "source_columns": ["Stable ID", "Lemma", "Forms", "German gloss"],
+        "source_digest": "",
+        "mapping_digest": "",
+        "next_source_number": 2,
+        "entries": [
+            {
+                "source_identity": "csv-source-000001",
+                "fingerprint": "legacy-fingerprint",
+                "last_row_index": 0,
+                "active": True,
+            }
+        ],
+    }
+    state.write_text(
+        json.dumps(legacy_state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    blocked = prepare_principal_part_export(source, _manifest_profile(), manifest_path=state)
+    assert blocked.scope_pending
+    assert blocked.generation.notes == ()
+    assert any("unscoped" in review.message or "fresh start" in review.message for review in blocked.manifest_reviews)
+
+    fresh = prepare_principal_part_export(
+        source,
+        _manifest_profile(),
+        manifest_path=state,
+        approved_reuse={0: "csv-source-000001"},
+        approve_new_scope=True,
+    )
+    assert fresh.source_scope
+    assert fresh.manifest_reviews == ()
+    write_principal_part_csv(fresh, tmp_path / "generated.csv")
+    persisted = CsvIdentityManifest.load(state)
+    assert persisted.source_scope == fresh.source_scope
+
+
+def test_legacy_unscoped_manifest_migration_preserves_matching_row_assignments(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    output = tmp_path / "generated.csv"
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    legacy = reconcile_csv_manifest(
+        read_csv_records(source),
+        None,
+        approved_allocations={0},
+    ).manifest
+    assert legacy.schema_version == 1 and legacy.source_scope == ""
+    state.write_text(legacy.to_json(), encoding="utf-8")
+
+    migrated = prepare_principal_part_export(
+        source,
+        _manifest_profile(),
+        manifest_path=state,
+        approve_new_scope=True,
+    )
+
+    assert not migrated.scope_pending
+    assert migrated.manifest_reviews == ()
+    assert {note.provenance.source_identity for note in migrated.generation.notes} == {"csv-source-000001"}
+    write_principal_part_csv(migrated, output)
+    persisted = CsvIdentityManifest.load(state)
+    assert persisted.source_scope == migrated.source_scope
+    assert {entry.source_identity for entry in persisted.entries} == {"csv-source-000001"}
+
+
+def test_anki_source_tags_reach_the_object_note_and_the_serialized_tags_column(tmp_path: Path) -> None:
     for package_name in ("tagged-package.apkg", "tagged-package.colpkg"):
         package = tmp_path / package_name
         _write_tagged_package(package, "collection.anki2")
@@ -164,20 +452,21 @@ def test_anki_source_tags_reach_every_descendant_and_the_serialized_tags_column(
         assert first == second
         assert hashlib.sha256(package.read_bytes()).digest() == original_digest
         header, rows, _metadata = _parse_export(first)
-        assert header[3] == "Tags"
+        assert header == list(EXPECTED_EXPORT_COLUMNS)
+        tags_index = header.index("Tags")
+        assert tags_index + 1 == TAGS_CSV_COLUMN == 5
         expected_tags_by_source = {
             "guid-a": "latin verb::irregular Vokabeln-Übung latinitas",
             "guid-b": "grammar latinitas latin",
             "guid-c": "latinitas latin",
         }
-        tags_by_source: dict[str, set[str]] = {}
+        tags_by_source: dict[str, str] = {}
         for row in rows:
             source_id = row[header.index("Source ID")]
-            tags_by_source.setdefault(source_id, set()).add(row[3])
-        assert set(tags_by_source) == set(expected_tags_by_source)
-        assert len(rows) == 24
-        for source_id, expected_tags in expected_tags_by_source.items():
-            assert tags_by_source[source_id] == {expected_tags}
+            tags_by_source[source_id] = row[tags_index]
+        assert tags_by_source == expected_tags_by_source
+        assert len(rows) == 3
+        assert all(row[header.index("Source Scope")] == "" for row in rows)
 
 
 def test_untagged_anki_source_keeps_configured_tags_only_in_serialized_output(tmp_path: Path) -> None:
@@ -188,7 +477,7 @@ def test_untagged_anki_source_keeps_configured_tags_only_in_serialized_output(tm
     payload = deterministic_csv_bytes(prepare_principal_part_export(package, profile))
 
     _header, rows, _metadata = _parse_export(payload)
-    assert {row[3] for row in rows} == {"latinitas latin"}
+    assert {row[4] for row in rows} == {"latinitas latin"}
 
 
 def test_invalid_source_tags_block_export_with_actionable_skip(tmp_path: Path) -> None:
@@ -206,7 +495,7 @@ def test_invalid_source_tags_block_export_with_actionable_skip(tmp_path: Path) -
     assert "bad" not in invalid_skip.message
     assert {note.provenance.source_identity for note in result.generation.notes} == {"guid-b", "guid-c"}
     _header, rows, _metadata = _parse_export(deterministic_csv_bytes(result))
-    assert {row[3] for row in rows} == {"grammar latinitas latin", "latinitas latin"}
+    assert {row[4] for row in rows} == {"grammar latinitas latin", "latinitas latin"}
 
 
 def test_markup_unsafe_inherited_tags_never_reach_the_serialized_tags_column(tmp_path: Path) -> None:
@@ -230,113 +519,64 @@ def test_markup_unsafe_inherited_tags_never_reach_the_serialized_tags_column(tmp
 
 
 def test_csv_export_is_utf8_deterministic_and_uses_anki_import_metadata(tmp_path: Path) -> None:
-    source = tmp_path / "source.csv"
     profile = _profile(tags=("latinitas", "provenance-β"))
-    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen\n& prüfen")])
+    result, source, state, _output = _committed_scoped_export(tmp_path, profile=profile)
 
-    first = deterministic_csv_bytes(prepare_principal_part_export(source, profile))
-    second = deterministic_csv_bytes(prepare_principal_part_export(source, profile))
+    first = deterministic_csv_bytes(result)
+    repeat = deterministic_csv_bytes(prepare_principal_part_export(source, profile, manifest_path=state))
 
-    assert first == second
+    assert first == repeat
     assert first.startswith(b"#separator:Comma\n")
     assert "#html:true\n" in first.decode("utf-8")
     assert "#notetype:Latinitas Principal Parts\n" in first.decode("utf-8")
     assert "#deck:Latin::Latinitas::Review\n" in first.decode("utf-8")
-    assert "#tags column:4\n" in first.decode("utf-8")
-    assert (
-        "#columns:LatinitasID,Prompt,Answer,Tags,Source ID,Source Kind,Source Location,Source Path,Recipe,"
-        "Exercise Key,Recipe Version\n" in first.decode("utf-8")
-    )
+    assert "#tags column:5\n" in first.decode("utf-8")
+    assert f"#columns:{','.join(EXPECTED_EXPORT_COLUMNS)}\n" in first.decode("utf-8")
     header, rows, metadata = _parse_export(first)
     assert metadata.startswith("#separator:Comma\n#html:true\n")
-    assert header == [
-        "LatinitasID",
-        "Prompt",
-        "Answer",
-        "Tags",
-        "Source ID",
-        "Source Kind",
-        "Source Location",
-        "Source Path",
-        "Recipe",
-        "Exercise Key",
-        "Recipe Version",
-    ]
-    assert len(rows) == 8
-    assert rows[0][0].startswith("latinitas-v1-")
-    assert rows[0][3] == "latinitas provenance-β"
+    assert header == list(EXPECTED_EXPORT_COLUMNS)
+    assert len(rows) == 1
+    assert rows[0][0].startswith("latinitas-v2-")
+    assert rows[0][4] == "latinitas provenance-β"
+    assert rows[0][header.index("Source ID")] == "entry-1"
+    assert rows[0][header.index("Source Scope")] == result.source_scope
+    assert rows[0][header.index("Source Kind")] == "csv"
+    assert rows[0][header.index("Note Schema")]
+    assert rows[0][header.index("Generator")]
+    assert rows[0][header.index("Profile")].startswith("profile-sha256:")
     assert "sagen" in first.decode("utf-8")
     assert "source.csv" not in first.decode("utf-8")
 
 
 def test_csv_export_omits_the_user_owned_personal_notes_column(tmp_path: Path) -> None:
-    source = tmp_path / "source.csv"
-    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    result, _source, _state, _output = _committed_scoped_export(tmp_path)
 
-    payload = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
+    payload = deterministic_csv_bytes(result)
     text = payload.decode("utf-8")
     header, rows, _ = _parse_export(payload)
 
     assert "Personal Notes" not in text
-    assert header[-1] == "Recipe Version"
-    assert len(header) == 11
+    assert header[-1] == "Profile"
+    assert len(header) == 13
     assert all(len(row) == len(header) for row in rows)
 
 
 def test_csv_export_escapes_source_identity_for_html_import(tmp_path: Path) -> None:
-    source = tmp_path / "source.csv"
-    _write_source(
-        source,
-        [("<img src=x onerror=alert(1)>", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")],
+    result, _source, _state, _output = _committed_scoped_export(
+        tmp_path,
+        rows=[("<img src=x onerror=alert(1)>", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")],
     )
 
-    payload = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
-    text = payload.decode("utf-8")
+    text = deterministic_csv_bytes(result).decode("utf-8")
 
     assert "&lt;img src=x onerror=alert(1)&gt;" in text
     assert "<img src=x onerror=alert(1)>" not in text
 
 
-def test_csv_export_preserves_completion_and_recognition_html_section_boundaries(tmp_path: Path) -> None:
-    source = tmp_path / "source.csv"
-    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
-
-    payload = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
-    header, rows, _ = _parse_export(payload)
-    recipe_index = header.index("Recipe")
-    exercise_index = header.index("Exercise Key")
-    prompt_index = header.index("Prompt")
-    answer_index = header.index("Answer")
-
-    completion = next(
-        row for row in rows if row[recipe_index] == "principal_part_completion" and row[exercise_index] == "perfect_1s"
-    )
-    recognition = next(
-        row for row in rows if row[recipe_index] == "principal_part_recognition" and row[exercise_index] == "perfect_1s"
-    )
-
-    assert completion[prompt_index].startswith(
-        "<div>Ergänze die fehlende Stammform.</div><div><strong>Stammformen</strong></div><div>"
-    )
-    assert completion[prompt_index].endswith("</div><div><strong>Bedeutung:</strong> sagen</div>")
-    assert completion[answer_index] == (
-        "<div><strong>Fehlende Stammform:</strong> dīxī</div>"
-        "<div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
-    )
-    assert recognition[answer_index].startswith(
-        "<div><strong>Lemma:</strong> dīcō</div><div><strong>Stammformen</strong></div><div>"
-    )
-    assert recognition[answer_index].endswith(
-        "</div><div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
-        "<div><strong>Bedeutung:</strong> sagen</div>"
-    )
-
-
-def test_csv_export_renders_source_html_as_safe_readable_text_in_both_recipes(tmp_path: Path) -> None:
-    source = tmp_path / "source.csv"
-    _write_source(
-        source,
-        [
+def test_csv_export_renders_source_html_as_safe_readable_knowledge(tmp_path: Path) -> None:
+    result, _source, state, _output = _committed_scoped_export(
+        tmp_path,
+        rows=[
             (
                 "entry-html",
                 "<i>dīcō</i>",
@@ -346,30 +586,21 @@ def test_csv_export_renders_source_html_as_safe_readable_text_in_both_recipes(tm
             )
         ],
     )
-    source_before = source.read_bytes()
+    source_before = _source.read_bytes()
 
-    first = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
-    second = deterministic_csv_bytes(prepare_principal_part_export(source, _profile()))
+    first = deterministic_csv_bytes(result)
+    repeat = deterministic_csv_bytes(prepare_principal_part_export(_source, result.profile, manifest_path=state))
 
-    assert first == second
+    assert first == repeat
     text = first.decode("utf-8")
     header, rows, _metadata = _parse_export(first)
-    recipe_index = header.index("Recipe")
-    exercise_index = header.index("Exercise Key")
-    prompt_index = header.index("Prompt")
-    answer_index = header.index("Answer")
-    expected_meaning = "<div><strong>Bedeutung:</strong> erste Bedeutung<br>zweite Bedeutung<br>dritte</div>"
-    completion = next(
-        row for row in rows if row[recipe_index] == "principal_part_completion" and row[exercise_index] == "perfect_1s"
-    )
-    recognition = next(
-        row for row in rows if row[recipe_index] == "principal_part_recognition" and row[exercise_index] == "supine"
-    )
+    lemma_index = header.index("Lemma")
+    parts_index = header.index("Principal Parts")
+    meaning_index = header.index("Meaning")
 
-    assert completion[prompt_index].endswith(expected_meaning)
-    assert recognition[answer_index].endswith(expected_meaning)
-    assert recognition[prompt_index] == "Welche Stammform ist „dictum“?"
-    assert "<div><strong>Lemma:</strong> dīcō</div>" in recognition[answer_index]
+    assert rows[0][lemma_index] == "dīcō"
+    assert "<strong>Präsens, 1. Person Singular:</strong> dīcō" in rows[0][parts_index]
+    assert rows[0][meaning_index] == "erste Bedeutung<br>zweite Bedeutung<br>dritte"
     assert "&lt;div&gt;" not in text
     assert "&lt;b&gt;" not in text
     assert "&lt;br&gt;" not in text
@@ -378,17 +609,16 @@ def test_csv_export_renders_source_html_as_safe_readable_text_in_both_recipes(tm
     assert "alert(2)" not in text
     assert "<script" not in text
     assert "<img" not in text
-    assert source.read_bytes() == source_before
+    assert _source.read_bytes() == source_before
 
 
 def test_csv_export_encodes_unsafe_controls_without_removing_newlines(tmp_path: Path) -> None:
-    source = tmp_path / "source.csv"
-    _write_source(
-        source,
-        [("entry-\x1b[31m\x9b", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen\x00\nprüfen")],
+    result, _source, _state, _output = _committed_scoped_export(
+        tmp_path,
+        rows=[("entry-\x1b[31m\x9b", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen\x00\nprüfen")],
     )
 
-    text = deterministic_csv_bytes(prepare_principal_part_export(source, _profile())).decode("utf-8")
+    text = deterministic_csv_bytes(result).decode("utf-8")
 
     assert "\x1b" not in text
     assert "\x00" not in text
@@ -407,6 +637,7 @@ def test_package_preview_and_export_leave_source_bytes_unchanged(tmp_path: Path,
 
     result = prepare_principal_part_export(source, _representative_profile())
     assert result.generated_count > 0
+    assert not result.scope_pending
     assert source.read_bytes() == source_before
 
     write_principal_part_csv(result, output)
@@ -415,24 +646,25 @@ def test_package_preview_and_export_leave_source_bytes_unchanged(tmp_path: Path,
     assert source.read_bytes() == source_before
 
 
-def test_managed_text_and_tags_updates_keep_one_logical_row_per_identity(tmp_path: Path) -> None:
-    source = tmp_path / "source.csv"
-    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
-    original = prepare_principal_part_export(source, _profile(tags=("old",)))
+def test_managed_text_and_tags_updates_keep_one_row_per_object_identity(tmp_path: Path) -> None:
+    result, source, state, _output = _committed_scoped_export(tmp_path, profile=_profile(tags=("old",)))
 
     _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen; aussprechen")])
-    revised = prepare_principal_part_export(source, _profile(tags=("new", "html-v2")))
+    revised = prepare_principal_part_export(source, _profile(tags=("new", "html-v2")), manifest_path=state)
 
-    original_ids = {note.latinitas_id for note in original.generation.notes}
+    original_ids = {note.latinitas_id for note in result.generation.notes}
     revised_ids = [note.latinitas_id for note in revised.generation.notes]
     assert set(revised_ids) == original_ids
-    assert len(revised_ids) == len(set(revised_ids))
-    assert deterministic_csv_bytes(original) != deterministic_csv_bytes(revised)
+    assert len(revised_ids) == len(set(revised_ids)) == 1
+    assert deterministic_csv_bytes(result) != deterministic_csv_bytes(revised)
 
 
-def test_idless_csv_requires_explicit_allocation_and_reuses_ids_after_reordering(tmp_path: Path) -> None:
+def test_idless_csv_requires_scope_then_explicit_allocation_and_reuses_ids_after_reordering(
+    tmp_path: Path,
+) -> None:
     source = tmp_path / "source.csv"
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(
         source,
         [
@@ -440,30 +672,22 @@ def test_idless_csv_requires_explicit_allocation_and_reuses_ids_after_reordering
             ("ignored-b", "ferō", "ferre, ferō, tulī, lātum", "tragen"),
         ],
     )
-    manifest = Path(f"{source}.latinitas.json")
 
-    pending = prepare_principal_part_export(source, profile, manifest_path=manifest)
-    assert pending.generated_count == 0
-    assert pending.manifest_reviews
-    with pytest.raises(PrincipalPartExportError, match="explicit identity review"):
-        write_principal_part_csv(pending, tmp_path / "blocked.csv")
-    assert not (tmp_path / "blocked.csv").exists()
-    assert not manifest.exists()
+    scope_pending = prepare_principal_part_export(source, profile, manifest_path=state)
+    assert scope_pending.scope_pending
+    assert scope_pending.generation.notes == ()
 
     allocated = prepare_principal_part_export(
         source,
         profile,
-        manifest_path=manifest,
+        manifest_path=state,
         approved_allocations={0, 1},
+        approve_new_scope=True,
     )
     output = tmp_path / "generated.csv"
     write_principal_part_csv(allocated, output)
-    assert manifest.exists()
-    allocated_ids = {
-        note.provenance.source_identity: note.latinitas_id
-        for note in allocated.generation.notes
-        if note.recipe.exercise_key == "present_infinitive"
-    }
+    assert state.exists()
+    allocated_ids = {note.provenance.source_identity: note.latinitas_id for note in allocated.generation.notes}
 
     _write_source(
         source,
@@ -472,14 +696,62 @@ def test_idless_csv_requires_explicit_allocation_and_reuses_ids_after_reordering
             ("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen"),
         ],
     )
-    reordered = prepare_principal_part_export(source, profile, manifest_path=manifest)
-    reordered_ids = {
-        note.provenance.source_identity: note.latinitas_id
-        for note in reordered.generation.notes
-        if note.recipe.exercise_key == "present_infinitive"
-    }
+    reordered = prepare_principal_part_export(source, profile, manifest_path=state)
+    reordered_ids = {note.provenance.source_identity: note.latinitas_id for note in reordered.generation.notes}
     assert reordered.manifest_reviews == ()
+    assert reordered.source_scope == allocated.source_scope
     assert reordered_ids == allocated_ids
+
+
+def test_manifest_approvals_are_rejected_without_a_scope_bootstrap(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+
+    with pytest.raises(PrincipalPartExportError, match="scope"):
+        prepare_principal_part_export(
+            source,
+            profile,
+            manifest_path=state,
+            approved_allocations={0},
+        )
+
+
+@pytest.mark.parametrize(
+    "approval_kwargs",
+    [
+        {"approved_reuse": {0: "L001"}},
+        {"approved_allocations": {0}},
+        {"approved_removals": ("L001",)},
+    ],
+)
+def test_row_approvals_are_rejected_for_explicit_csv_id_sources(
+    tmp_path: Path,
+    approval_kwargs: dict[str, object],
+) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source, [("L001", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    committed = prepare_principal_part_export(source, _profile(), manifest_path=state, approve_new_scope=True)
+    write_principal_part_csv(committed, tmp_path / "bootstrap.csv")
+
+    with pytest.raises(PrincipalPartExportError, match="manifest identity review"):
+        prepare_principal_part_export(
+            source,
+            _profile(),
+            manifest_path=state,
+            **approval_kwargs,  # type: ignore[arg-type]
+        )
+
+
+def test_scope_bootstrap_error_names_the_cli_flag(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+
+    with pytest.raises(PrincipalPartExportError, match="--approve-scope"):
+        prepare_principal_part_export(source, _manifest_profile(), manifest_path=state, approved_allocations={0})
 
 
 @pytest.mark.parametrize("manifest_exists", [False, True])
@@ -490,24 +762,26 @@ def test_manifest_commit_failure_restores_existing_or_absent_output_pair(
 ) -> None:
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
-    manifest = Path(f"{source}.latinitas.json")
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
 
     allocated = prepare_principal_part_export(
         source,
         profile,
-        manifest_path=manifest,
+        manifest_path=state,
         approved_allocations={0},
+        approve_new_scope=True,
     )
     if manifest_exists:
         write_principal_part_csv(allocated, output)
         output_before = output.read_bytes()
-        manifest_before = manifest.read_bytes()
+        state_before = state.read_bytes()
+        allocated = prepare_principal_part_export(source, profile, manifest_path=state)
     else:
         output.write_bytes(b"prior output")
         output_before = output.read_bytes()
-        manifest_before = None
+        state_before = None
 
     original_replace = os.replace
     failed = False
@@ -517,7 +791,7 @@ def test_manifest_commit_failure_restores_existing_or_absent_output_pair(
         destination_name: str | bytes | os.PathLike[str],
     ) -> None:
         nonlocal failed
-        if not failed and not isinstance(destination_name, bytes) and Path(destination_name) == manifest:
+        if not failed and not isinstance(destination_name, bytes) and Path(destination_name) == state:
             failed = True
             raise OSError("simulated manifest commit failure")
         original_replace(source_name, destination_name)
@@ -529,10 +803,10 @@ def test_manifest_commit_failure_restores_existing_or_absent_output_pair(
 
     assert failed
     assert output.read_bytes() == output_before
-    if manifest_before is None:
-        assert not manifest.exists()
+    if state_before is None:
+        assert not state.exists()
     else:
-        assert manifest.read_bytes() == manifest_before
+        assert state.read_bytes() == state_before
 
 
 def test_manifest_rollback_failure_without_backups_reports_affected_destination(
@@ -540,14 +814,15 @@ def test_manifest_rollback_failure_without_backups_reports_affected_destination(
 ) -> None:
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
-    manifest = Path(f"{source}.latinitas.json")
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
     allocated = prepare_principal_part_export(
         source,
         profile,
-        manifest_path=manifest,
+        manifest_path=state,
         approved_allocations={0},
+        approve_new_scope=True,
     )
 
     original_replace = os.replace
@@ -558,7 +833,7 @@ def test_manifest_rollback_failure_without_backups_reports_affected_destination(
         destination_name: str | bytes | os.PathLike[str],
     ) -> None:
         nonlocal manifest_failed
-        if not manifest_failed and not isinstance(destination_name, bytes) and Path(destination_name) == manifest:
+        if not manifest_failed and not isinstance(destination_name, bytes) and Path(destination_name) == state:
             manifest_failed = True
             raise OSError("simulated manifest commit failure")
         original_replace(source_name, destination_name)
@@ -579,7 +854,7 @@ def test_manifest_rollback_failure_without_backups_reports_affected_destination(
     message = str(error.value)
     assert manifest_failed
     assert output.exists()
-    assert not manifest.exists()
+    assert not state.exists()
     assert "Recovery is required" in message
     assert str(output) in message
     assert "No output or manifest was changed" not in message
@@ -588,14 +863,15 @@ def test_manifest_rollback_failure_without_backups_reports_affected_destination(
 def test_manifest_rollback_failure_retains_backup_for_recovery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
-    manifest = Path(f"{source}.latinitas.json")
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
     allocated = prepare_principal_part_export(
         source,
         profile,
-        manifest_path=manifest,
+        manifest_path=state,
         approved_allocations={0},
+        approve_new_scope=True,
     )
     output.write_bytes(b"prior output")
 
@@ -610,7 +886,7 @@ def test_manifest_rollback_failure_retains_backup_for_recovery(tmp_path: Path, m
         nonlocal manifest_failed, rollback_failed
         destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
         source_text = os.fsdecode(source_name)
-        if destination == manifest and not manifest_failed:
+        if destination == state and not manifest_failed:
             manifest_failed = True
             raise OSError("simulated manifest commit failure")
         if manifest_failed and destination == output and ".backup." in source_text:
@@ -633,17 +909,19 @@ def test_manifest_rollback_failure_reports_manifest_destination_and_backup(
 ) -> None:
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
-    manifest = Path(f"{source}.latinitas.json")
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
     allocated = prepare_principal_part_export(
         source,
         profile,
-        manifest_path=manifest,
+        manifest_path=state,
         approved_allocations={0},
+        approve_new_scope=True,
     )
     write_principal_part_csv(allocated, output)
     output_before = output.read_bytes()
+    allocated = prepare_principal_part_export(source, profile, manifest_path=state)
 
     original_replace = os.replace
     manifest_failed = False
@@ -656,10 +934,10 @@ def test_manifest_rollback_failure_reports_manifest_destination_and_backup(
         nonlocal manifest_failed, rollback_failed
         destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
         source_text = os.fsdecode(source_name)
-        if destination == manifest and not manifest_failed:
+        if destination == state and not manifest_failed:
             manifest_failed = True
             raise OSError("simulated manifest commit failure")
-        if destination == manifest and manifest_failed and ".backup." in source_text:
+        if destination == state and manifest_failed and ".backup." in source_text:
             rollback_failed = True
             raise OSError("simulated manifest rollback failure")
         original_replace(source_name, destination_name)
@@ -669,16 +947,67 @@ def test_manifest_rollback_failure_reports_manifest_destination_and_backup(
     with pytest.raises(PrincipalPartExportError) as error:
         write_principal_part_csv(allocated, output)
 
-    backup_paths = list(tmp_path.glob(f".{manifest.name}.backup.*"))
+    backup_paths = list(tmp_path.glob(f".{state.name}.backup.*"))
     message = str(error.value)
     assert manifest_failed
     assert rollback_failed
     assert output.read_bytes() == output_before
-    assert not manifest.exists()
+    assert not state.exists()
     assert backup_paths
-    assert str(manifest) in message
+    assert str(state) in message
     assert str(backup_paths[0]) in message
     assert "Recovery is required" in message
+
+
+def test_state_committed_by_another_process_after_prepare_blocks_the_export(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    output = tmp_path / "generated.csv"
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    profile = _manifest_profile()
+    approved = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=state,
+        approved_allocations={0},
+        approve_new_scope=True,
+    )
+
+    competing_scope = allocate_source_scope()
+    competing = CsvIdentityManifest.scoped(("Stable ID", "Lemma", "Forms", "German gloss"), competing_scope)
+    state.write_text(competing.to_json(), encoding="utf-8")
+    competing_bytes = state.read_bytes()
+
+    with pytest.raises(PrincipalPartExportError, match="identity state changed"):
+        write_principal_part_csv(approved, output)
+
+    assert not output.exists()
+    assert state.read_bytes() == competing_bytes
+    assert list(tmp_path.glob(".*.tmp")) == []
+    assert list(tmp_path.glob(".*.backup.*")) == []
+
+
+def test_state_removed_after_prepare_blocks_the_export(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    state = Path(f"{source}.latinitas.json")
+    output = tmp_path / "generated.csv"
+    profile = _manifest_profile()
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    committed = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=state,
+        approved_allocations={0},
+        approve_new_scope=True,
+    )
+    write_principal_part_csv(committed, output)
+    refreshed = prepare_principal_part_export(source, profile, manifest_path=state)
+    state.unlink()
+
+    with pytest.raises(PrincipalPartExportError, match="identity state changed"):
+        write_principal_part_csv(refreshed, tmp_path / "regenerated.csv")
+
+    assert not (tmp_path / "regenerated.csv").exists()
 
 
 def _is_staged_commit(source_text: str) -> bool:
@@ -691,15 +1020,21 @@ def test_keyboard_interrupt_after_backup_moves_restores_prior_pair_and_identitie
 ) -> None:
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
-    manifest = Path(f"{source}.latinitas.json")
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
-    allocated = prepare_principal_part_export(source, profile, manifest_path=manifest, approved_allocations={0})
+    allocated = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=state,
+        approved_allocations={0},
+        approve_new_scope=True,
+    )
     write_principal_part_csv(allocated, output)
     output_before = output.read_bytes()
-    manifest_before = manifest.read_bytes()
+    state_before = state.read_bytes()
     source_before = source.read_bytes()
-    second = prepare_principal_part_export(source, profile, manifest_path=manifest)
+    second = prepare_principal_part_export(source, profile, manifest_path=state)
 
     original_replace = os.replace
 
@@ -719,15 +1054,59 @@ def test_keyboard_interrupt_after_backup_moves_restores_prior_pair_and_identitie
         write_principal_part_csv(second, output)
 
     assert output.read_bytes() == output_before
-    assert manifest.read_bytes() == manifest_before
+    assert state.read_bytes() == state_before
     assert source.read_bytes() == source_before
     assert list(tmp_path.glob(".*.tmp")) == []
 
-    retry = prepare_principal_part_export(source, profile, manifest_path=manifest)
+    retry = prepare_principal_part_export(source, profile, manifest_path=state)
     assert retry.manifest_reviews == ()
+    assert retry.source_scope == allocated.source_scope
     assert {(note.provenance.source_identity, note.latinitas_id) for note in retry.generation.notes} == {
         (note.provenance.source_identity, note.latinitas_id) for note in allocated.generation.notes
     }
+
+
+def test_keyboard_interrupt_during_first_scoped_export_keeps_scope_state_uncommitted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    approved = prepare_principal_part_export(source, _profile(), manifest_path=state, approve_new_scope=True)
+
+    original_replace = os.replace
+
+    def interrupt_output_commit(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if destination == output and _is_staged_commit(source_text):
+            raise KeyboardInterrupt("simulated interruption before output replacement")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", interrupt_output_commit)
+
+    with pytest.raises(KeyboardInterrupt):
+        write_principal_part_csv(approved, output)
+
+    assert not output.exists()
+    assert not state.exists()
+    assert list(tmp_path.glob(".*.tmp")) == []
+
+    monkeypatch.undo()
+    retry_pending = prepare_principal_part_export(source, _profile(), manifest_path=state)
+    assert retry_pending.scope_pending
+    assert retry_pending.generation.notes == ()
+
+    retried = prepare_principal_part_export(source, _profile(), manifest_path=state, approve_new_scope=True)
+    write_principal_part_csv(retried, output)
+    persisted = CsvIdentityManifest.load(state)
+    assert persisted.source_scope == retried.source_scope
+    assert deterministic_csv_bytes(retried).startswith(b"#separator:Comma\n")
 
 
 def _prepare_committed_pair_for_interruption(
@@ -735,19 +1114,25 @@ def _prepare_committed_pair_for_interruption(
 ) -> tuple[PrincipalPartExportResult, Path, Path, Path, bytes, bytes, bytes]:
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
-    manifest = Path(f"{source}.latinitas.json")
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
-    allocated = prepare_principal_part_export(source, profile, manifest_path=manifest, approved_allocations={0})
+    allocated = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=state,
+        approved_allocations={0},
+        approve_new_scope=True,
+    )
     write_principal_part_csv(allocated, output)
-    second = prepare_principal_part_export(source, profile, manifest_path=manifest)
+    second = prepare_principal_part_export(source, profile, manifest_path=state)
     return (
         second,
         source,
         output,
-        manifest,
+        state,
         output.read_bytes(),
-        manifest.read_bytes(),
+        state.read_bytes(),
         source.read_bytes(),
     )
 
@@ -776,17 +1161,23 @@ def test_keyboard_interrupt_around_each_destructive_move_restores_the_prior_pair
 
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
-    manifest = Path(f"{source}.latinitas.json")
-    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    state = Path(f"{source}.latinitas.json")
+    profile = _manifest_profile()
     _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
-    allocated = prepare_principal_part_export(source, profile, manifest_path=manifest, approved_allocations={0})
+    allocated = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=state,
+        approved_allocations={0},
+        approve_new_scope=True,
+    )
     if prior_output is not None:
         output.write_bytes(prior_output)
     if prior_manifest is not None:
-        manifest.write_bytes(prior_manifest)
+        state.write_bytes(prior_manifest)
     source_before = source.read_bytes()
     phase, _, target_name = injection.partition("-")
-    target = output if target_name == "output" else manifest
+    target = output if target_name == "output" else state
 
     original_replace = os.replace
     hits = 0
@@ -820,9 +1211,9 @@ def test_keyboard_interrupt_around_each_destructive_move_restores_the_prior_pair
     else:
         assert output.read_bytes() == prior_output
     if prior_manifest is None:
-        assert not manifest.exists()
+        assert not state.exists()
     else:
-        assert manifest.read_bytes() == prior_manifest
+        assert state.read_bytes() == prior_manifest
     assert source.read_bytes() == source_before
     assert list(tmp_path.glob(".*.tmp")) == []
 
@@ -831,7 +1222,7 @@ def test_keyboard_interrupt_during_recovery_retains_both_backups(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    second, source, output, manifest, output_before, manifest_before, source_before = (
+    second, source, output, state, output_before, state_before, source_before = (
         _prepare_committed_pair_for_interruption(tmp_path)
     )
 
@@ -859,11 +1250,11 @@ def test_keyboard_interrupt_during_recovery_retains_both_backups(
 
     assert error.value.args == ("simulated interruption during recovery",)
     assert not output.exists()
-    assert not manifest.exists()
+    assert not state.exists()
     output_backups = list(tmp_path.glob(f".{output.name}.backup.*"))
-    manifest_backups = list(tmp_path.glob(f".{manifest.name}.backup.*"))
+    state_backups = list(tmp_path.glob(f".{state.name}.backup.*"))
     assert len(output_backups) == 1 and output_backups[0].read_bytes() == output_before
-    assert len(manifest_backups) == 1 and manifest_backups[0].read_bytes() == manifest_before
+    assert len(state_backups) == 1 and state_backups[0].read_bytes() == state_before
     assert source.read_bytes() == source_before
 
 
@@ -871,7 +1262,7 @@ def test_keyboard_interrupt_with_failed_restoration_retains_backup_and_reports_r
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    second, source, output, manifest, output_before, manifest_before, source_before = (
+    second, source, output, state, output_before, state_before, source_before = (
         _prepare_committed_pair_for_interruption(tmp_path)
     )
 
@@ -904,7 +1295,7 @@ def test_keyboard_interrupt_with_failed_restoration_retains_backup_and_reports_r
     assert len(output_backups) == 1 and output_backups[0].read_bytes() == output_before
     assert str(output_backups[0]) in message
     assert not output.exists()
-    assert manifest.read_bytes() == manifest_before
+    assert state.read_bytes() == state_before
     assert source.read_bytes() == source_before
 
 
@@ -912,7 +1303,7 @@ def test_base_exception_cancellation_propagates_after_recovery(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    second, source, output, manifest, output_before, manifest_before, source_before = (
+    second, source, output, state, output_before, state_before, source_before = (
         _prepare_committed_pair_for_interruption(tmp_path)
     )
 
@@ -933,7 +1324,7 @@ def test_base_exception_cancellation_propagates_after_recovery(
         write_principal_part_csv(second, output)
 
     assert output.read_bytes() == output_before
-    assert manifest.read_bytes() == manifest_before
+    assert state.read_bytes() == state_before
     assert source.read_bytes() == source_before
     assert list(tmp_path.glob(".*.tmp")) == []
 
@@ -942,7 +1333,7 @@ def test_base_exception_with_failed_restoration_notes_recovery_and_retains_backu
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    second, source, output, manifest, output_before, manifest_before, source_before = (
+    second, source, output, state, output_before, state_before, source_before = (
         _prepare_committed_pair_for_interruption(tmp_path)
     )
 
@@ -974,14 +1365,19 @@ def test_base_exception_with_failed_restoration_notes_recovery_and_retains_backu
     assert len(output_backups) == 1 and output_backups[0].read_bytes() == output_before
     assert any(str(output_backups[0]) in note for note in notes)
     assert not output.exists()
-    assert manifest.read_bytes() == manifest_before
+    assert state.read_bytes() == state_before
     assert source.read_bytes() == source_before
 
 
 def test_export_rejects_non_regular_output_and_manifest_destinations(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
-    result = prepare_principal_part_export(source, _profile())
+    result = prepare_principal_part_export(
+        source,
+        _profile(),
+        manifest_path=Path(f"{source}.latinitas.json"),
+        approve_new_scope=True,
+    )
     output_directory = tmp_path / "output-directory"
     output_directory.mkdir()
 
@@ -992,9 +1388,10 @@ def test_export_rejects_non_regular_output_and_manifest_destinations(tmp_path: P
     manifest = tmp_path / "manifest.json"
     manifest_result = prepare_principal_part_export(
         source,
-        _profile(source_identity=SourceIdentityConfig(strategy="manifest")),
+        _manifest_profile(),
         manifest_path=manifest,
         approved_allocations={0},
+        approve_new_scope=True,
     )
     manifest_directory = tmp_path / "manifest-directory"
     manifest_directory.mkdir()
@@ -1012,7 +1409,13 @@ def test_export_never_overwrites_prepared_profile_when_override_differs(tmp_path
     _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
     _profile().save(profile_a)
     _profile(tags=("other",)).save(profile_b)
-    result = prepare_principal_part_export(source, _profile(), profile_path=profile_a)
+    result = prepare_principal_part_export(
+        source,
+        _profile(),
+        profile_path=profile_a,
+        manifest_path=Path(f"{source}.latinitas.json"),
+        approve_new_scope=True,
+    )
     profile_before = profile_a.read_bytes()
 
     with pytest.raises(PrincipalPartExportError, match="profile path"):
@@ -1033,7 +1436,13 @@ def test_export_rejects_input_profile_and_manifest_aliases_without_overwriting(t
     _write_source(source, [("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
     profile = _profile()
     profile.save(profile_path)
-    result = prepare_principal_part_export(source, profile, profile_path=profile_path)
+    result = prepare_principal_part_export(
+        source,
+        profile,
+        profile_path=profile_path,
+        manifest_path=Path(f"{source}.latinitas.json"),
+        approve_new_scope=True,
+    )
     source_before = source.read_bytes()
     profile_before = profile_path.read_bytes()
 

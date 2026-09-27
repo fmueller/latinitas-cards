@@ -65,6 +65,7 @@ def run_principal_part_export(
     approved_reuse: Sequence[str],
     approved_allocations: Iterable[int],
     approved_removals: Iterable[str],
+    approve_new_scope: bool,
     limit: int,
 ) -> None:
     """Render a preview and then write the deterministic CSV output."""
@@ -82,6 +83,7 @@ def run_principal_part_export(
         approved_reuse=approved_reuse,
         approved_allocations=approved_allocations,
         approved_removals=approved_removals,
+        approve_new_scope=approve_new_scope,
     )
     render_principal_part_preview(result, limit=limit)
     write_principal_part_csv(result, output_path, profile_path=profile_path)
@@ -95,14 +97,25 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
     typer.echo(f"Generated: {result.generated_count}")
     typer.echo(f"Skipped: {result.skipped_count}")
     typer.echo(f"Ambiguous: {result.ambiguous_count}")
+    if result.scope_pending:
+        typer.echo(
+            "Source scope confirmation required: "
+            + safe_source_value(
+                "a read-only preview does not mint stable identities; run generate with --approve-scope "
+                "to allocate and commit a unique source scope with the first export.",
+                "source scope",
+            )
+        )
 
+    field_context = _preview_field_context(result)
     for index, note in enumerate(result.generation.notes[:limit], start=1):
         typer.echo(f"Representative note {index}:")
         typer.echo(f"  LatinitasID: {safe_source_value(note.latinitas_id, 'LatinitasID')}")
-        field_context = _preview_field_context(result)
-        typer.echo(f"  Prompt: {safe_source_value(note.content.prompt, field_context, limit=512)}")
-        typer.echo(f"  Answer: {safe_source_value(note.content.answer, field_context, limit=512)}")
+        typer.echo(f"  Lemma: {safe_source_value(note.content.lemma, field_context, limit=512)}")
+        typer.echo(f"  Principal Parts: {safe_source_value(note.content.principal_parts, field_context, limit=512)}")
+        typer.echo(f"  Meaning: {safe_source_value(note.content.meaning, field_context, limit=512)}")
         typer.echo(f"  Tags: {safe_source_value(' '.join(note.content.tags), field_context, limit=512)}")
+        typer.echo(f"  Card Keys: {safe_source_value(' '.join(note.card_keys), 'card keys', limit=512)}")
         typer.echo(
             "  Provenance: "
             + safe_source_value(
@@ -114,7 +127,7 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
     if result.generation.skips:
         typer.echo("Structured skips:")
         for skip in result.generation.skips[:_MAX_DIAGNOSTIC_ROWS]:
-            _render_skip(skip, _preview_field_context(result))
+            _render_skip(skip, field_context)
         _render_omitted_count("structured skips", len(result.generation.skips))
     if result.manifest_reviews:
         typer.echo("Manifest reviews:")
@@ -126,7 +139,7 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
                 "  "
                 + safe_source_value(
                     f"{review.kind}: row={row}; source={identity}; candidates={candidates}; {review.message}",
-                    _preview_field_context(result),
+                    field_context,
                 )
             )
         _render_omitted_count("manifest reviews", len(result.manifest_reviews))
@@ -144,6 +157,7 @@ def _prepare(
     approved_reuse: Sequence[str],
     approved_allocations: Iterable[int],
     approved_removals: Iterable[str],
+    approve_new_scope: bool = False,
 ) -> PrincipalPartExportResult:
     profile = _effective_profile(
         profile_path,
@@ -157,6 +171,7 @@ def _prepare(
         profile,
         profile_path=profile_path,
         manifest_path=manifest_path,
+        approve_new_scope=approve_new_scope,
         approved_reuse=_parse_reuse_approvals(approved_reuse),
         approved_allocations=tuple(approved_allocations),
         approved_removals=tuple(approved_removals),

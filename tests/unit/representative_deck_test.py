@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from latinitas_cards.identity import resolve_source_identities
+from latinitas_cards.identity import ResolvedSourceIdentity, resolve_source_identities
 from latinitas_cards.principal_parts import PrincipalPartParseFailure, PrincipalPartParseSuccess, parse_principal_parts
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 from latinitas_cards.sources import inspect_source, read_source_records
@@ -89,7 +89,7 @@ def test_fixture_identity_resolution_uses_guid_with_explicit_principal_part_mapp
 
     identities = resolve_source_identities(records, _profile())
 
-    assert identities == tuple(record.note_guid for record in records)
+    assert identities == tuple(ResolvedSourceIdentity(value=record.note_guid or "", scope=None) for record in records)
     assert _profile().fields.principal_parts_field in records[0].fields
 
 

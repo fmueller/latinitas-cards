@@ -43,7 +43,19 @@ def _command() -> click.Command:
     return cast(click.Command, _typer_get_command(app))
 
 
-def test_profile_preview_renders_counts_prompt_answer_and_provenance_without_output(tmp_path: Path) -> None:
+def _commit_scope_state(source: Path, profile: DeckProfile) -> None:
+    from latinitas_cards.preview_export import prepare_principal_part_export, write_principal_part_csv
+
+    prepared = prepare_principal_part_export(
+        source,
+        profile,
+        manifest_path=Path(f"{source}.latinitas.json"),
+        approve_new_scope=True,
+    )
+    write_principal_part_csv(prepared, source.parent / "bootstrap.csv")
+
+
+def test_profile_preview_requests_csv_scope_confirmation_without_minted_output(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     profile_path = tmp_path / "profile.json"
     _write_source(source)
@@ -55,13 +67,81 @@ def test_profile_preview_renders_counts_prompt_answer_and_provenance_without_out
     )
 
     assert result.exit_code == 0
-    assert "Generated: 4" in result.stdout
-    assert "Skipped: 0" in result.stdout
-    assert "Ambiguous: 0" in result.stdout
-    assert "Welche Stammform" in result.stdout
-    assert "Bedeutung" in result.stdout
-    assert "csv row 2" in result.stdout
+    assert "Generated: 0" in result.stdout
+    assert "source scope" in result.stdout.lower()
+    assert "scope confirmation" in result.stdout.lower()
+    assert "latinitas-v2-" not in result.stdout
     assert "Output:" not in result.stdout
+    assert not Path(f"{source}.latinitas.json").exists()
+
+
+def test_read_only_preview_rejects_scope_approval(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_source(source)
+    _profile().save(profile_path)
+
+    result = CliRunner().invoke(
+        _command(),
+        ["preview", "--input", str(source), "--profile", str(profile_path), "--approve-scope"],
+    )
+
+    assert result.exit_code != 0
+    assert "approve-scope" in result.output
+
+
+def test_generate_requires_scope_approval_before_writing_csv_sources(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    _write_source(source)
+    _profile().save(profile_path)
+
+    result = CliRunner().invoke(
+        _command(),
+        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+    )
+
+    assert result.exit_code == 2
+    assert "source scope" in result.output.lower()
+    assert not output.exists()
+    assert not Path(f"{source}.latinitas.json").exists()
+
+
+def test_generate_with_scope_approval_commits_state_and_object_output(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    output = tmp_path / "generated.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source)
+    _profile().save(profile_path)
+
+    result = CliRunner().invoke(
+        _command(),
+        [
+            "generate",
+            "--input",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--output",
+            str(output),
+            "--approve-scope",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout.index("Generated: 1") < result.stdout.index("Output:")
+    assert "LatinitasID: latinitas-v2-" in result.stdout
+    assert output.read_bytes().startswith(b"#separator:Comma\n")
+    assert state.exists()
+
+    repeat = CliRunner().invoke(
+        _command(),
+        ["generate", "--input", str(source), "--profile", str(profile_path), "--output", str(output)],
+    )
+    assert repeat.exit_code == 0
+    assert "source scope" not in repeat.stdout.lower()
 
 
 def test_profile_preview_and_generate_render_combined_tags_matching_the_csv(tmp_path: Path) -> None:
@@ -112,12 +192,13 @@ def test_profile_preview_and_generate_render_combined_tags_matching_the_csv(tmp_
     expected_tags = "latin verb::irregular latinitas"
     assert previewed.exit_code == 0
     assert f"Tags: {expected_tags}" in previewed.stdout
+    assert "Generated: 1" in previewed.stdout
     assert generated.exit_code == 0
     assert f"Tags: {expected_tags}" in generated.stdout
     rows = list(csv.reader(io.StringIO(output.read_text(encoding="utf-8"))))
-    tag_rows = [row for row in rows if row and row[0].startswith("latinitas-v1-")]
+    tag_rows = [row for row in rows if row and row[0].startswith("latinitas-v2-")]
     assert tag_rows
-    assert all(row[3] == expected_tags for row in tag_rows)
+    assert all(row[4] == expected_tags for row in tag_rows)
 
 
 def test_profile_preview_tags_line_matches_the_csv_beyond_the_default_limit(tmp_path: Path) -> None:
@@ -174,9 +255,9 @@ def test_profile_preview_tags_line_matches_the_csv_beyond_the_default_limit(tmp_
     assert generated.exit_code == 0
     assert f"Tags: {expected_tags}" in generated.stdout
     rows = list(csv.reader(io.StringIO(output.read_text(encoding="utf-8"))))
-    tag_rows = [row for row in rows if row and row[0].startswith("latinitas-v1-")]
+    tag_rows = [row for row in rows if row and row[0].startswith("latinitas-v2-")]
     assert tag_rows
-    assert all(row[3] == expected_tags for row in tag_rows)
+    assert all(row[4] == expected_tags for row in tag_rows)
 
 
 def test_profile_generate_renders_preview_before_writing_deterministic_output(tmp_path: Path) -> None:
@@ -198,11 +279,12 @@ def test_profile_generate_renders_preview_before_writing_deterministic_output(tm
             str(profile_path),
             "--output",
             str(output),
+            "--approve-scope",
         ],
     )
 
     assert result.exit_code == 0
-    assert result.stdout.index("Generated: 4") < result.stdout.index("Output:")
+    assert result.stdout.index("Generated: 1") < result.stdout.index("Output:")
     assert output.read_bytes().startswith(b"#separator:Comma\n")
     assert source.read_bytes() == source_before
     assert profile_path.read_bytes() == profile_before
@@ -231,6 +313,7 @@ def test_terminal_preview_escapes_c1_controls_in_source_values(tmp_path: Path) -
         encoding="utf-8",
     )
     _profile().save(profile_path)
+    _commit_scope_state(source, _profile())
 
     result = CliRunner().invoke(
         _command(),
@@ -263,6 +346,19 @@ def test_terminal_preview_redacts_sensitive_mapped_source_fields(tmp_path: Path)
         separators=(",",),
         selected_recipes=("principal_part_recognition",),
     ).save(profile_path)
+    _commit_scope_state(
+        source,
+        DeckProfile.default(
+            note_type="CSV source",
+            lexical_entry_field="Lemma",
+            principal_parts_field="Forms",
+            meaning_field="Password",
+            source_identity=SourceIdentityConfig(strategy="source_id_field", field="Stable ID"),
+            principal_part_roles=("present_infinitive", "present_1s", "perfect_1s", "supine"),
+            separators=(",",),
+            selected_recipes=("principal_part_recognition",),
+        ),
+    )
 
     result = CliRunner().invoke(
         _command(),
@@ -281,6 +377,7 @@ def test_terminal_preview_bounds_structured_diagnostics(tmp_path: Path) -> None:
     rows.extend(f"entry-{index},dīcō,,sagen" for index in range(60))
     source.write_text("\n".join(rows) + "\n", encoding="utf-8")
     _profile().save(profile_path)
+    _commit_scope_state(source, _profile())
 
     result = CliRunner().invoke(
         _command(),
@@ -316,6 +413,7 @@ def test_terminal_generate_keeps_recovery_status_before_long_destination_details
         profile,
         manifest_path=manifest,
         approved_allocations={0},
+        approve_new_scope=True,
     )
     write_principal_part_csv(prepared, output)
 

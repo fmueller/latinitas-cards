@@ -17,25 +17,51 @@ uv run latinitas-cards generate \
   --output generated-principal-parts.csv
 ```
 
-Both commands use the same typed generation result. `preview` shows representative prompt,
-answer, and provenance values before any output is written, followed by generated, skipped,
-and ambiguous counts. Structured skip and manifest-review reasons identify the source row and
+Both commands use the same typed generation result. `preview` shows representative lemma,
+principal-parts, and provenance values before any output is written, followed by generated,
+skipped, and ambiguous counts. Structured skip and manifest-review reasons identify the source row and
 failed assumption. `generate` renders that same preview first and writes only after the result
 is safe to export. The structured result is internal in v0.1.0; it is not a stable JSON CLI
 format.
 
-## ID-less CSV manifests
+One CSV row is one coherent learning object (one note with zero or more eligible cards), not
+one exercise: do not confuse a row count with a card count.
 
-Profiles using the `manifest` source-identity strategy default to the sidecar
-`source.csv.latinitas.json` beside the input source, not beside the generated output. A
-valid manifest automatically reuses an unchanged unique row fingerprint. The first run
-requires explicit allocation approvals, for example:
+## CSV source-scope bootstrap
+
+Every CSV source — with a stable source-ID column or with an ID-less manifest —
+needs a committed unique source scope before stable identities exist. An
+uninitialized `preview` reports that scope confirmation is required and mints
+nothing. The first approved export allocates and commits the scope together
+with the assignments and the output:
 
 ```bash
 uv run latinitas-cards generate \
   --input source.csv \
   --profile .latinitas/profile.json \
   --output generated-principal-parts.csv \
+  --approve-scope
+```
+
+Later exports reuse the persisted scope without the flag. A missing or legacy
+unscoped sidecar is never silently replaced: `--approve-scope` is also the
+explicit fresh-start or legacy-migration confirmation. `preview` rejects
+`--approve-scope` because a read-only preview cannot commit identity state.
+
+## ID-less CSV manifests
+
+Profiles using the `manifest` source-identity strategy default to the sidecar
+`source.csv.latinitas.json` beside the input source, not beside the generated output. The
+sidecar also persists the unique source scope. A
+valid manifest automatically reuses an unchanged unique row fingerprint. The first run
+requires the scope approval above plus explicit allocation approvals, for example:
+
+```bash
+uv run latinitas-cards generate \
+  --input source.csv \
+  --profile .latinitas/profile.json \
+  --output generated-principal-parts.csv \
+  --approve-scope \
   --approve-allocation 0 \
   --approve-allocation 1
 ```
@@ -68,7 +94,7 @@ and do not blindly retry or delete them. Use `--manifest` to select another side
 
 ## Source tag inheritance
 
-For APKG/COLPKG sources, every generated completion and recognition note inherits
+For APKG/COLPKG sources, every generated learning-object note inherits
 all valid tags of its parent Anki note. Inherited tags are read from the source
 note's own tag metadata only; they are never inferred from neighboring notes or
 unioned across the source deck. Configured tags (profile defaults, saved profile
@@ -100,12 +126,14 @@ Supported source-tag boundary: only native APKG/COLPKG note tags are inherited.
 CSV rows keep configured tags only — no CSV column is guessed to be Anki tag
 metadata, and CSV profile mappings are unchanged.
 
-Native tag-import verification (v0.1.0, Anki 26.09.3): combined
-inherited + configured tags were verified against a native Anki 26.09.3
-collection by importing the generated CSV through Anki's own import backend
+Native tag-import verification (v0.1.0, Anki 26.09.3, historical evidence for the
+retired per-exercise note model): combined inherited + configured tags were
+verified against a native Anki 26.09.3 collection by importing the generated CSV
+through Anki's own import backend
 (`get_csv_metadata` + `import_csv` with `#html` and `#tags column` honored),
 the same calls the import dialog makes; the dialog's UI was not click-driven
-during this run. On the first import, all 24 generated notes were created with
+during this run. On the first import, all 24 generated per-exercise notes of the
+old model were created with
 exactly the combined tag sets from the `Tags` column, `LatinitasID` values
 matched the CSV, and no duplicates existed. Anki stores note tags in its own
 canonical order (padding the stored tag string with spaces), so stored tag
@@ -122,9 +150,13 @@ manual tags on generated notes do not survive a repeat import.
 
 The output is UTF-8 CSV with deterministic `\n` line endings. It uses Anki text-file headers
 for `#separator`, `#html`, `#notetype`, `#deck`, `#tags column`, and `#columns`. The first
-regular column is always `LatinitasID`; it is derived from immutable source identity, recipe,
-and semantic exercise key, not from prompt text, glosses, HTML, tags, or local Anki IDs. The
-configured profile tags are emitted in the `Tags` column as Anki's special tags metadata,
+regular column is always `LatinitasID`; it is derived from the immutable source identity, the
+persisted CSV source scope where applicable, and the reviewed learning-object key — not from
+recipe selection, card roles, prompt text, glosses, HTML, tags, or local Anki IDs. The export
+columns are derived from the authoritative note schema:
+`LatinitasID, Lemma, Principal Parts, Meaning, Tags, Source ID, Source Scope, Source Kind,
+Source Location, Source Path, Note Schema, Generator, Profile`. The configured and inherited
+tags are emitted in the `Tags` column (column 5) as Anki's special tags metadata,
 not as a regular note field; provenance fields are included for auditing. `Source Path` is
 intentionally blank to avoid leaking absolute paths. The profile's language tag is explicit
 (`de` for the approved German content); it does not localize CLI controls or diagnostics.
@@ -152,9 +184,9 @@ For repeat imports:
 2. Keep `LatinitasID` as the first/matching field and choose **Update existing notes when
    first field matches**. Use match scope **note type** (or **note type and deck** when that
    is an intentional local policy).
-3. Map the managed columns (`Prompt`, `Answer`, `Tags`, provenance, and recipe metadata) as
-   before. `Personal Notes` stays unmapped because the generated CSV never contains it; no
-   remembered Ignore selection is required.
+3. Map the managed columns (`Lemma`, `Principal Parts`, `Meaning`, `Tags`,
+   provenance, and generation metadata) as before. `Personal Notes` stays unmapped because
+   the generated CSV never contains it; no remembered Ignore selection is required.
 4. Keep **Allow HTML in fields** enabled. Anki's manual documents that matching notes are
    updated in place, remain in their current decks, and preserve scheduling when updating is
    enabled. This behavior was verified in a disposable collection with native Anki Desktop

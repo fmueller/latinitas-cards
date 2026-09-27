@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from latinitas_cards.manifest import CsvIdentityManifest, ManifestError, reconcile_csv_manifest
+from latinitas_cards.manifest import (
+    CsvIdentityManifest,
+    ManifestError,
+    allocate_source_scope,
+    reconcile_csv_manifest,
+)
 from latinitas_cards.sources import CanonicalSourceRecord, read_csv_records
 
 
@@ -195,3 +200,94 @@ def test_manifest_round_trip_is_human_readable_and_preserves_tombstones(tmp_path
 
     assert loaded == allocated.manifest
     assert '"entries"' in path.read_text(encoding="utf-8")
+
+
+def test_reconcile_with_scope_persists_it_and_survives_move_and_reload(tmp_path: Path) -> None:
+    records = _records(tmp_path, "source.csv", [("amo", "lieben"), ("dico", "sagen")])
+    scope = allocate_source_scope()
+
+    allocated = reconcile_csv_manifest(records, None, approved_allocations={0, 1}, source_scope=scope)
+    assert allocated.manifest.source_scope == scope
+    assert allocated.manifest.schema_version == 2
+    assert allocated.reviews == ()
+
+    moved = tmp_path / "elsewhere"
+    moved.mkdir()
+    path = moved / "source.csv.latinitas.json"
+    allocated.manifest.save(path)
+    reloaded = CsvIdentityManifest.load(path)
+
+    reordered = _records(tmp_path, "reordered.csv", [("dico", "sagen"), ("amo", "lieben")])
+    reconciled = reconcile_csv_manifest(reordered, reloaded)
+    assert reconciled.reviews == ()
+    assert reconciled.identities_by_row == {
+        0: allocated.identities_by_row[1],
+        1: allocated.identities_by_row[0],
+    }
+    assert reconciled.manifest.source_scope == scope
+
+
+def test_reconcile_rejects_a_scope_that_conflicts_with_the_persisted_one(tmp_path: Path) -> None:
+    records = _records(tmp_path, "source.csv", [("amo", "lieben")])
+    allocated = reconcile_csv_manifest(records, None, approved_allocations={0}, source_scope=allocate_source_scope())
+
+    with pytest.raises(ManifestError, match="scope"):
+        reconcile_csv_manifest(
+            records,
+            allocated.manifest,
+            approved_reuse={0: allocated.identities_by_row[0]},
+            source_scope=allocate_source_scope(),
+        )
+
+
+def test_legacy_unscoped_manifest_migrates_only_with_an_explicit_scope(tmp_path: Path) -> None:
+    records = _records(tmp_path, "source.csv", [("amo", "lieben")])
+    legacy = reconcile_csv_manifest(records, None, approved_allocations={0}).manifest
+    assert legacy.source_scope == ""
+    assert legacy.schema_version == 1
+
+    untouched = reconcile_csv_manifest(records, legacy)
+    assert untouched.manifest.source_scope == ""
+    assert untouched.reviews == ()
+    assert untouched.identities_by_row == {0: legacy.entries[0].source_identity}
+
+    scope = allocate_source_scope()
+    migrated = reconcile_csv_manifest(records, legacy, source_scope=scope)
+
+    assert migrated.manifest.source_scope == scope
+    assert migrated.manifest.schema_version == 2
+    assert migrated.identities_by_row == {0: legacy.entries[0].source_identity}
+    assert migrated.reviews == ()
+
+
+def test_manifest_schema_two_requires_a_scope_and_v1_stays_legacy() -> None:
+    with pytest.raises(ManifestError, match="source_scope"):
+        CsvIdentityManifest.from_mapping(
+            {
+                "schema_version": 2,
+                "source_columns": ["Lemma"],
+                "entries": [],
+                "next_source_number": 1,
+            }
+        )
+
+    legacy_payload = {
+        "schema_version": 1,
+        "source_columns": ["Lemma"],
+        "entries": [{"source_identity": "csv-source-000001", "fingerprint": "fingerprint", "last_row_index": 0}],
+        "next_source_number": 2,
+    }
+    legacy = CsvIdentityManifest.from_mapping(legacy_payload)
+    assert legacy.source_scope == ""
+
+    with pytest.raises(ManifestError, match="schema"):
+        CsvIdentityManifest.from_mapping({**legacy_payload, "source_scope": "scope-alpha"})
+    with pytest.raises(ManifestError, match="schema"):
+        CsvIdentityManifest.from_mapping({**legacy_payload, "schema_version": 3})
+
+
+def test_allocated_source_scopes_are_unique_and_not_derived_from_contents() -> None:
+    scopes = {allocate_source_scope() for _ in range(32)}
+
+    assert len(scopes) == 32
+    assert all(scope.startswith("scope-") and len(scope) == len("scope-") + 32 for scope in scopes)

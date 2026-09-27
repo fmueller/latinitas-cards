@@ -1,8 +1,12 @@
-"""Typed preview and deterministic CSV output for generated principal-part notes.
+"""Typed preview and deterministic CSV output for generated learning-object notes.
 
-The module owns source/profile/manifest preparation and file serialization.  CLI
-modules render the returned result separately, so terminal output is not part of
-the generation or export contract.
+The module owns source/profile/identity-state preparation and file
+serialization.  CLI modules render the returned result separately, so terminal
+output is not part of the generation or export contract.  CSV sources carry a
+persisted, unique source scope: an uninitialized read-only preview reports that
+scope confirmation is required, and the first explicitly approved export
+allocates the scope and commits it with the source assignments and the output
+as one recoverable pair.
 """
 
 from __future__ import annotations
@@ -17,16 +21,17 @@ from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
-from .generation import PrincipalPartGenerationResult, generate_principal_part_study_cards
+from .generation import LearningObjectGenerationResult, generate_learning_object_notes
 from .manifest import (
     CsvIdentityManifest,
     ManifestReviewItem,
+    allocate_source_scope,
     reconcile_csv_manifest,
 )
-from .notes import CSV_EXPORT_FIELD_NAMES, GENERATED_NOTE_FIELD_NAMES, GeneratedNote
+from .notes import CSV_EXPORT_FIELD_NAMES, GENERATED_NOTE_FIELD_NAMES, TAGS_CSV_COLUMN, GeneratedNote
 from .profile import DeckProfile
 from .profile_setup import encode_unsafe_controls
-from .sources import read_source_records
+from .sources import CanonicalSourceRecord, read_source_records
 
 
 class PrincipalPartExportError(ValueError):
@@ -39,11 +44,14 @@ class PrincipalPartExportResult:
 
     source_path: Path
     profile: DeckProfile
-    generation: PrincipalPartGenerationResult
+    generation: LearningObjectGenerationResult
     profile_path: Path | None = None
     manifest_path: Path | None = None
     manifest_reviews: tuple[ManifestReviewItem, ...] = ()
     candidate_manifest: CsvIdentityManifest | None = None
+    loaded_manifest: CsvIdentityManifest | None = None
+    source_scope: str | None = None
+    scope_pending: bool = False
 
     @property
     def generated_count(self) -> int:
@@ -65,6 +73,7 @@ def prepare_principal_part_export(
     *,
     profile_path: str | Path | None = None,
     manifest_path: str | Path | None = None,
+    approve_new_scope: bool = False,
     approved_reuse: Mapping[int, str] | None = None,
     approved_allocations: Mapping[int, str | None] | Iterable[int] | None = None,
     approved_removals: Iterable[str] | None = None,
@@ -75,48 +84,52 @@ def prepare_principal_part_export(
     profile_file = None if profile_path is None else Path(profile_path)
     manifest_file = None if manifest_path is None else Path(manifest_path)
 
-    if profile.source_identity.strategy == "manifest":
+    strategy = profile.source_identity.strategy
+    if strategy == "manifest":
         if source.suffix.lower() != ".csv":
             raise PrincipalPartExportError("manifest source identity is supported only for CSV input")
         manifest_file = manifest_file or Path(f"{source}.latinitas.json")
         _reject_input_aliases(source, profile_file, manifest_file)
-        records = read_source_records(source)
-        saved_manifest = _load_manifest(manifest_file)
-        reconciliation = reconcile_csv_manifest(
-            records,
-            saved_manifest,
+        return _prepare_scoped_csv(
+            source,
+            profile,
+            profile_file=profile_file,
+            state_file=manifest_file,
+            reconcile_rows=True,
+            approve_new_scope=approve_new_scope,
             approved_reuse=approved_reuse,
             approved_allocations=approved_allocations,
             approved_removals=approved_removals,
         )
-        assignments = reconciliation.identities_by_row
-        assigned_rows = tuple(sorted(assignments))
-        assigned_records = tuple(records[index] for index in assigned_rows)
-        identities = tuple(assignments[index] for index in assigned_rows)
-        generation = generate_principal_part_study_cards(
-            assigned_records,
-            profile,
-            manifest_identities=identities,
-        )
-        return PrincipalPartExportResult(
-            source_path=source,
-            profile=profile,
-            generation=generation,
-            profile_path=profile_file,
-            manifest_path=manifest_file,
-            manifest_reviews=reconciliation.reviews,
-            candidate_manifest=reconciliation.manifest,
-        )
 
     _reject_input_aliases(source, profile_file, manifest_file)
-    if manifest_file is not None or approved_reuse or approved_allocations or approved_removals:
+    uses_csv_state = source.suffix.lower() == ".csv" and strategy == "source_id_field"
+    if not uses_csv_state and (
+        manifest_file is not None or approve_new_scope or approved_reuse or approved_allocations or approved_removals
+    ):
         raise PrincipalPartExportError(
-            "manifest approvals are valid only for a profile using the manifest source-identity strategy"
+            "identity state and approvals are valid only for a CSV source using the manifest "
+            "or explicit source-ID identity strategy"
+        )
+    if uses_csv_state:
+        if approved_reuse or approved_allocations or approved_removals:
+            raise PrincipalPartExportError(
+                "Row approvals are manifest identity review options; they are not valid for a CSV source "
+                "using the explicit source-ID identity strategy."
+            )
+        manifest_file = manifest_file or Path(f"{source}.latinitas.json")
+        return _prepare_scoped_csv(
+            source,
+            profile,
+            profile_file=profile_file,
+            state_file=manifest_file,
+            reconcile_rows=False,
+            approve_new_scope=approve_new_scope,
         )
 
-    source_id_field = profile.source_identity.field if profile.source_identity.strategy == "source_id_field" else None
+    source_id_field = profile.source_identity.field if strategy == "source_id_field" else None
     records = read_source_records(source, source_id_field=source_id_field)
-    generation = generate_principal_part_study_cards(records, profile)
+    generation = generate_learning_object_notes(records, profile)
     return PrincipalPartExportResult(
         source_path=source,
         profile=profile,
@@ -125,9 +138,152 @@ def prepare_principal_part_export(
     )
 
 
+def _prepare_scoped_csv(
+    source: Path,
+    profile: DeckProfile,
+    *,
+    profile_file: Path | None,
+    state_file: Path,
+    reconcile_rows: bool,
+    approve_new_scope: bool,
+    approved_reuse: Mapping[int, str] | None = None,
+    approved_allocations: Mapping[int, str | None] | Iterable[int] | None = None,
+    approved_removals: Iterable[str] | None = None,
+) -> PrincipalPartExportResult:
+    """Prepare one CSV source under a persisted, unique identity scope."""
+
+    identity_field = profile.source_identity.field if profile.source_identity.strategy == "source_id_field" else None
+    records = read_source_records(source, source_id_field=identity_field)
+    saved_state = _load_identity_state(state_file)
+
+    if saved_state is None or not saved_state.is_scoped:
+        if not approve_new_scope:
+            if approved_reuse or approved_allocations or approved_removals:
+                raise PrincipalPartExportError(
+                    "Row approvals require a committed source scope; approve the scope first with --approve-scope."
+                )
+            return _scope_pending_result(
+                source,
+                profile,
+                profile_file=profile_file,
+                state_file=state_file,
+                legacy_state=saved_state,
+            )
+        scope = allocate_source_scope()
+        if saved_state is None:
+            base_state = CsvIdentityManifest.scoped(_record_columns(records), scope)
+        else:
+            base_state = saved_state.with_scope(scope)
+    else:
+        scope = saved_state.source_scope
+        base_state = saved_state
+
+    if reconcile_rows:
+        reconciliation = reconcile_csv_manifest(
+            records,
+            base_state,
+            source_scope=scope,
+            approved_reuse=approved_reuse,
+            approved_allocations=approved_allocations,
+            approved_removals=approved_removals,
+        )
+        assignments = reconciliation.identities_by_row
+        assigned_rows = tuple(sorted(assignments))
+        assigned_records = tuple(records[index] for index in assigned_rows)
+        identities = tuple(assignments[index] for index in assigned_rows)
+        generation = generate_learning_object_notes(
+            assigned_records,
+            profile,
+            manifest_identities=identities,
+            source_scope=scope,
+        )
+        return PrincipalPartExportResult(
+            source_path=source,
+            profile=profile,
+            generation=generation,
+            profile_path=profile_file,
+            manifest_path=state_file,
+            manifest_reviews=reconciliation.reviews,
+            candidate_manifest=reconciliation.manifest,
+            loaded_manifest=saved_state,
+            source_scope=scope,
+        )
+
+    generation = generate_learning_object_notes(records, profile, source_scope=scope)
+    return PrincipalPartExportResult(
+        source_path=source,
+        profile=profile,
+        generation=generation,
+        profile_path=profile_file,
+        manifest_path=state_file,
+        manifest_reviews=(),
+        candidate_manifest=base_state,
+        loaded_manifest=saved_state,
+        source_scope=scope,
+    )
+
+
+def _scope_pending_result(
+    source: Path,
+    profile: DeckProfile,
+    *,
+    profile_file: Path | None,
+    state_file: Path,
+    legacy_state: CsvIdentityManifest | None,
+) -> PrincipalPartExportResult:
+    if legacy_state is None:
+        message = (
+            "No source scope is committed for this CSV source yet. A read-only preview does not "
+            "mint stable identities; the first explicitly approved export allocates and commits "
+            "a unique source scope together with the output."
+        )
+    else:
+        message = (
+            "The existing identity state is a legacy unscoped manifest. Its IDs must not be "
+            "silently reinterpreted: recover or review the state, or explicitly approve a fresh "
+            "start that allocates a new unique source scope."
+        )
+    return PrincipalPartExportResult(
+        source_path=source,
+        profile=profile,
+        generation=LearningObjectGenerationResult(notes=(), skips=()),
+        profile_path=profile_file,
+        manifest_path=state_file,
+        manifest_reviews=(
+            ManifestReviewItem(
+                kind="scope_confirmation",
+                row_index=None,
+                source_identity=None,
+                candidate_identities=(),
+                message=message,
+            ),
+        ),
+        candidate_manifest=None,
+        source_scope=None,
+        scope_pending=True,
+    )
+
+
+def _load_identity_state(path: Path) -> CsvIdentityManifest | None:
+    if not path.exists():
+        return None
+    try:
+        return CsvIdentityManifest.load(path)
+    except (OSError, ValueError) as error:
+        raise PrincipalPartExportError(f"Could not read identity state '{path.name}'.") from error
+
+
+def _record_columns(records: tuple[CanonicalSourceRecord, ...]) -> tuple[str, ...]:
+    if not records:
+        raise PrincipalPartExportError("Cannot bootstrap a source scope for an empty CSV source.")
+    return tuple(records[0].fields)
+
+
 def deterministic_csv_bytes(result: PrincipalPartExportResult) -> bytes:
     """Serialize a complete typed result as deterministic UTF-8 Anki text import."""
 
+    if result.scope_pending:
+        raise PrincipalPartExportError("Cannot export before an explicitly approved source scope is committed.")
     if result.manifest_reviews:
         raise PrincipalPartExportError(
             "Cannot export before explicit identity review resolves all manifest review items."
@@ -149,7 +305,7 @@ def deterministic_csv_bytes(result: PrincipalPartExportResult) -> bytes:
     output.write("#html:true\n")
     output.write(f"#notetype:{result.profile.generated_note_type}\n")
     output.write(f"#deck:{result.profile.target_deck}\n")
-    output.write("#tags column:4\n")
+    output.write(f"#tags column:{TAGS_CSV_COLUMN}\n")
     output.write(f"#columns:{','.join(CSV_EXPORT_FIELD_NAMES)}\n")
     writer = csv.writer(output, delimiter=",", lineterminator="\n", quoting=csv.QUOTE_MINIMAL)
     for note in notes:
@@ -195,6 +351,7 @@ def write_principal_part_csv(
 
     payload = deterministic_csv_bytes(result)
     manifest_destination = result.manifest_path if result.candidate_manifest is not None else None
+    _reject_changed_identity_state(result, manifest_destination)
     staged_output: Path | None = None
     staged_manifest: Path | None = None
     output_backup: Path | None = None
@@ -257,13 +414,44 @@ def write_principal_part_csv(
             _remove_temporary_path(manifest_backup)
 
 
-def _load_manifest(path: Path) -> CsvIdentityManifest | None:
-    if not path.exists():
-        return None
-    try:
-        return CsvIdentityManifest.load(path)
-    except (OSError, ValueError) as error:
-        raise PrincipalPartExportError(f"Could not read identity manifest '{path.name}'.") from error
+def _reject_changed_identity_state(
+    result: PrincipalPartExportResult,
+    manifest_destination: Path | None,
+) -> None:
+    """Abort before any destructive move when the identity state changed since prepare.
+
+    The check blocks a concurrent committer from silently orphaning an already
+    exported scope: a valid-but-different state, or the loss of a state that
+    prepare loaded, must be re-prepared and reviewed rather than overwritten.
+    Unparseable prior bytes keep the ordinary backup/restore semantics.
+    """
+
+    if manifest_destination is None or result.candidate_manifest is None:
+        return
+    if manifest_destination.exists():
+        if result.loaded_manifest is None:
+            try:
+                current = CsvIdentityManifest.load(manifest_destination)
+            except (OSError, ValueError):
+                return
+            raise PrincipalPartExportError(
+                "The identity state changed since preparation: another export committed this source. "
+                "Re-run the preview and export again before writing."
+            )
+        try:
+            current = CsvIdentityManifest.load(manifest_destination)
+        except (OSError, ValueError):
+            return
+        if current != result.loaded_manifest:
+            raise PrincipalPartExportError(
+                "The identity state changed since preparation: another export committed this source. "
+                "Re-run the preview and export again before writing."
+            )
+    elif result.loaded_manifest is not None:
+        raise PrincipalPartExportError(
+            "The identity state changed since preparation: the persisted source scope disappeared. "
+            "Recover the identity state or explicitly approve a fresh start before writing."
+        )
 
 
 def _reject_input_aliases(source: Path, profile: Path | None, manifest: Path | None) -> None:
@@ -297,7 +485,7 @@ def _validate_regular_file_destination(label: str, destination: Path) -> None:
 def _note_values(note: GeneratedNote) -> tuple[str, ...]:
     fields = dict(note.to_anki_fields())
     if tuple(fields) != GENERATED_NOTE_FIELD_NAMES:
-        raise PrincipalPartExportError("Generated note fields do not match the stable export field order.")
+        raise PrincipalPartExportError("Generated note fields do not match the authoritative note schema order.")
     return tuple(_export_field_value(name, fields[name]) for name in CSV_EXPORT_FIELD_NAMES)
 
 
@@ -310,12 +498,13 @@ _HTML_ESCAPED_METADATA_FIELDS = frozenset(
     {
         "LatinitasID",
         "Source ID",
+        "Source Scope",
         "Source Kind",
         "Source Location",
         "Source Path",
-        "Recipe",
-        "Exercise Key",
-        "Recipe Version",
+        "Note Schema",
+        "Generator",
+        "Profile",
     }
 )
 

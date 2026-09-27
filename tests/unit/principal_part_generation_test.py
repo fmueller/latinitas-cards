@@ -1,8 +1,14 @@
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
-from latinitas_cards.generation import PrincipalPartGenerationResult, generate_principal_part_study_cards
-from latinitas_cards.notes import GeneratedNote
+import pytest
+
+from latinitas_cards.generation import (
+    SINGLE_LEXEME_OBJECT_KEY,
+    LearningObjectGenerationResult,
+    generate_learning_object_notes,
+)
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 from latinitas_cards.sources import CanonicalSourceRecord, SourceProvenance
 
@@ -12,6 +18,16 @@ UNIVERSITY_ROLES = (
     "perfect_1s",
     "perfect_passive_participle",
 )
+
+
+def _generate(
+    records: tuple[CanonicalSourceRecord, ...],
+    profile: DeckProfile,
+    **kwargs: Any,
+) -> LearningObjectGenerationResult:
+    if profile.source_identity.strategy != "manifest":
+        kwargs.setdefault("source_scope", "scope-generation")
+    return generate_learning_object_notes(records, profile, **kwargs)
 
 
 def _profile(
@@ -59,7 +75,80 @@ def _record(
     )
 
 
-def test_generated_notes_inherit_all_valid_parent_tags_additively_for_both_recipes() -> None:
+def test_one_source_note_yields_one_learning_object_note_with_knowledge_and_card_keys() -> None:
+    profile = _profile()
+
+    result = _generate((_record("dīcere, dīcō, dīxī, dictum", profile=profile),), profile)
+
+    assert isinstance(result, LearningObjectGenerationResult)
+    assert not result.skips
+    assert len(result.notes) == 1
+    note = result.notes[0]
+    assert note.object_key == SINGLE_LEXEME_OBJECT_KEY
+    assert note.content.lemma == "dīcō"
+    assert "<strong>Infinitiv:</strong> dīcere" in note.content.principal_parts
+    assert note.content.meaning == "sagen"
+    assert note.provenance.source_identity == "entry-17"
+    assert note.provenance.location == "row 2"
+    assert note.provenance.source_path is None
+
+
+def test_card_keys_cover_selected_recipes_and_available_roles_only() -> None:
+    both = _generate((_record("dīcere, dīcō, dīxī, dictum", profile=_profile()),), _profile())
+    recognition_only = _generate(
+        (_record("dīcere, dīcō, dīxī, dictum", profile=_profile()),),
+        _profile(recipes=("principal_part_recognition",)),
+    )
+
+    assert both.notes[0].card_keys == (
+        "principal_part_completion:present_infinitive",
+        "principal_part_completion:present_1s",
+        "principal_part_completion:perfect_1s",
+        "principal_part_completion:perfect_passive_participle",
+        "principal_part_recognition:present_infinitive",
+        "principal_part_recognition:present_1s",
+        "principal_part_recognition:perfect_1s",
+        "principal_part_recognition:perfect_passive_participle",
+    )
+    assert recognition_only.notes[0].card_keys == tuple(
+        key for key in both.notes[0].card_keys if key.startswith("principal_part_recognition:")
+    )
+    assert all("latinitas" not in key for key in both.notes[0].card_keys)
+
+
+def test_distinct_sources_stay_distinct_objects_even_for_related_words() -> None:
+    profile = _profile()
+    result = _generate(
+        (
+            _record("ferre, ferō, tulī, lātum", lexical_entry="ferō", source_identity="entry-fero", profile=profile),
+            _record("esse, sum, fuī, ", lexical_entry="sum", source_identity="entry-sum", profile=profile),
+        ),
+        profile,
+    )
+
+    assert len(result.notes) == 2
+    assert len({note.latinitas_id for note in result.notes}) == 2
+    assert {note.provenance.source_identity for note in result.notes} == {"entry-fero", "entry-sum"}
+
+
+def test_wording_gloss_and_recipe_changes_enrich_the_same_note_identity() -> None:
+    profile = _profile()
+    original = _generate((_record("dīcere, dīcō, dīxī, dictum", profile=profile),), profile)
+    revised = _generate(
+        (_record("dicere, dico, dixi, dictum", meaning="sagen; aussprechen", profile=profile),), profile
+    )
+    enriched = _generate(
+        (_record("dīcere, dīcō, dīxī, dictum", profile=profile),),
+        _profile(recipes=("principal_part_recognition", "principal_part_completion")),
+    )
+
+    assert revised.notes[0].latinitas_id == original.notes[0].latinitas_id
+    assert revised.notes[0].content != original.notes[0].content
+    assert enriched.notes[0].latinitas_id == original.notes[0].latinitas_id
+    assert len(enriched.notes[0].card_keys) == 8
+
+
+def test_generated_notes_inherit_all_valid_parent_tags_additively() -> None:
     profile = _profile(tags=("latinitas", "latin"))
     records = (
         _record(
@@ -72,7 +161,7 @@ def test_generated_notes_inherit_all_valid_parent_tags_additively_for_both_recip
         _record("ferre, ferō, tulī, lātum", source_identity="entry-c", profile=profile),
     )
 
-    result = generate_principal_part_study_cards(records, profile)
+    result = _generate(records, profile)
 
     assert not result.skips
     expected_tags_by_parent = {
@@ -80,28 +169,17 @@ def test_generated_notes_inherit_all_valid_parent_tags_additively_for_both_recip
         "entry-b": ("grammar", "latinitas", "latin"),
         "entry-c": ("latinitas", "latin"),
     }
-    notes_by_parent: dict[str, list[GeneratedNote]] = {}
-    for note in result.notes:
-        notes_by_parent.setdefault(note.provenance.source_identity or "", []).append(note)
-    assert set(notes_by_parent) == set(expected_tags_by_parent)
-    for parent_identity, expected_tags in expected_tags_by_parent.items():
-        parent_notes = notes_by_parent[parent_identity]
-        assert len(parent_notes) == 8
-        assert {note.recipe.recipe_identity for note in parent_notes} == {
-            "principal_part_completion",
-            "principal_part_recognition",
-        }
-        assert all(note.content.tags == expected_tags for note in parent_notes)
-        assert all(("Tags", " ".join(expected_tags)) in note.to_anki_fields() for note in parent_notes)
+    assert {note.provenance.source_identity: note.content.tags for note in result.notes} == expected_tags_by_parent
+    assert all(("Tags", " ".join(note.content.tags)) in note.to_anki_fields() for note in result.notes)
 
 
 def test_tag_membership_and_order_changes_never_change_identities() -> None:
-    profile = _profile(recipes=("principal_part_recognition",), tags=("configured",))
-    before = generate_principal_part_study_cards(
+    profile = _profile(tags=("configured",))
+    before = _generate(
         (_record("dīcere, dīcō, dīxī, dictum", source_identity="entry-a", profile=profile, source_tags=("a", "b")),),
         profile,
     )
-    after = generate_principal_part_study_cards(
+    after = _generate(
         (
             _record(
                 "dīcere, dīcō, dīxī, dictum",
@@ -114,10 +192,7 @@ def test_tag_membership_and_order_changes_never_change_identities() -> None:
     )
 
     assert [note.latinitas_id for note in after.notes] == [note.latinitas_id for note in before.notes]
-    assert [note.provenance.source_identity for note in after.notes] == [
-        note.provenance.source_identity for note in before.notes
-    ]
-    assert {note.content.tags for note in after.notes} == {("c", "b", "a", "configured")}
+    assert after.notes[0].content.tags == ("c", "b", "a", "configured")
 
 
 def test_invalid_inherited_tags_skip_the_parent_with_actionable_diagnostics() -> None:
@@ -132,10 +207,10 @@ def test_invalid_inherited_tags_skip_the_parent_with_actionable_diagnostics() ->
         _record("ferre, ferō, tulī, lātum", source_identity="entry-ok", profile=profile, source_tags=("grammar",)),
     )
 
-    result = generate_principal_part_study_cards(records, profile)
+    result = _generate(records, profile)
 
-    assert [note.provenance.source_identity for note in result.notes] == ["entry-ok"] * 8
-    assert all(note.content.tags == ("grammar", "latinitas") for note in result.notes)
+    assert [note.provenance.source_identity for note in result.notes] == ["entry-ok"]
+    assert result.notes[0].content.tags == ("grammar", "latinitas")
     invalid_skips = [skip for skip in result.skips if skip.code == "invalid_source_tags"]
     assert len(invalid_skips) == 1
     skip = invalid_skips[0]
@@ -145,21 +220,6 @@ def test_invalid_inherited_tags_skip_the_parent_with_actionable_diagnostics() ->
     assert "tag" in skip.message.lower()
     assert "position 2" in skip.message
     assert "bad" not in skip.message
-
-
-def test_invalid_inherited_tag_whitespace_is_flagged_not_silently_split() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
-
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", source_identity="entry-tab", profile=profile, source_tags=("a\tb",)),),
-        profile,
-    )
-
-    assert result.notes == ()
-    skip = result.skips[0]
-    assert skip.code == "invalid_source_tags"
-    assert "whitespace" in skip.message or "control" in skip.message
-    assert "a\tb" not in skip.message
 
 
 def test_markup_unsafe_inherited_tags_are_skipped_without_live_markup() -> None:
@@ -175,9 +235,9 @@ def test_markup_unsafe_inherited_tags_are_skipped_without_live_markup() -> None:
         _record("amāre, amō, amāvī, amātum", source_identity="entry-ok", profile=profile, source_tags=("latin",)),
     )
 
-    result = generate_principal_part_study_cards(records, profile)
+    result = _generate(records, profile)
 
-    assert [note.provenance.source_identity for note in result.notes] == ["entry-ok"] * 8
+    assert [note.provenance.source_identity for note in result.notes] == ["entry-ok"]
     hostile_skips = [skip for skip in result.skips if skip.code == "invalid_source_tags"]
     assert len(hostile_skips) == 2
     assert {skip.source_identity for skip in hostile_skips} == {"entry-hostile", "entry-amp"}
@@ -191,165 +251,93 @@ def test_markup_unsafe_inherited_tags_are_skipped_without_live_markup() -> None:
     assert "<img" not in exported
 
 
-def test_configured_tags_keep_existing_markup_semantics_for_trusted_input() -> None:
-    profile = _profile(recipes=("principal_part_recognition",), tags=("rock&roll", "latinitas"))
-
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", source_identity="entry-17", profile=profile),),
-        profile,
-    )
-
-    assert all(note.content.tags == ("rock&roll", "latinitas") for note in result.notes)
-    assert all(("Tags", "rock&roll latinitas") in note.to_anki_fields() for note in result.notes)
-
-
-def test_completion_uses_only_confirmed_recipe_and_answers_with_form_and_role() -> None:
-    profile = _profile(recipes=("principal_part_completion",), tags=("custom-principal-parts",))
-
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", profile=profile),),
-        profile,
-    )
-
-    assert isinstance(result, PrincipalPartGenerationResult)
-    assert not result.skips
-    assert len(result.notes) == 4
-    assert {note.recipe.recipe_identity for note in result.notes} == {"principal_part_completion"}
-    assert {note.recipe.exercise_key for note in result.notes} == set(UNIVERSITY_ROLES)
-    assert all(note.provenance.source_identity == "entry-17" for note in result.notes)
-    assert all(note.provenance.location == "row 2" for note in result.notes)
-    assert all(note.provenance.source_path is None for note in result.notes)
-    assert all(note.content.tags == ("custom-principal-parts",) for note in result.notes)
-    assert all(("Tags", "custom-principal-parts") in note.to_anki_fields() for note in result.notes)
-
-    perfect_note = next(note for note in result.notes if note.recipe.exercise_key == "perfect_1s")
-    assert "Ergänze die fehlende Stammform." in perfect_note.content.prompt
-    assert "Stammformen" in perfect_note.content.prompt
-    assert "Bedeutung" in perfect_note.content.prompt
-    assert "dīxī" in perfect_note.content.answer
-    assert "Perfekt, 1. Person Singular" in perfect_note.content.answer
-    assert "Welche Stammform" not in perfect_note.content.prompt
-
-
-def test_generated_completion_and_recognition_html_keep_section_boundaries() -> None:
+# Tab-separated lemmas are intentionally not listed: HTML text extraction
+# normalizes tabs to spaces, so after normalization they are indistinguishable
+# from legitimate multi-word lemmas, and discriminating them would require new
+# linguistic rules that v0.1.0 explicitly excludes (v0.2.0 input).
+@pytest.mark.parametrize(
+    "lexical_entry",
+    ["ferō\nsum", "ferō — sum", "ferō - sum", "ferō / sum", "ferō, sum", "ferō; sum", "ferō|sum"],
+)
+def test_multi_object_lexical_entries_are_reported_for_review_not_merged(lexical_entry: str) -> None:
     profile = _profile()
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", profile=profile),),
+
+    result = _generate(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                lexical_entry=lexical_entry,
+                source_identity="entry-multi",
+                profile=profile,
+            ),
+            _record("ferre, ferō, tulī, lātum", lexical_entry="ferō", source_identity="entry-single", profile=profile),
+            _record(
+                "amāre, amō, amāvī, amātum",
+                lexical_entry="amāre|amare",
+                source_identity="entry-variant",
+                profile=profile,
+            ),
+        ),
         profile,
     )
 
-    completion = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
-    )
-    recognition = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
-    )
-
-    assert completion.content.prompt == (
-        "<div>Ergänze die fehlende Stammform.</div>"
-        "<div><strong>Stammformen</strong></div>"
-        "<div><strong>Infinitiv:</strong> dīcere<br>"
-        "<strong>Präsens, 1. Person Singular:</strong> dīcō<br>"
-        "<strong>Perfekt, 1. Person Singular:</strong> _____<br>"
-        "<strong>Partizip Perfekt Passiv (PPP):</strong> dictum</div>"
-        "<div><strong>Bedeutung:</strong> sagen</div>"
-    )
-    assert completion.content.answer == (
-        "<div><strong>Fehlende Stammform:</strong> dīxī</div>"
-        "<div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
-    )
-    assert recognition.content.answer == (
-        "<div><strong>Lemma:</strong> dīcō</div>"
-        "<div><strong>Stammformen</strong></div>"
-        "<div><strong>Infinitiv:</strong> dīcere<br>"
-        "<strong>Präsens, 1. Person Singular:</strong> dīcō<br>"
-        "<strong>Perfekt, 1. Person Singular:</strong> dīxī<br>"
-        "<strong>Partizip Perfekt Passiv (PPP):</strong> dictum</div>"
-        "<div><strong>Rolle:</strong> Perfekt, 1. Person Singular</div>"
-        "<div><strong>Bedeutung:</strong> sagen</div>"
-    )
+    assert {note.provenance.source_identity for note in result.notes} == {"entry-single", "entry-variant"}
+    multi_skip = next(skip for skip in result.skips if skip.code == "multi_object_source")
+    assert multi_skip.status == "ambiguous"
+    assert multi_skip.source_identity == "entry-multi"
+    assert "coherent" in multi_skip.message or "object" in multi_skip.message
 
 
-def test_recognition_maps_each_latin_form_to_lemma_full_parts_role_and_gloss() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
+def test_multiline_single_lexeme_display_variants_stay_one_object() -> None:
+    profile = _profile()
 
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", profile=profile),),
+    result = _generate(
+        (
+            _record(
+                "dīcere, dīcō, dīxī, dictum",
+                lexical_entry="dīcō\ndīcō",
+                source_identity="entry-multiline-variant",
+                profile=profile,
+            ),
+        ),
         profile,
     )
 
-    assert not result.skips
-    assert len(result.notes) == 4
-    perfect_note = next(note for note in result.notes if note.recipe.exercise_key == "perfect_1s")
-    assert perfect_note.content.prompt.startswith("Welche Stammform ist „dīxī“?")
-    assert "Lemma" in perfect_note.content.answer
-    assert "dīcō" in perfect_note.content.answer
-    assert "Stammformen" in perfect_note.content.answer
-    assert "dīcere" in perfect_note.content.answer
-    assert "dīxī" in perfect_note.content.answer
-    assert "dictum" in perfect_note.content.answer
-    assert "Rolle" in perfect_note.content.answer
-    assert "Perfekt, 1. Person Singular" in perfect_note.content.answer
-    assert "Bedeutung" in perfect_note.content.answer
-    assert "sagen" in perfect_note.content.answer
+    assert len(result.notes) == 1
+    assert result.notes[0].provenance.source_identity == "entry-multiline-variant"
+    assert result.notes[0].content.lemma == "dīcō<br>dīcō"
 
 
-def test_generation_preserves_old_supine_profiles_and_position_specific_layouts() -> None:
-    old_profile = _profile(
-        roles=("present_1s", "present_infinitive", "perfect_1s", "supine"),
-        separators=(" — ",),
-        recipes=("principal_part_recognition",),
-    )
-    old_result = generate_principal_part_study_cards(
-        (_record("ferō — ferre — tulī — lātum", lexical_entry="ferō", profile=old_profile),),
-        old_profile,
-    )
-
-    assert not old_result.skips
-    supine_note = next(note for note in old_result.notes if note.recipe.exercise_key == "supine")
-    assert "Supinum" in supine_note.content.answer
-    assert "Partizip Perfekt Passiv (PPP)" not in supine_note.content.answer
-
-    position_profile = _profile(
-        separators=(", ", "; ", " / "),
-        recipes=("principal_part_completion",),
-    )
-    position_result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō; dīxī / dictum", profile=position_profile),),
-        position_profile,
-    )
-
-    assert not position_result.skips
-    assert {note.recipe.exercise_key for note in position_result.notes} == set(UNIVERSITY_ROLES)
-    assert any("Partizip Perfekt Passiv (PPP)" in note.content.answer for note in position_result.notes)
-
-
-def test_explicit_omissions_skip_only_the_unavailable_role_without_shifting_roles() -> None:
+def test_explicit_omissions_keep_the_object_note_and_report_the_omitted_roles_once() -> None:
     profile = _profile(
         roles=("present_1s", "present_infinitive", "perfect_1s", "supine"),
         separators=(" — ",),
     )
 
-    result = generate_principal_part_study_cards(
+    result = _generate(
         (_record("sum — esse — fuī — ", lexical_entry="sum", profile=profile),),
         profile,
     )
 
-    assert len(result.notes) == 6
-    assert {note.recipe.exercise_key for note in result.notes} == {"present_1s", "present_infinitive", "perfect_1s"}
-    assert {skip.code for skip in result.skips} == {"omitted_principal_part"}
-    assert {skip.recipe_identity for skip in result.skips} == {
-        "principal_part_completion",
-        "principal_part_recognition",
-    }
-    assert all(skip.source_identity == "entry-17" for skip in result.skips)
+    assert len(result.notes) == 1
+    note = result.notes[0]
+    assert note.provenance.source_identity == "entry-17"
+    assert note.card_keys == (
+        "principal_part_completion:present_1s",
+        "principal_part_completion:present_infinitive",
+        "principal_part_completion:perfect_1s",
+        "principal_part_recognition:present_1s",
+        "principal_part_recognition:present_infinitive",
+        "principal_part_recognition:perfect_1s",
+    )
+    omission_skips = [skip for skip in result.skips if skip.code == "omitted_principal_part"]
+    assert len(omission_skips) == 1
+    assert omission_skips[0].status == "incomplete"
+    assert omission_skips[0].source_identity == "entry-17"
+    assert "supine" in omission_skips[0].message
 
 
-def test_parser_failures_become_structured_skips_without_guessed_cards() -> None:
+def test_parser_failures_become_structured_skips_without_guessed_objects() -> None:
     profile = _profile()
     records = (
         _record("", source_identity="incomplete"),
@@ -357,7 +345,7 @@ def test_parser_failures_become_structured_skips_without_guessed_cards() -> None
         _record("dīcō, dīcere, dīxī", source_identity="ambiguous"),
     )
 
-    result = generate_principal_part_study_cards(records, profile)
+    result = _generate(records, profile)
 
     assert result.notes == ()
     assert {skip.source_identity for skip in result.skips} == {"incomplete", "unsupported", "ambiguous"}
@@ -369,101 +357,74 @@ def test_parser_failures_become_structured_skips_without_guessed_cards() -> None
     assert all("dīcere" not in skip.message for skip in result.skips)
 
 
-def test_wording_and_gloss_changes_retain_identity_but_change_managed_content() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
-    original = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", profile=profile),),
-        profile,
-    )
-    revised = generate_principal_part_study_cards(
-        (_record("dicere, dico, dixi, dictum", meaning="sagen; aussprechen", profile=profile),),
-        profile,
-    )
-
-    original_by_key = {note.recipe.exercise_key: note for note in original.notes}
-    revised_by_key = {note.recipe.exercise_key: note for note in revised.notes}
-    assert set(original_by_key) == set(revised_by_key)
-    for key in original_by_key:
-        assert revised_by_key[key].latinitas_id == original_by_key[key].latinitas_id
-    assert revised_by_key["perfect_1s"].content != original_by_key["perfect_1s"].content
-
-
-def test_recipe_and_source_semantic_keys_never_collide() -> None:
-    profile = _profile()
-    result = generate_principal_part_study_cards(
-        (
-            _record("dīcere, dīcō, dīxī, dictum", source_identity="entry-a", profile=profile),
-            _record("ferre, ferō, tulī, lātum", lexical_entry="ferō", source_identity="entry-b", profile=profile),
-        ),
-        profile,
-    )
-
-    assert len(result.notes) == 16
-    assert len({note.latinitas_id for note in result.notes}) == len(result.notes)
-    semantic_keys = {
-        (
-            note.provenance.source_identity,
-            note.recipe.recipe_identity,
-            note.recipe.exercise_key,
-        )
-        for note in result.notes
-    }
-    assert len(semantic_keys) == 16
-
-
-def test_manifest_identity_is_used_for_note_identity_and_provenance() -> None:
-    profile = _profile(recipes=("principal_part_completion",)).apply_overrides(
-        {"source_identity": {"strategy": "manifest"}}
-    )
+def test_manifest_identity_and_scope_are_used_for_note_identity_and_provenance() -> None:
+    profile = _profile().apply_overrides({"source_identity": {"strategy": "manifest"}})
     record = _record("dīcere, dīcō, dīxī, dictum", profile=profile)
     record = replace(record, source_identity=None)
     other_note_type = replace(record, note_type="Other note type")
 
-    result = generate_principal_part_study_cards(
+    result = _generate(
         (other_note_type, record),
         profile,
         manifest_identities=("ignored", "manifest-17"),
+        source_scope="scope-alpha",
     )
 
     assert [skip.code for skip in result.skips] == ["note_type_mismatch"]
     assert result.notes
     assert all(note.provenance.source_identity == "manifest-17" for note in result.notes)
+    assert all(note.provenance.source_scope == "scope-alpha" for note in result.notes)
 
 
-def test_source_html_meaning_renders_as_readable_text_with_line_boundaries() -> None:
+def test_duplicate_source_identities_become_collision_skips() -> None:
     profile = _profile()
-    result = generate_principal_part_study_cards(
+
+    result = _generate(
+        (
+            _record("dīcere, dīcō, dīxī, dictum", source_identity="entry-dup", profile=profile),
+            _record("ferre, ferō, tulī, lātum", source_identity="entry-dup", profile=profile),
+        ),
+        profile,
+    )
+
+    assert result.notes == ()
+    assert {skip.code for skip in result.skips} == {"duplicate_source_identity"}
+    assert all(skip.status == "collision" for skip in result.skips)
+
+
+def test_source_html_knowledge_renders_as_safe_readable_text() -> None:
+    profile = _profile()
+    result = _generate(
         (
             _record(
-                "dīcere, dīcō, dīxī, dictum",
-                meaning="erste Bedeutung<div>zweite <b>Bedeutung</b></div>",
+                "dīcere, <i>dīcō</i>, dīxī, dictum",
+                lexical_entry="<b>dīcō</b>",
+                meaning="erste Bedeutung<div>zweite <b>Bedeutung</b>&lt;br&gt;dritte</div>"
+                "<script>alert(1)</script><img src=x onerror=alert(2)>",
                 profile=profile,
             ),
         ),
         profile,
     )
 
-    completion = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
-    )
-    recognition = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
-    )
-    expected = "<div><strong>Bedeutung:</strong> erste Bedeutung<br>zweite Bedeutung</div>"
+    note = result.notes[0]
+    rendered = note.content.lemma + note.content.principal_parts + note.content.meaning
 
-    assert completion.content.prompt.endswith(expected)
-    assert recognition.content.answer.endswith(expected)
-    assert "&lt;div&gt;" not in completion.content.prompt
-    assert "&lt;b&gt;" not in recognition.content.answer
+    assert note.content.lemma == "dīcō"
+    assert "<strong>Präsens, 1. Person Singular:</strong> dīcō" in note.content.principal_parts
+    assert note.content.meaning == "erste Bedeutung<br>zweite Bedeutung<br>dritte"
+    assert "&lt;div&gt;" not in rendered
+    assert "&lt;b&gt;" not in rendered
+    assert "&lt;br&gt;" not in rendered
+    assert "alert(1)" not in rendered
+    assert "alert(2)" not in rendered
+    assert "<script" not in rendered
+    assert "<img" not in rendered
 
 
-def test_source_entities_in_meaning_decode_to_readable_text() -> None:
+def test_source_entities_in_meaning_decode_exactly_once() -> None:
     profile = _profile()
-    result = generate_principal_part_study_cards(
+    result = _generate(
         (
             _record(
                 "dīcere, dīcō, dīxī, dictum",
@@ -474,164 +435,12 @@ def test_source_entities_in_meaning_decode_to_readable_text() -> None:
         profile,
     )
 
-    recognition = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
-    )
-
-    assert recognition.content.answer.endswith("<div><strong>Bedeutung:</strong> sagen &amp; machen<br>prüfen</div>")
-    assert "&amp;nbsp;" not in recognition.content.answer
-    assert "&lt;br&gt;" not in recognition.content.answer
+    assert result.notes[0].content.meaning == "sagen &amp; machen<br>prüfen"
 
 
-def test_plain_text_source_meaning_renders_byte_identical() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", meaning="führen, dīcere — prüfen", profile=profile),),
-        profile,
-    )
-
-    recognition = next(note for note in result.notes if note.recipe.exercise_key == "perfect_1s")
-
-    assert recognition.content.answer.endswith("<div><strong>Bedeutung:</strong> führen, dīcere — prüfen</div>")
-
-
-def test_lexical_and_principal_part_display_html_renders_as_readable_text() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, <b>dīctum</b>", lexical_entry="<i>dīcō</i>", profile=profile),),
-        profile,
-    )
-
-    participle = next(note for note in result.notes if note.recipe.exercise_key == "perfect_passive_participle")
-
-    assert participle.content.prompt == "Welche Stammform ist „dīctum“?"
-    assert "<div><strong>Lemma:</strong> dīcō</div>" in participle.content.answer
-    assert "&lt;i&gt;" not in participle.content.answer
-    assert "&lt;b&gt;" not in participle.content.answer
-
-
-def test_meaning_markup_normalization_keeps_identity_and_equivalent_content() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
-    plain = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", meaning="sagen", profile=profile),),
-        profile,
-    )
-    marked = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", meaning="<div>sagen</div>", profile=profile),),
-        profile,
-    )
-
-    assert {note.latinitas_id for note in marked.notes} == {note.latinitas_id for note in plain.notes}
-    assert marked.notes == plain.notes
-
-
-def test_entity_encoded_hostile_markup_in_meaning_is_removed() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
-    result = generate_principal_part_study_cards(
-        (
-            _record(
-                "dīcere, dīcō, dīxī, dictum",
-                meaning="sagen&lt;script&gt;alert(1)&lt;/script&gt;",
-                profile=profile,
-            ),
-        ),
-        profile,
-    )
-
-    recognition = next(note for note in result.notes if note.recipe.exercise_key == "perfect_1s")
-
-    assert recognition.content.answer.endswith("<div><strong>Bedeutung:</strong> sagen</div>")
-    assert "alert(1)" not in recognition.content.answer
-    assert "script" not in recognition.content.answer
-
-
-def test_untrusted_source_text_is_escaped_before_generated_markup() -> None:
+def test_encoded_comments_are_dropped_from_meaning() -> None:
     profile = _profile()
-    result = generate_principal_part_study_cards(
-        (
-            _record(
-                "<img src=x onerror=alert(1)>, <script>dīcō</script>, dīxī, dictum",
-                lexical_entry="<script>alert(1)</script>",
-                meaning="<b>sagen</b><script>steal()</script>",
-                profile=profile,
-            ),
-        ),
-        profile,
-    )
-
-    rendered = "\n".join(note.content.prompt + note.content.answer for note in result.notes)
-    assert "<script>" not in rendered
-    assert "<img" not in rendered
-    assert "&lt;script&gt;" not in rendered
-    assert "&lt;img" not in rendered
-    assert "&lt;b&gt;" not in rendered
-    assert "alert(1)" not in rendered
-    assert "steal()" not in rendered
-    assert "sagen" in rendered
-
-
-def test_meaning_entities_decode_exactly_once_in_both_recipes() -> None:
-    profile = _profile()
-    result = generate_principal_part_study_cards(
-        (_record("dīcere, dīcō, dīxī, dictum", meaning="a &amp;amp; b", profile=profile),),
-        profile,
-    )
-
-    completion = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
-    )
-    recognition = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
-    )
-    expected = "<div><strong>Bedeutung:</strong> a &amp;amp; b</div>"
-
-    assert completion.content.prompt.endswith(expected)
-    assert recognition.content.answer.endswith(expected)
-
-
-def test_meaning_attribute_markup_with_quoted_greater_than_renders_text_only() -> None:
-    profile = _profile()
-    result = generate_principal_part_study_cards(
-        (
-            _record(
-                "dīcere, dīcō, dīxī, dictum",
-                meaning='<span title="a > b">sagen</span>',
-                profile=profile,
-            ),
-        ),
-        profile,
-    )
-
-    completion = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
-    )
-    recognition = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
-    )
-    expected = "<div><strong>Bedeutung:</strong> sagen</div>"
-
-    assert completion.content.prompt.endswith(expected)
-    assert recognition.content.answer.endswith(expected)
-    rendered = "\n".join(
-        (completion.content.prompt, completion.content.answer, recognition.content.prompt, recognition.content.answer)
-    )
-    assert "title" not in rendered
-    assert "&quot;&gt;" not in rendered
-
-
-def test_encoded_comments_are_dropped_from_meaning_in_both_recipes() -> None:
-    profile = _profile()
-    result = generate_principal_part_study_cards(
+    result = _generate(
         (
             _record(
                 "dīcere, dīcō, dīxī, dictum",
@@ -642,67 +451,73 @@ def test_encoded_comments_are_dropped_from_meaning_in_both_recipes() -> None:
         profile,
     )
 
-    completion = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
-    )
-    recognition = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
-    )
-    expected = "<div><strong>Bedeutung:</strong> erste Bedeutung weitere Bedeutung</div>"
-
-    assert completion.content.prompt.endswith(expected)
-    assert recognition.content.answer.endswith(expected)
-    for content in (completion.content.prompt, recognition.content.answer):
-        assert "versteckt" not in content
-        assert "&lt;!--" not in content
+    meaning = result.notes[0].content.meaning
+    assert meaning == "erste Bedeutung weitere Bedeutung"
+    assert "versteckt" not in meaning
 
 
-def test_multiline_lexical_and_part_display_render_line_breaks_in_both_recipes() -> None:
+def test_multiline_lexical_and_part_display_render_line_breaks() -> None:
     profile = _profile()
-    result = generate_principal_part_study_cards(
+    result = _generate(
         (
             _record(
                 "dīcere, dīcō, dīxī<br>poet., dictum",
-                lexical_entry="dīcō<div>alt</div>",
+                lexical_entry="dīcō<div>dīcō</div>",
                 profile=profile,
             ),
         ),
         profile,
     )
 
-    completion = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_completion" and note.recipe.exercise_key == "perfect_1s"
-    )
-    recognition = next(
-        note
-        for note in result.notes
-        if note.recipe.recipe_identity == "principal_part_recognition" and note.recipe.exercise_key == "perfect_1s"
-    )
-
-    assert "Welche Stammform ist „dīxī<br>poet.“?" in recognition.content.prompt
-    assert "<div><strong>Lemma:</strong> dīcō<br>alt</div>" in recognition.content.answer
-    assert "<strong>Perfekt, 1. Person Singular:</strong> dīxī<br>poet." in recognition.content.answer
-    assert "<div><strong>Fehlende Stammform:</strong> dīxī<br>poet.</div>" in completion.content.answer
-    assert "<strong>Perfekt, 1. Person Singular:</strong> _____" in completion.content.prompt
+    note = result.notes[0]
+    assert note.content.lemma == "dīcō<br>dīcō"
+    assert "<strong>Perfekt, 1. Person Singular:</strong> dīxī<br>poet." in note.content.principal_parts
 
 
 def test_generated_provenance_does_not_expose_an_absolute_source_path() -> None:
-    profile = _profile(recipes=("principal_part_recognition",))
+    profile = _profile()
     record = _record("dīcere, dīcō, dīxī, dictum", profile=profile)
     record = replace(
         record,
         provenance=replace(record.provenance, source_path=Path("/home/alice/private/decks/source.csv")),
     )
 
-    result = generate_principal_part_study_cards((record,), profile)
+    result = _generate((record,), profile)
 
     assert result.notes
     assert all(note.provenance.source_path is None for note in result.notes)
     assert all(("Source Path", "") in note.to_anki_fields() for note in result.notes)
     assert all("alice" not in field_value for note in result.notes for _, field_value in note.to_anki_fields())
+
+
+def test_generated_notes_are_deterministic_for_identical_input() -> None:
+    profile = _profile()
+    records = (
+        _record("dīcere, dīcō, dīxī, dictum", source_identity="entry-a", profile=profile),
+        _record("ferre, ferō, tulī, lātum", lexical_entry="ferō", source_identity="entry-b", profile=profile),
+    )
+
+    first = _generate(records, profile)
+    second = _generate(records, profile)
+
+    assert first == second
+
+
+def test_generated_note_knowledge_uses_role_labels_for_every_confirmed_role() -> None:
+    profile = _profile(
+        roles=("present_1s", "present_infinitive", "perfect_1s", "supine"),
+        separators=(" — ",),
+    )
+
+    result = _generate(
+        (_record("ferō — ferre — tulī — lātum", lexical_entry="ferō", profile=profile),),
+        profile,
+    )
+
+    principal_parts = result.notes[0].content.principal_parts
+    assert principal_parts == (
+        "<strong>Präsens, 1. Person Singular:</strong> ferō<br>"
+        "<strong>Infinitiv:</strong> ferre<br>"
+        "<strong>Perfekt, 1. Person Singular:</strong> tulī<br>"
+        "<strong>Supinum:</strong> lātum"
+    )

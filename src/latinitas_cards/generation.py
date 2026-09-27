@@ -1,25 +1,42 @@
-"""Generate principal-part exercises from confirmed source records.
+"""Generate coherent learning-object notes from confirmed source records.
 
-Generation consumes the parser's successful semantic output and the recipes in a
-confirmed profile.  It does not infer eligibility, choose recipes from setup
-suggestions, or render source text as trusted HTML.
+Generation consumes the parser's successful semantic output and the confirmed
+profile.  Each eligible source note becomes exactly one learning-object note
+for its single confirmed lexeme; multi-object or ambiguous rows are reported
+for review instead of being merged or split silently.  Card semantic keys are
+derived per eligible recipe and role but never participate in note identity,
+and no recipe or wording is part of the identifier.
 """
 
 from __future__ import annotations
 
+import hashlib
 import html
+import json
+import re
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
 from .html_text import source_html_to_text
-from .identity import IdentityError, resolve_source_identity
-from .notes import GeneratedNote, GeneratedNoteProvenance, ManagedNoteContent, RecipeMetadata
+from .identity import (
+    IdentityError,
+    ResolvedSourceIdentity,
+    derive_card_semantic_key,
+    resolve_source_identity,
+)
+from .notes import (
+    GeneratedNote,
+    GeneratedNoteProvenance,
+    GenerationMetadata,
+    ManagedNoteContent,
+)
 from .principal_parts import (
     ParsedPrincipalParts,
     PrincipalPartParseFailure,
     PrincipalPartValue,
+    normalize_principal_part_for_comparison,
     parse_principal_parts,
 )
 from .profile import DeckProfile, tag_character_violation
@@ -27,6 +44,9 @@ from .profile_setup import encode_unsafe_controls
 from .sources import CanonicalSourceRecord
 
 GenerationSkipStatus = Literal["incomplete", "unsupported", "ambiguous", "identity_error", "collision"]
+
+SINGLE_LEXEME_OBJECT_KEY = "lexeme-1"
+_MULTI_OBJECT_SPLIT = re.compile(r"[,;\n\t|]| / | — | - ")
 
 _ROLE_LABELS = {
     "present_infinitive": "Infinitiv",
@@ -39,18 +59,17 @@ _ROLE_LABELS = {
 
 @dataclass(frozen=True, slots=True)
 class GenerationSkip:
-    """A source or exercise that was not safe to generate."""
+    """A source or object that was not safe to generate."""
 
     status: GenerationSkipStatus
     code: str
     message: str
     source_identity: str | None = None
     source_location: str | None = None
-    recipe_identity: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
-class PrincipalPartGenerationResult:
+class LearningObjectGenerationResult:
     """Typed generated notes and structured skips for one profile run."""
 
     notes: tuple[GeneratedNote, ...]
@@ -65,17 +84,30 @@ class PrincipalPartGenerationResult:
         return len(self.skips)
 
 
-def generate_principal_part_study_cards(
+def profile_digest(profile: DeckProfile) -> str:
+    """Return the deterministic digest of one effective profile for provenance."""
+
+    canonical = json.dumps(
+        profile.to_machine_readable(),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return f"profile-sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+
+def generate_learning_object_notes(
     records: Sequence[CanonicalSourceRecord],
     profile: DeckProfile,
     *,
     manifest_identities: Sequence[str | None] | None = None,
-) -> PrincipalPartGenerationResult:
-    """Generate one independent note for each selected recipe and parsed role.
+    source_scope: str | None = None,
+) -> LearningObjectGenerationResult:
+    """Generate one coherent learning-object note per eligible source record.
 
-    The profile's ``selected_recipes`` are the only recipe selection input.  A
-    manifest identity sequence is required only for profiles using the manifest
-    source-identity strategy.
+    The profile's ``selected_recipes`` enable card semantic keys on each note;
+    they never change which note exists.  A manifest identity sequence is
+    required only for profiles using the manifest source-identity strategy.
     """
 
     if manifest_identities is not None and len(manifest_identities) != len(records):
@@ -98,11 +130,16 @@ def generate_principal_part_study_cards(
         if record.note_type is not None and record.note_type != profile.note_type
     ]
 
-    resolved_records: list[tuple[CanonicalSourceRecord, str | None]] = []
+    resolved_records: list[tuple[CanonicalSourceRecord, ResolvedSourceIdentity | None]] = []
     for original_index, record in selected_records:
         manifest_identity = None if manifest_identities is None else manifest_identities[original_index]
         try:
-            source_identity = resolve_source_identity(record, profile, manifest_identity=manifest_identity)
+            source_identity = resolve_source_identity(
+                record,
+                profile,
+                manifest_identity=manifest_identity,
+                source_scope=source_scope,
+            )
         except IdentityError as error:
             source_identity = None
             skipped.append(
@@ -121,6 +158,7 @@ def generate_principal_part_study_cards(
         for identity, count in Counter(identity for _, identity in resolved_records).items()
         if identity is not None and count > 1
     }
+    metadata = GenerationMetadata(profile_digest=profile_digest(profile))
     notes: list[GeneratedNote] = []
     note_ids: set[str] = set()
     for record, source_identity in resolved_records:
@@ -132,7 +170,7 @@ def generate_principal_part_study_cards(
                     status="collision",
                     code="duplicate_source_identity",
                     message="The source identity is assigned to more than one source record.",
-                    source_identity=source_identity,
+                    source_identity=source_identity.value,
                     source_location=record.provenance.location,
                 )
             )
@@ -149,7 +187,7 @@ def generate_principal_part_study_cards(
                         f"The source note has an invalid tag at position {position} containing {reason}; "
                         "fix the tag in the source deck."
                     ),
-                    source_identity=source_identity,
+                    source_identity=source_identity.value,
                     source_location=record.provenance.location,
                 )
             )
@@ -157,48 +195,64 @@ def generate_principal_part_study_cards(
 
         parsed = parse_principal_parts(record, profile)
         if isinstance(parsed, PrincipalPartParseFailure):
-            skipped.append(_parse_failure_skip(parsed, record, source_identity))
+            skipped.append(_parse_failure_skip(parsed, record, source_identity.value))
             continue
 
-        for recipe_identity in profile.selected_recipes:
-            for part in parsed.value.parts:
-                if part.is_omitted:
-                    skipped.append(
-                        GenerationSkip(
-                            status="incomplete",
-                            code="omitted_principal_part",
-                            message="The confirmed source explicitly omits this principal-part role.",
-                            source_identity=source_identity,
-                            source_location=record.provenance.location,
-                            recipe_identity=recipe_identity,
-                        )
-                    )
-                    continue
-
-                note = _render_note(
-                    record,
-                    parsed.value,
-                    part,
-                    source_identity=source_identity,
-                    recipe_identity=recipe_identity,
-                    profile=profile,
+        lemma_text = source_html_to_text(parsed.value.lexical_entry)
+        if _names_multiple_lexemes(lemma_text):
+            skipped.append(
+                GenerationSkip(
+                    status="ambiguous",
+                    code="multi_object_source",
+                    message=(
+                        "The lexical entry names more than one distinct lexeme; confirm one coherent "
+                        "learning object or review explicit object boundaries. Spelling variants that "
+                        "normalize to one comparison form remain one object."
+                    ),
+                    source_identity=source_identity.value,
+                    source_location=record.provenance.location,
                 )
-                if note.latinitas_id in note_ids:
-                    skipped.append(
-                        GenerationSkip(
-                            status="collision",
-                            code="duplicate_logical_identity",
-                            message="Two generated exercises resolved to the same logical identity.",
-                            source_identity=source_identity,
-                            source_location=record.provenance.location,
-                            recipe_identity=recipe_identity,
-                        )
-                    )
-                    continue
-                note_ids.add(note.latinitas_id)
-                notes.append(note)
+            )
+            continue
 
-    return PrincipalPartGenerationResult(notes=tuple(notes), skips=tuple(skipped))
+        omitted_roles = tuple(part.role for part in parsed.value.parts if part.is_omitted)
+        if omitted_roles:
+            skipped.append(
+                GenerationSkip(
+                    status="incomplete",
+                    code="omitted_principal_part",
+                    message=(
+                        "The confirmed source explicitly omits these principal-part roles: "
+                        + ", ".join(omitted_roles)
+                        + "."
+                    ),
+                    source_identity=source_identity.value,
+                    source_location=record.provenance.location,
+                )
+            )
+
+        note = _render_note(
+            record,
+            parsed.value,
+            source_identity,
+            profile=profile,
+            metadata=metadata,
+        )
+        if note.latinitas_id in note_ids:
+            skipped.append(
+                GenerationSkip(
+                    status="collision",
+                    code="duplicate_logical_identity",
+                    message="Two learning objects resolved to the same logical identity.",
+                    source_identity=source_identity.value,
+                    source_location=record.provenance.location,
+                )
+            )
+            continue
+        note_ids.add(note.latinitas_id)
+        notes.append(note)
+
+    return LearningObjectGenerationResult(notes=tuple(notes), skips=tuple(skipped))
 
 
 def _parse_failure_skip(
@@ -213,6 +267,19 @@ def _parse_failure_skip(
         source_identity=source_identity,
         source_location=record.provenance.location,
     )
+
+
+def _names_multiple_lexemes(lemma_text: str) -> bool:
+    """Report whether one lexical entry names more than one distinct lexeme.
+
+    Spelling variants of the same lexeme (for example macron and plain forms)
+    normalize to one comparison form and stay one coherent object; genuinely
+    distinct lemmas in one entry remain a review item instead of being merged.
+    """
+
+    segments = [segment.strip() for segment in _MULTI_OBJECT_SPLIT.split(lemma_text) if segment.strip()]
+    comparisons = {normalize_principal_part_for_comparison(segment) for segment in segments}
+    return len(comparisons) > 1
 
 
 def _first_invalid_tag(source_tags: tuple[str, ...]) -> tuple[int, str] | None:
@@ -233,73 +300,44 @@ def _combined_tags(record: CanonicalSourceRecord, profile: DeckProfile) -> tuple
 def _render_note(
     record: CanonicalSourceRecord,
     parsed: ParsedPrincipalParts,
-    part: PrincipalPartValue,
+    source_identity: ResolvedSourceIdentity,
     *,
-    source_identity: str,
-    recipe_identity: str,
     profile: DeckProfile,
+    metadata: GenerationMetadata,
 ) -> GeneratedNote:
     meaning = _meaning(record, profile)
     tags = _combined_tags(record, profile)
-    if recipe_identity == "principal_part_completion":
-        content = _completion_content(parsed, part, meaning, tags=tags)
-    else:
-        content = _recognition_content(parsed, part, meaning, tags=tags)
+    content = ManagedNoteContent(
+        lemma=_escape_multiline(parsed.lexical_entry),
+        principal_parts=_render_parts(parsed.parts),
+        meaning=_escape_multiline(meaning),
+        tags=tags,
+    )
+    card_keys = tuple(
+        derive_card_semantic_key(recipe_identity, part.role)
+        for recipe_identity in profile.selected_recipes
+        for part in parsed.parts
+        if not part.is_omitted
+    )
     return GeneratedNote.create(
-        source_identity=source_identity,
+        source_identity=source_identity.value,
+        source_scope=source_identity.scope,
         provenance=GeneratedNoteProvenance(
             source_kind=record.source_kind,
             location=record.provenance.location,
-            source_path=None,
-            source_identity=source_identity,
+            source_scope=source_identity.scope,
         ),
-        recipe=RecipeMetadata(recipe_identity=recipe_identity, exercise_key=part.identity_role),
+        object_key=SINGLE_LEXEME_OBJECT_KEY,
+        metadata=metadata,
         content=content,
+        card_keys=card_keys,
     )
 
 
-def _completion_content(
-    parsed: ParsedPrincipalParts,
-    missing: PrincipalPartValue,
-    meaning: str,
-    *,
-    tags: tuple[str, ...],
-) -> ManagedNoteContent:
-    prompt = (
-        "<div>Ergänze die fehlende Stammform.</div>"
-        "<div><strong>Stammformen</strong></div>"
-        f"<div>{_render_parts(parsed.parts, omitted_role=missing.role)}</div>"
-        f"<div><strong>Bedeutung:</strong> {_escape_multiline(meaning)}</div>"
-    )
-    answer = (
-        f"<div><strong>Fehlende Stammform:</strong> {_escape_multiline(missing.display or '')}</div>"
-        f"<div><strong>Rolle:</strong> {_escape(_role_label(missing.role))}</div>"
-    )
-    return ManagedNoteContent(prompt=prompt, answer=answer, tags=tags)
-
-
-def _recognition_content(
-    parsed: ParsedPrincipalParts,
-    supplied: PrincipalPartValue,
-    meaning: str,
-    *,
-    tags: tuple[str, ...],
-) -> ManagedNoteContent:
-    prompt = f"Welche Stammform ist „{_escape_multiline(supplied.display or '')}“?"
-    answer = (
-        f"<div><strong>Lemma:</strong> {_escape_multiline(parsed.lexical_entry)}</div>"
-        "<div><strong>Stammformen</strong></div>"
-        f"<div>{_render_parts(parsed.parts)}</div>"
-        f"<div><strong>Rolle:</strong> {_escape(_role_label(supplied.role))}</div>"
-        f"<div><strong>Bedeutung:</strong> {_escape_multiline(meaning)}</div>"
-    )
-    return ManagedNoteContent(prompt=prompt, answer=answer, tags=tags)
-
-
-def _render_parts(parts: Sequence[PrincipalPartValue], *, omitted_role: str | None = None) -> str:
+def _render_parts(parts: Sequence[PrincipalPartValue]) -> str:
     lines = []
     for part in parts:
-        value = "_____" if part.role == omitted_role else (part.display if part.display is not None else "—")
+        value = "—" if part.is_omitted else (part.display or "")
         lines.append(f"<strong>{_escape(_role_label(part.role))}:</strong> {_escape_multiline(value)}")
     return "<br>".join(lines)
 
@@ -325,13 +363,11 @@ def _escape_text(value: str) -> str:
     return html.escape(encode_unsafe_controls(value), quote=True)
 
 
-generate_principal_part_notes = generate_principal_part_study_cards
-
-
 __all__ = [
     "GenerationSkip",
     "GenerationSkipStatus",
-    "PrincipalPartGenerationResult",
-    "generate_principal_part_notes",
-    "generate_principal_part_study_cards",
+    "LearningObjectGenerationResult",
+    "SINGLE_LEXEME_OBJECT_KEY",
+    "generate_learning_object_notes",
+    "profile_digest",
 ]
