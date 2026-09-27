@@ -1,13 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-26T20:45:45Z"
+updated_at: "2026-09-27T09:01:50Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
-status_summary: idle
-blockers: []
-next_action: Select the next eligible task
+status_summary: blocked
+blockers:
+    - 'T-014-publish-v0-1-0: Publication is gated by T-035-verify-the-revised-note-architecture-before and its T-029 through T-034 dependencies. Unblock only after the revised architecture gate passes and the owner approves the exact candidate; old single-card readiness evidence is not approval for this model.'
+next_action: Resolve blocker on T-014-publish-v0-1-0
 last_verification_result: pass for T-028-inherit-parent-anki-note-tags at 2026-09-26T20:45:40Z
 relevant_artifacts: []
 continuation_notes:
@@ -26,11 +27,11 @@ continuation_notes:
 
 ## Status
 
-- idle
+- blocked
 
 ## Blockers
 
-- None
+- T-014-publish-v0-1-0: Publication is gated by T-035-verify-the-revised-note-architecture-before and its T-029 through T-034 dependencies. Unblock only after the revised architecture gate passes and the owner approves the exact candidate; old single-card readiness evidence is not approval for this model.
 
 ## Last Verification
 
@@ -38,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Resolve blocker on T-014-publish-v0-1-0
 
 ## Relevant Artifacts
 
@@ -50,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 7
+- todo: 14
 - in_progress: 0
 - completed: 21
-- blocked: 0
+- blocked: 1
 - cancelled: 0
