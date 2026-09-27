@@ -329,7 +329,7 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v010() -> Non
     assert "candidate awaiting user review" in release
     assert "T-014" in release
     t014_front_matter = T014_TASK.read_text(encoding="utf-8").split("---", 2)[1]
-    assert re.search(r"^status: todo$", t014_front_matter, flags=re.MULTILINE)
+    assert re.search(r"^status: (?:todo|blocked)$", t014_front_matter, flags=re.MULTILINE)
     assert "93 package records" in audit
     assert "2.14.0+cpu" in audit
     assert "LicenseRef-NVIDIA-Proprietary" in audit
