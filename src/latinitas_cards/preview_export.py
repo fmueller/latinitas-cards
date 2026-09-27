@@ -199,10 +199,7 @@ def write_principal_part_csv(
     staged_manifest: Path | None = None
     output_backup: Path | None = None
     manifest_backup: Path | None = None
-    output_committed = False
-    manifest_committed = False
-    preserve_output_backup = False
-    preserve_manifest_backup = False
+    preserve_backups = False
     output_existed = destination.exists()
     manifest_existed = manifest_destination is not None and manifest_destination.exists()
     try:
@@ -213,36 +210,27 @@ def write_principal_part_csv(
                 result.candidate_manifest.to_json().encode("utf-8"),
             )
 
-        output_backup = _move_existing_to_backup(destination)
+        output_backup = _prepare_backup_slot(destination)
+        if output_backup is not None:
+            os.replace(destination, output_backup)
         if manifest_destination is not None:
-            manifest_backup = _move_existing_to_backup(manifest_destination)
+            manifest_backup = _prepare_backup_slot(manifest_destination)
+            if manifest_backup is not None:
+                os.replace(manifest_destination, manifest_backup)
 
         os.replace(staged_output, destination)
         staged_output = None
-        output_committed = True
         if staged_manifest is not None and manifest_destination is not None:
             os.replace(staged_manifest, manifest_destination)
             staged_manifest = None
-            manifest_committed = True
-    except OSError as error:
-        output_restored = _restore_after_failed_commit(destination, output_backup, output_existed, output_committed)
-        preserve_output_backup = output_backup is not None and not output_restored
+    except BaseException as error:
+        preserve_backups = True
+        output_restored = _restore_after_failed_commit(destination, output_backup, output_existed)
         manifest_restored = True
         if manifest_destination is not None:
-            manifest_restored = _restore_after_failed_commit(
-                manifest_destination,
-                manifest_backup,
-                bool(manifest_existed),
-                manifest_committed,
-            )
-            preserve_manifest_backup = manifest_backup is not None and not manifest_restored
+            manifest_restored = _restore_after_failed_commit(manifest_destination, manifest_backup, manifest_existed)
         retained_backups = tuple(
-            str(path)
-            for path, preserve in (
-                (output_backup, preserve_output_backup),
-                (manifest_backup, preserve_manifest_backup),
-            )
-            if path is not None and preserve
+            str(path) for path in (output_backup, manifest_backup) if path is not None and path.exists()
         )
         affected_destinations = tuple(
             str(path)
@@ -252,30 +240,20 @@ def write_principal_part_csv(
             )
             if path is not None and not restored
         )
-        recovery_details = []
-        if affected_destinations:
-            recovery_details.append("Recovery is required")
-        if retained_backups:
-            recovery_details.append("backups were retained")
-        if affected_destinations:
-            recovery_details.append("affected destinations to check: " + ", ".join(affected_destinations))
-        if retained_backups:
-            recovery_details.append("backup locations: " + ", ".join(retained_backups))
-        if recovery_details:
-            message = (
-                "The CSV and identity manifest could not be committed safely. " + "; ".join(recovery_details) + "."
-            )
-        else:
-            message = (
-                "No output or manifest was changed because the CSV and identity manifest could not be committed safely."
-            )
-        raise PrincipalPartExportError(message) from error
+        message = _recovery_failure_message(affected_destinations, retained_backups)
+        restoration_incomplete = not (output_restored and manifest_restored)
+        if isinstance(error, OSError):
+            raise PrincipalPartExportError(message) from error
+        if isinstance(error, KeyboardInterrupt) and restoration_incomplete:
+            raise KeyboardInterrupt(message) from error
+        if restoration_incomplete:
+            error.add_note(message)
+        raise
     finally:
         _remove_temporary_path(staged_output)
         _remove_temporary_path(staged_manifest)
-        if not preserve_output_backup:
+        if not preserve_backups:
             _remove_temporary_path(output_backup)
-        if not preserve_manifest_backup:
             _remove_temporary_path(manifest_backup)
 
 
@@ -367,7 +345,7 @@ def _stage_bytes(destination: Path, payload: bytes) -> Path:
                 os.unlink(temporary_name)
 
 
-def _move_existing_to_backup(destination: Path) -> Path | None:
+def _prepare_backup_slot(destination: Path) -> Path | None:
     if not destination.exists():
         return None
     descriptor, temporary_name = tempfile.mkstemp(
@@ -377,22 +355,33 @@ def _move_existing_to_backup(destination: Path) -> Path | None:
     )
     os.close(descriptor)
     os.unlink(temporary_name)
-    os.replace(destination, temporary_name)
     return Path(temporary_name)
 
 
-def _restore_after_failed_commit(
-    destination: Path,
-    backup: Path | None,
-    existed_before: bool,
-    committed: bool,
-) -> bool:
+def _recovery_failure_message(affected_destinations: tuple[str, ...], retained_backups: tuple[str, ...]) -> str:
+    recovery_details = []
+    if affected_destinations:
+        recovery_details.append("Recovery is required")
+    if retained_backups:
+        recovery_details.append("backups were retained")
+    if affected_destinations:
+        recovery_details.append("affected destinations to check: " + ", ".join(affected_destinations))
+    if retained_backups:
+        recovery_details.append("backup locations: " + ", ".join(retained_backups))
+    if recovery_details:
+        return "The CSV and identity manifest could not be committed safely. " + "; ".join(recovery_details) + "."
+    return "No output or manifest was changed because the CSV and identity manifest could not be committed safely."
+
+
+def _restore_after_failed_commit(destination: Path, backup: Path | None, existed_before: bool) -> bool:
     try:
         if backup is not None:
+            if not backup.exists():
+                return True
             if destination.exists():
                 destination.unlink()
             os.replace(backup, destination)
-        elif committed and not existed_before:
+        elif not existed_before and destination.exists():
             destination.unlink()
     except OSError:
         return False

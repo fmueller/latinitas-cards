@@ -12,6 +12,7 @@ import pytest
 
 from latinitas_cards.preview_export import (
     PrincipalPartExportError,
+    PrincipalPartExportResult,
     deterministic_csv_bytes,
     prepare_principal_part_export,
     write_principal_part_csv,
@@ -678,6 +679,303 @@ def test_manifest_rollback_failure_reports_manifest_destination_and_backup(
     assert str(manifest) in message
     assert str(backup_paths[0]) in message
     assert "Recovery is required" in message
+
+
+def _is_staged_commit(source_text: str) -> bool:
+    return source_text.endswith(".tmp") and ".backup." not in source_text
+
+
+def test_keyboard_interrupt_after_backup_moves_restores_prior_pair_and_identities(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    manifest = Path(f"{source}.latinitas.json")
+    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    allocated = prepare_principal_part_export(source, profile, manifest_path=manifest, approved_allocations={0})
+    write_principal_part_csv(allocated, output)
+    output_before = output.read_bytes()
+    manifest_before = manifest.read_bytes()
+    source_before = source.read_bytes()
+    second = prepare_principal_part_export(source, profile, manifest_path=manifest)
+
+    original_replace = os.replace
+
+    def interrupt_output_commit(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if destination == output and _is_staged_commit(source_text):
+            raise KeyboardInterrupt("simulated interruption before output replacement")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", interrupt_output_commit)
+
+    with pytest.raises(KeyboardInterrupt):
+        write_principal_part_csv(second, output)
+
+    assert output.read_bytes() == output_before
+    assert manifest.read_bytes() == manifest_before
+    assert source.read_bytes() == source_before
+    assert list(tmp_path.glob(".*.tmp")) == []
+
+    retry = prepare_principal_part_export(source, profile, manifest_path=manifest)
+    assert retry.manifest_reviews == ()
+    assert {(note.provenance.source_identity, note.latinitas_id) for note in retry.generation.notes} == {
+        (note.provenance.source_identity, note.latinitas_id) for note in allocated.generation.notes
+    }
+
+
+def _prepare_committed_pair_for_interruption(
+    tmp_path: Path,
+) -> tuple[PrincipalPartExportResult, Path, Path, Path, bytes, bytes, bytes]:
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    manifest = Path(f"{source}.latinitas.json")
+    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    allocated = prepare_principal_part_export(source, profile, manifest_path=manifest, approved_allocations={0})
+    write_principal_part_csv(allocated, output)
+    second = prepare_principal_part_export(source, profile, manifest_path=manifest)
+    return (
+        second,
+        source,
+        output,
+        manifest,
+        output.read_bytes(),
+        manifest.read_bytes(),
+        source.read_bytes(),
+    )
+
+
+@pytest.mark.parametrize("perform", [False, True], ids=["before-move", "after-move"])
+@pytest.mark.parametrize(
+    "injection",
+    ["backup-output", "backup-manifest", "commit-output", "commit-manifest"],
+)
+@pytest.mark.parametrize(
+    "prior_manifest", [b'{"prior": "manifest"}\n', None], ids=["manifest-present", "manifest-absent"]
+)
+@pytest.mark.parametrize("prior_output", [b"#separator:Comma\nprior\n", None], ids=["output-present", "output-absent"])
+def test_keyboard_interrupt_around_each_destructive_move_restores_the_prior_pair(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    prior_output: bytes | None,
+    prior_manifest: bytes | None,
+    injection: str,
+    perform: bool,
+) -> None:
+    if injection == "backup-output" and prior_output is None:
+        pytest.skip("the output backup move never runs without an existing output")
+    if injection == "backup-manifest" and prior_manifest is None:
+        pytest.skip("the manifest backup move never runs without an existing manifest")
+
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    manifest = Path(f"{source}.latinitas.json")
+    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    allocated = prepare_principal_part_export(source, profile, manifest_path=manifest, approved_allocations={0})
+    if prior_output is not None:
+        output.write_bytes(prior_output)
+    if prior_manifest is not None:
+        manifest.write_bytes(prior_manifest)
+    source_before = source.read_bytes()
+    phase, _, target_name = injection.partition("-")
+    target = output if target_name == "output" else manifest
+
+    original_replace = os.replace
+    hits = 0
+
+    def interrupting_replace(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal hits
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if phase == "backup":
+            matches = Path(source_text) == target
+        else:
+            matches = destination == target and _is_staged_commit(source_text)
+        if matches:
+            hits += 1
+            if perform:
+                original_replace(source_name, destination_name)
+            raise KeyboardInterrupt("simulated interruption")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", interrupting_replace)
+
+    with pytest.raises(KeyboardInterrupt):
+        write_principal_part_csv(allocated, output)
+
+    assert hits == 1
+    if prior_output is None:
+        assert not output.exists()
+    else:
+        assert output.read_bytes() == prior_output
+    if prior_manifest is None:
+        assert not manifest.exists()
+    else:
+        assert manifest.read_bytes() == prior_manifest
+    assert source.read_bytes() == source_before
+    assert list(tmp_path.glob(".*.tmp")) == []
+
+
+def test_keyboard_interrupt_during_recovery_retains_both_backups(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    second, source, output, manifest, output_before, manifest_before, source_before = (
+        _prepare_committed_pair_for_interruption(tmp_path)
+    )
+
+    original_replace = os.replace
+    interrupted_commit = False
+
+    def interrupt_commit_and_recovery(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal interrupted_commit
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if destination == output and _is_staged_commit(source_text):
+            interrupted_commit = True
+            raise KeyboardInterrupt("simulated interruption before output replacement")
+        if interrupted_commit and destination == output and ".backup." in source_text:
+            raise KeyboardInterrupt("simulated interruption during recovery")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", interrupt_commit_and_recovery)
+
+    with pytest.raises(KeyboardInterrupt) as error:
+        write_principal_part_csv(second, output)
+
+    assert error.value.args == ("simulated interruption during recovery",)
+    assert not output.exists()
+    assert not manifest.exists()
+    output_backups = list(tmp_path.glob(f".{output.name}.backup.*"))
+    manifest_backups = list(tmp_path.glob(f".{manifest.name}.backup.*"))
+    assert len(output_backups) == 1 and output_backups[0].read_bytes() == output_before
+    assert len(manifest_backups) == 1 and manifest_backups[0].read_bytes() == manifest_before
+    assert source.read_bytes() == source_before
+
+
+def test_keyboard_interrupt_with_failed_restoration_retains_backup_and_reports_recovery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    second, source, output, manifest, output_before, manifest_before, source_before = (
+        _prepare_committed_pair_for_interruption(tmp_path)
+    )
+
+    original_replace = os.replace
+    interrupted_commit = False
+
+    def interrupt_commit_fail_restoration(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal interrupted_commit
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if destination == output and _is_staged_commit(source_text):
+            interrupted_commit = True
+            raise KeyboardInterrupt("simulated interruption before output replacement")
+        if interrupted_commit and destination == output and ".backup." in source_text:
+            raise OSError("simulated restoration failure")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", interrupt_commit_fail_restoration)
+
+    with pytest.raises(KeyboardInterrupt) as error:
+        write_principal_part_csv(second, output)
+
+    message = str(error.value)
+    assert "Recovery is required" in message
+    assert str(output) in message
+    output_backups = list(tmp_path.glob(f".{output.name}.backup.*"))
+    assert len(output_backups) == 1 and output_backups[0].read_bytes() == output_before
+    assert str(output_backups[0]) in message
+    assert not output.exists()
+    assert manifest.read_bytes() == manifest_before
+    assert source.read_bytes() == source_before
+
+
+def test_base_exception_cancellation_propagates_after_recovery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    second, source, output, manifest, output_before, manifest_before, source_before = (
+        _prepare_committed_pair_for_interruption(tmp_path)
+    )
+
+    original_replace = os.replace
+
+    def cancel_output_commit(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        if destination == output and _is_staged_commit(os.fsdecode(source_name)):
+            raise SystemExit("simulated cancellation before output replacement")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", cancel_output_commit)
+
+    with pytest.raises(SystemExit):
+        write_principal_part_csv(second, output)
+
+    assert output.read_bytes() == output_before
+    assert manifest.read_bytes() == manifest_before
+    assert source.read_bytes() == source_before
+    assert list(tmp_path.glob(".*.tmp")) == []
+
+
+def test_base_exception_with_failed_restoration_notes_recovery_and_retains_backup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    second, source, output, manifest, output_before, manifest_before, source_before = (
+        _prepare_committed_pair_for_interruption(tmp_path)
+    )
+
+    original_replace = os.replace
+    interrupted_commit = False
+
+    def cancel_commit_fail_restoration(
+        source_name: str | bytes | os.PathLike[str],
+        destination_name: str | bytes | os.PathLike[str],
+    ) -> None:
+        nonlocal interrupted_commit
+        destination = Path(destination_name) if not isinstance(destination_name, bytes) else None
+        source_text = os.fsdecode(source_name)
+        if destination == output and _is_staged_commit(source_text):
+            interrupted_commit = True
+            raise SystemExit("simulated cancellation before output replacement")
+        if interrupted_commit and destination == output and ".backup." in source_text:
+            raise OSError("simulated restoration failure")
+        original_replace(source_name, destination_name)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.os.replace", cancel_commit_fail_restoration)
+
+    with pytest.raises(SystemExit) as error:
+        write_principal_part_csv(second, output)
+
+    notes = getattr(error.value, "__notes__", ())
+    assert any("Recovery is required" in note and str(output) in note for note in notes)
+    output_backups = list(tmp_path.glob(f".{output.name}.backup.*"))
+    assert len(output_backups) == 1 and output_backups[0].read_bytes() == output_before
+    assert any(str(output_backups[0]) in note for note in notes)
+    assert not output.exists()
+    assert manifest.read_bytes() == manifest_before
+    assert source.read_bytes() == source_before
 
 
 def test_export_rejects_non_regular_output_and_manifest_destinations(tmp_path: Path) -> None:

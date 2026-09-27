@@ -1,11 +1,11 @@
 ---
 id: T-036-preserve-csv-and-manifest-recovery-on-interruption
 title: Preserve CSV and manifest recovery on interruption
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#interrupt-safe-csv-and-manifest-export
 dependencies: []
-updated_at: "2026-09-27T09:01:50Z"
+updated_at: "2026-09-27T10:16:53Z"
 ---
 
 # T-036-preserve-csv-and-manifest-recovery-on-interruption Preserve CSV and manifest recovery on interruption
@@ -41,3 +41,4 @@ finally cleanup still ran. This is distinct from hard-crash pair atomicity.
 
 ## Implementation Notes
 - Independent of the note-model change; preserve T-026/T-027/T-028 completed history.
+- 2026-09-27T10:16:49Z: verification pass

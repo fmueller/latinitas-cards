@@ -56,11 +56,15 @@ Use `--approve-allocation ROW` when the row should receive a new source identity
 Both options are repeatable. Unresolved reviews block export; no identity is silently
 transferred or allocated. Keep the generated CSV and the source-side manifest together
 when backing up or moving a project. The CSV and manifest are staged together.
-For caught process/I/O failures, the exporter makes a best-effort attempt to restore the
-prior pair. Rollback is not durable pair-atomicity: a crash or power loss between the two
-replacements can leave one file new and the other old. If rollback fails, inspect reported
-destinations and retained `.backup.*` files, recover manually, and do not blindly retry or
-delete them. Use `--manifest` to select another sidecar path.
+For caught process/I/O failures and catchable interruptions such as Ctrl-C, the exporter
+makes a best-effort attempt to restore the prior pair before the failure or cancellation
+is re-raised. Rollback is not durable pair-atomicity: a crash or power loss between the two
+replacements can leave one file new and the other old. Backups are deleted only after a
+confirmed commit or confirmed recovery. If rollback fails, the error or interruption message
+reports the affected destinations and retained backup locations; if rollback is itself
+interrupted, no message may be emitted, and the retained `.backup.*` files in the output and
+manifest directories hold the recoverable prior bytes. Recover manually from those files
+and do not blindly retry or delete them. Use `--manifest` to select another sidecar path.
 
 ## Source tag inheritance
 
