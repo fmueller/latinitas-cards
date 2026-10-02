@@ -1,7 +1,7 @@
 ---
 id: T-014-publish-v0-1-0
 title: Publish v0.1.0
-status: in_progress
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
@@ -10,7 +10,7 @@ dependencies:
     - T-027-protect-personal-notes-on-repeat-import
     - T-028-inherit-parent-anki-note-tags
     - T-035-verify-the-revised-note-architecture-before
-updated_at: "2026-10-02T16:58:27Z"
+updated_at: "2026-10-02T17:04:56Z"
 ---
 
 # T-014-publish-v0-1-0 Publish v0.1.0
@@ -41,7 +41,26 @@ approval, tagging, and GitHub release creation.
 
 ## Verification Notes
 
-- TODO: record verification evidence and publication timestamp.
+- Owner approved publication on 2026-10-02, including the requested editorial
+  changelog/guidance preparation; PyPI remains deferred.
+- Published at 2026-10-02T17:00:06Z:
+  [v0.1.0 release](https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.0).
+- Annotated [v0.1.0 tag](https://github.com/fmueller/latinitas-cards/tree/v0.1.0)
+  points to the exact approved release-preparation
+  [commit](https://github.com/fmueller/latinitas-cards/commit/183963bdb4e31bbe94a4763bbd84c0369c0698a5).
+  Runtime, package metadata, and lock inputs are unchanged from the T-035 candidate;
+  upstream T-037 planning changes were preserved. No released commit was rewritten.
+- [Exact-commit CI](https://github.com/fmueller/latinitas-cards/actions/runs/37037576863)
+  passed lint/type checking, guards, and Python 3.13/3.14 tests. Locked local
+  ruff/mypy/pytest chains passed on both versions: 417 passed, 10 skipped each.
+  The integrated `mise run check`, Taskrail validation, and `git diff --check` passed.
+- A fresh clone of `v0.1.0` passed the README installation commands:
+  `uv sync --locked` and `uv run latinitas-cards --help`.
+- Release metadata assertions were checked red/green. Simplification made no edits;
+  General review found no issues. The later release-status consistency finding was
+  resolved by actual publication and rejected as obsolete in candidate validation.
+  Existing T-035 synthetic Anki 26.09.3 evidence remains the native-client boundary;
+  this editorial release preparation does not claim a new native Anki run.
 
 ## Implementation Notes
 
@@ -52,3 +71,5 @@ approval, tagging, and GitHub release creation.
 - 2026-10-02T16:58:04Z: verification pass
 - 2026-10-02T16:58:27Z: Rebase restored the old blocker projection; reapply the owner-approved publication transition through CLI before publishing.
 - 2026-10-02T16:58:27Z: Owner approval on 2026-10-02 and completed T-035 still apply after integrating documentation-only T-037; clear the stale merged blocker.
+- 2026-10-02T17:04:56Z: verification pass
+- 2026-10-02T17:04:56Z: Published approved v0.1.0 at https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.0; exact-commit CI and fresh-tag install pass. Publication evidence recorded separately without rewriting released commit. PyPI deferred.
