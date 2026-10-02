@@ -1,7 +1,7 @@
 ---
 id: T-014-publish-v0-1-0
 title: Publish v0.1.0
-status: blocked
+status: in_progress
 priority: medium
 spec_ref: specs/v0.1.0.md#release-readiness
 dependencies:
@@ -10,7 +10,7 @@ dependencies:
     - T-027-protect-personal-notes-on-repeat-import
     - T-028-inherit-parent-anki-note-tags
     - T-035-verify-the-revised-note-architecture-before
-updated_at: "2026-09-27T08:56:37Z"
+updated_at: "2026-10-02T16:58:27Z"
 ---
 
 # T-014-publish-v0-1-0 Publish v0.1.0
@@ -47,3 +47,8 @@ approval, tagging, and GitHub release creation.
 
 - Do not publish until the readiness dependency is completed and independently verified.
 - 2026-09-27T08:56:37Z: Publication is gated by T-035-verify-the-revised-note-architecture-before and its T-029 through T-034 dependencies. Unblock only after the revised architecture gate passes and the owner approves the exact candidate; old single-card readiness evidence is not approval for this model.
+- 2026-10-02T16:42:42Z: Owner explicitly approved v0.1.0 publication on 2026-10-02 after the completed T-035 gate, requesting a user-focused changelog and AGENTS.md guidance before release; PyPI remains deferred. Only editorial release preparation may change the verified runtime candidate.
+- 2026-10-02T16:55:43Z: verification pass
+- 2026-10-02T16:58:04Z: verification pass
+- 2026-10-02T16:58:27Z: Rebase restored the old blocker projection; reapply the owner-approved publication transition through CLI before publishing.
+- 2026-10-02T16:58:27Z: Owner approval on 2026-10-02 and completed T-035 still apply after integrating documentation-only T-037; clear the stale merged blocker.

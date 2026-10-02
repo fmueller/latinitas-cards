@@ -1,62 +1,33 @@
 # Changelog
 
-All notable changes to Latinitas Cards are documented here. The project has not been
-published yet; this entry describes the prepared release candidate.
+Notable user-facing changes to Latinitas Cards are documented here.
 
-## [0.1.0] - Unreleased (candidate)
+## [Unreleased]
 
-Status: candidate awaiting user review. No tag or GitHub release has been created.
+## [0.1.0] - 2026-10-02
 
-### Stable deck-first workflow
+First release: turn an existing Latin deck into German principal-part study cards
+and export them for import into Anki, without modifying the source.
 
-- Inspect an existing CSV, APKG, or COLPKG source and confirm an assisted, human-readable
-  profile.
-- Rank setup field suggestions from representative sample values as well as names, show
-  candidate sample values and reasons, and require an explicit field choice before
-  saving when evidence ties, conflicts, or is sparse; saved profiles still reload
-  deterministically without repeating setup prompts.
-- Preserve stable source identities and derive immutable `LatinitasID` values for generated
-  exercises.
-- Generate explicitly selected German principal-part completion and recognition exercises
-  with semantic role names, provenance, and a `de` language tag.
-- Render both initial recipes as conditional sibling cards of one shared learning-object
-  note: frozen template slots with per-card `Enabled`/`Prompt`/`Answer` fields, wholly
-  guarded fronts, stable semantic keys that never feed note identity, and zero-eligible
-  objects omitted from the CSV and reported separately instead of becoming blank cards.
-- Persist a versioned prior-export card-evidence checkpoint beside scoped CSV sources and
-  commit it with the output and identity manifest; withhold whole note rows that lost a
-  previously exported card key, retain last-safe evidence for absent or parse-failed
-  objects, and require explicit `--approve-fresh-import` confirmation when the checkpoint
-  is missing, corrupt, or incompatible.
-- Preview generated, skipped, and ambiguous entries before writing a deterministic UTF-8
-  Anki text-import CSV with `LatinitasID` as the first column.
-- Restrict generated CSV columns to managed fields: the note type keeps the user-owned
-  `Personal Notes` field, but repeat imports never see a `Personal Notes` column to
-  overwrite (legacy CSVs map it to Ignore on every import).
-- Reuse the same logical identities when managed wording, HTML, glosses, or tags change;
-  leave source inputs and the user-owned `Personal Notes` field untouched.
-- Include a sanitized representative APKG fixture and an end-to-end assisted-profile,
-  preview, export, and repeatability regression contract.
-- Guard legacy note-model transitions explicitly: pre-release per-exercise notes
-  (note schema 1/2, `latinitas-v1-` identities, legacy split clones) are never silently
-  reinterpreted, remain read-only review outcomes, and their only supported option is an
-  explicitly approved, backed-up fresh start of disposable data into a new dedicated note
-  type with new schedules; valuable review history and conflicting personal annotations
-  retain the old collection, ordinary CSV consolidation carries no history guarantee, and
-  compatible regeneration of current-model notes stays a separate identity-preserving
-  operation. `preview`/`generate --profile` reject an effective generated note type that
-  matches a note type declared with `--legacy-note-type` before writing any output, and
-  reject blank `--legacy-note-type` declarations as usage errors; a declaration protects
-  only on an exact, case-sensitive name match (padding is ignored).
+### Added
 
-### Explicit exclusions
+- Inspect CSV, APKG, and COLPKG sources and save reusable profiles with assisted
+  field suggestions and explicit confirmation of uncertain mappings.
+- Preview and generate principal-part completion and recognition cards, grouped
+  under one note with shared personal notes and independently scheduled cards.
+- Export repeatable Anki-import CSVs with stable note identities for matching on
+  reimport; source files stay unchanged and `Personal Notes` stays unmapped.
+- Review skipped or ambiguous entries and missing forms before export; withhold
+  affected notes when regeneration would remove previously exported cards.
+- Set up Anki using reference templates and first/repeat import guidance;
+  pre-release note models require explicit review rather than silent conversion.
 
-- No direct updates to a live Anki collection, scheduling verification, native Anki
-  rendering verification, or automatic conflict/retirement application.
-- No corpus-first generation, new corpus adapters, generalized USFX/cloze generation, or
-  grammatical parsing cards in the stable workflow.
-- No stable promise for legacy APKG mutation/split-note cloning, CLTK/Stanza annotation,
-  optional Ollama disambiguation, or the legacy USFX `preview`/`generate` path; those remain
-  experimental.
-- No package publication, tag creation, or GitHub release; publication is the separate
-  T-014 task after user approval.
+### Limitations
+
+- Import into Anki is manual. Back up before updating: imports that change managed
+  content can replace destination-only tags; there is no live collection merging.
+- Legacy splitting/APKG mutation, annotation, Ollama analysis, and corpus cloze
+  workflows remain experimental. This release is available on GitHub, not PyPI.
+
+[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.0

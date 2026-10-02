@@ -9,12 +9,15 @@ approval or a native Anki test report.
 - Prepared version: `v0.1.0`.
 - Prepared tag version: `v0.1.0`.
 - Changelog entry: `CHANGELOG.md`, `## [0.1.0]`.
-- Status: **candidate awaiting user review**.
-- The `v0.1.0` tag and GitHub release do not exist yet. Publication belongs to T-014.
+- Status: **approved for publication** by the owner on 2026-10-02, after the completed
+  T-035 revised-architecture gate and the requested user-focused changelog preparation.
+- Publication belongs to T-014; the annotated `v0.1.0` tag identifies the exact released
+  commit and the [GitHub release](https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.0)
+  records the published notes. PyPI publishing remains deferred.
 
-The exact candidate is the single commit containing this preparation and its final checks.
-Record that immutable full commit ID in the Taskrail verification and review callback; do
-not add a self-referential commit ID to this document.
+The release preparation changes documentation, guidance, and release-metadata assertions
+only, not the runtime verified by T-035. Record the immutable released commit ID and final
+checks in the T-014 publication evidence; do not add a self-referential commit ID here.
 
 ## Stable scope reviewed
 
@@ -91,6 +94,7 @@ license obligations remain a user review risk.
 
 ## Publication boundary
 
-This task prepares and identifies a technical candidate only. It does not create a tag,
-GitHub release, package, deployment, or publication claim. T-014 remains the separate,
-currently todo publication task and must not be started by this preparation.
+Technical readiness and owner approval are separate from publication. T-014 creates the
+annotated tag and GitHub release only after the final checks pass, and records publication
+evidence separately without modifying the released commit. This release does not publish
+to PyPI, deploy a service, or bundle optional annotation dependencies.

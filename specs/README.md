@@ -15,7 +15,8 @@ This repository uses versioned specs under `specs/`.
   contract.
 - `specs/v0.2.1.md` adds short, reviewed combinations of existing deck vocabulary for
   translation and grammatical recognition, without waiting for corpus-first generation.
-- Nothing has been released yet, so there is no baseline spec.
+- The `v0.1.0` tag records the first release; the active spec stays at v0.1.0 until
+  the next planned version is activated through Taskrail.
 - Tracked work in `planning/tasks/` links to its headings via `spec_ref`.
 
 ## Reading Order

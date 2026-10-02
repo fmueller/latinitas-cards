@@ -340,13 +340,14 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v010() -> Non
 
     assert project["project"]["version"] == "0.1.0"
     assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.1.0"
-    assert "## [0.1.0]" in changelog
+    assert "## [0.1.0] - 2026-10-02" in changelog
+    assert "## [Unreleased]" in changelog
     assert "Prepared version: `v0.1.0`" in release
     assert "Prepared tag version: `v0.1.0`" in release
-    assert "candidate awaiting user review" in release
+    assert "approved for publication" in release
     assert "T-014" in release
     t014_front_matter = T014_TASK.read_text(encoding="utf-8").split("---", 2)[1]
-    assert re.search(r"^status: (?:todo|blocked)$", t014_front_matter, flags=re.MULTILINE)
+    assert re.search(r"^status: (?:in_progress|completed)$", t014_front_matter, flags=re.MULTILINE)
     assert "93 package records" in audit
     assert "2.14.0+cpu" in audit
     assert "LicenseRef-NVIDIA-Proprietary" in audit

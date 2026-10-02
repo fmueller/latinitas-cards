@@ -58,8 +58,8 @@ issue first, not necessarily a code regression.
 
 Planning and task state live in the repo, managed by the `taskrail` CLI.
 
-- `specs/` — versioned specs. `specs/v0.1.0.md` is active; nothing is released yet, so
-  there is no baseline spec.
+- `specs/` — versioned specs. `specs/v0.1.0.md` defines the first release and
+  remains active until the next planned spec is activated through Taskrail.
 - `planning/STATE.md` — current focus, blockers, next action.
 - `planning/tasks/` — one file per task, each linked to a spec heading via `spec_ref`.
 - `planning/artifacts/` — verification artifacts, gitignored.
@@ -158,3 +158,17 @@ If any command fails, fix it and rerun the **full chain from the start**.
   - linked issue(s) when applicable,
   - validation evidence (`ruff`, `mypy`, `pytest`).
 - If CLI output changes, include a short before/after example.
+
+## Changelog Guidelines
+
+- Keep `CHANGELOG.md` user-focused: describe what users can do, what changed for
+  them, or which observable problem was fixed. Lead with the command or capability.
+- Use short, one- or two-line bullets and fold related changes into one entry.
+  Omit internal refactors, tests, CI/toolchain work, dependency noise, task IDs,
+  verification evidence, and implementation mechanics; keep those in task notes,
+  focused docs, or commit messages.
+- Use `Added`, `Changed`, `Fixed`, and `Limitations` sections only when useful.
+  Include practical safety limits, but do not duplicate the spec's exclusions.
+- Put pending changes under `[Unreleased]`. At release time, move them under
+  `## [<version>] - YYYY-MM-DD`, leave an empty `[Unreleased]` section, and update
+  release/comparison links. GitHub release notes should follow the same concise style.
