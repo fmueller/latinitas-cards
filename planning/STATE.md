@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-27T21:18:59Z"
+updated_at: "2026-10-02T16:40:36Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-014-publish-v0-1-0: Publication is gated by T-035-verify-the-revised-note-architecture-before and its T-029 through T-034 dependencies. Unblock only after the revised architecture gate passes and the owner approves the exact candidate; old single-card readiness evidence is not approval for this model.'
-next_action: Select the next eligible task
-last_verification_result: pass for T-035-verify-the-revised-note-architecture-before at 2026-09-27T21:18:59Z
+next_action: Resolve blocker on T-014-publish-v0-1-0
+last_verification_result: pass for T-037-specify-early-deck-based-phrase-and-grammar at 2026-10-02T16:40:36Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-035-verify-the-revised-note-architecture-before at 2026-09-27T21:18:59Z
+- pass for T-037-specify-early-deck-based-phrase-and-grammar at 2026-10-02T16:40:36Z
 
 ## Next Action
 
-- Select the next eligible task
+- Resolve blocker on T-014-publish-v0-1-0
 
 ## Relevant Artifacts
 
@@ -53,6 +53,6 @@ continuation_notes:
 
 - todo: 6
 - in_progress: 0
-- completed: 29
+- completed: 30
 - blocked: 1
 - cancelled: 0
