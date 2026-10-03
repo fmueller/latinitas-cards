@@ -20,14 +20,18 @@ Current command set:
 Code lives in `src/latinitas_cards/`.
 
 - `cli.py` contains shared/domain logic and the Typer app instance.
-- `commands/` contains one file per command callback.
+- `commands/` contains one module per command. Older commands (`inspect`, `split`,
+  `annotate`, `cloze`, `preview`, `generate`, `validate`) are thin re-exports of a
+  `*_impl` callback in `cli.py`; newer ones implement the command themselves
+  (`principal_parts.py`) or re-export it from a domain module (`setup.py`).
+- Domain modules (`cards.py`, `profile.py`, `sources.py`, ...) sit beside `cli.py`.
 - `__main__.py` is the CLI entry module.
 
 ### Refactoring Direction
 
-The legacy implementation concentrated most logic in `cli.py`. Do **not** add new
-large command implementations to one monolithic file. Prefer extracting command entry
-points and domain helpers into focused modules.
+Don't grow `cli.py` further: put new command implementations and domain helpers in
+focused modules, and move an existing `*_impl` out of `cli.py` when you
+substantially change it.
 
 ## Runtime Prerequisites
 
@@ -104,6 +108,7 @@ Use uv for environment and task execution. `mise.toml` pins the rest of the tool
 
 - Python target: `>=3.13,<3.15`; keep 3.13 compatibility.
 - Ruff rules: `E, F, UP, B, SIM, I`; line length `120`.
+- Format with `ruff format` and sort imports via ruff's `I` rule; this project does not use black or isort.
 - mypy strict mode; type public functions and non-trivial internals explicitly.
 - Use snake_case for functions/variables and lowercase module names.
 - Keep modules focused and composable.
@@ -111,7 +116,8 @@ Use uv for environment and task execution. `mise.toml` pins the rest of the tool
 
 ## Testing Guidelines
 
-- Framework: `pytest`.
+- Framework: `pytest`. `pytest-cov` is not a dependency, so don't pass `--cov`; no custom
+  markers (e.g. `pytest.mark.unit`) are registered, so don't add them.
 - Place tests under `tests/unit/`.
 - Add regression coverage for:
   - USFX parsing and normalization,
