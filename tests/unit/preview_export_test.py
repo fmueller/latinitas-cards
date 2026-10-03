@@ -1318,13 +1318,16 @@ def _prepare_committed_pair_for_interruption(
 
 @pytest.mark.parametrize("perform", [False, True], ids=["before-move", "after-move"])
 @pytest.mark.parametrize(
-    "injection",
-    ["backup-output", "backup-manifest", "commit-output", "commit-manifest"],
+    ("prior_output", "prior_manifest", "injection"),
+    [
+        pytest.param(prior_output, prior_manifest, injection, id=f"{output_id}-{manifest_id}-{injection}")
+        for output_id, prior_output in [("output-present", b"#separator:Comma\nprior\n"), ("output-absent", None)]
+        for manifest_id, prior_manifest in [("manifest-present", b'{"prior": "manifest"}\n'), ("manifest-absent", None)]
+        for injection in ["backup-output", "backup-manifest", "commit-output", "commit-manifest"]
+        if not (injection == "backup-output" and prior_output is None)
+        and not (injection == "backup-manifest" and prior_manifest is None)
+    ],
 )
-@pytest.mark.parametrize(
-    "prior_manifest", [b'{"prior": "manifest"}\n', None], ids=["manifest-present", "manifest-absent"]
-)
-@pytest.mark.parametrize("prior_output", [b"#separator:Comma\nprior\n", None], ids=["output-present", "output-absent"])
 def test_keyboard_interrupt_around_each_destructive_move_restores_the_prior_pair(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1333,11 +1336,6 @@ def test_keyboard_interrupt_around_each_destructive_move_restores_the_prior_pair
     injection: str,
     perform: bool,
 ) -> None:
-    if injection == "backup-output" and prior_output is None:
-        pytest.skip("the output backup move never runs without an existing output")
-    if injection == "backup-manifest" and prior_manifest is None:
-        pytest.skip("the manifest backup move never runs without an existing manifest")
-
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
     state = Path(f"{source}.latinitas.json")
@@ -1399,10 +1397,13 @@ def test_keyboard_interrupt_around_each_destructive_move_restores_the_prior_pair
 
 @pytest.mark.parametrize("perform", [False, True], ids=["before-move", "after-move"])
 @pytest.mark.parametrize(
-    "injection",
-    ["backup-checkpoint", "commit-checkpoint"],
+    ("prior_state", "injection"),
+    [
+        pytest.param("committed", "backup-checkpoint", id="state-present-backup-checkpoint"),
+        pytest.param("committed", "commit-checkpoint", id="state-present-commit-checkpoint"),
+        pytest.param("fresh", "commit-checkpoint", id="state-absent-commit-checkpoint"),
+    ],
 )
-@pytest.mark.parametrize("prior_state", ["committed", "fresh"], ids=["state-present", "state-absent"])
 def test_keyboard_interrupt_around_checkpoint_moves_restores_the_prior_state(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1410,9 +1411,6 @@ def test_keyboard_interrupt_around_checkpoint_moves_restores_the_prior_state(
     injection: str,
     perform: bool,
 ) -> None:
-    if injection == "backup-checkpoint" and prior_state == "fresh":
-        pytest.skip("the checkpoint backup move never runs without an existing checkpoint")
-
     source = tmp_path / "source.csv"
     output = tmp_path / "generated.csv"
     state = Path(f"{source}.latinitas.json")
