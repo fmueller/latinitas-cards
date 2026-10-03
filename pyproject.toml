@@ -76,7 +76,8 @@ testpaths = ["tests"]
 
 [tool.mutmut]
 source_paths = ["src/latinitas_cards/"]
-also_copy = ["pyproject.toml"]
+# Repository-file assertions run from inside mutmut's sandbox too.
+also_copy = ["pyproject.toml", "uv.lock", "README.md", "CHANGELOG.md", "THIRD_PARTY_NOTICES.md", "docs/", "planning/tasks/"]
 
 [tool.ruff]
 line-length = 120

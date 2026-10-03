@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-03T10:12:32Z"
+updated_at: "2026-10-03T10:34:15Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-014-publish-v0-1-0 at 2026-10-02T17:04:56Z
+last_verification_result: pass for T-039-restore-mutation-baseline-sandbox-dependencies at 2026-10-03T10:34:15Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-014-publish-v0-1-0 at 2026-10-02T17:04:56Z
+- pass for T-039-restore-mutation-baseline-sandbox-dependencies at 2026-10-03T10:34:15Z
 
 ## Next Action
 
@@ -52,6 +52,6 @@ continuation_notes:
 
 - todo: 7
 - in_progress: 0
-- completed: 31
+- completed: 32
 - blocked: 0
 - cancelled: 0

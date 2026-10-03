@@ -63,6 +63,11 @@ not execute mutants.
 
 `src/latinitas_cards/` is the mutation source. Pytest collection is constrained
 to `tests/` so the generated `mutants/` project cannot be collected recursively.
+Mutmut copies tests automatically; `tool.mutmut.also_copy` also includes the
+documentation, release metadata, and task notes read by repository-file tests.
+Keep that list and `tests/unit/mutation_config_test.py` in sync when adding such
+dependencies. Missing files abort the unmutated baseline before any mutants are
+tested; they are not evidence of surviving mutations or low test efficacy.
 The current command entry points are undecorated functions registered through
 `app.command()(function)`, avoiding mutmut's known omission of most decorated
 function bodies. A reported percentage still describes only mutants mutmut
