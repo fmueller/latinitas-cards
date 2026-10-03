@@ -1625,9 +1625,12 @@ def test_base_exception_with_failed_restoration_notes_recovery_and_retains_backu
 
     monkeypatch.setattr("latinitas_cards.preview_export.os.replace", cancel_commit_fail_restoration)
 
-    with pytest.raises(SystemExit) as error:
+    # A mutant can turn cancellation into KeyboardInterrupt. Capture it so the
+    # wrong exception fails an assertion instead of aborting pytest's runner.
+    with pytest.raises((SystemExit, KeyboardInterrupt)) as error:
         write_principal_part_csv(second, output)
 
+    assert isinstance(error.value, SystemExit)
     notes = getattr(error.value, "__notes__", ())
     assert any("Recovery is required" in note and str(output) in note for note in notes)
     output_backups = list(tmp_path.glob(f".{output.name}.backup.*"))
