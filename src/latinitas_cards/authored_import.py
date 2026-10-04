@@ -8,9 +8,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 
 from .profile import tag_character_violation
+
+
+def _utf8_string(value: str) -> str:
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError("must be valid UTF-8 text without lone surrogates") from error
+    return value
+
+
+Utf8String = Annotated[str, AfterValidator(_utf8_string)]
 
 
 def _nonempty(value: str) -> str:
@@ -23,9 +34,9 @@ class Provenance(BaseModel):
     """Opaque labels and citations; no normalization or corpus lookup."""
 
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
-    document: str
-    section: str
-    reference: str | None = None
+    document: Utf8String
+    section: Utf8String
+    reference: Utf8String | None = None
 
     _required_labels = field_validator("document", "section")(_nonempty)
 
@@ -33,11 +44,11 @@ class Provenance(BaseModel):
 class _AuthoredItem(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True, extra="forbid")
     schema_version: Literal[1]
-    key: str
+    key: Utf8String
     provenance: Provenance
     status: Literal["include", "skip"]
-    tags: tuple[str, ...] = ()
-    language_tag: str
+    tags: tuple[Utf8String, ...] = ()
+    language_tag: Utf8String
     # Set by the loader, never accepted from the import file.
     line_number: int = Field(default=0, exclude=True)
 
@@ -69,28 +80,28 @@ class _AuthoredItem(BaseModel):
 
 class VocabItem(_AuthoredItem):
     kind: Literal["vocab"]
-    lemma: str
-    meaning: str
-    dictionary_form: str | None = None
+    lemma: Utf8String
+    meaning: Utf8String
+    dictionary_form: Utf8String | None = None
 
     _required_content = field_validator("lemma", "meaning")(_nonempty)
 
 
 class FormItem(_AuthoredItem):
     kind: Literal["form"]
-    text_form: str
-    base_form: str
-    analysis: str
-    translation: str
-    context: str | None = None
+    text_form: Utf8String
+    base_form: Utf8String
+    analysis: Utf8String
+    translation: Utf8String
+    context: Utf8String | None = None
 
     _required_content = field_validator("text_form", "base_form", "analysis", "translation")(_nonempty)
 
 
 class QaItem(_AuthoredItem):
     kind: Literal["qa"]
-    question: str
-    answer: str
+    question: Utf8String
+    answer: Utf8String
 
     _required_content = field_validator("question", "answer")(_nonempty)
 

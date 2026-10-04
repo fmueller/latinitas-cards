@@ -138,6 +138,66 @@ def test_invalid_utf8_is_reported_and_next_row_is_validated(tmp_path: Path) -> N
         result.require_valid()
 
 
+@pytest.mark.parametrize("surrogate", ["\ud800", "\udfff"])
+@pytest.mark.parametrize(
+    "kind,field",
+    [
+        ("vocab", "key"),
+        ("vocab", "lemma"),
+        ("vocab", "meaning"),
+        ("vocab", "dictionary_form"),
+        ("vocab", "language_tag"),
+        ("vocab", "tags"),
+        ("vocab", "document"),
+        ("vocab", "section"),
+        ("vocab", "reference"),
+        ("form", "text_form"),
+        ("form", "base_form"),
+        ("form", "analysis"),
+        ("form", "translation"),
+        ("form", "context"),
+        ("qa", "question"),
+        ("qa", "answer"),
+    ],
+)
+def test_lone_surrogates_rejected_with_field_and_recovery(
+    tmp_path: Path, surrogate: str, kind: str, field: str
+) -> None:
+    bad = row(kind)
+    if field in {"document", "section", "reference"}:
+        bad["provenance"] = {"document": "source", "section": "lesson", field: surrogate}
+    else:
+        bad[field] = [surrogate] if field == "tags" else surrogate
+    source = write_rows(tmp_path / "notes.jsonl", [json.dumps(bad), row("qa", key="later")])
+    result = load_authored_import(source)
+    assert len(result.errors) == 1
+    assert result.errors[0].line_number == 1 and field in result.errors[0].field
+    assert "UTF-8" in str(result.errors[0])
+    str(result.errors[0]).encode("utf-8")
+    assert [item.line_number for item in result.diagnostic_items] == [2]
+    with pytest.raises(AuthoredImportError):
+        result.require_valid()
+
+
+@pytest.mark.parametrize("escaped", [False, True])
+def test_non_bmp_unicode_preserved(tmp_path: Path, escaped: bool) -> None:
+    value = "𐌀🌹"
+    item = row(
+        key=value,
+        lemma=value,
+        meaning=value,
+        dictionary_form=value,
+        tags=[value],
+        provenance={"document": value, "section": value, "reference": value},
+    )
+    result = load_authored_import(write_rows(tmp_path / "notes.jsonl", [json.dumps(item, ensure_ascii=escaped)]))
+    actual = result.require_valid()[0]
+    assert isinstance(actual, VocabItem)
+    assert actual.key == actual.lemma == actual.meaning == actual.dictionary_form == value
+    assert actual.tags == (value,)
+    assert actual.provenance.document == actual.provenance.section == actual.provenance.reference == value
+
+
 @pytest.mark.parametrize(
     "duplicate,field",
     [

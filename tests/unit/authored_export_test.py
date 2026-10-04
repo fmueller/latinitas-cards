@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 from pathlib import Path
 
 import pytest
@@ -34,6 +35,58 @@ def data(payload: bytes) -> list[list[str]]:
             io.StringIO("\n".join(line for line in payload.decode("utf-8").splitlines() if not line.startswith("#")))
         )
     )
+
+
+@pytest.mark.parametrize("command", ["validate", "preview", "export"])
+@pytest.mark.parametrize("existing", [False, True])
+def test_surrogate_cli_errors_aggregate_before_selection_and_preserve_bytes(
+    tmp_path: Path, command: str, existing: bool
+) -> None:
+    source = write_rows(
+        tmp_path / "notes.jsonl",
+        [
+            json.dumps(row(meaning="\ud800", status="skip")),
+            json.dumps(row("form", context="\udfff")),
+            row("qa", key="later"),
+        ],
+    )
+    before = source.read_bytes()
+    out = tmp_path / "out"
+    out.mkdir()
+    if existing:
+        (out / "vocab.csv").write_bytes(b"prior output\x00\xff")
+    outputs = {p.name: p.read_bytes() for p in out.iterdir()}
+    args = ["authored", command, str(source), "--namespace", "course"]
+    if command != "validate":
+        args += ["--kind", "qa"]
+    if command == "export":
+        args += ["--output-dir", str(out), "--deck", "Latin"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 1, result.output
+    assert "line 1, vocab.meaning" in result.output
+    assert "line 2, form.context" in result.output
+    assert "Invalid: 2 errors" in result.output and "not exportable" in result.output
+    assert "'qa': 1" in result.output
+    assert "Traceback" not in result.output and "Authored export error" not in result.output
+    result.output.encode("utf-8")
+    assert source.read_bytes() == before
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == outputs
+
+
+@pytest.mark.parametrize("escaped", [False, True])
+def test_unicode_cli_roundtrip(tmp_path: Path, escaped: bool) -> None:
+    value = "𐌀🌹"
+    source = write_rows(tmp_path / "notes.jsonl", [json.dumps(row(meaning=value), ensure_ascii=escaped)])
+    before = source.read_bytes()
+    out = tmp_path / "out"
+    out.mkdir()
+    for command in ("validate", "preview"):
+        result = CliRunner().invoke(app, ["authored", command, str(source), "--namespace", "course"])
+        assert result.exit_code == 0, result.output
+        assert "Valid. Effective selection: 1" in result.output
+    assert export(source, out).exit_code == 0
+    assert value in (out / "vocab.csv").read_text(encoding="utf-8")
+    assert source.read_bytes() == before
 
 
 def test_all_kinds_deterministic_edited_identity_and_personal_omission(tmp_path: Path) -> None:
