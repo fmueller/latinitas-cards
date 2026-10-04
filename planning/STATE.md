@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T22:44:00Z"
+updated_at: "2026-10-04T23:10:56Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
+next_action: 'Start task T-048-define-destination-snapshots-and-file-transport: Define destination snapshots and file transport capabilities'
 last_verification_result: pass for T-047-publish-v0-1-1 at 2026-10-04T21:26:42Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-048-define-destination-snapshots-and-file-transport: Define destination snapshots and file transport capabilities
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 16
 - in_progress: 0
 - completed: 46
 - blocked: 0

@@ -4,7 +4,10 @@ title: Publish releases on PyPI
 status: todo
 priority: medium
 spec_ref: specs/v0.2.0.md#pypi-publishing
-dependencies: []
+dependencies:
+    - T-061-verify-managed-csv-import-safety-and-recovery-in
+    - T-062-verify-morphology-presentation-on-ankimobile-and
+    - T-060-generate-precision-gated-latin-form-parsing
 updated_at: "2026-10-03T10:12:32Z"
 ---
 
@@ -51,9 +54,9 @@ actual publication requires explicit maintainer approval.
 
 ## Implementation Notes
 
-- The decomposition remains draft-only in `planning/v0.2.0-task-draft.json`.
-  When imported task IDs exist, add dependencies on the tasks with draft keys
-  `native-update-evidence`, `native-presentation-evidence`, and
-  `form-parsing-exercises`; do not place unresolved draft keys in task frontmatter.
-  Claim-policy and destination-contract are transitive prerequisites, but their
-  release-candidate evidence remains an explicit publication requirement above.
+- Publication depends on T-061's native update evidence, T-062's native
+  presentation evidence, and T-060's form-parsing work and affected native retests.
+  T-051's claim-policy and T-048's destination-contract are transitive
+  prerequisites, but their release-candidate evidence remains an explicit
+  publication requirement above. Workflow/build preparation may proceed earlier;
+  this task cannot complete publication before those gates pass.
