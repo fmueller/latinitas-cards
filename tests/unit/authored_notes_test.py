@@ -132,3 +132,32 @@ def test_managed_text_is_html_safe_and_preserves_lines(tmp_path: Path) -> None:
 def test_published_reference_matches_contract() -> None:
     published = Path("docs/authored-note-types.md").read_text(encoding="utf-8")
     assert reference_authored_note_types() in published
+
+
+@pytest.mark.parametrize("kind", ["vocab", "form", "qa"])
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("left\rright", "left<br>right"),
+        ("left\r\nright", "left<br>right"),
+        ("left\nright", "left<br>right"),
+        ('<ä>\r\n\r&\n"𐌀"\r\nend', "&lt;ä&gt;<br><br>&amp;<br>&quot;𐌀&quot;<br>end"),
+    ],
+)
+def test_logical_newlines_in_content_and_provenance(tmp_path: Path, kind: str, value: str, expected: str) -> None:
+    schema = AUTHORED_NOTE_TYPES[kind]
+    content = {attribute: value for _, attribute in schema.content_fields}
+    source = write_rows(
+        tmp_path / "notes.jsonl",
+        [row(kind, **content, provenance={"document": value, "section": value, "reference": value})],
+    )
+    before = source.read_bytes()
+    (identified,) = reconcile_authored_import("course", load_authored_import(source)).require_valid()
+    fields = dict(render_authored_note(identified, GenerationMetadata(profile_digest="p")).to_export_fields())
+    for field, attribute in schema.content_fields:
+        assert fields[field] == expected
+        assert getattr(identified.item, attribute) == value
+    for field in ("Document", "Section", "Reference"):
+        assert fields[field] == expected
+        assert getattr(identified.item.provenance, field.lower()) == value
+    assert source.read_bytes() == before

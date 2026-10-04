@@ -1,11 +1,11 @@
 ---
 id: T-045-preserve-cr-newlines-in-authored-anki-rendering
 title: Preserve CR newlines in authored Anki rendering
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.1.md#authored-note-kinds
 dependencies: []
-updated_at: "2026-10-04T18:40:28Z"
+updated_at: "2026-10-04T18:57:12Z"
 ---
 
 # T-045-preserve-cr-newlines-in-authored-anki-rendering Preserve CR newlines in authored Anki rendering
@@ -46,3 +46,6 @@ Evidence: https://ampcode.com/threads/T-01a107a0-c767-736c-b08b-5903cf53afd9
   timestamp; do not commit references to gitignored artifact paths.
 
 ## Implementation Notes
+
+- 2026-10-04T18:56:55Z: verification pass
+- 2026-10-04T18:57:12Z: Verified 2026-10-04T18:56:55Z after workflow-v3: strict renderer/native RED to GREEN; 572 tests, ruff and mypy pass; native Anki 26.9.3 first/edited imports and reopen preserve logical newlines, identities/cards and Personal Notes for all kinds; repeated real CLI exports preserve source and exact CR reference filters. Browser-inspected first QA and edited all-kind answers. Dedicated simplifier plus General/Python/Security/Database review, fresh candidate validation and disposition verification complete; DB-1 rejected because native answers include FrontSide, no validated findings. NUL and unknown-kind advisories unchanged.

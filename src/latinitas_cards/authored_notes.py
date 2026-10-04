@@ -126,7 +126,9 @@ def render_authored_note(note: IdentifiedAuthoredItem, metadata: GenerationMetad
         "Profile": metadata.profile_digest,
     }
     fields = tuple(
-        (field.name, escape(values[field.name]).replace("\n", "<br>")) for field in schema.fields if field.exported
+        (field.name, escape(values[field.name]).replace("\r\n", "\n").replace("\r", "\n").replace("\n", "<br>"))
+        for field in schema.fields
+        if field.exported
     )
     return RenderedAuthoredNote(note.latinitas_id, schema, fields, item.tags)
 

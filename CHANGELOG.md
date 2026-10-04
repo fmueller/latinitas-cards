@@ -15,6 +15,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- Authored Anki cards preserve CRLF, CR, and LF line breaks in content and
+  citations, including after import and edited re-import.
 - Authored validate, preview, and export diagnostics and successful export paths
   display terminal controls as visible escapes without changing file destinations.
 - Authored imports reject lone Unicode surrogates with line and field diagnostics

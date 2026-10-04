@@ -111,7 +111,7 @@ def test_cli_controls_are_inert_but_typed_content_is_preserved(tmp_path: Path) -
     assert result.exit_code == 0
     assert "\x1b" not in result.output and "\x07" not in result.output and "\u202e" not in result.output
     assert r"\x1b]52;c;Y2xpcGJvYXJk\x07" in result.output
-    assert r"\x0dspoof\u202etext" in result.output
+    assert r"after<br>spoof\u202etext" in result.output
 
 
 @pytest.mark.parametrize("command", ["validate", "preview", "export"])
