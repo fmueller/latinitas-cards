@@ -1,8 +1,8 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T21:26:42Z"
-active_spec_version: v0.1.1
-active_spec_path: specs/v0.1.1.md
+updated_at: "2026-10-04T22:44:00Z"
+active_spec_version: v0.2.0
+active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
@@ -18,7 +18,7 @@ continuation_notes:
 
 ## Active Spec
 
-- `specs/v0.1.1.md`
+- `specs/v0.2.0.md`
 
 ## Current Focus
 

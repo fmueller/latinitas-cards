@@ -5,18 +5,20 @@ This repository uses versioned specs under `specs/`.
 - `specs/v0.1.0.md` defines the completed first deck-enrichment release:
   assisted deck profiles, stable generated-note identity, principal-part cards, and
   deterministic Anki CSV output.
-- `specs/v0.1.1.md` is the active spec. It adds import of authored vocabulary,
+- `specs/v0.1.1.md` defines the completed import of authored vocabulary,
   form, and question/answer notes through the v0.1.0 identity and export contracts.
-- `specs/v0.2.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
-  preserve the agreed progression through managed updates, form parsing and colors,
-  deck-based phrase and grammar practice, normalized corpora and agent contracts,
+- `specs/v0.2.0.md` is the active spec for managed updates, evidence-led extraction,
+  calibrated form parsing, morphology themes, and PyPI publishing.
+- `specs/v0.2.1.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
+  preserve the agreed progression through deck-based phrase and grammar practice,
+  normalized corpora and agent contracts,
   corpus-first generation, grammar/syntax study, optional direct Anki integration,
   reproducible projects, CLI/migration hardening, release validation, and the v1 stable
   contract.
 - `specs/v0.2.1.md` adds short, reviewed combinations of existing deck vocabulary for
   translation and grammatical recognition, without waiting for corpus-first generation.
 - The `v0.1.0` and `v0.1.1` tags record the released deck-first and authored-note
-  workflows. v0.1.1 remains active; spec transitions are managed through Taskrail.
+  workflows. Spec transitions are managed through Taskrail.
 - Tracked work in `planning/tasks/` links to its headings via `spec_ref`.
 
 ## Reading Order
