@@ -23,7 +23,11 @@ the v0.1.0 note contract, with the default card directions from the spec.
   managed content fields, provenance, generation metadata, and a personal-notes field.
 - `vocab` renders Latin to meaning; `form` renders the form (with context when present) to
   base form, analysis, and translation; `qa` renders question to answer.
-- The same text form under different source references yields separate `form` items.
+- Contextually distinct occurrences of the same text form use distinct explicit keys.
+  Tests show these yield separate items even with the same form text, while a citation
+  edit alone preserves an established key's identity.
+- Reference field definitions and front/back templates document creation of each stable
+  note type with one card per authored item, including the user-owned Personal Notes field.
 - Rendering is covered by tests for each kind, including optional fields left empty.
 - `uv run ruff check`, `uv run mypy`, and `uv run pytest -v` pass.
 

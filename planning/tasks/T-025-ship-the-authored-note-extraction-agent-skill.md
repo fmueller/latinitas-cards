@@ -21,7 +21,8 @@ notes into the import format and then runs validation and preview.
 ## Acceptance
 
 - The skill documents key conventions per kind and requires explicit, reviewed keys for
-  `qa` items.
+  `qa` items. Contextually distinct form occurrences receive distinct explicit keys;
+  correcting a citation never silently renames an existing key.
 - It covers varying heading and table column names, bullet-list vocabulary, and answers
   given inline or in a separate solutions section.
 - Re-extraction into an existing import file preserves existing keys and `skip` decisions
@@ -29,8 +30,10 @@ notes into the import format and then runs validation and preview.
 - It runs validation and preview before reporting, and never writes to Anki directly.
 - The skill is corpus-agnostic; its examples use synthetic notes from more than one text
   and contain no private study material.
-- A synthetic Markdown fixture and its expected import file are checked in and validate
-  cleanly.
+- Synthetic first-extraction and re-extraction fixtures and expected import files are
+  checked in and validate cleanly. Record an extraction/re-extraction exercise with a
+  corrected answer, an existing skipped item, a new item, and a missing item; verify stable
+  keys, preserved statuses, and the expected new/changed/missing report, then run preview.
 - `uv run ruff check`, `uv run mypy`, and `uv run pytest -v` pass.
 
 ## Verification Notes

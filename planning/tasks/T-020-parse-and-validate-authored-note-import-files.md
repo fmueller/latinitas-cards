@@ -23,6 +23,9 @@ no corpus is parsed or assumed.
   status (`include`/`skip`), tags, and language tag.
 - Unknown or incompatible schema versions, unknown kinds, missing required fields, and
   malformed JSON fail with the line number and failed assumption.
+- Whole-file validation retains recoverable line-level errors for preview reporting,
+  including errors on skipped or filtered-out rows; invalid input is never an exportable
+  result. Tests cover multiple errors, including malformed JSON followed by a valid row.
 - Source references are stored verbatim; tests use references from more than one corpus
   and non-corpus labels to prove nothing is interpreted.
 - The format is documented with one example per kind.

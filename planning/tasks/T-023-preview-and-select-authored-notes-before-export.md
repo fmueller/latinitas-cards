@@ -20,11 +20,17 @@ by kind, source section, source reference, and tag.
 
 - Preview reports counts by kind, source section, source reference, and status; merged
   duplicates; invalid or conflicting items with reasons; and representative cards.
+- Validation and duplicate reconciliation cover the whole file before filtering. Preview
+  reports recoverable errors together and exits nonzero on any error; any rendered cards
+  then are diagnostic, not an exportable selection.
 - Filters narrow the selection without modifying the import file; the effective selection
-  is reported.
+  is reported. Filters operate on merged items, including combined tags and filled references.
 - `skip` items are counted but never selected for export.
 - Preview consumes an internal typed result separate from terminal rendering.
 - Tests prove preview writes no files and leaves the import file unchanged.
+- CLI tests cover combined filters, filtering after duplicate merging, empty selection,
+  and invalid skipped or filtered-out rows. Document validation and preview invocations
+  with an explicit collection namespace and no corpus resources or principal-part mappings.
 - `uv run ruff check`, `uv run mypy`, and `uv run pytest -v` pass.
 
 ## Verification Notes
