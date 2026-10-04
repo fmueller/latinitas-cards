@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T13:46:59Z"
+updated_at: "2026-10-04T15:38:44Z"
 active_spec_version: v0.1.1
 active_spec_path: specs/v0.1.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: No active-spec task is ready
+next_action: 'Start task T-044-escape-terminal-controls-in-authored-export-paths: Escape terminal controls in authored export paths'
 last_verification_result: pass for T-043-reject-lone-surrogates-in-authored-input at 2026-10-04T13:46:09Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- No active-spec task is ready
+- Start task T-044-escape-terminal-controls-in-authored-export-paths: Escape terminal controls in authored export paths
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 2
 - in_progress: 0
 - completed: 42
 - blocked: 0
