@@ -4,6 +4,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-04
+
 ### Added
 
 - Validate and preview authored JSONL notes without changing files, with whole-file
@@ -23,6 +25,15 @@ Notable user-facing changes to Latinitas Cards are documented here.
   display terminal controls as visible escapes without changing file destinations.
 - Authored imports reject lone Unicode surrogates with line and field diagnostics
   before selection or export, while preserving valid non-BMP Unicode.
+
+### Limitations
+
+- Import into Anki is manual; back up before updates and leave Personal Notes
+  unmapped. Forced termination, power loss, and concurrent exports are not protected.
+- Anki may normalize Unicode and remove NUL characters; authored grammar and
+  translations need human review. This release is on GitHub, not PyPI.
+- Experimental annotation extras lock urllib3 2.7.0, affected by two high and one
+  moderate security advisories; the default authored-note workflow does not install it.
 
 ## [0.1.0] - 2026-10-02
 
@@ -49,5 +60,6 @@ and export them for import into Anki, without modifying the source.
 - Legacy splitting/APKG mutation, annotation, Ollama analysis, and corpus cloze
   workflows remain experimental. This release is available on GitHub, not PyPI.
 
-[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/fmueller/latinitas-cards/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.0

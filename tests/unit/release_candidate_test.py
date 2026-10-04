@@ -327,7 +327,7 @@ def test_release_candidate_managed_updates_preserve_user_owned_notes() -> None:
     assert changed.personal_notes == "Review this next week"
 
 
-def test_release_metadata_and_current_lock_audit_are_versioned_for_v010() -> None:
+def test_release_metadata_and_current_lock_audit_are_versioned_for_v011() -> None:
     with (ROOT / "pyproject.toml").open("rb") as project_file:
         project = tomllib.load(project_file)
     with (ROOT / "uv.lock").open("rb") as lock_file:
@@ -338,8 +338,13 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v010() -> Non
     audit = (ROOT / "docs" / "license-compatibility-audit.md").read_text(encoding="utf-8")
     notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
 
-    assert project["project"]["version"] == "0.1.0"
-    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.1.0"
+    assert project["project"]["version"] == "0.1.1"
+    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.1.1"
+    assert "## [0.1.1] - 2026-10-04" in changelog
+    assert "compare/v0.1.1...HEAD" in changelog
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "git clone --branch v0.1.1 --depth 1" in readme
+    assert "**Release:** [v0.1.1]" in readme
     assert "## [0.1.0] - 2026-10-02" in changelog
     assert "## [Unreleased]" in changelog
     assert "Prepared version: `v0.1.0`" in release

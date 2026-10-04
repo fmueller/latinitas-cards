@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T20:10:54Z"
+updated_at: "2026-10-04T21:23:19Z"
 active_spec_version: v0.1.1
 active_spec_path: specs/v0.1.1.md
-current_task: ""
-current_task_title: ""
-status_summary: idle
+current_task: T-047-publish-v0-1-1
+current_task_title: Publish v0.1.1
+status_summary: in_progress
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-046-preserve-untouched-exports-after-early-staging at 2026-10-04T20:10:54Z
+last_verification_result: pass for T-047-publish-v0-1-1 at 2026-10-04T21:23:19Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -22,11 +22,12 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: none
+- Task: `T-047-publish-v0-1-1`
+- Title: Publish v0.1.1
 
 ## Status
 
-- idle
+- in_progress
 
 ## Blockers
 
@@ -34,7 +35,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-046-preserve-untouched-exports-after-early-staging at 2026-10-04T20:10:54Z
+- pass for T-047-publish-v0-1-1 at 2026-10-04T21:23:19Z
 
 ## Next Action
 
@@ -51,7 +52,7 @@ continuation_notes:
 ## Task Counts
 
 - todo: 1
-- in_progress: 0
+- in_progress: 1
 - completed: 45
 - blocked: 0
 - cancelled: 0
