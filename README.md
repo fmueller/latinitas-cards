@@ -149,16 +149,20 @@ Structural parser counts do not establish eligible-verb or universal morphologic
 coverage; full grammatical parsing and managed live-Anki updates are not implemented.
 PPP and supine remain distinct semantic roles.
 
-Authored JSONL study notes can be validated and previewed without corpus resources
-or profile mappings (CSV export is planned):
+Authored JSONL study notes can be validated, previewed, and exported without corpus
+resources or profile mappings:
 
 ```bash
 uv run latinitas-cards authored validate notes.jsonl --namespace my-course
 uv run latinitas-cards authored preview notes.jsonl --namespace my-course --kind vocab
+mkdir -p authored-csv
+uv run latinitas-cards authored export notes.jsonl --namespace my-course \
+  --output-dir authored-csv --deck 'Latin::Authored'
 ```
 
-These commands never change the input or write output files. See the authored import
-guide below for combined filters, merged duplicates, and whole-file diagnostics.
+Validation and preview write nothing; export writes one CSV per selected kind and
+never changes the input. See the authored import guide below for combined filters,
+whole-file diagnostics, and first/repeat Anki import with Personal Notes unmapped.
 
 ## Documentation
 

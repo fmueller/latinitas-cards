@@ -2,8 +2,8 @@
 
 This corpus-independent input format describes study material already written by
 a learner or agent. It does not parse Markdown or check Latin analyses. The
-Python loader, identity reconciliation, and CLI validation/preview are available
-now; CSV export remains separate planned work.
+Python loader, identity reconciliation, and CLI validation, preview, and CSV
+export are available without corpus resources or principal-part profile mappings.
 
 Save UTF-8 JSONL: one JSON object on each physical line, with no header, comments,
 or blank lines. A final newline is optional. An empty file is a valid empty input.
@@ -135,3 +135,81 @@ Neither command creates output files or modifies the input. The internal typed
 `AuthoredPreviewResult` is separate from terminal formatting; consumers must call
 `require_valid_selection()` before using notes as an exportable selection. There
 is no stable JSON preview API in this release.
+
+## Export selected notes and import into Anki
+
+Keep the namespace explicit and unchanged across edits. Pre-create an output
+directory, then export the same combined selection you reviewed:
+
+```bash
+mkdir -p authored-csv
+uv run latinitas-cards authored export notes.jsonl --namespace my-course \
+  --output-dir authored-csv --deck 'Latin::Authored' \
+  --kind vocab --kind form --section 'Lesson 3' --reference 'Lk 1,28' --tag lesson::3
+```
+
+This selects vocabulary OR form, AND the exact section, reference, and merged
+tag; `skip` is always excluded. Omit filters to export every included kind.
+The command reports effective selection and writes `vocab.csv`, `form.csv`, and
+`qa.csv` only for kinds with selected notes. It validates the entire file,
+including skipped/filtered rows and conflicting duplicates, before any writes.
+Invalid input exits nonzero without changing existing output or creating new
+files. An empty selection reports zero and writes nothing, even if the output
+directory is absent. Files left from an earlier, different selection are not
+deleted: import only the files reported by the current successful command.
+The input is never overwritten; symlink destinations are rejected.
+
+CSV uses UTF-8, LF line endings, fixed schema field order, HTML-safe content,
+and the shared v0.1.0 recoverable export boundary. Repeating a run with the same
+input, namespace, deck, filters, and generator version produces identical bytes.
+Headers specify comma separation, HTML, dedicated note type, target deck,
+column names, and the special Tags column. Managed provenance is preserved;
+input tags are merged and sorted. `Profile` is the fixed marker `authored`, not
+a corpus/profile mapping. **Personal Notes is absent from all CSV columns.**
+
+### First import
+
+1. Back up Anki. Create the three dedicated note types using the exact field
+   order and single `Recognition` template in [authored-note-types.md](authored-note-types.md).
+   Headers preset existing models; they do not install fields or templates.
+2. Pre-create `Latin::Authored` (or your explicitly chosen target deck).
+3. Import each reported CSV into its named note type with **Allow HTML in
+   fields** enabled. Map each managed column to the matching regular field and
+   `Tags` to Anki's special tags destination, not a regular field.
+4. Keep `LatinitasID` first; **leave Personal Notes unmapped**. Choose **Update
+   existing notes when first field matches**, match scope **note type**. Confirm
+   one intended Recognition card per note and check a representative answer.
+
+### Re-import after edits
+
+Edit managed content in JSONL, retaining kind, normalized key, and namespace.
+Validate and preview again, then repeat the same export command. Import the
+new CSV into the same dedicated note type with first-field Update enabled and
+the same managed mappings; Personal Notes remains unmapped because it is not
+offered as a column. Edited fields update the existing note, rather than adding
+a duplicate. Changing key, kind, or namespace intentionally creates a new identity.
+Removing or skipping an item does not delete a note already imported into Anki.
+Mapped tags may replace destination-only tags when managed content changes;
+back up those tags or defer import if they must be preserved. There is no live
+collection conflict detection, merge, or automatic Anki write.
+
+### Native Anki verification
+
+On 2026-10-04, Anki 26.09.3's native backend (PyPI `anki==26.9.3`) on Linux
+was exercised in a disposable collection using actual CLI-generated CSV files.
+For **each** of vocab, form, and QA, first import created one note and one
+Recognition card. A fresh `get_csv_metadata` + `import_csv` re-import with
+first-field Update and note-type match scope changed Meaning, Translation, or
+Answer respectively while retaining note ID, LatinitasID, card ID, target deck,
+and seeded nonempty Personal Notes. Native card question/answer rendering and
+HTML escaping were checked. Total remained three notes and three cards.
+
+Reproduce this optional native gate (no live collection is opened):
+
+```bash
+uv run --with anki==26.9.3 python scripts/check-authored-anki.py
+```
+
+This is a real native-backend import check, not a mocked importer or a claim
+that the desktop dialog was clicked. Manual desktop mapping remains necessary;
+the normal test environment intentionally does not depend on Anki.

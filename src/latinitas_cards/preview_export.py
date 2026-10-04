@@ -38,7 +38,7 @@ from .manifest import (
     allocate_source_scope,
     reconcile_csv_manifest,
 )
-from .notes import CSV_EXPORT_FIELD_NAMES, GENERATED_NOTE_FIELD_NAMES, TAGS_CSV_COLUMN, GeneratedNote
+from .notes import CSV_EXPORT_FIELD_NAMES, GENERATED_NOTE_FIELD_NAMES, GeneratedNote
 from .profile import DeckProfile
 from .profile_setup import encode_unsafe_controls
 from .sources import CanonicalSourceRecord, read_source_records
@@ -469,22 +469,30 @@ def deterministic_csv_bytes(result: PrincipalPartExportResult) -> bytes:
     if len(note_ids) != len(set(note_ids)):
         raise PrincipalPartExportError("Cannot export duplicate logical LatinitasID values.")
 
-    for value_name, value in (
-        ("generated note type", result.profile.generated_note_type),
-        ("target deck", result.profile.target_deck),
-    ):
-        _validate_import_metadata(value_name, value)
+    return serialize_anki_csv(
+        result.profile.generated_note_type,
+        result.profile.target_deck,
+        CSV_EXPORT_FIELD_NAMES,
+        (_note_values(note) for note in notes),
+    )
 
+
+def serialize_anki_csv(note_type: str, deck: str, columns: tuple[str, ...], rows: Iterable[tuple[str, ...]]) -> bytes:
+    """Shared UTF-8 transport boundary; callers supply already rendered managed fields."""
+    for value_name, value in (("generated note type", note_type), ("target deck", deck)):
+        _validate_import_metadata(value_name, value)
     output = io.StringIO(newline="")
     output.write("#separator:Comma\n")
     output.write("#html:true\n")
-    output.write(f"#notetype:{result.profile.generated_note_type}\n")
-    output.write(f"#deck:{result.profile.target_deck}\n")
-    output.write(f"#tags column:{TAGS_CSV_COLUMN}\n")
-    output.write(f"#columns:{','.join(CSV_EXPORT_FIELD_NAMES)}\n")
+    output.write(f"#notetype:{note_type}\n")
+    output.write(f"#deck:{deck}\n")
+    output.write(f"#tags column:{columns.index('Tags') + 1}\n")
+    output.write(f"#columns:{','.join(columns)}\n")
     writer = csv.writer(output, delimiter=",", lineterminator="\n", quoting=csv.QUOTE_MINIMAL)
-    for note in notes:
-        writer.writerow(_note_values(note))
+    for row in rows:
+        if len(row) != len(columns):
+            raise PrincipalPartExportError("CSV row width does not match the export schema.")
+        writer.writerow(row)
     return output.getvalue().encode("utf-8")
 
 
@@ -574,6 +582,12 @@ def write_principal_part_csv(
         artifacts.append(
             _CommitArtifact(destination=checkpoint_destination, payload=candidate_checkpoint.to_json().encode("utf-8"))
         )
+    commit_csv_artifacts(tuple((artifact.destination, artifact.payload) for artifact in artifacts))
+
+
+def commit_csv_artifacts(payloads: tuple[tuple[Path, bytes], ...]) -> None:
+    """Stage all payloads before replacement and restore originals on a failed commit."""
+    artifacts = [_CommitArtifact(destination=path, payload=payload) for path, payload in payloads]
     preserve_backups = False
     try:
         for artifact in artifacts:

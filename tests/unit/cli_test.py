@@ -297,7 +297,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     click_app = cast(click.Group, get_command(app))
     commands = list(click_app.commands.values())
     authored = cast(click.Group, click_app.commands["authored"])
-    assert set(authored.commands) == {"preview", "validate"}
+    assert set(authored.commands) == {"preview", "validate", "export"}
     commands.remove(authored)
     commands.extend(authored.commands.values())
     assert all(command.callback is not None for command in commands)
