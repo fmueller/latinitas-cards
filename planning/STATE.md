@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T11:30:09Z"
+updated_at: "2026-10-04T13:16:15Z"
 active_spec_version: v0.1.1
 active_spec_path: specs/v0.1.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: No active-spec task is ready
+next_action: 'Start task T-042-escape-terminal-controls-in-authored-diagnostics: Escape terminal controls in authored diagnostics'
 last_verification_result: pass for T-025-ship-the-authored-note-extraction-agent-skill at 2026-10-04T11:30:09Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- No active-spec task is ready
+- Start task T-042-escape-terminal-controls-in-authored-diagnostics: Escape terminal controls in authored diagnostics
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 3
 - in_progress: 0
 - completed: 40
 - blocked: 0
