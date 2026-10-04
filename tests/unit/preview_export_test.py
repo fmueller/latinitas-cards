@@ -1,10 +1,12 @@
 import csv
+import errno
 import hashlib
 import io
 import json
 import os
 import shutil
 import sqlite3
+import tempfile
 import zipfile
 from dataclasses import replace
 from pathlib import Path
@@ -1185,6 +1187,40 @@ def test_state_removed_after_prepare_blocks_the_export(tmp_path: Path) -> None:
 
 def _is_staged_commit(source_text: str) -> bool:
     return source_text.endswith(".tmp") and ".backup." not in source_text
+
+
+@pytest.mark.parametrize("fail_at", [1, 2, 3])
+@pytest.mark.parametrize("existing", [False, True])
+def test_early_staging_failure_preserves_legacy_csv_manifest_and_checkpoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fail_at: int, existing: bool
+) -> None:
+    source = tmp_path / "source.csv"
+    output = tmp_path / "generated.csv"
+    state = Path(f"{source}.latinitas.json")
+    _write_source(source, [("ignored-a", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen")])
+    prepared = prepare_principal_part_export(
+        source, _manifest_profile(), manifest_path=state, approved_allocations={0}, approve_new_scope=True
+    )
+    if existing:
+        # Prepare first so invalid binary originals exercise recovery, not state parsing.
+        for index, path in enumerate((output, state, Path(f"{source}.latinitas-cards.json"))):
+            path.write_bytes(bytes([index, 255, 0, 128]) + b"original\r\n")
+    before = {p.name: p.read_bytes() for p in tmp_path.iterdir()}
+    calls = 0
+    original_mkstemp = tempfile.mkstemp
+
+    def fail_creation(*, prefix: str, suffix: str, dir: Path) -> tuple[int, str]:
+        nonlocal calls
+        calls += 1
+        if calls == fail_at:
+            raise OSError(errno.ENOSPC, "injected legacy staging failure")
+        return original_mkstemp(prefix=prefix, suffix=suffix, dir=dir)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.tempfile.mkstemp", fail_creation)
+    with pytest.raises(PrincipalPartExportError, match="No output or committed state was changed"):
+        write_principal_part_csv(prepared, output)
+    assert calls == fail_at
+    assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before
 
 
 def test_keyboard_interrupt_after_backup_moves_restores_prior_pair_and_identities(

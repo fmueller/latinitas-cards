@@ -15,6 +15,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- CSV exports preserve existing output and state files when temporary staging
+  fails, including disk-full errors before all files have been staged.
 - Authored Anki cards preserve CRLF, CR, and LF line breaks in content and
   citations, including after import and edited re-import.
 - Authored validate, preview, and export diagnostics and successful export paths

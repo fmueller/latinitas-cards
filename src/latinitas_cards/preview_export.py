@@ -587,12 +587,15 @@ def write_principal_part_csv(
 
 def commit_csv_artifacts(payloads: tuple[tuple[Path, bytes], ...]) -> None:
     """Stage all payloads before replacement and restore originals on a failed commit."""
-    artifacts = [_CommitArtifact(destination=path, payload=payload) for path, payload in payloads]
+    artifacts = [
+        _CommitArtifact(destination=path, payload=payload, existed_before=path.exists()) for path, payload in payloads
+    ]
     preserve_backups = False
+    replacement_started = False
     try:
         for artifact in artifacts:
-            artifact.existed_before = artifact.destination.exists()
             artifact.staged = _stage_bytes(artifact.destination, artifact.payload)
+        replacement_started = True
         for artifact in artifacts:
             artifact.backup = _prepare_backup_slot(artifact.destination)
             if artifact.backup is not None:
@@ -606,7 +609,8 @@ def commit_csv_artifacts(payloads: tuple[tuple[Path, bytes], ...]) -> None:
         preserve_backups = True
         restored: dict[Path, bool] = {}
         for artifact in artifacts:
-            restored[artifact.destination] = _restore_after_failed_commit(
+            # Staging never changes destinations, including concurrent creations.
+            restored[artifact.destination] = not replacement_started or _restore_after_failed_commit(
                 artifact.destination, artifact.backup, artifact.existed_before
             )
         retained_backups = tuple(

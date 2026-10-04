@@ -1,7 +1,11 @@
 import csv
+import errno
 import io
 import json
+import os
+import tempfile
 from pathlib import Path
+from typing import IO
 
 import pytest
 from authored_import_test import row, write_rows
@@ -9,6 +13,93 @@ from typer.testing import CliRunner, Result
 
 from latinitas_cards.authored_notes import AUTHORED_NOTE_TYPES
 from latinitas_cards.cli import app
+
+
+@pytest.mark.parametrize("fail_at", [1, 2, 3])
+@pytest.mark.parametrize("present", [(), (0, 1, 2), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
+@pytest.mark.parametrize("failure", ["create", "write"])
+def test_early_staging_failure_preserves_durable_directory_and_successful_repeat(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fail_at: int, present: tuple[int, ...], failure: str
+) -> None:
+    source = write_rows(tmp_path / "notes.jsonl", [row(kind) for kind in ("vocab", "form", "qa")])
+    source_before = source.read_bytes()
+    out = tmp_path / "out"
+    out.mkdir()
+    for index, kind in enumerate(("vocab", "form", "qa")):
+        if index in present:
+            (out / f"{kind}.csv").write_bytes(bytes([index, 255, 0, 128]) + b"prior\r\n")
+    before = {p.name: p.read_bytes() for p in out.iterdir()}
+    calls = 0
+    original_mkstemp = tempfile.mkstemp
+    original_fdopen = os.fdopen
+
+    def fail_creation(*, prefix: str, suffix: str, dir: Path) -> tuple[int, str]:
+        nonlocal calls
+        calls += 1
+        if calls == fail_at:
+            raise OSError(errno.ENOSPC, "injected staging creation failure")
+        return original_mkstemp(prefix=prefix, suffix=suffix, dir=dir)
+
+    def fail_write(payload: bytes) -> int:
+        raise OSError(errno.ENOSPC, "injected staging write failure")
+
+    def open_stage(descriptor: int, mode: str) -> IO[bytes]:
+        nonlocal calls
+        calls += 1
+        stream = original_fdopen(descriptor, mode)
+        if calls == fail_at:
+            monkeypatch.setattr(stream, "write", fail_write)
+        return stream
+
+    with monkeypatch.context() as injection:
+        if failure == "create":
+            injection.setattr("latinitas_cards.preview_export.tempfile.mkstemp", fail_creation)
+        else:
+            injection.setattr("latinitas_cards.preview_export.os.fdopen", open_stage)
+        result = export(source, out)
+    assert calls == fail_at
+    assert result.exit_code == 1, result.output
+    assert "No output or committed state was changed" in result.output
+    assert source.read_bytes() == source_before
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == before
+    assert export(source, out).exit_code == 0
+    successful = {p.name: p.read_bytes() for p in out.iterdir()}
+    assert set(successful) == {"vocab.csv", "form.csv", "qa.csv"}
+    assert all(len(data(payload)) == 1 for payload in successful.values())
+    assert export(source, out).exit_code == 0
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == successful
+    assert source.read_bytes() == source_before
+
+
+def test_staging_failure_does_not_remove_concurrently_created_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = write_rows(tmp_path / "notes.jsonl", [row(kind) for kind in ("vocab", "form", "qa")])
+    source_before = source.read_bytes()
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "vocab.csv").write_bytes(b"prior\x00\xff")
+    before = {p.name: p.read_bytes() for p in out.iterdir()}
+    concurrent_bytes = b"concurrent\x00\xfe"
+    calls = 0
+    original_mkstemp = tempfile.mkstemp
+
+    def create_concurrently_then_fail(*, prefix: str, suffix: str, dir: Path) -> tuple[int, str]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            (out / "form.csv").write_bytes(concurrent_bytes)
+        if calls == 2:
+            raise OSError(errno.ENOSPC, "injected staging failure after concurrent creation")
+        return original_mkstemp(prefix=prefix, suffix=suffix, dir=dir)
+
+    monkeypatch.setattr("latinitas_cards.preview_export.tempfile.mkstemp", create_concurrently_then_fail)
+    result = export(source, out)
+    assert calls == 2
+    assert result.exit_code == 1, result.output
+    assert "No output or committed state was changed" in result.output
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == before | {"form.csv": concurrent_bytes}
+    assert source.read_bytes() == source_before
 
 
 def export(source: Path, destination: Path, *filters: str) -> Result:
