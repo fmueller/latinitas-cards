@@ -2436,6 +2436,7 @@ def validate_impl(
 
 def _register_commands() -> None:
     from .commands.annotate import annotate
+    from .commands.authored import app as authored_app
     from .commands.cloze import cloze
     from .commands.generate import generate
     from .commands.inspect import inspect
@@ -2452,6 +2453,7 @@ def _register_commands() -> None:
     app.command()(cloze)
     app.command()(validate)
     app.command()(setup)
+    app.add_typer(authored_app, name="authored")
 
 
 _register_commands()

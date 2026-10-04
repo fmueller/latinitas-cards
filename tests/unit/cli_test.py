@@ -295,7 +295,13 @@ def test_cli_short_help_option() -> None:
 
 def test_command_callbacks_are_split_into_command_modules() -> None:
     click_app = cast(click.Group, get_command(app))
-    command_modules = {name: command.callback.__module__ for name, command in click_app.commands.items()}
+    commands = list(click_app.commands.values())
+    authored = cast(click.Group, click_app.commands["authored"])
+    assert set(authored.commands) == {"preview", "validate"}
+    commands.remove(authored)
+    commands.extend(authored.commands.values())
+    assert all(command.callback is not None for command in commands)
+    command_modules = {command.name: command.callback.__module__ for command in commands}
 
     assert command_modules
     assert all(module.startswith("latinitas_cards.commands.") for module in command_modules.values())

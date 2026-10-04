@@ -2,8 +2,8 @@
 
 This corpus-independent input format describes study material already written by
 a learner or agent. It does not parse Markdown or check Latin analyses. The
-Python loader and identity reconciliation are available now; CLI preview,
-selection, and CSV export are separate planned work.
+Python loader, identity reconciliation, and CLI validation/preview are available
+now; CSV export remains separate planned work.
 
 Save UTF-8 JSONL: one JSON object on each physical line, with no header, comments,
 or blank lines. A final newline is optional. An empty file is a valid empty input.
@@ -104,3 +104,34 @@ retains all contributing physical lines and the smallest line as item metadata.
 Conflict diagnostics name both contributing lines and each differing field.
 `diagnostic_notes` are partial reporting data, not an exportable selection; call
 the reconciliation result's `require_valid()` before selecting or exporting.
+
+## Validate and preview without writing files
+
+Supply an explicit, stable collection namespace; no profile, corpus resources,
+or principal-part field mappings are required:
+
+```bash
+uv run latinitas-cards authored validate notes.jsonl --namespace my-course
+uv run latinitas-cards authored preview notes.jsonl --namespace my-course
+uv run latinitas-cards authored preview notes.jsonl --namespace my-course \
+  --kind vocab --section 'Lesson 3' --reference 'Lk 1,28' --tag lesson::3
+```
+
+Repeat a filter for OR matching within that dimension; different dimensions are
+combined with AND. Section/reference/tag values match exactly, including whitespace.
+Filters run after whole-file validation and duplicate reconciliation, so they see
+merged tags and completed references. `skip` notes are counted but never selected.
+
+Both commands report counts for reconciled nonconflicting notes by kind, section,
+reference (`None` means absent), and status, plus merged line groups and all errors.
+Invalid rows and conflicting groups are excluded from those counts and reported
+as diagnostics. Preview additionally shows effective filters, selection size, and
+one representative rendered front/back per matching kind (HTML shown as text).
+An empty valid selection succeeds and is reported explicitly. Any validation or
+conflict error anywhere, even in skipped or filtered-out rows, exits nonzero; cards
+shown then are diagnostic only, with no exportable selection.
+
+Neither command creates output files or modifies the input. The internal typed
+`AuthoredPreviewResult` is separate from terminal formatting; consumers must call
+`require_valid_selection()` before using notes as an exportable selection. There
+is no stable JSON preview API in this release.

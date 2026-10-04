@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Validate and preview authored JSONL notes without changing files, with whole-file
+  diagnostics, duplicate merging, and filters by kind, section, reference, and tag.
+
 ## [0.1.0] - 2026-10-02
 
 First release: turn an existing Latin deck into German principal-part study cards
