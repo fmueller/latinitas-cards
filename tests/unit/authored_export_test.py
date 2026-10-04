@@ -37,6 +37,35 @@ def data(payload: bytes) -> list[list[str]]:
     )
 
 
+@pytest.mark.parametrize(
+    ("directory", "display"),
+    [
+        ("ordinary ä", "ordinary ä"),
+        ("out\x1b]0;OWNED\x07", r"out\x1b]0;OWNED\x07"),
+        ("out\n\r\t\u2028\u2029", r"out\x0a\x0d\x09\u2028\u2029"),
+    ],
+)
+def test_export_status_escapes_path_without_changing_destination_or_csv(
+    tmp_path: Path, directory: str, display: str
+) -> None:
+    source = write_rows(tmp_path / "notes.jsonl", [row(kind) for kind in ("vocab", "form", "qa")])
+    source_bytes = source.read_bytes()
+    baseline = tmp_path / "baseline"
+    baseline.mkdir()
+    assert export(source, baseline).exit_code == 0
+    out = tmp_path / directory
+    out.mkdir()
+    result = export(source, out)
+    assert result.exit_code == 0, repr(result.output)
+    expected_status = [f"Wrote {tmp_path / display / f'{kind}.csv'}" for kind in ("vocab", "form", "qa")]
+    assert result.output.splitlines()[-3:] == expected_status, repr(result.output)
+    assert all(character not in result.output for character in "\x1b\x07\r\t\u2028\u2029")
+    assert {path.name for path in out.iterdir()} == {"vocab.csv", "form.csv", "qa.csv"}
+    for path in baseline.iterdir():
+        assert (out / path.name).read_bytes() == path.read_bytes()
+    assert source.read_bytes() == source_bytes
+
+
 @pytest.mark.parametrize("command", ["validate", "preview", "export"])
 @pytest.mark.parametrize("existing", [False, True])
 def test_surrogate_cli_errors_aggregate_before_selection_and_preserve_bytes(

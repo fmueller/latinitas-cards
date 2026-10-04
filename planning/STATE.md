@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T15:38:44Z"
+updated_at: "2026-10-04T15:48:12Z"
 active_spec_version: v0.1.1
 active_spec_path: specs/v0.1.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-044-escape-terminal-controls-in-authored-export-paths: Escape terminal controls in authored export paths'
-last_verification_result: pass for T-043-reject-lone-surrogates-in-authored-input at 2026-10-04T13:46:09Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-044-escape-terminal-controls-in-authored-export-paths at 2026-10-04T15:48:02Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-043-reject-lone-surrogates-in-authored-input at 2026-10-04T13:46:09Z
+- pass for T-044-escape-terminal-controls-in-authored-export-paths at 2026-10-04T15:48:02Z
 
 ## Next Action
 
-- Start task T-044-escape-terminal-controls-in-authored-export-paths: Escape terminal controls in authored export paths
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 1
 - in_progress: 0
-- completed: 42
+- completed: 43
 - blocked: 0
 - cancelled: 0

@@ -98,4 +98,4 @@ def export_notes(
         typer.echo(f"Authored export error: {encode_unsafe_controls(str(error), preserve_line_breaks=False)}", err=True)
         raise typer.Exit(1) from error
     for path in paths:
-        typer.echo(f"Wrote {path}")
+        typer.echo(f"Wrote {encode_unsafe_controls(str(path), preserve_line_breaks=False)}")

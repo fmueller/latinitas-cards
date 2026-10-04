@@ -15,8 +15,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
-- Authored validate, preview, and export diagnostics display terminal controls as
-  visible escapes instead of executing controls embedded in invalid input.
+- Authored validate, preview, and export diagnostics and successful export paths
+  display terminal controls as visible escapes without changing file destinations.
 - Authored imports reject lone Unicode surrogates with line and field diagnostics
   before selection or export, while preserving valid non-BMP Unicode.
 
