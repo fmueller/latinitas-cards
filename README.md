@@ -164,6 +164,12 @@ Validation and preview write nothing; export writes one CSV per selected kind an
 never changes the input. See the authored import guide below for combined filters,
 whole-file diagnostics, and first/repeat Anki import with Personal Notes unmapped.
 
+For loosely structured Markdown, ask your repository agent to use
+[`extracting-authored-notes`](.agents/skills/extracting-authored-notes/SKILL.md)
+(also installed under `.claude/skills/`). Supply notes, language, a stable namespace,
+and any existing JSONL. Review QA keys and the validated preview before export;
+re-extraction preserves keys and skip decisions and reports new/changed/missing items.
+
 ## Documentation
 
 - [Changelog](CHANGELOG.md)

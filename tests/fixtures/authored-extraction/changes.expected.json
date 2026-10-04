@@ -1,0 +1,7 @@
+{
+  "new": ["vocab/porta/gate"],
+  "changed": ["form/garden/speaker", "qa/harbour/cargo"],
+  "missing": ["qa/garden/path"],
+  "unchanged": ["form/harbour/sailor", "vocab/navis/ship", "vocab/rosa/rose"],
+  "missing_policy": "retained unchanged pending review"
+}

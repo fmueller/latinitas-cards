@@ -10,6 +10,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   diagnostics, duplicate merging, and filters by kind, section, reference, and tag.
 - Export selected authored vocabulary, form, and QA notes as repeatable Anki CSVs;
   edits retain note identity and Personal Notes stays unmapped on re-import.
+- Extract Markdown study notes with the repository agent skill; review stable keys,
+  preserved skip decisions, and new/changed/missing items in a validated preview.
 
 ## [0.1.0] - 2026-10-02
 

@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T11:12:37Z"
+updated_at: "2026-10-04T11:30:09Z"
 active_spec_version: v0.1.1
 active_spec_path: specs/v0.1.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
-last_verification_result: pass for T-024-export-selected-authored-notes-as-deterministic at 2026-10-04T11:12:27Z
+next_action: No active-spec task is ready
+last_verification_result: pass for T-025-ship-the-authored-note-extraction-agent-skill at 2026-10-04T11:30:09Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-024-export-selected-authored-notes-as-deterministic at 2026-10-04T11:12:27Z
+- pass for T-025-ship-the-authored-note-extraction-agent-skill at 2026-10-04T11:30:09Z
 
 ## Next Action
 
-- Select the next eligible task
+- No active-spec task is ready
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 1
 - in_progress: 0
-- completed: 39
+- completed: 40
 - blocked: 0
 - cancelled: 0
