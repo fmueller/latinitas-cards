@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T15:48:12Z"
+updated_at: "2026-10-04T18:41:04Z"
 active_spec_version: v0.1.1
 active_spec_path: specs/v0.1.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
+next_action: 'Start task T-045-preserve-cr-newlines-in-authored-anki-rendering: Preserve CR newlines in authored Anki rendering'
 last_verification_result: pass for T-044-escape-terminal-controls-in-authored-export-paths at 2026-10-04T15:48:02Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-045-preserve-cr-newlines-in-authored-anki-rendering: Preserve CR newlines in authored Anki rendering
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 2
 - in_progress: 0
 - completed: 43
 - blocked: 0
