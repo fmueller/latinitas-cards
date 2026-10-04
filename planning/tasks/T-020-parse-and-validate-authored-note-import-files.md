@@ -1,11 +1,11 @@
 ---
 id: T-020-parse-and-validate-authored-note-import-files
 title: Parse and validate authored note import files
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.1.md#authored-note-import-format
 dependencies: []
-updated_at: "2026-09-23T21:23:04Z"
+updated_at: "2026-10-04T09:51:24Z"
 ---
 
 # T-020-parse-and-validate-authored-note-import-files Parse and validate authored note import files
@@ -34,6 +34,19 @@ no corpus is parsed or assumed.
 
 ## Verification Notes
 
-- TODO: record verification evidence paths.
+- Verification passed at 2026-10-04T09:51:24Z after Ruff, strict mypy, and
+  `uv run pytest -v` (464 passed). Focused loader suite: 33 passed.
+- Strict TDD: initial loader tests failed with ModuleNotFoundError, then 30 passed.
+  Duplicate-key regression tests failed in all 3 cases, then all 3 passed.
+- Dedicated code-simplifier made no changes. Independent General and Python
+  review found no concrete findings. Security S-1 was validated by a fresh
+  candidate reviewer: "Reject JSON objects with duplicate keys instead of
+  silently accepting the last value." Fixed with a recursive object-pairs hook;
+  fresh disposition verification marked S-1 resolved with no new issues.
+- Manual loading of all documented JSONL examples returned 3 typed items with
+  verbatim references from two corpora and a non-corpus lesson label.
 
 ## Implementation Notes
+
+- 2026-10-04T09:51:24Z: verification pass
+- 2026-10-04T09:51:24Z: Implemented schema-1 authored JSONL loader, typed vocab/form/qa, aggregate whole-file diagnostics and require_valid gate, opaque provenance, and per-kind format examples. Ruff/mypy/464 tests pass; review S-1 fixed via strict TDD and independently verified. See verification run timestamp recorded in this task.
