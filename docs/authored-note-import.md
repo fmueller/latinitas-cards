@@ -2,8 +2,8 @@
 
 This corpus-independent input format describes study material already written by
 a learner or agent. It does not parse Markdown or check Latin analyses. The
-Python loader is available now; CLI preview, selection, identity reconciliation,
-and CSV export are separate planned work.
+Python loader and identity reconciliation are available now; CLI preview,
+selection, and CSV export are separate planned work.
 
 Save UTF-8 JSONL: one JSON object on each physical line, with no header, comments,
 or blank lines. A final newline is optional. An empty file is a valid empty input.
@@ -66,3 +66,41 @@ items are **not an exportable selection**. Selection/export callers must call
 `require_valid()` before filtering or touching output files. Successful items
 carry loader-assigned `line_number` metadata; that field is forbidden in input.
 Read/open failures propagate as `OSError`. This loader writes no output files.
+
+## Stable identity and duplicate reconciliation
+
+```python
+from latinitas_cards.authored_identity import reconcile_authored_import
+
+resolved = reconcile_authored_import("my-course", result)
+notes = resolved.require_valid()  # loader errors AND duplicate conflicts block selection
+for note in notes:
+    print(note.latinitas_id, note.item.key, note.lines)
+print(resolved.merged_duplicates)  # physical line groups for compatible duplicates
+```
+
+Choose a stable, nonempty collection namespace. Namespaces are used verbatim,
+not normalized. Keys are Unicode NFC-normalized, outer whitespace is stripped,
+and each run of Unicode whitespace is replaced by one ASCII space (Python
+`str.split()` whitespace semantics). Case and punctuation are preserved:
+`" lesson:\t1 "` and `"lesson: 1"` are one key; `"Lesson: 1"` is different.
+Renaming a normalized key, namespace, or kind creates a different identity.
+
+Identity reuses the v0.1.0 `latinitas-v2-` note-family contract: the source identity
+is compact, non-ASCII-escaped JSON `["authored", namespace, kind]`, the object key
+is the normalized key, and no source scope is supplied. Content, language, tags,
+status, provenance, and line numbers never enter the digest. Correcting them on
+a later import keeps the ID; conflicting duplicates within one import still fail.
+
+Reconciliation covers all rows, including `skip`, before filtering. Same-kind,
+same-normalized-key duplicates must agree exactly on required content, language,
+document, and section. Optional `dictionary_form`, `context`, and reference can
+be completed from another row when absent (missing, null, or empty string).
+Different nonempty values conflict; whitespace-only optional strings are nonempty
+and preserved verbatim. Tags are unioned and sorted; `skip` dominates `include`.
+Merged keys are normalized, empty optional values become null, and notes are
+sorted by kind and normalized key independently of input order. Each merged note
+retains all contributing physical lines and the smallest line as item metadata.
+Conflict diagnostics name both contributing lines and each differing field.
+`diagnostic_notes` are partial reporting data, not an exportable selection; call
+the reconciliation result's `require_valid()` before selecting or exporting.

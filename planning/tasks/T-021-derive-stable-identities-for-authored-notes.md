@@ -1,13 +1,13 @@
 ---
 id: T-021-derive-stable-identities-for-authored-notes
 title: Derive stable identities for authored notes
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.1.md#authored-note-identity
 dependencies:
     - T-020-parse-and-validate-authored-note-import-files
     - T-002-stable-generated-note-identity
-updated_at: "2026-09-23T21:23:04Z"
+updated_at: "2026-10-04T10:05:27Z"
 ---
 
 # T-021-derive-stable-identities-for-authored-notes Derive stable identities for authored notes
@@ -35,6 +35,23 @@ conflicting ones.
 
 ## Verification Notes
 
-- TODO: record verification evidence paths.
+- Verification run 2026-10-04T10:05:27Z passed after the exact Ruff, mypy,
+  and pytest chain: all lint checks passed, 57 typed files clean, 482 tests passed.
+- Strict behavioral TDD: 18 failures against the initial API skeleton (normalization
+  mismatch, absent duplicate result, missing conflict errors), then 18 passing tests.
+- Dedicated code-simplifier loaded its skill and recommended no changes. Independent
+  General, Python, and Security reviewers each reported: "No concrete task-relevant
+  findings." Fresh candidate validation found zero candidates; fresh disposition
+  verification found no unresolved or newly introduced task-relevant issues.
+- Taskrail selector matched T-021 and the pinned v0.1.1 spec before start, verify,
+  and complete. No follow-up task was needed; this cycle stops after T-021.
 
 ## Implementation Notes
+
+- Authored identity and whole-file reconciliation live in authored_identity.py,
+  reusing the v0.1.0 derive_latinitas_id contract. Keys use NFC and collapsed
+  whitespace while preserving case; namespaces and content remain verbatim.
+- Compatible duplicates complete absent optional values, sort tag unions, and
+  honor skip dominance. Conflicts retain actual contributor lines and field names.
+- CLI, selection, and export remain outside this task's scope.
+- 2026-10-04T10:05:27Z: verification pass
