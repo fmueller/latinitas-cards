@@ -2,10 +2,10 @@
 
 This repository uses versioned specs under `specs/`.
 
-- `specs/v0.1.0.md` is the active spec. It defines the first deck-enrichment release:
+- `specs/v0.1.0.md` defines the completed first deck-enrichment release:
   assisted deck profiles, stable generated-note identity, principal-part cards, and
   deterministic Anki CSV output.
-- `specs/v0.1.1.md` is a planned, inactive follow-up that imports authored vocabulary,
+- `specs/v0.1.1.md` is the active spec. It adds import of authored vocabulary,
   form, and question/answer notes through the v0.1.0 identity and export contracts.
 - `specs/v0.2.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
   preserve the agreed progression through managed updates, form parsing and colors,
@@ -15,8 +15,8 @@ This repository uses versioned specs under `specs/`.
   contract.
 - `specs/v0.2.1.md` adds short, reviewed combinations of existing deck vocabulary for
   translation and grammatical recognition, without waiting for corpus-first generation.
-- The `v0.1.0` tag records the first release; the active spec stays at v0.1.0 until
-  the next planned version is activated through Taskrail.
+- The `v0.1.0` tag records the first release; v0.1.1 is activated for implementation,
+  not yet released. Active-spec transitions are managed through Taskrail.
 - Tracked work in `planning/tasks/` links to its headings via `spec_ref`.
 
 ## Reading Order

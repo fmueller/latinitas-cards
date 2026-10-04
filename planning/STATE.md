@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-03T11:11:00Z"
-active_spec_version: v0.1.0
-active_spec_path: specs/v0.1.0.md
+updated_at: "2026-10-04T09:36:15Z"
+active_spec_version: v0.1.1
+active_spec_path: specs/v0.1.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
+next_action: 'Start task T-020-parse-and-validate-authored-note-import-files: Parse and validate authored note import files'
 last_verification_result: pass for T-041-classify-mutated-cancellation-errors-as-test at 2026-10-03T11:11:00Z
 relevant_artifacts: []
 continuation_notes:
@@ -18,7 +18,7 @@ continuation_notes:
 
 ## Active Spec
 
-- `specs/v0.1.0.md`
+- `specs/v0.1.1.md`
 
 ## Current Focus
 
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-020-parse-and-validate-authored-note-import-files: Parse and validate authored note import files
 
 ## Relevant Artifacts
 

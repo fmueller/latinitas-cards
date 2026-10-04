@@ -63,7 +63,8 @@ issue first, not necessarily a code regression.
 Planning and task state live in the repo, managed by the `taskrail` CLI.
 
 - `specs/` — versioned specs. `specs/v0.1.0.md` defines the first release and
-  remains active until the next planned spec is activated through Taskrail.
+  `specs/v0.1.1.md` is active for authored-note import work. Activate later specs
+  through Taskrail.
 - `planning/STATE.md` — current focus, blockers, next action.
 - `planning/tasks/` — one file per task, each linked to a spec heading via `spec_ref`.
 - `planning/artifacts/` — verification artifacts, gitignored.
