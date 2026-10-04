@@ -13,6 +13,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - Extract Markdown study notes with the repository agent skill; review stable keys,
   preserved skip decisions, and new/changed/missing items in a validated preview.
 
+### Fixed
+
+- Authored validate, preview, and export diagnostics display terminal controls as
+  visible escapes instead of executing controls embedded in invalid input.
+
 ## [0.1.0] - 2026-10-02
 
 First release: turn an existing Latin deck into German principal-part study cards

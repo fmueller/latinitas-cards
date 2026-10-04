@@ -114,6 +114,57 @@ def test_cli_controls_are_inert_but_typed_content_is_preserved(tmp_path: Path) -
     assert r"\x0dspoof\u202etext" in result.output
 
 
+@pytest.mark.parametrize("command", ["validate", "preview", "export"])
+def test_cli_escapes_issue_fields_and_recovers_without_writes(tmp_path: Path, command: str) -> None:
+    field = "bad\x1b]0;OWNED\x07\r\u202e"
+    provenance = {"document": "D", "section": "S\x1b\x07", "reference": "R\r"}
+    source = write_rows(tmp_path / "notes.jsonl", [row(**{field: "extra"}), row(provenance=provenance)])
+    existing = tmp_path / "authored-vocab.csv"
+    existing.write_bytes(b"existing output\x00\xff")
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir()}
+    structured = preview_authored_import(source, "course")
+    assert field in structured.errors[0].field
+    assert structured.diagnostic_notes[0].item.provenance.section == provenance["section"]
+    args = ["authored", command, str(source), "--namespace", "course"]
+    if command == "export":
+        args += ["--output-dir", str(tmp_path), "--deck", "Latin"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 1, result.output
+    assert "\x1b" not in result.output and "\x07" not in result.output
+    assert "\r" not in result.output and "\u202e" not in result.output
+    assert r"bad\x1b]0;OWNED\x07\x0d\u202e" in result.output
+    assert "line 1" in result.output and "Extra inputs are not permitted" in result.output
+    assert "diagnostic matches: 1; not exportable" in result.output
+    if command == "preview":
+        assert "Front:\n" in result.output and "Back:\n" in result.output and "amō" in result.output
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir()} == before
+
+
+@pytest.mark.parametrize(
+    ("command", "boundary"),
+    [("validate", "input"), ("preview", "input"), ("export", "input"), ("export", "export")],
+)
+def test_cli_escapes_caught_error_text(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, command: str, boundary: str
+) -> None:
+    from latinitas_cards.commands import authored
+
+    source = write_rows(tmp_path / "notes.jsonl", [row()])
+
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ValueError("unsafe\x1b]0;OWNED\x07\r\n\t\u202e")
+
+    monkeypatch.setattr(authored, "preview_authored_import" if boundary == "input" else "write_authored_csv", fail)
+    args = ["authored", command, str(source), "--namespace", "course"]
+    if command == "export":
+        args += ["--output-dir", str(tmp_path), "--deck", "Latin"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 1
+    assert "\x1b" not in result.output and "\x07" not in result.output
+    assert f"Authored {boundary} error: " in result.output
+    assert r"unsafe\x1b]0;OWNED\x07\x0d\x0a\x09\u202e" in result.output
+
+
 @pytest.mark.parametrize("dimension", ["kind", "section", "reference", "tag"])
 def test_each_combined_cli_filter_excludes_its_own_decoy(tmp_path: Path, dimension: str) -> None:
     provenance = {"document": "D", "section": "S", "reference": "R"}

@@ -20,7 +20,7 @@ def _load(path: Path, namespace: str, filters: AuthoredFilters | None = None) ->
     try:
         return preview_authored_import(path, namespace, filters)
     except (OSError, ValueError) as error:
-        typer.echo(f"Authored input error: {error}", err=True)
+        typer.echo(f"Authored input error: {encode_unsafe_controls(str(error), preserve_line_breaks=False)}", err=True)
         raise typer.Exit(1) from error
 
 
@@ -39,7 +39,7 @@ def _report(result: AuthoredPreviewResult, *, show_cards: bool) -> None:
     typer.echo(f"Filters: {result.filters}")
     if result.errors:
         for issue in result.errors:
-            typer.echo(str(issue))
+            typer.echo(encode_unsafe_controls(str(issue), preserve_line_breaks=False))
         typer.echo(
             f"Invalid: {len(result.errors)} errors; diagnostic matches: {len(result.diagnostic_notes)}; not exportable"
         )
@@ -95,7 +95,7 @@ def export_notes(
     try:
         paths = write_authored_csv(result, input_path, output_dir, deck)
     except (OSError, ValueError) as error:
-        typer.echo(f"Authored export error: {error}", err=True)
+        typer.echo(f"Authored export error: {encode_unsafe_controls(str(error), preserve_line_breaks=False)}", err=True)
         raise typer.Exit(1) from error
     for path in paths:
         typer.echo(f"Wrote {path}")
