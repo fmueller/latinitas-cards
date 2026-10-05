@@ -1,14 +1,15 @@
 ---
 schema_version: 1
-updated_at: "2026-10-05T05:35:16Z"
+updated_at: "2026-10-05T05:57:54Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
-status_summary: idle
-blockers: []
-next_action: Select the next eligible task
-last_verification_result: pass for T-061-verify-managed-csv-import-safety-and-recovery-in at 2026-10-05T05:35:16Z
+status_summary: blocked
+blockers:
+    - 'T-062-verify-morphology-presentation-on-ankimobile-and: Required native AnkiMobile iPhone/iPad devices/client unavailable in Linux orb. Partial Desktop 26.09.3 completion muted/light/static proof only; finish native Mobile and remaining Desktop/disclosure/manual setup/import parity gates before completion or release readiness.'
+next_action: Resolve blocker on T-062-verify-morphology-presentation-on-ankimobile-and
+last_verification_result: fail for T-062-verify-morphology-presentation-on-ankimobile-and at 2026-10-05T05:57:54Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -26,19 +27,19 @@ continuation_notes:
 
 ## Status
 
-- idle
+- blocked
 
 ## Blockers
 
-- None
+- T-062-verify-morphology-presentation-on-ankimobile-and: Required native AnkiMobile iPhone/iPad devices/client unavailable in Linux orb. Partial Desktop 26.09.3 completion muted/light/static proof only; finish native Mobile and remaining Desktop/disclosure/manual setup/import parity gates before completion or release readiness.
 
 ## Last Verification
 
-- pass for T-061-verify-managed-csv-import-safety-and-recovery-in at 2026-10-05T05:35:16Z
+- fail for T-062-verify-morphology-presentation-on-ankimobile-and at 2026-10-05T05:57:54Z
 
 ## Next Action
 
-- Select the next eligible task
+- Resolve blocker on T-062-verify-morphology-presentation-on-ankimobile-and
 
 ## Relevant Artifacts
 
@@ -50,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 3
+- todo: 2
 - in_progress: 0
 - completed: 59
-- blocked: 0
+- blocked: 1
 - cancelled: 0
