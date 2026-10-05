@@ -298,14 +298,24 @@ def read_snapshot(payload: object, expected: BoundDestination) -> DestinationSna
 
 def _ownership(value: object, tags: list[str]) -> dict[str, Any]:
     ownership = _object(value)
-    result = {
+    result: dict[str, Any] = {
         name: _strings(ownership.get(name)) for name in ("source_tags", "configured_tags", "keep_tags", "keep_fields")
     }
+    for name in ("lifecycle_tags", "suppressed_tags"):
+        if name in ownership:
+            result[name] = _strings(ownership[name])
     if not set(result["keep_fields"]) <= set(MANAGED_FIELDS) - {"LatinitasID", "Note Schema"}:
         raise ReconciliationRequired("invalid user keep override")
-    contributed = set(result["source_tags"]) | set(result["configured_tags"]) | set(result["keep_tags"])
-    if contributed != set(tags):
+    managed = set(result["source_tags"]) | set(result["configured_tags"]) | set(result.get("lifecycle_tags", []))
+    suppressed = set(result.get("suppressed_tags", []))
+    if not suppressed <= managed or suppressed & set(tags):
+        raise ReconciliationRequired("invalid suppressed tag ownership")
+    if (managed - suppressed) | set(result["keep_tags"]) != set(tags):
         raise ReconciliationRequired("unreviewed tag ownership")
+    if "decisions" in ownership:
+        result["decisions"] = _object(ownership["decisions"])
+        for choice in result["decisions"].values():
+            _text(_object(choice).get("approval"))
     return result
 
 

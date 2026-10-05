@@ -233,3 +233,35 @@ it is not a concurrent database. On any persistence error, reload the journal an
 destination evidence before deciding what happened: an error after replacement may mean the
 new file exists. `load_state` rejects missing/corrupt/foreign-format data. Preserve the old
 journal and recoverable native backup locally; do not overwrite a journal with a prior export.
+
+## Offline reconciliation API (T-055)
+
+`destination_reconciliation.reconcile_note(snapshot, state, identity, proposal,
+contributions, decisions)` compares one shared note, so every sibling card sees the
+same resulting tag set. It uses the existing binding and observed-anchor validators;
+missing anchors and pending effects block normal reconciliation. It neither advances
+the anchor nor approves application. A changed destination anchor still requires
+`review_reconciliation` before the existing journal accepts a later pending operation.
+
+The result exposes exact managed `fields`, changed-field `writes`, exact sorted `tags`,
+`tag_write`, proposed `removals`, `ownership`, `conflicts`, and reviewed `decisions`.
+Only conflict-free results include a journal-compatible `target`. Personal Notes and
+custom user fields are excluded even if supplied in the proposal; decisions targeting
+them are rejected. `reconcile_values` is the pure comparison primitive for reviewed
+values; use the bound-note entry point for snapshots.
+
+Decision keys are `field:<name>` or `tag:<tag>`. Each decision records a non-empty
+`approval` reference and an action: `keep_destination`, `accept_proposal`, or
+`replacement` (text `value` for fields, boolean presence `value` for tags). Tags also
+support `keep_as_user_owned` for a present destination tag. The result records each
+decision and its exact `result`. Removal candidates remain visible even when a review
+keeps them. No prefix implies ownership and no decision grants suspension permission.
+
+The journal retains separate `source_tags`, `configured_tags`, optional `lifecycle_tags`,
+and persistent `keep_tags`/`keep_fields`. Optional `suppressed_tags` records explicit
+retention of a user deletion while the source/configured contribution remains required;
+it must be a subset of managed contributions and absent from the final tag set. If a
+user later re-adds that tag, the observable addition is preserved as user owned.
+Reviewed decisions survive pending targets and successful observed anchors. Existing
+version-1 journals without the optional keys remain valid. These are offline assertions,
+not evidence of native tag-only import behavior, scheduling safety, or calibration.

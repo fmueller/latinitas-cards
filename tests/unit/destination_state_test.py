@@ -22,6 +22,47 @@ from latinitas_cards.destination_state import (
 from latinitas_cards.notes import AUTHORITATIVE_NOTE_FIELDS
 
 
+def test_reconciled_note_targets_observe_origins_and_decisions(evidence: dict[str, Any], tmp_path: Path) -> None:
+    from latinitas_cards.destination_reconciliation import reconcile_note
+
+    evidence["notes"][0]["cards"]["rows"].append({"id": "sibling-id-A", "due": 19})
+    before = read_snapshot(evidence, bound(evidence))
+    state = adopt(before, ownership(), "adopt")
+    proposal = dict(before.payload["notes"][0]["fields"])
+    proposal["Meaning"] = "new-A"
+    result = reconcile_note(
+        before,
+        state,
+        "id-A",
+        proposal,
+        {"source_tags": ["source"], "lifecycle_tags": ["lifecycle"]},
+        {"field:Meaning": {"action": "replacement", "value": "reviewed-A", "approval": "review"}},
+    )
+    assert result["conflicts"] == []
+    assert result["target"]["tags"] == ["lifecycle", "manual", "source"]
+    journal = begin_observation(state, before, "plan", {"id-A": result["target"]}, "approve")
+    after_data = deepcopy(evidence)
+    after_data["snapshot_id"] = "after"
+    after_data["notes"][0]["fields"] = result["fields"]
+    after_data["notes"][0]["tags"] = result["tags"]
+    after = read_snapshot(after_data, bound(evidence))
+    observed = observe(journal, "plan", after, "offline report", interval_confirmed=True)
+    save_state(tmp_path / "state.json", observed)
+    loaded = load_state(tmp_path / "state.json")
+    assert loaded["anchors"]["id-A"]["lifecycle_tags"] == ["lifecycle"]
+    assert loaded["anchors"]["id-A"]["decisions"]["field:Meaning"]["result"] == "reviewed-A"
+    shared_note = loaded["anchors"]["id-A"]
+    assert shared_note["cards"]["rows"] == [{"id": "card-id-A", "due": 7}, {"id": "sibling-id-A", "due": 19}]
+    assert shared_note["tags"] == ["lifecycle", "manual", "source"]
+    assert loaded["anchors"]["id-B"]["tags"] == ["manual", "source"]
+    noop = reconcile_note(
+        after, loaded, "id-A", result["fields"], {"source_tags": ["source"], "lifecycle_tags": ["lifecycle"]}
+    )
+    assert noop["writes"] == {}
+    assert noop["tag_write"] is False
+    assert noop["tags"] == ["lifecycle", "manual", "source"]
+
+
 @pytest.fixture
 def evidence() -> dict[str, Any]:
     notes = []
