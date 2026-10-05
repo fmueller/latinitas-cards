@@ -25,7 +25,22 @@ from latinitas_cards.notes import AUTHORITATIVE_NOTE_FIELDS
 def test_reconciled_note_targets_observe_origins_and_decisions(evidence: dict[str, Any], tmp_path: Path) -> None:
     from latinitas_cards.destination_reconciliation import reconcile_note
 
-    evidence["notes"][0]["cards"]["rows"].append({"id": "sibling-id-A", "due": 19})
+    evidence["notes"][0]["cards"]["rows"].append(
+        {
+            "id": "sibling-id-A",
+            "due": 19,
+            "semantic_key": "principal_part_recognition:perfect_1s",
+            "ordinal": 7,
+            "template_name": "Recognition Perfect",
+        }
+    )
+    evidence["notes"][0]["fields"].update(
+        {
+            "RecognitionPerfectEnabled": "1",
+            "RecognitionPerfectPrompt": "amavi",
+            "RecognitionPerfectAnswer": "Perfekt",
+        }
+    )
     before = read_snapshot(evidence, bound(evidence))
     state = adopt(before, ownership(), "adopt")
     proposal = dict(before.payload["notes"][0]["fields"])
@@ -52,7 +67,11 @@ def test_reconciled_note_targets_observe_origins_and_decisions(evidence: dict[st
     assert loaded["anchors"]["id-A"]["lifecycle_tags"] == ["lifecycle"]
     assert loaded["anchors"]["id-A"]["decisions"]["field:Meaning"]["result"] == "reviewed-A"
     shared_note = loaded["anchors"]["id-A"]
-    assert shared_note["cards"]["rows"] == [{"id": "card-id-A", "due": 7}, {"id": "sibling-id-A", "due": 19}]
+    assert shared_note["cards"]["rows"] == evidence["notes"][0]["cards"]["rows"]
+    assert [(row["id"], row["due"]) for row in shared_note["cards"]["rows"]] == [
+        ("card-id-A", 7),
+        ("sibling-id-A", 19),
+    ]
     assert shared_note["tags"] == ["lifecycle", "manual", "source"]
     assert loaded["anchors"]["id-B"]["tags"] == ["manual", "source"]
     noop = reconcile_note(
@@ -69,6 +88,13 @@ def evidence() -> dict[str, Any]:
     for identity, meaning in (("id-A", "old-A"), ("id-B", "old-B")):
         fields = {field.name: "" for field in AUTHORITATIVE_NOTE_FIELDS if field.ownership == "managed"}
         fields.update({"LatinitasID": identity, "Meaning": meaning, "Note Schema": "3"})
+        fields.update(
+            {
+                "RecognitionPresentEnabled": "1",
+                "RecognitionPresentPrompt": "amo",
+                "RecognitionPresentAnswer": "Präsens",
+            }
+        )
         notes.append(
             {
                 "identity": identity,
@@ -79,7 +105,18 @@ def evidence() -> dict[str, Any]:
                 "fields": fields,
                 "tags": ["source", "manual"],
                 "personal_digest": "synthetic-personal-digest",
-                "cards": {"rows": [{"id": f"card-{identity}", "due": 7}], "complete": True},
+                "cards": {
+                    "rows": [
+                        {
+                            "id": f"card-{identity}",
+                            "due": 7,
+                            "semantic_key": "principal_part_recognition:present_1s",
+                            "ordinal": 5,
+                            "template_name": "Recognition Present",
+                        }
+                    ],
+                    "complete": True,
+                },
                 "history": {"rows": [{"id": f"log-{identity}", "ease": 2}], "complete": True},
             }
         )

@@ -18,7 +18,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from .cards import TEMPLATE_REGISTRY_DIGEST, TEMPLATE_REGISTRY_VERSION
+from .cards import TEMPLATE_REGISTRY, TEMPLATE_REGISTRY_DIGEST, TEMPLATE_REGISTRY_VERSION, slot_for_key
+from .identity import derive_latinitas_id
 from .notes import AUTHORITATIVE_NOTE_FIELDS, NOTE_SCHEMA_VERSION
 from .reference_templates import REFERENCE_CARD_CSS, REFERENCE_CARD_TEMPLATES
 
@@ -92,15 +93,23 @@ def _membership(value: object) -> dict[str, Any]:
     if not isinstance(members, list):
         raise ReconciliationRequired("missing whole managed-set membership")
     identities: set[str] = set()
-    sources: set[tuple[str, str]] = set()
+    sources: set[tuple[str, ...]] = set()
+    keyed_sources: dict[tuple[str, str], bool] = {}
     for member in members:
-        if not isinstance(member, list) or len(member) != 3:
+        if not isinstance(member, list) or len(member) not in (3, 4):
             raise ReconciliationRequired("invalid membership")
-        identity, source_scope, source_id = (_text(item) for item in member)
-        if source_scope != scope or identity in identities or (source_scope, source_id) in sources:
+        identity, source_scope, source_id, *object_key = (_text(item) for item in member)
+        source = (source_scope, source_id, *object_key)
+        pair = (source_scope, source_id)
+        if pair in keyed_sources and keyed_sources[pair] != bool(object_key):
+            raise ReconciliationRequired("ambiguous mixed source/object membership")
+        keyed_sources[pair] = bool(object_key)
+        if object_key and identity != derive_latinitas_id(source_id, object_key[0], source_scope=source_scope):
+            raise ReconciliationRequired("inconsistent coherent-object identity")
+        if source_scope != scope or identity in identities or source in sources:
             raise ReconciliationRequired("ambiguous managed-set identity")
         identities.add(identity)
-        sources.add((source_scope, source_id))
+        sources.add(source)
     return {"scope": scope, "members": sorted(members)}
 
 
@@ -196,6 +205,33 @@ def _preservation(note: dict[str, Any]) -> dict[str, Any] | None:
         name: note[name]
         for name in ("source", "note_type_id", "guid", "local_id", "personal_digest", "cards", "history")
     }
+
+
+def bound_card_rows(note: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """Resolve actual destination rows to frozen slots; never infer from eligibility."""
+    evidence = note.get("cards")
+    if not isinstance(evidence, dict) or evidence.get("complete") is not True:
+        raise ReconciliationRequired("missing complete card set evidence")
+    result: dict[str, dict[str, Any]] = {}
+    for row in evidence["rows"]:
+        slot = slot_for_key(row.get("semantic_key", ""))
+        if slot is None or row.get("ordinal") != slot.ordinal or row.get("template_name") != slot.template_name:
+            raise ReconciliationRequired("unknown card set template binding")
+        if slot.semantic_key in result:
+            raise ReconciliationRequired("ambiguous card set binding")
+        result[slot.semantic_key] = row
+    return result
+
+
+def require_content_only_card_set(note: Mapping[str, Any], fields: Mapping[str, str]) -> None:
+    """CSV cannot add via a guard, clear a front, or substitute eligibility for existence."""
+    rows = bound_card_rows(note)
+    for slot in TEMPLATE_REGISTRY:
+        enabled = bool(fields[slot.enabled_field].strip())
+        if enabled != (slot.semantic_key in rows):
+            raise ReconciliationRequired("unsupported content-only card set change")
+        if enabled and (not fields[slot.prompt_field].strip() or not fields[slot.answer_field].strip()):
+            raise ReconciliationRequired("invalid content-only card set content")
 
 
 @dataclass(frozen=True)
@@ -459,6 +495,9 @@ def begin_observation(
         fields = _fields(target.get("fields"), identity)
         tags = _strings(target.get("tags"))
         origins = _ownership(target, tags)
+        require_content_only_card_set(notes[identity], fields)
+        if ("latinitas::retired" in tags) != ("latinitas::retired" in notes[identity]["tags"]):
+            raise ReconciliationRequired("unsupported lifecycle tag effect; tags cannot approximate suspension")
         # Identity/provenance and slot fields cannot be repurposed as structural transport.
         for name in MANAGED_FIELDS:
             if (

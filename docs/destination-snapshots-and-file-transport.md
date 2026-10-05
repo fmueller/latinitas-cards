@@ -265,3 +265,43 @@ user later re-adds that tag, the observable addition is preserved as user owned.
 Reviewed decisions survive pending targets and successful observed anchors. Existing
 version-1 journals without the optional keys remain valid. These are offline assertions,
 not evidence of native tag-only import behavior, scheduling safety, or calibration.
+
+### Offline card lifecycle planning
+
+`card_lifecycle.plan_card_lifecycle(snapshot, state, identity, proposal, ...)` consumes
+the same observed anchors and journal, not an export checkpoint. The proposal is an
+existing `GeneratedNote` with the complete frozen rendered registry. Its immutable
+source/object identity must match; visible lemmas never reconcile objects. Membership
+may explicitly use `[LatinitasID, scope, source_id, object_key]` and note `source` uses
+`[scope, source_id, object_key]`, allowing separate senses in one source entry. These
+bindings are checked against the existing identity derivation; legacy three-element
+members remain readable but cannot stand in for an ambiguous object split.
+
+Complete destination card rows must include `id`, `semantic_key`, `ordinal`,
+`template_name`, and (for lifecycle planning) boolean `suspended`, alongside full native
+row evidence. Template bindings are checked against the frozen registry. Eligibility
+is not evidence of actual card existence: even unchanged enabled fields with a missing
+destination row imply an unsupported addition. The content-only journal also enforces
+this gate, rejects guard-based creation/front clearing, and rejects changes to the
+reserved retired tag rather than pretending tags implement suspension. Existing slot
+write restrictions remain in force; this does not broaden transport capability.
+
+Plans expose independent retain/add/retire/reactivate effects, existing card/template
+bindings, explicit approvals, blockers and unsupported effects. Missing/ambiguous/
+withheld/inapplicable/parser-failure proposals retain existing cards pending review.
+Approved eligibility loss requires a per-key approval; whole-object retirement has a
+separate approval and proposed `latinitas::retired` contribution. Single-card retirement
+never proposes that note tag. All structural effects have no CSV target. Unrepresentable
+last-safe slot content blocks retention; retained fields and observed provenance are an
+explicitly stale/pending, not newly approved, whole-note bundle. The bundle is not mixed
+into fresh shared fields while suspension is pending.
+
+Observed retired card rows may carry `retirement` evidence with `approval`, boolean
+`pre_suspended`, boolean/unknown `tool_suspended`, and `observed` snapshot reference.
+These are reviewed observed facts in the existing anchor, not a second lifecycle store;
+this planner never creates a receipt or advances state. Eligible reactivation requires
+explicit per-key approval and the existing row. Only known, non-conflicting tool-owned
+suspension of a previously unsuspended card can propose `unsuspend`; pre-suspended user
+cards remain suspended and unknown ownership blocks reversal. Profile re-enablement
+alone gives no authority. No plan result proves actual scheduling/history preservation:
+native structural transport checks remain a separate later gate.
