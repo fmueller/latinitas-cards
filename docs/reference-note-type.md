@@ -15,6 +15,49 @@ Anki yourself. General automated note-type/template provisioning is v0.6.0
 roadmap work, and broad cross-platform/Anki-version compatibility certification
 is v0.9.0 roadmap work (see `specs/v0.1.0.md`).
 
+## Morphology presentation contract
+
+Profile schema **2** owns `morphology`: `version: 1`, `theme: "muted"` or
+`"monochrome"`, `appearance: "light"` or `"dark"`, and `comparison: "static"`
+or `"disclosure"`. Defaults are muted/light/static. Effective profile overrides
+merge individual settings; setup's JSON report and principal-part preview report
+the effective values. Unknown versions, names and modes fail validation.
+Legacy schema 1 profiles **without** morphology settings are explicitly upgraded
+in memory to schema 2 with those defaults and serialize as schema 2. Schema 1
+with morphology settings is rejected; edit the version to 2 deliberately.
+Upgrading the linguistic profile schema requires renewed old claim reviews.
+
+Generation and preview share the same managed answer markup, `morphology-v1`.
+Only accepted segmentation/explanation is asserted. Two reviewed pipe components
+mean stem | ending; three mean stem | formation marker | ending. Other reviewed
+notation stays literal, not inferred. Typography and separators work without color.
+Absent and withheld roles are explicit and their proposed explanations are not facts.
+The core explanation and compact comparison remain on the revealed answer.
+`Stammformen vergleichen` contains the complete four-role handoff and accepted
+further explanation, either as a readable static section or native details/summary.
+There is no script dependency. **Static is the unverified-client default.**
+
+CSV installs neither CSS nor templates. Paste the versioned reference CSS below
+only as a separately reviewed manual setup step. It supports both themes and
+light/dark classes on the managed answer, without changing field order, recipe
+keys, slots or scheduled template bindings. Existing destination CSS/template
+digest mismatches block acquisition pending manual setup/review; no scheduled
+template rebinding, provisioning or migration is performed. Presentation changes
+alter generated fields and therefore require renewed destination payload approval,
+not reuse of an old observation plan. The current destination journal rejects
+changed per-card answer fields as unsupported slot effects, even after CSS setup;
+this is a migration/application block, not permission to import into a scheduled
+layout. Retain the collection and seek separately reviewed manual setup or the
+explicit backed-up fresh-start path. No application capability is added here.
+Linguistic claim review ignores only
+`morphology`; all evidence and linguistic configuration remain bound.
+Personal Notes are neither sanitized nor written by generation/CSV.
+
+Browser renders are **not native Anki proof**. Both static readability/reveal and
+disclosure require the future native presentation gate on AnkiMobile and Desktop.
+Do not claim compatibility or enable disclosure as a verified-client default from
+browser evidence alone.
+
 ## How the note type is organized
 
 One generated CSV row is one coherent learning object rendered as **one note**
@@ -53,6 +96,10 @@ a test; it changes only when that contract changes.
 Reference setup for note schema `3` and template registry `v1` (digest `card-registry-sha256:b1e7709e3db8ac17645c0254d9cecfa2d558a105b9b40e87bfcc329ef0adb96d`).
 This block is generated from the authoritative contract; a test fails if this
 published copy drifts from it. Do not hand-edit inside the markers.
+Reference styling `v2` supports morphology markup `v1`.
+CSV carries managed markup, never installs CSS or provisions/rebinds templates.
+Existing destinations with a different CSS/template digest are blocked for
+separately reviewed manual setup; do not rewrite scheduled templates.
 
 ### Reference fields (43, exact order)
 
@@ -299,6 +346,7 @@ Back:
 ### Shared styling (paste once into the note type's Styling)
 
 ```css
+/* Latinitas reference styling v2; morphology markup v1. Manual setup only. */
 .card {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
@@ -327,6 +375,49 @@ Back:
   color: #666666;
   text-align: left;
 }
+
+.morphology-v1 {
+  --stem: #356357;
+  --marker: #785523;
+  --ending: #5d5079;
+  margin: 0.8em auto 0;
+  padding: 1em;
+  max-width: 42em;
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: normal;
+  text-align: left;
+  color: #222222;
+  background: #f7f7f4;
+  border: 1px solid #bdbdb7;
+  border-radius: 0.3em;
+  overflow-wrap: anywhere;
+}
+.morphology-v1.morphology-dark {
+  --stem: #9bc9b9;
+  --marker: #e1bf85;
+  --ending: #c4b5e1;
+  color: #eeeeee;
+  background: #222526;
+  border-color: #666666;
+}
+.morphology-v1.morphology-monochrome {
+  --stem: currentColor;
+  --marker: currentColor;
+  --ending: currentColor;
+}
+.morphology-lemma { font-style: italic; }
+.morphology-stem { color: var(--stem); font-weight: bold; }
+.morphology-marker { color: var(--marker); border-bottom: 1px dotted; }
+.morphology-ending { color: var(--ending); text-decoration: underline; }
+.tested-form-explanation, .related-stems { margin-top: 0.5em; }
+.morphology-v1 summary, .morphology-static h3 {
+  margin: 0.8em 0 0.3em;
+  font-size: 1em;
+  font-weight: bold;
+}
+.morphology-v1 summary { cursor: pointer; }
+.morphology-role { margin: 0.4em 0; }
 ```
 <!-- latinitas-reference-setup end -->
 

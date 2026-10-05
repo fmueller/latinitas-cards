@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from .identity import derive_card_semantic_key
 from .principal_parts import ParsedPrincipalParts, PrincipalPartValue
 from .principal_relationships import PrincipalPartComparison
+from .profile import MorphologySettings
 from .profile_setup import encode_unsafe_controls
 
 TEMPLATE_REGISTRY_VERSION = 1
@@ -194,6 +195,7 @@ def render_cards(
     selected_recipes: Sequence[str],
     meaning: str = "",
     comparison: PrincipalPartComparison | None = None,
+    morphology: MorphologySettings | None = None,
 ) -> tuple[RenderedCard, ...]:
     """Render every registry slot of one learning object in registry order.
 
@@ -203,6 +205,7 @@ def render_cards(
     """
 
     gloss = _escape_text(meaning) if meaning.strip() else ""
+    settings = morphology or MorphologySettings()
     cards: list[RenderedCard] = []
     for slot in TEMPLATE_REGISTRY:
         part = parsed.by_role.get(slot.role)
@@ -217,34 +220,68 @@ def render_cards(
             prompt = _recognition_prompt(parsed, part, gloss)
             answer = _escape_text(role_display_label(slot.role))
         if comparison is not None:
-            answer += _render_comparison(comparison, slot.role)
+            answer += _render_comparison(comparison, slot.role, settings, parsed.lexical_entry)
         cards.append(RenderedCard(slot=slot, eligible=True, guard=GUARD_VALUE, prompt=prompt, answer=answer))
     return tuple(cards)
 
 
-def _render_comparison(comparison: PrincipalPartComparison, tested_role: str) -> str:
+def _render_segmentation(value: str) -> str:
+    """Style only the reviewed pipe convention; never derive a linguistic split."""
+    pieces = tuple(piece.strip() for piece in value.split("|"))
+    if len(pieces) not in (2, 3) or not all(pieces):
+        return _escape_text(value)
+    classes = ("stem", "ending") if len(pieces) == 2 else ("stem", "marker", "ending")
+    return " | ".join(
+        f'<span class="morphology-{kind}">{_escape_text(piece)}</span>'
+        for kind, piece in zip(classes, pieces, strict=True)
+    )
+
+
+def _render_comparison(
+    comparison: PrincipalPartComparison, tested_role: str, settings: MorphologySettings, lemma: str
+) -> str:
     lines = []
     related = []
-    focused = ""
+    focused = "Analyse zurückgehalten; einzelne Belege prüfen."
     for role in comparison.roles:
-        value = "—" if role.status != "present" else _escape_text(role.form or "")
-        analysis = " · ".join(_escape_text(text) for text in (role.segmentation, role.explanation) if text)
+        available = role.status == "present"
+        value = (
+            _escape_text(role.form or "")
+            if available
+            else ("— (Nicht vorhanden)" if role.status == "absent" else "— (Zurückgehalten)")
+        )
+        analysis = " · ".join(
+            text
+            for text in (
+                _render_segmentation(role.segmentation) if available and role.segmentation else "",
+                _escape_text(role.explanation) if available and role.explanation else "",
+            )
+            if text
+        )
         if role.role == tested_role:
             focused = analysis or "Analyse zurückgehalten; einzelne Belege prüfen."
-        elif role.status == "present" and role.segmentation:
-            related.append(f"{_escape_text(role_display_label(role.role))}: {_escape_text(role.segmentation)}")
+        elif available and role.segmentation:
+            related.append(f"{_escape_text(role_display_label(role.role))}: {_render_segmentation(role.segmentation)}")
         lines.append(
-            f"<strong>{_escape_text(role_display_label(role.role))}:</strong> {value}"
+            f'<div class="morphology-role"><strong>{_escape_text(role_display_label(role.role))}:</strong> {value}'
             + (f" · {analysis}" if analysis else f" · {_escape_text(role.reason)}")
+            + "</div>"
         )
+    body = "".join(lines)
+    further = (
+        "<details><summary>Stammformen vergleichen</summary>" + body + "</details>"
+        if settings.comparison == "disclosure"
+        else '<section class="morphology-static"><h3>Stammformen vergleichen</h3>' + body + "</section>"
+    )
     return (
-        f'<div class="tested-form-explanation">{focused}</div>'
+        f'<section class="morphology-v1 morphology-{settings.theme} morphology-{settings.appearance}">'
+        + f'<div>Lemma: <span class="morphology-lemma">{_escape_text(lemma)}</span></div>'
+        + f'<div class="tested-form-explanation">{focused}</div>'
         + '<div class="related-stems">'
         + ("Verwandte Stämme: " + " · ".join(related) if related else "Weitere Stämme: Analyse zurückgehalten.")
         + "</div>"
-        + "<details><summary>Stammformen vergleichen</summary>"
-        + "<br>".join(lines)
-        + "</details>"
+        + further
+        + "</section>"
     )
 
 

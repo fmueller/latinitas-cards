@@ -342,7 +342,7 @@ def test_card_prompts_render_the_series_with_the_target_blanked() -> None:
     assert "unresolved source evidence" in completion.prompt
     assert "tulī" not in completion.prompt
     assert "____" in completion.prompt
-    assert completion.answer.startswith("tulī<div")
+    assert completion.answer.startswith('tulī<section class="morphology-v1')
 
 
 def test_card_content_is_escaped_and_guards_are_binary() -> None:

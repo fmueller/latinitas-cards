@@ -35,9 +35,12 @@ evidence and renew review. Use `asserted_claims` at the knowledge boundary; it
 rechecks the binding so stale assessments cannot leak unsupported facts.
 
 The SHA-256 binding includes exact candidate ID, kind/value, alternatives,
-analyzer, all evidence text/versions, raw extraction, actual profile configuration
-and profile version. Any change invalidates both acceptance and withholding
-decisions. Versions identify the caller's evidence/configuration snapshots;
+analyzer, all evidence text/versions, raw extraction, actual linguistic profile
+configuration and profile version. Only the versioned `morphology` presentation
+settings are excluded: changing a palette or disclosure mode does not adjudicate
+Latin. Other changes invalidate both acceptance and withholding decisions.
+Rendered payload changes still require renewed destination authorization.
+Versions identify the caller's evidence/configuration snapshots;
 callers must supply the actual current profile/evidence, not retained stale copies.
 This is an in-process domain contract, not authenticated reviewer identity or a
 persistent review UI. No network call is made; future optional LLM acquisition

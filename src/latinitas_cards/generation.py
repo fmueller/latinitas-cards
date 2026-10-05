@@ -362,7 +362,13 @@ def _render_note(
         meaning=_escape_normalized_lines(meaning_text),
         tags=tags,
     )
-    cards = render_cards(parsed, selected_recipes=profile.selected_recipes, meaning=meaning_text, comparison=comparison)
+    cards = render_cards(
+        parsed,
+        selected_recipes=profile.selected_recipes,
+        meaning=meaning_text,
+        comparison=comparison,
+        morphology=profile.morphology,
+    )
     return GeneratedNote.create(
         source_identity=source_identity.value,
         source_scope=source_identity.scope,

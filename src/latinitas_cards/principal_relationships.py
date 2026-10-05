@@ -66,7 +66,7 @@ def compare_principal_parts(
             current = assess_claim(item.claim, item.decision)
             if (
                 item.claim.candidate_text != part.display
-                or item.claim.profile != profile
+                or item.claim.profile.model_dump(exclude={"morphology"}) != profile.model_dump(exclude={"morphology"})
                 or parsed.evidence is None
                 or item.claim.extraction != parsed.evidence
             ):

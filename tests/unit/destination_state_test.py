@@ -22,7 +22,9 @@ from latinitas_cards.destination_state import (
 from latinitas_cards.notes import AUTHORITATIVE_NOTE_FIELDS
 
 
-@pytest.mark.parametrize("layout", ["legacy_identity", "legacy_schema", "template_task", "template_front"])
+@pytest.mark.parametrize(
+    "layout", ["legacy_identity", "legacy_schema", "template_task", "template_front", "legacy_css"]
+)
 def test_incompatible_layout_offers_safe_choices(evidence: dict[str, Any], layout: str) -> None:
     if layout == "legacy_identity":
         identity = "latinitas-v1-old-exercise"
@@ -33,10 +35,49 @@ def test_incompatible_layout_offers_safe_choices(evidence: dict[str, Any], layou
         evidence["schema"]["version"] = "2"
     elif layout == "template_task":
         evidence["schema"]["templates"][0]["semantic_key"] = "different_task"
+    elif layout == "legacy_css":
+        evidence["schema"]["css_digest"] = "previous-style-digest"
     else:
         evidence["schema"]["templates"][0]["front_digest"] = "changed-front"
     with pytest.raises(ReconciliationRequired, match="separate destination.*no inherited scheduling"):
         read_snapshot(evidence, bound(evidence))
+
+
+def test_style_migration_requires_separately_reviewed_manual_setup(evidence: dict[str, Any]) -> None:
+    evidence["schema"]["css_digest"] = "old-v1"
+    with pytest.raises(ReconciliationRequired, match="separately reviewed manual setup.*scheduled templates"):
+        read_snapshot(evidence, bound(evidence))
+
+
+def test_changed_presentation_cannot_confirm_an_approved_payload(evidence: dict[str, Any]) -> None:
+    from latinitas_cards.cards import render_cards
+    from latinitas_cards.principal_parts import ParsedPrincipalParts, PrincipalPartValue
+    from latinitas_cards.principal_relationships import PrincipalPartComparison, RoleComparison
+    from latinitas_cards.profile import MorphologySettings
+
+    parsed = ParsedPrincipalParts("amō", "amo", (PrincipalPartValue("present_1s", "amō", "amo"),))
+    comparison = PrincipalPartComparison((RoleComparison("present_1s", "amō", "present", ""),))
+
+    def answer(theme: str) -> str:
+        settings = MorphologySettings.model_validate({"theme": theme})
+        return next(
+            card.answer
+            for card in render_cards(
+                parsed, selected_recipes=("principal_part_recognition",), comparison=comparison, morphology=settings
+            )
+            if card.eligible
+        )
+
+    evidence["notes"][0]["fields"]["RecognitionPresentAnswer"] = answer("muted")
+    before = read_snapshot(evidence, bound(evidence))
+    state = adopt(before, ownership(), "reviewed-muted-payload")
+    fields = dict(evidence["notes"][0]["fields"])
+    fields["RecognitionPresentAnswer"] = answer("monochrome")
+    targets = {"id-A": {"fields": fields, "tags": ["source", "manual"], **ownership()["id-A"]}}
+    original = deepcopy(state)
+    with pytest.raises(ReconciliationRequired, match="unsupported identity/schema/slot effect"):
+        begin_observation(state, before, "theme-change", targets, "reviewed-muted-payload")
+    assert state == original
 
 
 def test_reconciled_note_targets_observe_origins_and_decisions(evidence: dict[str, Any], tmp_path: Path) -> None:

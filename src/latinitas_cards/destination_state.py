@@ -128,7 +128,10 @@ class BoundDestination:
     def payload(self) -> dict[str, Any]:
         schema = _object(self.schema)
         if schema != schema_contract(_text(schema.get("note_type_id"))):
-            raise ReconciliationRequired("unknown schema/template layout. " + INCOMPATIBLE_LAYOUT_CHOICES)
+            raise ReconciliationRequired(
+                "unknown schema/template/style layout; separately reviewed manual setup required; "
+                "do not rebind scheduled templates. " + INCOMPATIBLE_LAYOUT_CHOICES
+            )
         return _object(
             json.loads(
                 _encoded(

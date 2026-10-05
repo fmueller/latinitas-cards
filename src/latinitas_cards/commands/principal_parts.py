@@ -16,6 +16,7 @@ from ..preview_export import (
 )
 from ..profile import DeckProfile, load_profile, resolve_profile
 from ..profile_setup import safe_source_value
+from ..reference_templates import REFERENCE_STYLE_VERSION
 
 _MAX_DIAGNOSTIC_ROWS = 50
 
@@ -101,6 +102,13 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
     """Render bounded, terminal-safe representative notes and structured reasons."""
 
     typer.echo("Principal-part preview")
+    morphology = result.profile.morphology
+    typer.echo(f"Morphology v{morphology.version}: {morphology.theme}/{morphology.appearance}/{morphology.comparison}")
+    typer.echo(
+        "Effective profile presentation (including overrides); "
+        f"manual reference CSS v{REFERENCE_STYLE_VERSION} required."
+    )
+    typer.echo("Native Anki presentation unverified; static is the default. CSV does not install styling.")
     typer.echo(f"Source entries: {result.source_entry_count}")
     typer.echo(f"Objects: {result.object_count}")
     typer.echo(f"Notes: {result.exported_note_count}")
@@ -142,6 +150,9 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
         typer.echo(f"  Meaning: {safe_source_value(note.content.meaning, field_context, limit=512)}")
         typer.echo(f"  Tags: {safe_source_value(' '.join(note.content.tags), field_context, limit=512)}")
         typer.echo(f"  Card Keys: {safe_source_value(' '.join(note.card_keys), 'card keys', limit=512)}")
+        for card in note.cards:
+            if card.eligible:
+                typer.echo(f"  {card.slot.answer_field}: {safe_source_value(card.answer, field_context, limit=4096)}")
         typer.echo(
             "  Provenance: "
             + safe_source_value(

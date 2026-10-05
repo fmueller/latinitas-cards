@@ -50,7 +50,10 @@ REFERENCE_CARD_TEMPLATES: tuple[ReferenceCardTemplate, ...] = tuple(
     ReferenceCardTemplate(slot=slot, front=_front(slot), back=_back(slot)) for slot in TEMPLATE_REGISTRY
 )
 
+REFERENCE_STYLE_VERSION = 2
+
 REFERENCE_CARD_CSS = """\
+/* Latinitas reference styling v2; morphology markup v1. Manual setup only. */
 .card {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
@@ -79,6 +82,49 @@ REFERENCE_CARD_CSS = """\
   color: #666666;
   text-align: left;
 }
+
+.morphology-v1 {
+  --stem: #356357;
+  --marker: #785523;
+  --ending: #5d5079;
+  margin: 0.8em auto 0;
+  padding: 1em;
+  max-width: 42em;
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: normal;
+  text-align: left;
+  color: #222222;
+  background: #f7f7f4;
+  border: 1px solid #bdbdb7;
+  border-radius: 0.3em;
+  overflow-wrap: anywhere;
+}
+.morphology-v1.morphology-dark {
+  --stem: #9bc9b9;
+  --marker: #e1bf85;
+  --ending: #c4b5e1;
+  color: #eeeeee;
+  background: #222526;
+  border-color: #666666;
+}
+.morphology-v1.morphology-monochrome {
+  --stem: currentColor;
+  --marker: currentColor;
+  --ending: currentColor;
+}
+.morphology-lemma { font-style: italic; }
+.morphology-stem { color: var(--stem); font-weight: bold; }
+.morphology-marker { color: var(--marker); border-bottom: 1px dotted; }
+.morphology-ending { color: var(--ending); text-decoration: underline; }
+.tested-form-explanation, .related-stems { margin-top: 0.5em; }
+.morphology-v1 summary, .morphology-static h3 {
+  margin: 0.8em 0 0.3em;
+  font-size: 1em;
+  font-weight: bold;
+}
+.morphology-v1 summary { cursor: pointer; }
+.morphology-role { margin: 0.4em 0; }
 """
 
 
@@ -90,6 +136,10 @@ def reference_setup_markdown() -> str:
         f"`v{TEMPLATE_REGISTRY_VERSION}` (digest `{TEMPLATE_REGISTRY_DIGEST}`).",
         "This block is generated from the authoritative contract; a test fails if this",
         "published copy drifts from it. Do not hand-edit inside the markers.",
+        f"Reference styling `v{REFERENCE_STYLE_VERSION}` supports morphology markup `v1`.",
+        "CSV carries managed markup, never installs CSS or provisions/rebinds templates.",
+        "Existing destinations with a different CSS/template digest are blocked for",
+        "separately reviewed manual setup; do not rewrite scheduled templates.",
         "",
         f"### Reference fields ({len(REFERENCE_NOTE_TYPE_FIELDS)}, exact order)",
         "",

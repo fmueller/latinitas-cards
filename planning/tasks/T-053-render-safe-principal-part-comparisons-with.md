@@ -1,13 +1,13 @@
 ---
 id: T-053-render-safe-principal-part-comparisons-with
 title: Render safe principal-part comparisons with versioned morphology themes
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.0.md#morphology-themes
 dependencies:
     - T-052-generate-supported-principal-part-relationships
     - T-048-define-destination-snapshots-and-file-transport
-updated_at: "2026-10-04T23:05:46Z"
+updated_at: "2026-10-05T04:03:00Z"
 ---
 
 # T-053-render-safe-principal-part-comparisons-with Render safe principal-part comparisons with versioned morphology themes
@@ -29,3 +29,46 @@ Extend the human-readable deck profile and existing answer rendering with restra
 ## Verification
 
 Use red/green tests and the mandatory ruff, mypy, pytest -v chain. Record inspected visual artifacts and defer native compatibility claims to the native presentation gate.
+
+### Workflow evidence
+
+- Source guard: accepted main commit contained after fetch; clean checkout,
+  valid Taskrail state, exactly this eligible task and pinned spec before writes.
+- RED: morphology tests initially reported 9 failures (schema still 1 and no
+  presentation settings). The claim-binding matrix then failed on changed
+  presentation fingerprints; preview parity failed on missing answer output.
+  The manual setup diagnostic test failed on the old generic layout message.
+  GREEN: versioned settings, presentation-only claim exclusion, shared rendering,
+  preview reporting and manual setup diagnostics resolved these failures.
+- Initial full chain caught one obsolete div-wrapper assertion (791 passed,
+  1 failed); updated it to the versioned section without weakening prompt guards.
+  Restarted the full chain: ruff passed, mypy passed (79 files), pytest 794 passed.
+- Dedicated code-simplifier loaded its skill and moved settings resolution outside
+  the card loop; focused 90 tests, ruff and mypy passed. No other simplification.
+- Separate read-only General, Security and Python lanes loaded code-reviewer and
+  their dedicated guidance (Security security-review; Python python-patterns).
+  Each returned verbatim: "No concrete task-relevant findings." Each ran 90
+  focused tests. General/Security/Python cover acceptance, trust boundaries and
+  JSON persistence; no SQL/framework/network/ML behavior changed.
+- Fresh candidate-validation found no concrete task-local issue, with empty
+  validated/rejected candidate IDs. No findings required fix or deferral.
+  Fresh disposition-verification returned "No concrete task-relevant findings."
+  One review cycle; full reviewed chain passed with 794 tests.
+- Inspected 2x Chromium reference captures: both themes and light/dark in static,
+  disclosure closed/open, and 390px narrow static; accepted perfect analysis,
+  absent infinitive and withheld fourth role visible as appropriate. DOM reported
+  16 role rows, 18px/400 body typography, no narrow horizontal overflow; summary
+  click opened disclosure while focused/compact sections remained visible.
+  Visual artifacts are linked in the task execution report, not committed paths.
+- Delivery: managed answer markup v1 and manual reference CSS v2 only. Schema 1
+  without presentation upgrades explicitly to schema 2 defaults; older reviews
+  require renewal. CSS digest mismatch blocks setup, and the existing journal
+  rejects changed answer fields rather than expanding scheduled application.
+  No provisioning, scheduled template rebind, automatic claim acceptance or JS.
+- Remaining release gate: actual AnkiMobile/Desktop reveal/readability and native
+  disclosure evidence. Browser captures are not native proof. T-058 is not
+  implemented in this cycle; no new follow-up beyond the existing gate/task.
+
+## Implementation Notes
+
+- 2026-10-05T04:03:00Z: verification pass

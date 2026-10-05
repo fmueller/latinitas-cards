@@ -19,8 +19,8 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-CURRENT_PROFILE_SCHEMA_VERSION = 1
-SUPPORTED_PROFILE_SCHEMA_VERSIONS = (CURRENT_PROFILE_SCHEMA_VERSION,)
+CURRENT_PROFILE_SCHEMA_VERSION = 2
+SUPPORTED_PROFILE_SCHEMA_VERSIONS = (1, CURRENT_PROFILE_SCHEMA_VERSION)
 
 DEFAULT_LANGUAGE_TAG = "de"
 DEFAULT_GENERATED_NOTE_TYPE = "Latinitas Principal Parts"
@@ -30,7 +30,7 @@ DEFAULT_PRINCIPAL_PART_ROLES = ("present_1s", "present_infinitive", "perfect_1s"
 DEFAULT_SEPARATORS = (" — ",)
 DEFAULT_SELECTED_RECIPES = ("principal_part_completion", "principal_part_recognition")
 
-ProfileSchemaVersion = Literal[1]
+ProfileSchemaVersion = Literal[1, 2]
 SourceIdentityStrategy = Literal["note_guid", "source_id_field", "manifest"]
 RecipeName = Literal["principal_part_completion", "principal_part_recognition"]
 
@@ -267,6 +267,36 @@ def _canonicalise_recipes(value: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(recipes)
 
 
+class MorphologySettings(_ProfileModel):
+    """Versioned presentation only; static remains the unverified-client default."""
+
+    version: Literal[1] = 1
+    theme: Literal["muted", "monochrome"] = "muted"
+    appearance: Literal["light", "dark"] = "light"
+    comparison: Literal["static", "disclosure"] = "static"
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def _integer_version(cls, value: object) -> object:
+        if type(value) is not int:
+            raise ValueError("morphology version must be an integer")
+        return value
+
+
+class MorphologyOverrides(_ProfileModel):
+    version: Literal[1] | None = None
+    theme: Literal["muted", "monochrome"] | None = None
+    appearance: Literal["light", "dark"] | None = None
+    comparison: Literal["static", "disclosure"] | None = None
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def _integer_version(cls, value: object) -> object:
+        if value is not None and type(value) is not int:
+            raise ValueError("morphology version must be an integer")
+        return value
+
+
 class ProfileOverrides(_ProfileModel):
     """Explicit, optional values that replace profile values for one run."""
 
@@ -279,6 +309,7 @@ class ProfileOverrides(_ProfileModel):
     target_deck: str | None = Field(default=None, min_length=1)
     tags: tuple[str, ...] | None = Field(default=None, min_length=1)
     selected_recipes: tuple[str, ...] | None = Field(default=None, min_length=1)
+    morphology: MorphologyOverrides | None = None
 
     @field_validator("language_tag")
     @classmethod
@@ -319,6 +350,16 @@ class DeckProfile(_ProfileModel):
     target_deck: str = Field(default=DEFAULT_TARGET_DECK, min_length=1)
     tags: tuple[str, ...] = Field(default=DEFAULT_TAGS, min_length=1)
     selected_recipes: tuple[str, ...] = Field(default=DEFAULT_SELECTED_RECIPES, min_length=1)
+    morphology: MorphologySettings = Field(default_factory=MorphologySettings)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _upgrade_legacy(cls, value: Any) -> Any:
+        if isinstance(value, dict) and type(value.get("schema_version")) is int and value["schema_version"] == 1:
+            if "morphology" in value:
+                raise ValueError("legacy schema 1 cannot contain morphology settings; use schema 2")
+            return {**value, "schema_version": 2}
+        return value
 
     @field_validator("schema_version", mode="before")
     @classmethod
@@ -469,7 +510,7 @@ class DeckProfile(_ProfileModel):
         parsed = overrides if isinstance(overrides, ProfileOverrides) else ProfileOverrides.from_mapping(overrides)
         values = self.model_dump(mode="python")
         changes = parsed.model_dump(exclude_none=True, mode="python")
-        for nested in ("source_identity", "fields", "principal_parts"):
+        for nested in ("source_identity", "fields", "principal_parts", "morphology"):
             nested_changes = changes.pop(nested, None)
             if nested_changes is not None:
                 nested_value = getattr(parsed, nested)

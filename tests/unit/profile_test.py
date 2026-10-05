@@ -40,9 +40,9 @@ def test_profile_round_trips_through_human_and_machine_readable_json() -> None:
     machine = profile.to_machine_readable()
     human = profile.to_human_readable()
 
-    assert machine["schema_version"] == 1
+    assert machine["schema_version"] == 2
     assert machine["fields"]["lexical_entry_field"] == "Lemma"
-    assert '"schema_version": 1' in human
+    assert '"schema_version": 2' in human
     assert DeckProfile.from_human_readable(human) == profile
 
 

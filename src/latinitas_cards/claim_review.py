@@ -54,7 +54,10 @@ class Claim:
 
     @property
     def fingerprint(self) -> str:
-        """Bind all claim data, raw extraction and actual profile configuration."""
+        """Bind claim data, extraction and linguistic profile, not presentation.
+
+        Destination authorization independently binds the rendered payload.
+        """
         data = {
             "candidate_id": self.candidate_id,
             "candidate_text": self.candidate_text,
@@ -62,7 +65,7 @@ class Claim:
             "value": self.value,
             "analyzer": self.analyzer,
             "evidence": [asdict(item) for item in self.evidence],
-            "profile": self.profile.model_dump(mode="json"),
+            "profile": self.profile.model_dump(mode="json", exclude={"morphology"}),
             "profile_version": self.profile_version,
             "alternatives": self.alternatives,
             "supported": self.supported,
