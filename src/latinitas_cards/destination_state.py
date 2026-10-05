@@ -20,6 +20,7 @@ from typing import Any, Literal
 
 from .cards import TEMPLATE_REGISTRY, TEMPLATE_REGISTRY_DIGEST, TEMPLATE_REGISTRY_VERSION, slot_for_key
 from .identity import derive_latinitas_id
+from .legacy_transition import INCOMPATIBLE_LAYOUT_CHOICES, incompatible_managed_identity
 from .notes import AUTHORITATIVE_NOTE_FIELDS, NOTE_SCHEMA_VERSION
 from .reference_templates import REFERENCE_CARD_CSS, REFERENCE_CARD_TEMPLATES
 
@@ -99,6 +100,8 @@ def _membership(value: object) -> dict[str, Any]:
         if not isinstance(member, list) or len(member) not in (3, 4):
             raise ReconciliationRequired("invalid membership")
         identity, source_scope, source_id, *object_key = (_text(item) for item in member)
+        if incompatible_managed_identity(identity):
+            raise ReconciliationRequired("incompatible portable identity layout. " + INCOMPATIBLE_LAYOUT_CHOICES)
         source = (source_scope, source_id, *object_key)
         pair = (source_scope, source_id)
         if pair in keyed_sources and keyed_sources[pair] != bool(object_key):
@@ -125,7 +128,7 @@ class BoundDestination:
     def payload(self) -> dict[str, Any]:
         schema = _object(self.schema)
         if schema != schema_contract(_text(schema.get("note_type_id"))):
-            raise ReconciliationRequired("unknown schema/template layout")
+            raise ReconciliationRequired("unknown schema/template layout. " + INCOMPATIBLE_LAYOUT_CHOICES)
         return _object(
             json.loads(
                 _encoded(
@@ -154,7 +157,7 @@ def _fields(value: object, identity: str) -> dict[str, str]:
     if set(fields) != set(MANAGED_FIELDS) or any(not isinstance(value, str) for value in fields.values()):
         raise ReconciliationRequired("incomplete managed fields or user-owned field")
     if fields["LatinitasID"] != identity or fields["Note Schema"] != NOTE_SCHEMA_VERSION:
-        raise ReconciliationRequired("inconsistent portable identity/schema")
+        raise ReconciliationRequired("inconsistent portable identity/schema. " + INCOMPATIBLE_LAYOUT_CHOICES)
     return {name: fields[name] for name in MANAGED_FIELDS}
 
 
@@ -216,7 +219,7 @@ def bound_card_rows(note: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     for row in evidence["rows"]:
         slot = slot_for_key(row.get("semantic_key", ""))
         if slot is None or row.get("ordinal") != slot.ordinal or row.get("template_name") != slot.template_name:
-            raise ReconciliationRequired("unknown card set template binding")
+            raise ReconciliationRequired("unknown card set template binding. " + INCOMPATIBLE_LAYOUT_CHOICES)
         if slot.semantic_key in result:
             raise ReconciliationRequired("ambiguous card set binding")
         result[slot.semantic_key] = row

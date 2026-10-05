@@ -11,6 +11,7 @@ checklist, and a drift test pins the published policy statement and inventory.
 """
 
 import shutil
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -52,7 +53,110 @@ def _approval(backup: Path, dedicated_note_type: str = NEW_NOTE_TYPE) -> FreshSt
         dedicated_note_type=dedicated_note_type,
         data_is_disposable=True,
         acknowledges_new_schedules=True,
+        dedicated_note_type_id="new-model",
     )
+
+
+@pytest.mark.parametrize("approved_type_id", [None, "wrong-model"])
+def test_bound_fresh_start_rejects_unbound_or_mismatched_approved_type(
+    verified_backup: Path, approved_type_id: str | None
+) -> None:
+    from latinitas_cards.destination_state import BoundDestination, schema_contract
+    from latinitas_cards.legacy_transition import plan_destination_fresh_start
+
+    original = BoundDestination("old-collection", "profile", {"note_type_id": "old-model"}, {})
+    destination = BoundDestination(
+        "new-collection", "profile", schema_contract("new-model"), {"scope": "scope", "members": []}
+    )
+    approval = FreshStartApproval(verified_backup, NEW_NOTE_TYPE, True, True, dedicated_note_type_id=approved_type_id)
+    with pytest.raises(LegacyTransitionError, match="approved destination note type ID"):
+        plan_destination_fresh_start(
+            _profile(),
+            [],
+            original=original,
+            destination=destination,
+            selection="fresh_start",
+            fresh_start=approval,
+        )
+
+
+@pytest.mark.parametrize("selection", [None, "consolidate", "fresh_start"])
+def test_bound_fresh_start_requires_selection_and_separate_destination(
+    verified_backup: Path, selection: str | None
+) -> None:
+    from latinitas_cards.destination_state import BoundDestination, schema_contract
+    from latinitas_cards.legacy_transition import plan_destination_fresh_start
+
+    original = BoundDestination("old-collection", "profile", {"note_type_id": "old-model"}, {})
+    destination = BoundDestination(
+        "old-collection", "profile", schema_contract("new-model"), {"scope": "scope", "members": []}
+    )
+    with pytest.raises(LegacyTransitionError, match="explicit|unsupported|separate destination"):
+        plan_destination_fresh_start(
+            _profile(),
+            [],
+            original=original,
+            destination=destination,
+            selection=selection,
+            fresh_start=_approval(verified_backup),
+        )
+
+
+def test_bound_fresh_start_preserves_original_evidence_and_discloses_schedules(verified_backup: Path) -> None:
+    from latinitas_cards.destination_state import BoundDestination, schema_contract
+    from latinitas_cards.legacy_transition import plan_destination_fresh_start
+
+    original = BoundDestination(
+        "old-collection",
+        "profile",
+        {"note_type_id": "old-model", "version": "2"},
+        {"historical_manifest": ["exercise-id"]},
+    )
+    destination = BoundDestination(
+        "new-collection", "profile", schema_contract("new-model"), {"scope": "scope", "members": []}
+    )
+    notes = [
+        DestinationNoteEvidence(LEGACY_ID, LEGACY_NOTE_TYPE, "2", tags=("personal-tag",), card_count=3),
+        DestinationNoteEvidence(LEGACY_ID + "history", LEGACY_NOTE_TYPE, "2", has_review_history=True),
+        DestinationNoteEvidence(LEGACY_ID + "personal", LEGACY_NOTE_TYPE, "2", personal_notes="keep me"),
+    ]
+    before = deepcopy((original, destination, notes))
+    backup_bytes = verified_backup.read_bytes()
+    plan = plan_destination_fresh_start(
+        _profile(),
+        notes,
+        original=original,
+        destination=destination,
+        selection="fresh_start",
+        fresh_start=_approval(verified_backup),
+        legacy_note_types=[LEGACY_NOTE_TYPE],
+    )
+    assert [review.decision for review in plan.decisions] == ["fresh_start", "retain_and_defer", "retain_and_defer"]
+    assert plan.original_destination == "old-collection"
+    assert plan.fresh_destination == "new-collection"
+    assert "no inherited scheduling" in plan.disclosure
+    assert plan.old_collections_retained
+    assert (original, destination, notes) == before
+    assert verified_backup.read_bytes() == backup_bytes
+    with pytest.raises(LegacyTransitionError, match="approval"):
+        plan_destination_fresh_start(
+            _profile(),
+            notes,
+            original=original,
+            destination=destination,
+            selection="fresh_start",
+            fresh_start=None,
+        )
+    destination.schema["note_type_id"] = "old-model"
+    with pytest.raises(LegacyTransitionError, match="note type"):
+        plan_destination_fresh_start(
+            _profile(),
+            notes,
+            original=original,
+            destination=destination,
+            selection="fresh_start",
+            fresh_start=_approval(verified_backup),
+        )
 
 
 @pytest.fixture()

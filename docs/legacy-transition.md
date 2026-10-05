@@ -129,6 +129,30 @@ models and stay in scope of the inventory:
 
 ## Scope and limits
 
+- The v0.2.0 offline managed destination contract rejects historical versioned
+  identities and incompatible schema/template layouts before adoption or apply.
+  Errors offer retain-and-review or a backed-up, explicitly selected fresh start
+  in a separate destination, never slot repurposing or manifest reinterpretation.
+- Library callers use `plan_destination_fresh_start(profile, evidences,
+  original=original_binding, destination=new_binding, selection="fresh_start",
+  fresh_start=approval, legacy_note_types=inventory_names)`. The original binding
+  is reviewed inventory (its historical schema is not adopted); the new binding
+  must match the current frozen schema/template contract. Portable collection
+  IDs must differ, and the new dedicated note type must not reuse the inventoried
+  original type. The approval's `dedicated_note_type_id` must match the new
+  binding's collection-local schema ID, explicitly associating that ID with the
+  approved display name (`dedicated_note_type`, matching the profile). ID and
+  display name are distinct namespaces, not compared for equality.
+  Backup, disposable-data and new-schedule confirmations remain
+  mandatory, including when the inventory is empty. Missing selection and
+  scheduling-preserving consolidation requests fail clearly.
+- This API extends the four read-only decisions above. It reports both destinations
+  and explicitly discloses no inherited scheduling. It neither exports/imports
+  cards nor authorizes structural CSV effects; it leaves original notes/cards,
+  personal fields, tags, source structure, review logs and identity manifests
+  untouched. Valuable-history and personal-annotation notes still retain/defer.
+  Native fresh-start isolation proof remains a later native update gate; the
+  synthetic tests here establish policy and input preservation only.
 - v0.1.0 ships the guard, the policy, and the rehearsal. It does not ship
   migration machinery, destination-aware merging, collection cleanup, or any
   live collection mutation.

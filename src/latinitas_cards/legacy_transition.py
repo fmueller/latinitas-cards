@@ -17,13 +17,16 @@ identity, surviving cards, and review history.
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from .identity import LATINITAS_ID_VERSION
 from .notes import NOTE_SCHEMA_VERSION
 from .profile import DeckProfile
+
+if TYPE_CHECKING:
+    from .destination_state import BoundDestination
 
 LEGACY_NOTE_SCHEMA_VERSIONS: tuple[str, ...] = ("1", "2")
 LEGACY_LATINITAS_ID_VERSION = "v1"
@@ -31,6 +34,13 @@ LEGACY_SPLIT_GUID_PREFIX = "legacy-split-guid-v1-"
 
 _LEGACY_ID_PREFIX = f"latinitas-{LEGACY_LATINITAS_ID_VERSION}-"
 _CURRENT_ID_PREFIX = f"latinitas-{LATINITAS_ID_VERSION}-"
+
+INCOMPATIBLE_LAYOUT_CHOICES = (
+    "Retain the original collection and review its inventory, or explicitly select a backed-up "
+    "fresh start in a separate destination with a new dedicated note type and no inherited scheduling. "
+    "Scheduling-preserving consolidation is unsupported; regeneration/CSV export is not migration. "
+    "Do not reinterpret old manifests or repurpose frozen template slots; no automatic deletion or retirement."
+)
 
 #: The published guarantee boundary for any structural consolidation of the
 #: legacy models.  It is quoted verbatim in ``docs/legacy-transition.md`` and
@@ -113,6 +123,7 @@ class FreshStartApproval:
     dedicated_note_type: str
     data_is_disposable: bool = False
     acknowledges_new_schedules: bool = False
+    dedicated_note_type_id: str | None = None
 
     def missing_requirements(self, legacy_note_types: Iterable[str] = ()) -> tuple[str, ...]:
         """Return every explicit confirmation the approval still lacks."""
@@ -150,6 +161,9 @@ class LegacyTransitionPlan:
     legacy_note_types: tuple[str, ...]
     decisions: tuple[LegacyTransitionReview, ...]
     old_collections_retained: bool = True
+    original_destination: str | None = None
+    fresh_destination: str | None = None
+    disclosure: str = ""
 
     @property
     def review_only(self) -> bool:
@@ -188,6 +202,13 @@ def classify_legacy_model(first_field: str, note_schema: str | None) -> LegacyMo
     if legacy_schema:
         return "legacy_per_exercise"
     return "unrecognized"
+
+
+def incompatible_managed_identity(first_field: str) -> bool:
+    """Reject historical or unknown versioned identities, without rewriting them."""
+    return first_field.startswith(LEGACY_SPLIT_GUID_PREFIX) or (
+        first_field.startswith("latinitas-") and not first_field.startswith(_CURRENT_ID_PREFIX)
+    )
 
 
 def evaluate_legacy_transition(
@@ -297,6 +318,54 @@ def plan_legacy_transition(
     )
 
 
+def plan_destination_fresh_start(
+    profile: DeckProfile,
+    evidences: Sequence[DestinationNoteEvidence],
+    *,
+    original: BoundDestination,
+    destination: BoundDestination,
+    selection: str | None,
+    fresh_start: FreshStartApproval | None,
+    legacy_note_types: Iterable[str] = (),
+) -> LegacyTransitionPlan:
+    """Extend the legacy review policy with explicit portable destination isolation.
+
+    The original binding is reviewed inventory, potentially incompatible with the
+    current contract; it is never adopted, normalized, or passed to managed apply.
+    Only the new binding is validated. This read-only plan neither exports cards
+    nor proves native isolation or grants structural CSV transport permission.
+    """
+    if selection != "fresh_start":
+        raise LegacyTransitionError("An explicit fresh_start selection is required. " + INCOMPATIBLE_LAYOUT_CHOICES)
+    source_id = original.destination.strip()
+    if not source_id or source_id == destination.destination.strip():
+        raise LegacyTransitionError("Fresh start requires a separate destination. " + INCOMPATIBLE_LAYOUT_CHOICES)
+    target = destination.payload()
+    old_type = original.schema.get("note_type_id")
+    if not isinstance(old_type, str) or not old_type.strip() or old_type == target["schema"]["note_type_id"]:
+        raise LegacyTransitionError("Fresh start requires a distinct, inventoried note type.")
+    if fresh_start is None:
+        raise LegacyTransitionError("Fresh start requires explicit backup and schedule approval.")
+    if fresh_start.dedicated_note_type_id != target["schema"]["note_type_id"]:
+        raise LegacyTransitionError("Fresh start requires the approved destination note type ID to match its binding.")
+    plan = plan_legacy_transition(profile, evidences, legacy_note_types=legacy_note_types, fresh_start=fresh_start)
+    missing = fresh_start.missing_requirements(plan.legacy_note_types)
+    if fresh_start.dedicated_note_type.strip() != profile.generated_note_type.strip():
+        missing = (*missing, _MATCHING_TYPE_REQUIREMENT.format(intended=profile.generated_note_type))
+    if missing:
+        raise LegacyTransitionError("Fresh-start approval requires " + "; ".join(missing))
+    return replace(
+        plan,
+        original_destination=source_id,
+        fresh_destination=target["destination"],
+        disclosure=(
+            "Fresh start: new cards have no inherited scheduling. Original notes/cards, personal fields, "
+            "tags, source structure and review logs stay untouched; no automatic deletion or retirement. "
+            "Regeneration/CSV export is not migration; scheduling-preserving consolidation is unsupported."
+        ),
+    )
+
+
 __all__ = [
     "CSV_CONSOLIDATION_HISTORY_STATEMENT",
     "DestinationNoteEvidence",
@@ -311,4 +380,5 @@ __all__ = [
     "evaluate_legacy_transition",
     "is_legacy_note_schema",
     "plan_legacy_transition",
+    "plan_destination_fresh_start",
 ]

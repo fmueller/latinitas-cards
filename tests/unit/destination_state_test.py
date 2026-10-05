@@ -22,6 +22,23 @@ from latinitas_cards.destination_state import (
 from latinitas_cards.notes import AUTHORITATIVE_NOTE_FIELDS
 
 
+@pytest.mark.parametrize("layout", ["legacy_identity", "legacy_schema", "template_task", "template_front"])
+def test_incompatible_layout_offers_safe_choices(evidence: dict[str, Any], layout: str) -> None:
+    if layout == "legacy_identity":
+        identity = "latinitas-v1-old-exercise"
+        evidence["managed_set"]["members"][0][0] = identity
+        evidence["notes"][0]["identity"] = identity
+        evidence["notes"][0]["fields"]["LatinitasID"] = identity
+    elif layout == "legacy_schema":
+        evidence["schema"]["version"] = "2"
+    elif layout == "template_task":
+        evidence["schema"]["templates"][0]["semantic_key"] = "different_task"
+    else:
+        evidence["schema"]["templates"][0]["front_digest"] = "changed-front"
+    with pytest.raises(ReconciliationRequired, match="separate destination.*no inherited scheduling"):
+        read_snapshot(evidence, bound(evidence))
+
+
 def test_reconciled_note_targets_observe_origins_and_decisions(evidence: dict[str, Any], tmp_path: Path) -> None:
     from latinitas_cards.destination_reconciliation import reconcile_note
 
