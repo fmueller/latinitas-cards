@@ -754,7 +754,7 @@ def test_export_reports_source_entries_objects_cards_and_zero_eligible_notes_sep
     assert result.source_entry_count == 3
     assert result.object_count == 2
     assert result.exported_note_count == 2
-    assert result.card_count == 14
+    assert result.card_count == 12
     assert result.zero_card_note_count == 0
     assert result.skipped_count == 1
     assert result.generation.generated_warning_count == 1
@@ -1803,8 +1803,10 @@ def test_preview_and_csv_retain_review_evidence_without_unconditional_targets(
     )
     assert result.generation.generated_warning_count == 1
     header, rows, _ = _parse_export(deterministic_csv_bytes(result))
-    assert len(rows) == 1
-    fields = dict(zip(header, rows[0], strict=True))
+    assert len(rows) == (0 if recipe == "principal_part_completion" else 1)
+    fields = dict(result.generation.notes[0].to_anki_fields())
+    if rows:
+        assert dict(zip(header, rows[0], strict=True))["Principal Parts"] == fields["Principal Parts"]
     evidence_text = fields["Principal Parts"].split("</span>")[0].split(">", 1)[1]
     evidence = json.loads(unescape(evidence_text))
     assert evidence["raw"] == alternatives
@@ -1815,7 +1817,7 @@ def test_preview_and_csv_retain_review_evidence_without_unconditional_targets(
         "trim",
         "preserve alternative order",
     ]
-    assert result.card_count == 2
+    assert result.card_count == (0 if recipe == "principal_part_completion" else 1)
     assert fields["CompletionInfinitiveEnabled"] == fields["RecognitionInfinitiveEnabled"] == ""
     assert fields["CompletionPresentEnabled"] == fields["RecognitionPresentEnabled"] == ""
     render_principal_part_preview(result, limit=2)

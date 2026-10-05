@@ -197,7 +197,7 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
 
     assert preview.returncode == 0
     assert "Objects: 3" in preview.stdout
-    assert "Cards: 16" in preview.stdout
+    assert "Cards: 12" in preview.stdout
     assert "Skipped: 2" in preview.stdout
     assert "Ambiguous: 1" in preview.stdout
     assert "Zero-eligible notes: 1" in preview.stdout

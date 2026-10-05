@@ -112,11 +112,9 @@ MISSING_FORM_EXAMPLES = (
             "Completion Present",
             "Completion Infinitive",
             "Completion Perfect",
-            "Completion Supine",
             "Recognition Present",
             "Recognition Infinitive",
             "Recognition Perfect",
-            "Recognition Supine",
         ),
     ),
     (
@@ -137,10 +135,8 @@ MISSING_FORM_EXAMPLES = (
         (
             "Completion Present",
             "Completion Infinitive",
-            "Completion Supine",
             "Recognition Present",
             "Recognition Infinitive",
-            "Recognition Supine",
         ),
     ),
 )

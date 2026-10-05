@@ -108,11 +108,9 @@ def test_first_approved_export_commits_checkpoint_bound_to_scope_schema_and_regi
                 "principal_part_completion:present_1s",
                 "principal_part_completion:present_infinitive",
                 "principal_part_completion:perfect_1s",
-                "principal_part_completion:supine",
                 "principal_part_recognition:present_1s",
                 "principal_part_recognition:present_infinitive",
                 "principal_part_recognition:perfect_1s",
-                "principal_part_recognition:supine",
             ),
         ),
     )
@@ -132,7 +130,7 @@ def test_repeat_export_is_deterministic_and_leaves_checkpoint_stable(tmp_path: P
     assert (tmp_path / "generated.csv").read_bytes() == output_before
     assert _checkpoint_path(source).read_bytes() == checkpoint_before
     assert repeat.exported_note_count == 1
-    assert repeat.card_count == 8
+    assert repeat.card_count == 6
     assert not repeat.card_eligibility_reviews
 
 
@@ -193,7 +191,11 @@ def test_recipe_deselection_withholds_previously_exported_cards(tmp_path: Path) 
 
     assert deselected.exported_note_count == 0
     withheld = next(review for review in deselected.card_eligibility_reviews if review.kind == "withheld")
-    assert set(withheld.card_keys) == {f"principal_part_completion:{role}" for role in profile.principal_parts.roles}
+    assert set(withheld.card_keys) == {
+        "principal_part_completion:present_1s",
+        "principal_part_completion:present_infinitive",
+        "principal_part_completion:perfect_1s",
+    }
 
 
 def test_wording_and_gloss_updates_still_export_and_advance_evidence(tmp_path: Path) -> None:
@@ -402,7 +404,7 @@ def test_package_sources_persist_checkpoint_and_withhold_deselected_cards(tmp_pa
     _write_package(source, [("guid-a", "dīcō", "dīcere — dīcō — dīxī — dictum", "sagen")])
     first = prepare_principal_part_export(source, _package_profile(), approve_fresh_import=True)
     assert first.exported_note_count == 1
-    assert first.card_count == 8
+    assert first.card_count == 6
     write_principal_part_csv(first, output)
 
     checkpoint_file = Path(f"{source}.latinitas-cards.json")

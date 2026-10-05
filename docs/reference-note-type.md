@@ -337,15 +337,18 @@ backs render the managed answer plus the shared context and Personal Notes.
 
 ## Synthetic missing-form examples
 
-These synthetic examples show how missing forms behave. Each row is one note;
+These synthetic examples show how missing forms behave without fourth-role claim
+review. A proposed PPP/supine profile label alone does not approve a fourth-form
+card; explicitly review its contextual role through the offline claim API.
+Each row is one note;
 "eligible templates" lists exactly the templates whose `Enabled` field is `1`
 (every other slot renders an empty front and creates no card):
 
 | Forms value | Confirmed roles | Eligible templates |
 | --- | --- | --- |
-| `ferō — ferre — tulī — lātum` | present_1s, present_infinitive, perfect_1s, supine | Completion Present, Completion Infinitive, Completion Perfect, Completion Supine, Recognition Present, Recognition Infinitive, Recognition Perfect, Recognition Supine |
+| `ferō — ferre — tulī — lātum` | present_1s, present_infinitive, perfect_1s, supine | Completion Present, Completion Infinitive, Completion Perfect, Recognition Present, Recognition Infinitive, Recognition Perfect |
 | `ferō — ferre —  — ` | present_1s, present_infinitive, perfect_1s, perfect_passive_participle | Completion Present, Completion Infinitive, Recognition Present, Recognition Infinitive |
-| `amō — amāre — <b></b> — amātum` | present_1s, present_infinitive, perfect_1s, supine | Completion Present, Completion Infinitive, Completion Supine, Recognition Present, Recognition Infinitive, Recognition Supine |
+| `amō — amāre — <b></b> — amātum` | present_1s, present_infinitive, perfect_1s, supine | Completion Present, Completion Infinitive, Recognition Present, Recognition Infinitive |
 
 - An absent form guards its own cards off without shifting any positional
   meaning: the remaining prompts keep every confirmed position and show the

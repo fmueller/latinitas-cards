@@ -105,11 +105,9 @@ def test_card_keys_cover_selected_recipes_and_available_roles_only() -> None:
         "principal_part_completion:present_1s",
         "principal_part_completion:present_infinitive",
         "principal_part_completion:perfect_1s",
-        "principal_part_completion:perfect_passive_participle",
         "principal_part_recognition:present_1s",
         "principal_part_recognition:present_infinitive",
         "principal_part_recognition:perfect_1s",
-        "principal_part_recognition:perfect_passive_participle",
     )
     assert recognition_only.notes[0].card_keys == tuple(
         key for key in both.notes[0].card_keys if key.startswith("principal_part_recognition:")
@@ -146,7 +144,7 @@ def test_wording_gloss_and_recipe_changes_enrich_the_same_note_identity() -> Non
     assert revised.notes[0].latinitas_id == original.notes[0].latinitas_id
     assert revised.notes[0].content != original.notes[0].content
     assert enriched.notes[0].latinitas_id == original.notes[0].latinitas_id
-    assert len(enriched.notes[0].card_keys) == 8
+    assert len(enriched.notes[0].card_keys) == 6
 
 
 def test_generated_notes_inherit_all_valid_parent_tags_additively() -> None:
@@ -518,11 +516,11 @@ def test_generated_note_knowledge_uses_role_labels_for_every_confirmed_role() ->
     principal_parts = result.notes[0].content.principal_parts
     evidence, visible = principal_parts.split("</span>", 1)
     assert 'class="source-extraction"' in evidence
-    assert visible == (
+    assert visible.startswith(
         "<strong>Präsens, 1. Person Singular:</strong> ferō<br>"
         "<strong>Infinitiv:</strong> ferre<br>"
         "<strong>Perfekt, 1. Person Singular:</strong> tulī<br>"
-        "<strong>Supinum:</strong> lātum"
+        "<strong>Supinum:</strong> lātum <em>(unresolved source evidence; target withheld)</em>"
     )
 
 
@@ -565,10 +563,8 @@ def test_markup_only_part_keeps_the_note_but_omits_blank_answers_and_cards() -> 
     assert note.card_keys == (
         "principal_part_completion:present_1s",
         "principal_part_completion:present_infinitive",
-        "principal_part_completion:supine",
         "principal_part_recognition:present_1s",
         "principal_part_recognition:present_infinitive",
-        "principal_part_recognition:supine",
     )
     assert "<strong>Perfekt, 1. Person Singular:</strong> —" in note.content.principal_parts
     for expected_answer in ("amo", "amare", "amatum"):
@@ -668,7 +664,9 @@ def test_unresolved_source_evidence_never_becomes_a_recipe_target(recipe: str) -
     assert result.generated_count == 3
     assert result.skipped_count == 1
     assert result.generated_warning_count == 3
-    assert [len(note.card_keys) for note in result.notes] == [2, 3, 3]
+    assert [len(note.card_keys) for note in result.notes] == (
+        [0, 2, 2] if recipe == "principal_part_completion" else [1, 2, 2]
+    )
     for note in result.notes:
         assert 'class="source-extraction"' in note.content.principal_parts
     assert "amāre | amare" in result.notes[0].content.principal_parts

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 
@@ -131,7 +132,13 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
         parts = note.content.principal_parts
         if parts.startswith('<span hidden class="source-extraction">'):
             parts = parts.partition("</span>")[2]
+        parts, _, review_payload = parts.partition('<span hidden class="principal-part-review">')
         typer.echo(f"  Principal Parts: {safe_source_value(parts, field_context, limit=512)}")
+        if review_payload:
+            typer.echo(
+                "  Relationship review (proposals are not assertions): "
+                + safe_source_value(html.unescape(review_payload.partition("</span>")[0]), field_context, limit=4096)
+            )
         typer.echo(f"  Meaning: {safe_source_value(note.content.meaning, field_context, limit=512)}")
         typer.echo(f"  Tags: {safe_source_value(' '.join(note.content.tags), field_context, limit=512)}")
         typer.echo(f"  Card Keys: {safe_source_value(' '.join(note.card_keys), 'card keys', limit=512)}")

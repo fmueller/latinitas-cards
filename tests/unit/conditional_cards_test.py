@@ -236,11 +236,9 @@ def test_card_keys_follow_registry_order_not_profile_order() -> None:
         "principal_part_completion:present_1s",
         "principal_part_completion:present_infinitive",
         "principal_part_completion:perfect_1s",
-        "principal_part_completion:supine",
         "principal_part_recognition:present_1s",
         "principal_part_recognition:present_infinitive",
         "principal_part_recognition:perfect_1s",
-        "principal_part_recognition:supine",
     )
 
 
@@ -288,9 +286,8 @@ def test_ppp_and_supine_remain_distinct_slots() -> None:
     supine_completion = next(
         card for card in supine_note.cards if card.slot.semantic_key == "principal_part_completion:supine"
     )
-    assert ppp_completion.eligible and supine_completion.eligible
-    assert "Partizip Perfekt Passiv (PPP)" in ppp_completion.prompt
-    assert "Supinum" in supine_completion.prompt
+    assert not ppp_completion.eligible and not supine_completion.eligible
+    assert ppp_completion.prompt == supine_completion.prompt == ""
     assert ppp_completion.slot.template_name == "Completion PPP"
     assert supine_completion.slot.template_name == "Completion Supine"
 
@@ -330,11 +327,8 @@ def test_recognition_prompt_uses_target_and_lemma_and_gloss_is_never_invented() 
     assert "tragen" in recognition.prompt
     assert recognition_bare.eligible
     assert "tragen" not in recognition_bare.prompt
-    assert "tulī" in completion.prompt
-    assert "lātum" not in completion.prompt
-    assert "____" in completion.prompt
-    assert "tragen" in completion.prompt
-    assert completion.answer == "lātum"
+    assert not completion.eligible
+    assert completion.prompt == completion.answer == ""
 
 
 def test_card_prompts_render_the_series_with_the_target_blanked() -> None:
@@ -344,10 +338,11 @@ def test_card_prompts_render_the_series_with_the_target_blanked() -> None:
 
     assert "ferō" in completion.prompt
     assert "ferre" in completion.prompt
-    assert "lātum" in completion.prompt
+    assert "lātum" not in completion.prompt
+    assert "unresolved source evidence" in completion.prompt
     assert "tulī" not in completion.prompt
     assert "____" in completion.prompt
-    assert completion.answer == "tulī"
+    assert completion.answer.startswith("tulī<div")
 
 
 def test_card_content_is_escaped_and_guards_are_binary() -> None:

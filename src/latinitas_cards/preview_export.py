@@ -16,7 +16,7 @@ import html
 import io
 import os
 import tempfile
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -30,6 +30,7 @@ from .checkpoint import (
     compare_export_with_checkpoint,
     export_fingerprint,
 )
+from .claim_review import ClaimAssessment
 from .generation import LearningObjectGenerationResult, generate_learning_object_notes
 from .legacy_transition import plan_legacy_transition
 from .manifest import (
@@ -144,6 +145,7 @@ def prepare_principal_part_export(
     checkpoint_path: str | Path | None = None,
     approve_fresh_import: bool = False,
     legacy_note_types: Iterable[str] = (),
+    claim_assessments: Sequence[ClaimAssessment] = (),
 ) -> PrincipalPartExportResult:
     """Read immutable input and build a typed generation result without writing files."""
 
@@ -171,6 +173,7 @@ def prepare_principal_part_export(
             approved_allocations=approved_allocations,
             approved_removals=approved_removals,
             approve_fresh_import=approve_fresh_import,
+            claim_assessments=claim_assessments,
         )
 
     package_checkpoint_file = Path(f"{source}{CHECKPOINT_SUFFIX}")
@@ -206,11 +209,12 @@ def prepare_principal_part_export(
             reconcile_rows=False,
             approve_new_scope=approve_new_scope,
             approve_fresh_import=approve_fresh_import,
+            claim_assessments=claim_assessments,
         )
 
     source_id_field = profile.source_identity.field if strategy == "source_id_field" else None
     records = read_source_records(source, source_id_field=source_id_field)
-    generation = generate_learning_object_notes(records, profile)
+    generation = generate_learning_object_notes(records, profile, claim_assessments=claim_assessments)
     package_result = PrincipalPartExportResult(
         source_path=source,
         profile=profile,
@@ -247,6 +251,7 @@ def _prepare_scoped_csv(
     approved_reuse: Mapping[int, str] | None = None,
     approved_allocations: Mapping[int, str | None] | Iterable[int] | None = None,
     approved_removals: Iterable[str] | None = None,
+    claim_assessments: Sequence[ClaimAssessment] = (),
 ) -> PrincipalPartExportResult:
     """Prepare one CSV source under a persisted, unique identity scope."""
 
@@ -296,11 +301,14 @@ def _prepare_scoped_csv(
             profile,
             manifest_identities=identities,
             source_scope=scope,
+            claim_assessments=claim_assessments,
         )
         manifest_reviews = reconciliation.reviews
         candidate_manifest = reconciliation.manifest
     else:
-        generation = generate_learning_object_notes(records, profile, source_scope=scope)
+        generation = generate_learning_object_notes(
+            records, profile, source_scope=scope, claim_assessments=claim_assessments
+        )
         manifest_reviews = ()
         candidate_manifest = base_state
     prepared = PrincipalPartExportResult(

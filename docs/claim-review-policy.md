@@ -46,6 +46,47 @@ write approval. Setup's proposed fourth-role label is not explicit PPP/supine
 adjudication. Existing recipe keys and source-extraction expectations are unchanged;
 T-052 owns subsequent supported principal-part analysis and rendering integration.
 
+## Principal-part generation handoff
+
+`principal_relationships.compare_principal_parts` exposes an immutable four-role
+comparison with forms, absence/withholding reasons, individually assessed claims,
+accepted segmentation and accepted German explanation. It proposes no linguistic
+rules. Detailed splits, coarse splits and irregular comparisons are caller-supplied
+proposals: each requires its own explicit review. No string diff or `-um` heuristic
+is used; deponents and exceptional forms acquire no implied derivation or voice.
+
+Pass current `ClaimAssessment` values as `claim_assessments` to
+`generate_learning_object_notes` or `prepare_principal_part_export`. Generation
+uses candidate IDs `<LatinitasID>:<semantic-role>`; derive the ID with the existing
+`derive_latinitas_id(source_identity, "lexeme-1", source_scope=...)`. For CSV, first
+commit its approved identity scope, then construct proposals against that scope.
+Include the parser's exact current `SourceExtraction` and confirmed profile in
+each proposal. Review cannot transfer across sources/scopes, candidate text,
+extraction snapshots or profiles. An incompatible PPP/supine profile must be
+resolved explicitly; changing its role invalidates the earlier review.
+
+For the fourth form a freshly accepted `label` value must be exactly `supine` or
+`perfect_passive_participle`, matching the explicit role in the profile. A setup
+proposal or bare suffix is insufficient. With no review input, both recipes
+withhold fourth-role targets but retain eligible siblings. Unresolved source
+alternatives remain unresolved even if a proposal was reviewed; first resolve
+the source evidence explicitly. Conflicting accepted proposals and explicit
+withholding cannot silently select a winning analysis.
+
+The answer fields carry individually accepted prose/splits and a basic collapsed
+four-role comparison; absent/withheld slots have actionable reasons. Escaped
+hidden `principal-part-review` JSON retains the comparison, claim provenance,
+profiles, and decisions alongside the existing extraction JSON. Terminal preview
+labels this separately as review data, not asserted knowledge. Future presentation
+work may style these fields but must not infer claims from styling. CLI commands
+currently provide no persistent claim-review editor/import option; the offline
+Python handoff is the explicit review path. Existing destination/checkpoint gates
+still apply: accepting a claim is not write approval, and previously exported
+cards that lose eligibility require the existing recovery/review process.
+
+Tests use stipulated synthetic judgments, not measured Latin-expert or analyzer
+accuracy; the automatic-acceptance policy above remains disabled.
+
 ## Reviewed evaluation material and overlap disclosure
 
 `tests/fixtures/claim-review/evaluation.jsonl` contains 18 purposively authored

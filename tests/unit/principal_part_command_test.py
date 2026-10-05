@@ -433,7 +433,7 @@ def test_profile_preview_and_generate_render_combined_tags_matching_the_csv(tmp_
     assert previewed.exit_code == 0
     assert f"Tags: {expected_tags}" in previewed.stdout
     assert "Notes: 1" in previewed.stdout
-    assert "Cards: 4" in previewed.stdout
+    assert "Cards: 3" in previewed.stdout
     assert generated.exit_code == 0
     assert f"Tags: {expected_tags}" in generated.stdout
     rows = list(csv.reader(io.StringIO(output.read_text(encoding="utf-8"))))

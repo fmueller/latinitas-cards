@@ -236,10 +236,12 @@ def test_generated_sample_adjudications_hold_value_contracts() -> None:
     assert "<strong>Partizip Perfekt Passiv (PPP):</strong> dictum" in rev_001.content.principal_parts
     assert rev_002.content.meaning == ""
     for note in (rev_001, rev_002):
-        assert len(note.card_keys) == 8
+        assert len(note.card_keys) == 6
         eligible_answers = [
             line.split("</strong>")[-1].strip()
-            for line in note.content.principal_parts.split("<br>")
+            for line in note.content.principal_parts.partition('<span hidden class="principal-part-review">')[0].split(
+                "<br>"
+            )
             if line.split("</strong>")[-1].strip() != "—"
         ]
         assert len(eligible_answers) == 4
@@ -292,7 +294,7 @@ def test_markup_only_sample_adjudications_keep_notes_and_omit_blank_answers() ->
         assert skips[0].status == "incomplete"
         assert skips[0].code == "omitted_principal_part"
         assert "perfect_1s" in skips[0].message
-        assert len(note.card_keys) == 6
+        assert len(note.card_keys) == 4
         assert "principal_part_completion:perfect_1s" not in note.card_keys
         assert "principal_part_recognition:perfect_1s" not in note.card_keys
         assert "<strong>Perfekt, 1. Person Singular:</strong> —" in note.content.principal_parts
@@ -301,7 +303,8 @@ def test_markup_only_sample_adjudications_keep_notes_and_omit_blank_answers() ->
             for line in note.content.principal_parts.split("<br>")
             if line.split("</strong>")[-1].strip() != "—"
         ]
-        assert eligible_answers == ["amāre", "amō", "amātum"]
+        assert eligible_answers[:2] == ["amāre", "amō"]
+        assert eligible_answers[2].startswith("amātum <em>(unresolved source evidence; target withheld)</em>")
 
 
 def test_unsupported_and_ambiguous_sample_adjudications_match_the_matrix() -> None:

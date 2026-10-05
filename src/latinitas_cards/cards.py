@@ -20,6 +20,7 @@ from dataclasses import dataclass
 
 from .identity import derive_card_semantic_key
 from .principal_parts import ParsedPrincipalParts, PrincipalPartValue
+from .principal_relationships import PrincipalPartComparison
 from .profile_setup import encode_unsafe_controls
 
 TEMPLATE_REGISTRY_VERSION = 1
@@ -192,6 +193,7 @@ def render_cards(
     *,
     selected_recipes: Sequence[str],
     meaning: str = "",
+    comparison: PrincipalPartComparison | None = None,
 ) -> tuple[RenderedCard, ...]:
     """Render every registry slot of one learning object in registry order.
 
@@ -214,8 +216,36 @@ def render_cards(
         else:
             prompt = _recognition_prompt(parsed, part, gloss)
             answer = _escape_text(role_display_label(slot.role))
+        if comparison is not None:
+            answer += _render_comparison(comparison, slot.role)
         cards.append(RenderedCard(slot=slot, eligible=True, guard=GUARD_VALUE, prompt=prompt, answer=answer))
     return tuple(cards)
+
+
+def _render_comparison(comparison: PrincipalPartComparison, tested_role: str) -> str:
+    lines = []
+    related = []
+    focused = ""
+    for role in comparison.roles:
+        value = "—" if role.status != "present" else _escape_text(role.form or "")
+        analysis = " · ".join(_escape_text(text) for text in (role.segmentation, role.explanation) if text)
+        if role.role == tested_role:
+            focused = analysis or "Analyse zurückgehalten; einzelne Belege prüfen."
+        elif role.status == "present" and role.segmentation:
+            related.append(f"{_escape_text(role_display_label(role.role))}: {_escape_text(role.segmentation)}")
+        lines.append(
+            f"<strong>{_escape_text(role_display_label(role.role))}:</strong> {value}"
+            + (f" · {analysis}" if analysis else f" · {_escape_text(role.reason)}")
+        )
+    return (
+        f'<div class="tested-form-explanation">{focused}</div>'
+        + '<div class="related-stems">'
+        + ("Verwandte Stämme: " + " · ".join(related) if related else "Weitere Stämme: Analyse zurückgehalten.")
+        + "</div>"
+        + "<details><summary>Stammformen vergleichen</summary>"
+        + "<br>".join(lines)
+        + "</details>"
+    )
 
 
 def _completion_prompt(parsed: ParsedPrincipalParts, target: PrincipalPartValue, gloss: str) -> str:

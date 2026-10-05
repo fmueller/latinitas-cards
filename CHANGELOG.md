@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Changed
 
+- Principal-part answers can include individually reviewed German explanations and
+  stem comparisons; fourth-form cards require explicit PPP/supine review.
 - Principal-part profiles can retain reviewed pipe alternatives and the bounded
   `poet.` hint as source evidence; unresolved targets are withheld in both recipes.
 - Principal-part previews separate wholly skipped entries from generated entries

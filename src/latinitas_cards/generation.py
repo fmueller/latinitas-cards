@@ -16,14 +16,16 @@ import json
 import re
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Literal
 
 from .cards import render_cards, role_display_label
+from .claim_review import ClaimAssessment
 from .html_text import source_html_to_text
 from .identity import (
     IdentityError,
     ResolvedSourceIdentity,
+    derive_latinitas_id,
     resolve_source_identity,
 )
 from .notes import (
@@ -39,6 +41,7 @@ from .principal_parts import (
     normalize_principal_part_for_comparison,
     parse_principal_parts,
 )
+from .principal_relationships import compare_principal_parts
 from .profile import DeckProfile, tag_character_violation
 from .profile_setup import encode_unsafe_controls
 from .source_extraction import SourceExtraction
@@ -104,6 +107,7 @@ def generate_learning_object_notes(
     *,
     manifest_identities: Sequence[str | None] | None = None,
     source_scope: str | None = None,
+    claim_assessments: Sequence[ClaimAssessment] = (),
 ) -> LearningObjectGenerationResult:
     """Generate one coherent learning-object note per eligible source record.
 
@@ -254,6 +258,7 @@ def generate_learning_object_notes(
             source_identity,
             profile=profile,
             metadata=metadata,
+            claim_assessments=claim_assessments,
         )
         if note.latinitas_id in note_ids:
             skipped.append(
@@ -322,10 +327,23 @@ def _render_note(
     *,
     profile: DeckProfile,
     metadata: GenerationMetadata,
+    claim_assessments: Sequence[ClaimAssessment],
 ) -> GeneratedNote:
     meaning = _meaning(record, profile)
     meaning_text = source_html_to_text(meaning)
     tags = _combined_tags(record, profile)
+    comparison = compare_principal_parts(
+        parsed,
+        profile,
+        claim_assessments,
+        source_identity=derive_latinitas_id(
+            source_identity.value, SINGLE_LEXEME_OBJECT_KEY, source_scope=source_identity.scope
+        ),
+    )
+    withheld = {role.role for role in comparison.roles if role.status == "withheld"}
+    parsed = replace(
+        parsed, parts=tuple(replace(part, unresolved=True) if part.role in withheld else part for part in parsed.parts)
+    )
     content = ManagedNoteContent(
         lemma=_escape_normalized_lines(parsed.lexical_entry),
         principal_parts=(
@@ -335,11 +353,16 @@ def _render_note(
             if parsed.evidence is not None
             else ""
         )
-        + _render_parts(parsed.parts),
+        + _render_parts(parsed.parts)
+        + '<span hidden class="principal-part-review">'
+        + _escape_text(
+            json.dumps(asdict(comparison), ensure_ascii=False, default=lambda value: value.model_dump(mode="json"))
+        )
+        + "</span>",
         meaning=_escape_normalized_lines(meaning_text),
         tags=tags,
     )
-    cards = render_cards(parsed, selected_recipes=profile.selected_recipes, meaning=meaning_text)
+    cards = render_cards(parsed, selected_recipes=profile.selected_recipes, meaning=meaning_text, comparison=comparison)
     return GeneratedNote.create(
         source_identity=source_identity.value,
         source_scope=source_identity.scope,
