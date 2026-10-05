@@ -2440,6 +2440,7 @@ def _register_commands() -> None:
     from .commands.cloze import cloze
     from .commands.generate import generate
     from .commands.inspect import inspect
+    from .commands.managed import app as managed_app
     from .commands.preview import preview
     from .commands.setup import setup
     from .commands.split import split
@@ -2454,6 +2455,7 @@ def _register_commands() -> None:
     app.command()(validate)
     app.command()(setup)
     app.add_typer(authored_app, name="authored")
+    app.add_typer(managed_app, name="managed")
 
 
 _register_commands()

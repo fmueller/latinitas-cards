@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `managed plan` exposes deterministic destination-aware JSON reviews;
+  `managed approve` binds selected compatible operations to their exact import footprint.
+
 ### Changed
 
 - Managed destination reviews reject historical identities and incompatible layouts;

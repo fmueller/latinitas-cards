@@ -300,6 +300,10 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     assert set(authored.commands) == {"preview", "validate", "export"}
     commands.remove(authored)
     commands.extend(authored.commands.values())
+    managed = cast(click.Group, click_app.commands["managed"])
+    assert set(managed.commands) == {"plan", "approve"}
+    commands.remove(managed)
+    commands.extend(managed.commands.values())
     assert all(command.callback is not None for command in commands)
     command_modules = {command.name: command.callback.__module__ for command in commands}
 

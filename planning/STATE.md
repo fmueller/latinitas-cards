@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-05T04:03:00Z"
+updated_at: "2026-10-05T04:30:04Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-053-render-safe-principal-part-comparisons-with at 2026-10-05T04:03:00Z
+last_verification_result: pass for T-058-expose-deterministic-managed-plans-and-operation at 2026-10-05T04:30:04Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-053-render-safe-principal-part-comparisons-with at 2026-10-05T04:03:00Z
+- pass for T-058-expose-deterministic-managed-plans-and-operation at 2026-10-05T04:30:04Z
 
 ## Next Action
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 6
+- todo: 5
 - in_progress: 0
-- completed: 56
+- completed: 57
 - blocked: 0
 - cancelled: 0

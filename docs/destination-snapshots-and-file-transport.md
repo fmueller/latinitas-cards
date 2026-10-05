@@ -305,3 +305,56 @@ suspension of a previously unsuspended card can propose `unsuspend`; pre-suspend
 cards remain suspended and unknown ownership blocks reversal. Profile re-enablement
 alone gives no authority. No plan result proves actual scheduling/history preservation:
 native structural transport checks remain a separate later gate.
+
+## Managed JSON review and approval
+
+`managed plan request.json` writes deterministic JSON to stdout, without changing
+the destination or baseline. The request contains `binding` (the selected
+`BoundDestination` payload), `snapshot` (validated version-1 evidence), `baseline`
+(observed journal or null), `effective_profile` (the full resolved profile including
+presentation settings), and `proposals` (an explicitly selected array). Each proposal
+has `identity`, complete `fields` containing only authoritative managed fields,
+optional `contributions` keyed by source/configured/lifecycle tag origins, optional
+`decisions` using the reconciliation API above, `status` (default `approved` means
+generation/knowledge status only), and `retire` (default false). Omission never retires
+an object. Membership must include its immutable object key. Generated fields can be
+obtained from `GeneratedNote.to_anki_fields()` excluding Tags and Personal Notes.
+
+Plans expose create/update/unchanged/conflict/retire classifications, reasons,
+baseline/destination/proposal/resolved field differences, full tags, card effects,
+blocked operations and transport capability flags. Missing baselines require adoption;
+wrong, incomplete, stale, duplicate and incompatible evidence fails closed. An old CSS
+digest requires separately reviewed manual setup, never automatic template migration.
+
+```bash
+uv run latinitas-cards managed plan request.json > plan.json
+uv run latinitas-cards managed approve plan.json \
+  --operation 'latinitas-v2-…/field/Meaning' \
+  --review 'explicit apply review of this selected operation' > approval.json
+```
+
+Use the exact operation IDs from the plan; repeat `--operation` for a subset. There
+is no implicit approve-all. `--review` is required and cannot be replaced by profile
+confirmation, linguistic claim approval, or a lifecycle tag. A receipt binds the whole
+resolved plan (including presentation), selected operations, and exact `targets`,
+`import_columns` and `import_rows`. These rows are an **inspectable proposed import
+footprint**, not a generated CSV or completed application. Required unselected fields
+and unselected tags use destination values. Unselected notes have no row. Personal
+Notes is absent from both targets and import mapping. Empty/no-op selections have no
+targets or rows and do not advance a baseline.
+
+The conservative CSV scope allows only reconciled Lemma, Principal Parts, Meaning,
+Generator, Profile, and a reconciled full tag set. Slot prompt/answer/guard changes
+(including changed rendered presentation), creation, retirement, reactivation and
+migration remain inspectable but unsupported. Compatible content-only subsets retain
+actual destination slot content; unrepresentable or uncertain retention blocks them.
+`verify_approval(plan, receipt, fresh_snapshot, baseline)` checks exact snapshot and
+baseline binding, recomputes derived operations, rejects changed receipts/payloads,
+and checks actual destination card-set guards before a future transport can proceed.
+Any changed plan, resolution, profile or presentation requires renewed approval.
+
+The receipt is a local reviewed assertion, not a cryptographic signature or native
+preservation proof. No application command or journal advancement is added here.
+Later managed CSV/reconciliation and native gates must consume the approved footprint,
+revalidate freshness, require backup, and observe actual outcomes. Source-only v0.1
+exports remain unchanged and do not gain managed preservation claims.
