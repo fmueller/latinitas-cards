@@ -189,3 +189,47 @@ import semantics, still needs the sanitized native checks on the chosen client/v
 Card addition, retirement/reactivation, APKG matching and consolidation are unproved and
 remain unsupported. Later tasks implement snapshot/plan/apply contracts and obtain that
 evidence; this decision does not authorize another task or widen release compatibility.
+
+## Offline state API (T-054)
+
+`latinitas_cards.destination_state` implements version-1 JSON evidence and a separate
+`latinitas-observed-baseline` journal. It does not acquire native evidence, import files,
+read a running collection, or prove transport compatibility. The synthetic test fixtures
+are reviewed assertions, not Anki preservation evidence.
+
+- `BoundDestination` selects a portable collection binding, profile, actual note-type
+  schema/template digests and immutable managed-set membership. `schema_contract` supplies
+  the expected reference layout, **not** evidence that a destination uses it.
+- `read_snapshot(payload, binding)` validates whole-set completeness/freshness assertions,
+  identities, schema, exact fields/tags and available full card/history evidence. Missing
+  card/history/personal evidence is unknown; note-only snapshots can inform adoption but
+  cannot confirm application. Version 1 requires no export exclusions: an identity or
+  arbitrary query excluded from the bound set cannot prove absence. Direct snapshot
+  construction enforces the same evidence validation. The capture fingerprint excludes
+  acquisition time, snapshot ID and artifact hash; those are retained separately in
+  evidence references.
+- `adopt(snapshot, ownership, approval)` requires a reviewed decision for every observed
+  note and tag. Ownership names source/configured contributions, explicit keep tags and
+  keep fields. Personal Notes are never managed fields; only their comparison digest is
+  retained. Neither prior-export manifests nor file existence establish an anchor.
+- `begin_observation` records an approved existing-note target and its preconditions as
+  pending. Persist it with `save_state` **before** any later external import. This is not
+  permission to import: native/client, freshness, plan and transport gates remain later
+  work. Unknown preservation evidence and pending effects block another attempt.
+- `observe` records actual per-note results and requires explicit no-intervening-edit
+  interval confirmation. Exact full fields/tags plus unchanged identity, personal data,
+  cards, history and deck options confirm one indivisible operation. Independent confirmed
+  entries advance in a new version; mixed/unknown outcomes keep their previous anchors.
+  Whole-plan status remains partial until every operation confirms.
+- `reconcile` returns anchors inconsistent with fresh evidence, including backup restore.
+  Changed or unknown collection deck options also require explicit review.
+  `review_reconciliation` explicitly accepts observed values/ownership, preserves historical
+  receipts and abandons remaining effects. A new plan requires new approval; no file is
+  blindly replayed. This also recovers imports whose result persistence was interrupted.
+
+`save_state` validates then fsyncs and atomically replaces one journal containing both
+anchors and receipts. It requires an existing parent directory and a single operator/writer;
+it is not a concurrent database. On any persistence error, reload the journal and reacquire
+destination evidence before deciding what happened: an error after replacement may mean the
+new file exists. `load_state` rejects missing/corrupt/foreign-format data. Preserve the old
+journal and recoverable native backup locally; do not overwrite a journal with a prior export.

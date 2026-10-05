@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-05T02:04:35Z"
+updated_at: "2026-10-05T02:35:23Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-052-generate-supported-principal-part-relationships at 2026-10-05T02:04:35Z
+last_verification_result: pass for T-054-implement-bound-destination-snapshots-and-observed at 2026-10-05T02:35:23Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-052-generate-supported-principal-part-relationships at 2026-10-05T02:04:35Z
+- pass for T-054-implement-bound-destination-snapshots-and-observed at 2026-10-05T02:35:23Z
 
 ## Next Action
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 11
+- todo: 10
 - in_progress: 0
-- completed: 51
+- completed: 52
 - blocked: 0
 - cancelled: 0
