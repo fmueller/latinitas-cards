@@ -174,6 +174,10 @@ before/after closed exports, import report, exact table diffs and limitations. T
 v0.1 native results are regression context, not proof of v0.2 destination-tag or lifecycle
 safety. No new native execution is claimed by this contract task.
 
+T-061's [native backend verification](managed-csv-native-verification.md) records
+the later Anki 26.9.3 API run, exact fixture/settings, observed capabilities and
+remaining limitations. It does not certify the Desktop dialog or AnkiMobile.
+
 | Capability/gate | Checks required before declaring support |
 |---|---|
 | Common CSV matching and protection | Use two objects with identical visible lemmas but distinct IDs, multiple siblings with unequal schedules/review histories, a user-suspended card, synthetic Personal Notes and destination-only tags. Prove first-field + Note Type matching updates only the intended existing note, creates no duplicate notes/cards, leaves source/unmanaged notes and schema/templates intact, and never maps Personal Notes. Reject wrong collection, missing/duplicate identities and incompatible old layout before import. |
@@ -184,8 +188,9 @@ safety. No new native execution is claimed by this contract task.
 
 ### Open evidence
 
-Managed content/tag application, especially unchanged-field tag-only
-import semantics, still needs the sanitized native checks on the chosen client/version.
+The native backend report establishes the tested content/tag and isolated tag-only
+results for its exact client/settings/fixture. Other chosen import paths/settings,
+including Desktop GUI import, still need their own sanitized checks before support claims.
 Card addition, retirement/reactivation, APKG matching and consolidation are unproved and
 remain unsupported. Later tasks implement snapshot/plan/apply contracts and obtain that
 evidence; this decision does not authorize another task or widen release compatibility.
