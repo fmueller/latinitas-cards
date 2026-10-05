@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T23:10:56Z"
+updated_at: "2026-10-05T00:09:25Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-048-define-destination-snapshots-and-file-transport: Define destination snapshots and file transport capabilities'
-last_verification_result: pass for T-047-publish-v0-1-1 at 2026-10-04T21:26:42Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-048-define-destination-snapshots-and-file-transport at 2026-10-05T00:09:14Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-047-publish-v0-1-1 at 2026-10-04T21:26:42Z
+- pass for T-048-define-destination-snapshots-and-file-transport at 2026-10-05T00:09:14Z
 
 ## Next Action
 
-- Start task T-048-define-destination-snapshots-and-file-transport: Define destination snapshots and file transport capabilities
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 16
+- todo: 15
 - in_progress: 0
-- completed: 46
+- completed: 47
 - blocked: 0
 - cancelled: 0
