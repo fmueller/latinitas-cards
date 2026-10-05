@@ -471,7 +471,13 @@ def reconcile(snapshot: DestinationSnapshot, state: object) -> tuple[str, ...]:
 
 
 def begin_observation(
-    state: object, before: DestinationSnapshot, plan_id: str, operations: Mapping[str, object], approval: str
+    state: object,
+    before: DestinationSnapshot,
+    plan_id: str,
+    operations: Mapping[str, object],
+    approval: str,
+    *,
+    reviewed_changes: bool = False,
 ) -> dict[str, Any]:
     """Journal pending approved existing-note effects BEFORE external application.
 
@@ -483,8 +489,26 @@ def begin_observation(
     _text(approval)
     if not operations:
         raise ReconciliationRequired("empty plan has no application effects to observe")
-    if reconcile(before, result):
-        raise ReconciliationRequired("inconsistent anchors; reacquire/reconcile before replanning")
+    inconsistent = reconcile(before, result)
+    if inconsistent:
+        notes_before = {note["identity"]: note for note in before.payload["notes"]}
+        confirmed = {
+            identity
+            for plan in result["plans"].values()
+            for identity, operation in plan["operations"].items()
+            if operation["status"] == "confirmed"
+        }
+        for identity in inconsistent:
+            anchor = result["anchors"][identity]
+            actual = notes_before.get(identity)
+            if (
+                not reviewed_changes
+                or identity in confirmed
+                or actual is None
+                or any(actual[key] != anchor[key] for key in ("source", "guid", "local_id", "note_type_id"))
+                or _preservation(actual) != _preservation(anchor)
+            ):
+                raise ReconciliationRequired("inconsistent anchors; reacquire/reconcile before replanning")
     if any(plan["status"] not in ("complete", "abandoned") for plan in result["plans"].values()):
         raise ReconciliationRequired("pending effects require observation/reconciliation, never blind replay")
     if plan_id in result["plans"]:

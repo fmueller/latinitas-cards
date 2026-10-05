@@ -1,7 +1,7 @@
 # Destination snapshots and file transport contract
 
 This is the contract-first decision for [v0.2.0](../specs/v0.2.0.md#safe-update-application),
-not an implemented snapshot command or a claim of verified managed import support.
+not an implemented native snapshot acquisition command or a claim of verified managed import support.
 The initial application scope is **compatible content/tag CSV updates to existing
 notes**. Matching, freshness and native verification gates below must pass before
 advertising that capability. Unproved operations remain unsupported.
@@ -240,8 +240,9 @@ journal and recoverable native backup locally; do not overwrite a journal with a
 contributions, decisions)` compares one shared note, so every sibling card sees the
 same resulting tag set. It uses the existing binding and observed-anchor validators;
 missing anchors and pending effects block normal reconciliation. It neither advances
-the anchor nor approves application. A changed destination anchor still requires
-`review_reconciliation` before the existing journal accepts a later pending operation.
+the anchor nor approves application. The managed handoff may retain reviewed current
+field/tag differences after exact plan/approval verification; changed preservation
+evidence or inconsistent recorded successes still require `review_reconciliation`.
 
 The result exposes exact managed `fields`, changed-field `writes`, exact sorted `tags`,
 `tag_write`, proposed `removals`, `ownership`, `conflicts`, and reviewed `decisions`.
@@ -354,7 +355,82 @@ and checks actual destination card-set guards before a future transport can proc
 Any changed plan, resolution, profile or presentation requires renewed approval.
 
 The receipt is a local reviewed assertion, not a cryptographic signature or native
-preservation proof. No application command or journal advancement is added here.
-Later managed CSV/reconciliation and native gates must consume the approved footprint,
-revalidate freshness, require backup, and observe actual outcomes. Source-only v0.1
-exports remain unchanged and do not gain managed preservation claims.
+preservation proof. Source-only v0.1 exports remain unchanged and do not gain managed
+preservation claims.
+
+## Managed CSV handoff and observation
+
+These commands implement the offline handoff, **not native import certification**.
+T-061 remains the native safety gate. Use one operator/writer and keep the journal,
+backup and before/after evidence local. No command opens a running collection.
+
+1. Acquire a fresh complete bound snapshot as above and a recoverable full collection
+   backup including scheduling. Verify the backup can be restored; a readable file
+   or recorded hash alone does not establish native recoverability. Record its path
+   and explicit recovery procedure. Freeze edits/reviews/sync on every device through
+   GUI import and the result capture. The CLI cannot lock or prove this interval.
+2. Plan and approve exact operation IDs. Include `generated_note_type` and
+   `target_deck` in the approved `effective_profile`; manually verify that the name
+   selects the native note type whose ID/schema is bound in the snapshot. Names alone
+   do not establish matching. Any changed snapshot, baseline, schema, profile, plan,
+   mapping or selected-operation footprint requires replanning and renewed approval.
+3. Prepare `handoff.json` with `binding`, fresh `snapshot`, saved `plan`, saved
+   `approval`, `backup` (local path), `recovery` (verified restoration procedure),
+   `note_type` and `deck` (exact approved profile values). Run:
+
+   ```bash
+   uv run latinitas-cards managed emit handoff.json --state baseline.json --output updates.csv
+   ```
+
+   Emission revalidates the derived plan and approval, records pending effects and
+   backup/hash before publishing a new CSV, then records emission outcome. It refuses
+   existing output files and baseline/backup aliases. Required unselected columns use
+   destination values; only selected notes appear. Personal Notes/user fields never
+   appear. `approved`, `emitted`, `pending`, `observed`, `failed`, and `unresolved`
+   lists distinguish authorization, transport output and actual result. An emitted
+   file is still pending, not successful application or a scheduling guarantee.
+   A post-publication persistence error returns emission `unknown` and exits nonzero:
+   the CSV may already exist. Reload the journal and inspect the artifact/hash and
+   destination before recovery; never treat this as permission to emit/import again.
+4. Open only the bound collection. Use CSV Update with **first-field LatinitasID +
+   Note Type** matching and the emitted column mapping. Map Tags to the indicated
+   tags column and leave Personal Notes unmapped. Inspect the preview and supported
+   client/settings; do not import unsupported structural/slot effects. Capture the
+   native report, then export/close and acquire the result snapshot before any edits.
+5. Prepare `observation.json` with `binding`, `snapshot` (observed result, or `null`
+   when no result evidence exists), `plan_id`, and `report` (native outcome/evidence
+   reference). Run:
+
+   ```bash
+   uv run latinitas-cards managed observe observation.json --state baseline.json --interval-confirmed
+   ```
+
+   Supply the flag only when the fresh-snapshot/no-edit interval is established.
+   Without it even equal final values stay unresolved and no preservation claim or
+   anchor advancement is made. Exact fields/tags and unchanged full preservation
+   evidence confirm an indivisible note; independent confirmed notes advance
+   atomically with receipts. Mixed field/tag results do not advance that note.
+   A tag-only row skipped by Anki stays unresolved/pending or is unsupported for
+   those native settings. Never alter unrelated fields or metadata to force Update.
+6. Before **any retry**, inspect/reacquire actual destination state. Re-run observation
+   to recover an import that succeeded before result persistence was interrupted;
+   never blindly emit/import again. Persistence errors may occur after replacement:
+   reload the journal and inspect the CSV hash and native destination, not the dialog
+   alone. A CSV transaction rollback is not destination/baseline recovery.
+   Interrupted emission status stays pending until its artifact and actual destination
+   are checked; existing output is never overwritten.
+7. For partial/mixed outcomes, an unknown interval, or restoration after recorded
+   successes, acquire a fresh snapshot and explicitly review ownership for **every**
+   observed note. Use `managed reconcile reconciliation.json --state baseline.json`,
+   where the JSON contains `binding`, `snapshot`, `ownership` (the adoption format),
+   and `review`. This accepts current observed anchors, preserves historical receipts
+   as past evidence, and abandons pending effects. Replan and obtain new selected
+   approval for remaining writes; confirmed results become no-write. Restore a backup
+   only by operator decision after checking intervening work, then reconcile the
+   restored evidence before retry. Recorded success inconsistent with restoration
+   is rejected, never silently replayed.
+
+Content/tag output remains conditional on native matching/tag-only checks. Card
+addition/retirement/reactivation, schema migration, slot prompt/answer/guard edits,
+and APKG application remain unsupported. Incompatible CSS requires separate manual
+setup and new evidence, not automatic migration.

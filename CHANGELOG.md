@@ -8,6 +8,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 - `managed plan` exposes deterministic destination-aware JSON reviews;
   `managed approve` binds selected compatible operations to their exact import footprint.
+- `managed emit` writes approved content/tag CSV handoffs with backup records;
+  `managed observe` and `managed reconcile` record offline results before retrying.
 
 ### Changed
 
