@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `form-parsing` previews individually reviewed contextual Latin features and exports
+  eligible exercises for a separate manual note type; automatic acceptance stays disabled.
 - `managed plan` exposes deterministic destination-aware JSON reviews;
   `managed approve` binds selected compatible operations to their exact import footprint.
 - `managed emit` writes approved content/tag CSV handoffs with backup records;

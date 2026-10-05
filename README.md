@@ -169,6 +169,11 @@ Structural parser counts do not establish eligible-verb or universal morphologic
 coverage; full grammatical parsing and managed live-Anki updates are not implemented.
 PPP and supine remain distinct semantic roles.
 
+`form-parsing` offers offline, individually reviewed contextual feature preview and
+fresh CSV export, not automatic analysis or managed application. See the
+[review policy and separate manual reference setup](docs/contextual-form-parsing.md).
+Native presentation acceptance for these bindings remains deferred, not release-ready.
+
 Authored JSONL study notes can be validated, previewed, and exported without corpus
 resources or profile mappings:
 
