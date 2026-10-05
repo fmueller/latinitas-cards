@@ -355,7 +355,13 @@ def build_representative_examples(
         result = parse_principal_parts(record, profile)
         if isinstance(result, PrincipalPartParseSuccess):
             status: SetupStatus = "success"
-            message = "Structural layout matched the proposed role order."
+            unresolved = tuple(part.role for part in result.value.parts if part.unresolved)
+            omitted = result.value.omitted_roles
+            message = "Extraction matched the confirmed positional layout; linguistic claims are unverified."
+            if unresolved:
+                message += " Unresolved evidence (targets withheld): " + ", ".join(unresolved) + "."
+            if omitted:
+                message += " Explicit omissions (positions preserved): " + ", ".join(omitted) + "."
         else:
             status = result.status
             message = result.message

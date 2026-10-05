@@ -80,12 +80,21 @@ class PrincipalPartExportResult:
 
     @property
     def skipped_count(self) -> int:
-        return self.generation.skipped_count
+        return self.source_entry_count - self.generated_count
 
     @property
     def ambiguous_count(self) -> int:
-        generation_ambiguities = sum(1 for skip in self.generation.skips if skip.status == "ambiguous")
-        return generation_ambiguities + len(self.manifest_reviews)
+        generation_ambiguities = len(
+            {
+                (skip.source_identity, skip.source_location)
+                for skip in self.generation.skips
+                if skip.status == "ambiguous"
+            }
+        )
+        # Snapshot/removal reviews have no current source entry; report their
+        # events separately rather than inflating the sample denominator.
+        manifest_entries = {review.row_index for review in self.manifest_reviews if review.row_index is not None}
+        return generation_ambiguities + len(manifest_entries)
 
     @property
     def object_count(self) -> int:

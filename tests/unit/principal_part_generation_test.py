@@ -516,7 +516,9 @@ def test_generated_note_knowledge_uses_role_labels_for_every_confirmed_role() ->
     )
 
     principal_parts = result.notes[0].content.principal_parts
-    assert principal_parts == (
+    evidence, visible = principal_parts.split("</span>", 1)
+    assert 'class="source-extraction"' in evidence
+    assert visible == (
         "<strong>Präsens, 1. Person Singular:</strong> ferō<br>"
         "<strong>Infinitiv:</strong> ferre<br>"
         "<strong>Perfekt, 1. Person Singular:</strong> tulī<br>"
@@ -647,3 +649,37 @@ def test_rendering_does_not_double_decode_normalized_display_text() -> None:
     assert unescape(perfect_line).endswith("did&#x12B;cī")
     assert "didīcī" not in unescape(perfect_line)
     assert "didīcī" not in note.content.principal_parts
+
+
+@pytest.mark.parametrize("recipe", ["principal_part_completion", "principal_part_recognition"])
+def test_unresolved_source_evidence_never_becomes_a_recipe_target(recipe: str) -> None:
+    profile = _profile(recipes=(recipe,)).apply_overrides(
+        {"principal_parts": {"pipe_alternatives": True, "trailing_poet_hint": True}}
+    )
+    result = _generate(
+        (
+            _record("amāre|amare, amō|amo, amāvī, amātum", source_identity="alternatives", profile=profile),
+            _record("monēre, moneō, mōnī<br>poet., monitum", source_identity="hint", profile=profile),
+            _record("dīcere, dīcō, dīxī, dictum<br>supine (not PPP)", source_identity="conflict", profile=profile),
+            _record("amāre, amō, , amātum", source_identity="omission", profile=profile),
+        ),
+        profile,
+    )
+    assert result.generated_count == 3
+    assert result.skipped_count == 1
+    assert result.generated_warning_count == 3
+    assert [len(note.card_keys) for note in result.notes] == [2, 3, 3]
+    for note in result.notes:
+        assert 'class="source-extraction"' in note.content.principal_parts
+    assert "amāre | amare" in result.notes[0].content.principal_parts
+    assert "unresolved" in result.notes[0].content.principal_parts
+    assert "poet." in result.notes[1].content.principal_parts
+    if recipe == "principal_part_completion":
+        for card in result.notes[0].cards:
+            if card.eligible:
+                assert "amāre" not in card.prompt
+                assert "unresolved source evidence" in card.prompt
+    conflict = next(skip for skip in result.skips if skip.code == "unconfirmed_source_evidence")
+    assert conflict.evidence is not None
+    assert conflict.evidence.raw == "dīcere, dīcō, dīxī, dictum<br>supine (not PPP)"
+    assert conflict.evidence.hints[0].position == 4

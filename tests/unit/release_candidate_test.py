@@ -184,6 +184,8 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
             "perfect_passive_participle",
         ],
         "separators": [","],
+        "pipe_alternatives": False,
+        "trailing_poet_hint": False,
     }
     assert effective_profile["selected_recipes"] == [
         "principal_part_completion",
@@ -195,9 +197,10 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
 
     assert preview.returncode == 0
     assert "Objects: 3" in preview.stdout
-    assert "Cards: 24" in preview.stdout
+    assert "Cards: 16" in preview.stdout
     assert "Skipped: 2" in preview.stdout
-    assert "Ambiguous: 0" in preview.stdout
+    assert "Ambiguous: 1" in preview.stdout
+    assert "Zero-eligible notes: 1" in preview.stdout
     assert "Partizip Perfekt Passiv (PPP)" in preview.stdout
     assert "Output:" not in preview.stdout
     assert source.read_bytes() == source_before
@@ -242,10 +245,9 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
         "#deck:Latin::Latinitas\n"
         f"#tags column:5\n#columns:{','.join(EXPECTED_COLUMNS)}\n"
     )
-    assert len(rows) == 3
+    assert len(rows) == 2
     expected_source_locations = {
         "fixture-guid-001": "note 1001",
-        "fixture-guid-002": "note 1002",
         "fixture-guid-005": "note 1005",
     }
     assert {row["Source ID"] for row in rows} == set(expected_source_locations)

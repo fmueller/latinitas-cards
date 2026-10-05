@@ -16,7 +16,7 @@ import json
 import re
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Literal
 
 from .cards import render_cards, role_display_label
@@ -41,6 +41,7 @@ from .principal_parts import (
 )
 from .profile import DeckProfile, tag_character_violation
 from .profile_setup import encode_unsafe_controls
+from .source_extraction import SourceExtraction
 from .sources import CanonicalSourceRecord
 
 GenerationSkipStatus = Literal["incomplete", "unsupported", "ambiguous", "identity_error", "collision"]
@@ -58,6 +59,7 @@ class GenerationSkip:
     message: str
     source_identity: str | None = None
     source_location: str | None = None
+    evidence: SourceExtraction | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +68,7 @@ class LearningObjectGenerationResult:
 
     notes: tuple[GeneratedNote, ...]
     skips: tuple[GenerationSkip, ...]
+    source_entry_count: int | None = None
 
     @property
     def generated_count(self) -> int:
@@ -73,7 +76,14 @@ class LearningObjectGenerationResult:
 
     @property
     def skipped_count(self) -> int:
-        return len(self.skips)
+        if self.source_entry_count is not None:
+            return self.source_entry_count - self.generated_count
+        return sum(skip.code not in {"omitted_principal_part", "unresolved_source_evidence"} for skip in self.skips)
+
+    @property
+    def generated_warning_count(self) -> int:
+        generated = {note.provenance.source_identity for note in self.notes}
+        return len({skip.source_identity for skip in self.skips if skip.source_identity in generated})
 
 
 def profile_digest(profile: DeckProfile) -> str:
@@ -219,6 +229,22 @@ def generate_learning_object_notes(
                     ),
                     source_identity=source_identity.value,
                     source_location=record.provenance.location,
+                    evidence=parsed.value.evidence,
+                )
+            )
+
+        unresolved_roles = tuple(part.role for part in parsed.value.parts if part.unresolved)
+        if unresolved_roles:
+            skipped.append(
+                GenerationSkip(
+                    status="ambiguous",
+                    code="unresolved_source_evidence",
+                    message="Extraction matched, but linguistic/selection uncertainty withholds targets for: "
+                    + ", ".join(unresolved_roles)
+                    + ". Review alternatives/hints; no answer was selected.",
+                    source_identity=source_identity.value,
+                    source_location=record.provenance.location,
+                    evidence=parsed.value.evidence,
                 )
             )
 
@@ -243,7 +269,7 @@ def generate_learning_object_notes(
         note_ids.add(note.latinitas_id)
         notes.append(note)
 
-    return LearningObjectGenerationResult(notes=tuple(notes), skips=tuple(skipped))
+    return LearningObjectGenerationResult(notes=tuple(notes), skips=tuple(skipped), source_entry_count=len(records))
 
 
 def _parse_failure_skip(
@@ -257,6 +283,7 @@ def _parse_failure_skip(
         message=failure.message,
         source_identity=source_identity,
         source_location=record.provenance.location,
+        evidence=failure.evidence,
     )
 
 
@@ -301,7 +328,14 @@ def _render_note(
     tags = _combined_tags(record, profile)
     content = ManagedNoteContent(
         lemma=_escape_normalized_lines(parsed.lexical_entry),
-        principal_parts=_render_parts(parsed.parts),
+        principal_parts=(
+            '<span hidden class="source-extraction">'
+            + _escape_text(json.dumps(asdict(parsed.evidence), ensure_ascii=False))
+            + "</span>"
+            if parsed.evidence is not None
+            else ""
+        )
+        + _render_parts(parsed.parts),
         meaning=_escape_normalized_lines(meaning_text),
         tags=tags,
     )
@@ -325,6 +359,8 @@ def _render_parts(parts: Sequence[PrincipalPartValue]) -> str:
     lines = []
     for part in parts:
         value = "—" if part.is_omitted else _escape_normalized_lines(part.display or "")
+        if part.unresolved:
+            value += " <em>(unresolved source evidence; target withheld)</em>"
         lines.append(f"<strong>{_escape_text(role_display_label(part.role))}:</strong> {value}")
     return "<br>".join(lines)
 

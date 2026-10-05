@@ -119,6 +119,26 @@ uv run latinitas-cards setup \
   --role perfect_passive_participle
 ```
 
+For the [reviewed source layouts](docs/source-extraction-fixtures.md), the saved
+profile's `principal_parts` section accepts `pipe_alternatives: true` (literal
+`|` within a role) and `trailing_poet_hint: true` (only trailing line-boundary
+`poet.` in position 3, confirmed as `perfect_1s`). Both default to false; review
+representative values and explicitly confirm these options before enabling them.
+The bounded hint rule accepts a bare `<br>` or literal line boundary; attributed
+breaks and other block-tag hint layouts remain unsupported pending review.
+Role delimiters stay literal and profile-selected, never autodetected. Alternatives
+retain order and spelling; no candidate is selected automatically. Explicit blanks
+retain their positions. Hints and alternatives are source evidence, not grammatical
+facts, and unresolved targets are withheld in both recipes. Legacy unsplit pipes and
+multiline values remain readable but also require review before becoming targets.
+Preview separates wholly skipped entries from generated entries with role warnings;
+ambiguity is an overlapping review membership, not an extra outcome partition.
+Export retains raw text, positional candidates, hints and applied rules as escaped
+JSON in a hidden `source-extraction` span in Principal Parts (no new Anki field).
+Future claim-policy/analyzer work must consume this evidence rather than assuming
+extraction success establishes morphology. Zero-card objects remain reviewable but
+are not exported; existing card-removal checkpoint approval still applies.
+
 Prepare the generated note type, fields, template, and HTML import setting before the
 first import; the note type keeps a user-owned `Personal Notes` field that generated CSVs
 never contain. For repeat imports, use the same note type with `LatinitasID` as the

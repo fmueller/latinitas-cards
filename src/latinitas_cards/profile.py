@@ -211,6 +211,8 @@ class PrincipalPartLayout(_ProfileModel):
 
     roles: tuple[str, ...] = Field(min_length=2)
     separators: tuple[str, ...] = Field(min_length=1)
+    pipe_alternatives: bool = False
+    trailing_poet_hint: bool = False
 
     @field_validator("roles")
     @classmethod
@@ -246,6 +248,8 @@ class PrincipalPartOverrides(_ProfileModel):
 
     roles: tuple[str, ...] | None = Field(default=None, min_length=2)
     separators: tuple[str, ...] | None = Field(default=None, min_length=1)
+    pipe_alternatives: bool | None = None
+    trailing_poet_hint: bool | None = None
 
 
 def _canonicalise_recipes(value: tuple[str, ...]) -> tuple[str, ...]:

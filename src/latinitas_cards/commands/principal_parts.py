@@ -107,6 +107,12 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
     typer.echo(f"Zero-eligible notes: {result.zero_card_note_count}")
     typer.echo(f"Skipped: {result.skipped_count}")
     typer.echo(f"Ambiguous: {result.ambiguous_count}")
+    typer.echo(f"Generated entries: {result.generated_count}/{result.source_entry_count}")
+    typer.echo(f"Wholly skipped entries: {result.skipped_count}/{result.source_entry_count}")
+    typer.echo(f"Ambiguous entries: {result.ambiguous_count}/{result.source_entry_count} (overlaps outcomes)")
+    typer.echo(f"Manifest review events: {len(result.manifest_reviews)} (includes snapshot/removal reviews)")
+    typer.echo(f"Generated entries with warnings: {result.generation.generated_warning_count} (overlaps generated)")
+    typer.echo("Ambiguous is a review membership, not an additional disjoint outcome; cards are counted separately.")
     if result.scope_pending:
         typer.echo(
             "Source scope confirmation required: "
@@ -122,7 +128,10 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
         typer.echo(f"Representative note {index}:")
         typer.echo(f"  LatinitasID: {safe_source_value(note.latinitas_id, 'LatinitasID')}")
         typer.echo(f"  Lemma: {safe_source_value(note.content.lemma, field_context, limit=512)}")
-        typer.echo(f"  Principal Parts: {safe_source_value(note.content.principal_parts, field_context, limit=512)}")
+        parts = note.content.principal_parts
+        if parts.startswith('<span hidden class="source-extraction">'):
+            parts = parts.partition("</span>")[2]
+        typer.echo(f"  Principal Parts: {safe_source_value(parts, field_context, limit=512)}")
         typer.echo(f"  Meaning: {safe_source_value(note.content.meaning, field_context, limit=512)}")
         typer.echo(f"  Tags: {safe_source_value(' '.join(note.content.tags), field_context, limit=512)}")
         typer.echo(f"  Card Keys: {safe_source_value(' '.join(note.card_keys), 'card keys', limit=512)}")
@@ -135,7 +144,7 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
         )
 
     if result.generation.skips:
-        typer.echo("Structured skips:")
+        typer.echo("Structured skips / role warnings (may overlap generated entries):")
         for skip in result.generation.skips[:_MAX_DIAGNOSTIC_ROWS]:
             _render_skip(skip, field_context)
         _render_omitted_count("structured skips", len(result.generation.skips))
@@ -272,6 +281,8 @@ def _render_skip(skip: GenerationSkip, field_context: str) -> None:
             field_context,
         )
     )
+    if skip.evidence is not None:
+        typer.echo("  Raw extraction evidence: " + safe_source_value(skip.evidence.raw, field_context, limit=512))
 
 
 __all__ = [

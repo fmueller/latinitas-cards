@@ -139,6 +139,10 @@ def _review(
     notes_by_id = {note.provenance.source_identity or "": note for note in result.notes}
     skips_by_id: dict[str, tuple[GenerationSkip, ...]] = {record_id: () for record_id in notes_by_id}
     for skip in result.skips:
+        # Keep the historical extraction strata independent of the new,
+        # overlapping claim/selection warnings (tested in T-050 regressions).
+        if skip.code == "unresolved_source_evidence":
+            continue
         identity = skip.source_identity or ""
         skips_by_id.setdefault(identity, ())
         skips_by_id[identity] = (*skips_by_id[identity], skip)
@@ -349,7 +353,9 @@ def test_sanitized_fixture_population_is_fully_reviewed() -> None:
 
     alternatives_note = notes_by_id["fixture-guid-002"]
     assert alternatives_note.content.lemma == "amāre|amare"
-    assert len(alternatives_note.card_keys) == 8
+    # Extraction remains a regression; unresolved alternatives are no longer
+    # unconditional completion/recognition answers.
+    assert alternatives_note.card_keys == ()
     assert notes_by_id["fixture-guid-005"].content.meaning == ""
     assert notes_by_id["fixture-guid-001"].content.meaning == "sagen"
 

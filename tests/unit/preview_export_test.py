@@ -756,7 +756,8 @@ def test_export_reports_source_entries_objects_cards_and_zero_eligible_notes_sep
     assert result.exported_note_count == 2
     assert result.card_count == 14
     assert result.zero_card_note_count == 0
-    assert result.skipped_count == 2
+    assert result.skipped_count == 1
+    assert result.generation.generated_warning_count == 1
     assert any(skip.code == "omitted_principal_part" for skip in result.generation.skips)
     assert any(skip.code == "unmarked_omission" for skip in result.generation.skips)
 
@@ -1761,3 +1762,84 @@ def test_export_rejects_input_profile_and_manifest_aliases_without_overwriting(t
 
     assert source.read_bytes() == source_before
     assert profile_path.read_bytes() == profile_before
+
+
+@pytest.mark.parametrize("recipe", ["principal_part_completion", "principal_part_recognition"])
+def test_preview_and_csv_retain_review_evidence_without_unconditional_targets(
+    tmp_path: Path,
+    recipe: str,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from html import unescape
+
+    from latinitas_cards.commands.principal_parts import render_principal_part_preview
+    from latinitas_cards.profile_setup import build_representative_examples
+
+    source = tmp_path / "source.csv"
+    alternatives = "amāre|amare, amō|amo, amāvī, amātum"
+    conflict = "dīcere, dīcō, dīxī, dictum<br>supine (not PPP)"
+    _write_source(source, [("a", "amāre", alternatives, "lieben"), ("b", "dīcere", conflict, "sagen")])
+    profile = _profile().apply_overrides(
+        {
+            "principal_parts": {
+                "roles": ["present_infinitive", "present_1s", "perfect_1s", "perfect_passive_participle"],
+                "pipe_alternatives": True,
+                "trailing_poet_hint": True,
+            },
+            "selected_recipes": [recipe],
+        }
+    )
+    examples = build_representative_examples(read_csv_records(source), profile)
+    assert examples[0].structural_status == "success"
+    assert "Unresolved evidence" in examples[0].structural_message
+    assert examples[1].structural_status == "unsupported"
+    assert "review" in examples[1].structural_message
+    result = prepare_principal_part_export(source, profile, approve_new_scope=True)
+    assert (result.source_entry_count, result.generated_count, result.skipped_count, result.ambiguous_count) == (
+        2,
+        1,
+        1,
+        1,
+    )
+    assert result.generation.generated_warning_count == 1
+    header, rows, _ = _parse_export(deterministic_csv_bytes(result))
+    assert len(rows) == 1
+    fields = dict(zip(header, rows[0], strict=True))
+    evidence_text = fields["Principal Parts"].split("</span>")[0].split(">", 1)[1]
+    evidence = json.loads(unescape(evidence_text))
+    assert evidence["raw"] == alternatives
+    assert evidence["candidates"] == [["amāre", "amare"], ["amō", "amo"], ["amāvī"], ["amātum"]]
+    assert evidence["rules"] == [
+        "literal comma",
+        "confirmed pipe alternatives within each slot",
+        "trim",
+        "preserve alternative order",
+    ]
+    assert result.card_count == 2
+    assert fields["CompletionInfinitiveEnabled"] == fields["RecognitionInfinitiveEnabled"] == ""
+    assert fields["CompletionPresentEnabled"] == fields["RecognitionPresentEnabled"] == ""
+    render_principal_part_preview(result, limit=2)
+    output = capsys.readouterr().out
+    assert "Generated entries: 1/2" in output
+    assert "Wholly skipped entries: 1/2" in output
+    assert "Generated entries with warnings: 1 (overlaps generated)" in output
+    assert "Raw extraction evidence:" in output
+    assert "supine (not PPP)" in output
+
+
+def test_manifest_snapshot_and_removal_reviews_are_not_ambiguous_current_entries(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    first = ("a", "dīcere", "dīcere, dīcō, dīxī, dictum", "sagen")
+    second = ("b", "amāre", "amāre, amō, amāvī, amātum", "lieben")
+    _write_source(source, [first, second])
+    profile = _profile(source_identity=SourceIdentityConfig(strategy="manifest"))
+    initial = prepare_principal_part_export(
+        source, profile, approve_new_scope=True, approve_fresh_import=True, approved_allocations=(0, 1)
+    )
+    write_principal_part_csv(initial, tmp_path / "initial.csv")
+    _write_source(source, [first])
+    reviewed = prepare_principal_part_export(source, profile)
+    assert {review.kind for review in reviewed.manifest_reviews} == {"removed", "stale_manifest"}
+    assert reviewed.source_entry_count == reviewed.generated_count == 1
+    assert reviewed.skipped_count == 0
+    assert reviewed.ambiguous_count == 0

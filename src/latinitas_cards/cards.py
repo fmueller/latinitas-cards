@@ -178,12 +178,12 @@ def card_is_eligible(
 
     if recipe not in selected_recipes or slot_for_recipe_role(recipe, part.role) is None:
         return False
-    if part.is_omitted or not (part.display or "").strip():
+    if part.is_omitted or part.unresolved or not (part.display or "").strip():
         return False
     if recipe == RECOGNITION_RECIPE:
         return bool(parsed.lexical_entry.strip())
     if recipe == COMPLETION_RECIPE:
-        return any(other is not part and not other.is_omitted for other in parsed.parts)
+        return any(other is not part and not other.is_omitted and not other.unresolved for other in parsed.parts)
     return False
 
 
@@ -222,6 +222,8 @@ def _completion_prompt(parsed: ParsedPrincipalParts, target: PrincipalPartValue,
     lines = []
     for part in parsed.parts:
         value = _BLANK_MARKER if part is target else ("—" if part.is_omitted else _escape_text(part.display or ""))
+        if part.unresolved:
+            value = "— (unresolved source evidence)"
         lines.append(f"<strong>{_escape_text(role_display_label(part.role))}:</strong> {value}")
     if gloss:
         lines.append(gloss)

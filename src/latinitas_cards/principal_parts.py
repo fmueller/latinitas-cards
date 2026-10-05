@@ -18,6 +18,7 @@ from typing import Literal
 
 from .html_text import source_html_to_text
 from .profile import DeckProfile, PrincipalPartLayout
+from .source_extraction import SourceExtraction, extract_segments, separator_rules
 from .sources import CanonicalSourceRecord
 
 ParseFailureStatus = Literal["incomplete", "unsupported", "ambiguous"]
@@ -33,6 +34,8 @@ class PrincipalPartValue:
     display: str | None
     comparison: str | None
     raw: str = ""
+    candidates: tuple[str, ...] = ()
+    unresolved: bool = False
 
     def __post_init__(self) -> None:
         if not self.role.strip():
@@ -61,6 +64,7 @@ class ParsedPrincipalParts:
     source_identity: str | None = None
     source_location: str | None = None
     raw_lexical_entry: str = ""
+    evidence: SourceExtraction | None = None
     _by_role: Mapping[str, PrincipalPartValue] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -101,6 +105,10 @@ class PrincipalPartParseSuccess:
     value: ParsedPrincipalParts
     status: Literal["success"] = "success"
 
+    @property
+    def evidence(self) -> SourceExtraction | None:
+        return self.value.evidence
+
 
 @dataclass(frozen=True, slots=True)
 class PrincipalPartParseFailure:
@@ -114,6 +122,7 @@ class PrincipalPartParseFailure:
     source_location: str | None = None
     observed_count: int | None = None
     expected_count: int | None = None
+    evidence: SourceExtraction | None = None
 
 
 type PrincipalPartParseResult = PrincipalPartParseSuccess | PrincipalPartParseFailure
@@ -207,7 +216,13 @@ def parse_principal_part_value(
 
     segments_or_failure = _split_value(value, layout)
     if isinstance(segments_or_failure, PrincipalPartParseFailure):
-        return _with_source(segments_or_failure, source_identity, source_location)
+        rule = "reject extra slot" if segments_or_failure.code == "extra_separator" else segments_or_failure.code
+        return replace(
+            _with_source(segments_or_failure, source_identity, source_location),
+            evidence=SourceExtraction(
+                value, layout.roles, segments_or_failure.status, None, rules=(*separator_rules(layout), rule)
+            ),
+        )
 
     segments = segments_or_failure
     if len(segments) != len(layout.roles):
@@ -223,7 +238,7 @@ def parse_principal_part_value(
             if status == "incomplete"
             else "The principal-parts value omits a role without an explicit blank slot."
         )
-        return _failure(
+        failure = _failure(
             status,
             code,
             assumption,
@@ -233,20 +248,47 @@ def parse_principal_part_value(
             observed_count=len(segments),
             expected_count=len(layout.roles),
         )
+        return replace(
+            failure,
+            evidence=SourceExtraction(
+                value, layout.roles, status, None, rules=(*separator_rules(layout), "reject unmarked short layout")
+            ),
+        )
 
+    evidence = extract_segments(value, segments, layout)
+    if evidence.candidates is None:
+        return PrincipalPartParseFailure(
+            status="unsupported",
+            code="unconfirmed_source_evidence",
+            assumption="alternatives and hints match explicitly reviewed profile rules",
+            message=(
+                "Source evidence cannot be assigned safely; review the hint grammar, "
+                "role order, or pipe confirmation in the profile."
+            ),
+            source_identity=source_identity,
+            source_location=source_location,
+            evidence=evidence,
+        )
     values: list[PrincipalPartValue] = []
-    for role, segment in zip(layout.roles, segments, strict=True):
-        display = _display_value(segment)
+    for position, (role, segment, candidates) in enumerate(
+        zip(layout.roles, segments, evidence.candidates, strict=True), start=1
+    ):
+        display = " | ".join(candidates) or None
         values.append(
             PrincipalPartValue(
                 role=role,
                 display=display,
                 comparison=None if display is None else normalize_principal_part_for_comparison(display),
                 raw=segment,
+                candidates=candidates,
+                unresolved=len(candidates) > 1
+                or any(hint.position == position for hint in evidence.hints)
+                or "\n" in (display or "")
+                or "|" in (display or ""),
             )
         )
     if any(value.is_omitted for value in values[:2]):
-        return _failure(
+        failure = _failure(
             "incomplete",
             "required_role_omitted",
             "the first two confirmed semantic roles are present",
@@ -256,6 +298,7 @@ def parse_principal_part_value(
             observed_count=len(segments),
             expected_count=len(layout.roles),
         )
+        return replace(failure, evidence=evidence)
 
     return PrincipalPartParseSuccess(
         ParsedPrincipalParts(
@@ -265,6 +308,7 @@ def parse_principal_part_value(
             source_identity=source_identity,
             source_location=source_location,
             raw_lexical_entry=lexical_entry,
+            evidence=evidence,
         )
     )
 

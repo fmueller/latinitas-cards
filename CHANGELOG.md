@@ -4,6 +4,13 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Principal-part profiles can retain reviewed pipe alternatives and the bounded
+  `poet.` hint as source evidence; unresolved targets are withheld in both recipes.
+- Principal-part previews separate wholly skipped entries from generated entries
+  with omission/review warnings, and exports preserve extraction evidence.
+
 ## [0.1.1] - 2026-10-04
 
 ### Added
