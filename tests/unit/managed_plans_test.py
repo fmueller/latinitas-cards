@@ -1,5 +1,6 @@
 """Sanitized offline plans; no fixture constitutes native import proof."""
 
+import hashlib
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -10,7 +11,7 @@ from card_lifecycle_test import capture, fixture, generated
 from typer.testing import CliRunner
 
 from latinitas_cards.cli import app
-from latinitas_cards.destination_state import DestinationSnapshot, ReconciliationRequired, _digest
+from latinitas_cards.destination_state import DestinationSnapshot, ReconciliationRequired, _digest, _encoded
 from latinitas_cards.managed_plans import approve_plan, compose_plan, verify_approval
 
 
@@ -147,6 +148,57 @@ def test_cli_review_and_explicit_approval(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert json.loads(result.output)["selected_operations"] == [operation]
+
+
+def test_cli_unicode_review_is_escaped_without_changing_canonical_data(tmp_path: Path) -> None:
+    controls = (
+        "".join(chr(code) for code in range(0x80, 0xA0))
+        + "\u2028\u2029\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+    )
+    proposed = "proposed ā Ω " + controls + " end A"
+    destination = "destination é " + controls[::-1] + " end B"
+    profile = {"theme": "profile 漢 " + controls + " end C"}
+    review = "review ü " + controls[::-1] + " end D"
+    snapshot, state = fixture(generated())
+    data = snapshot.payload
+    data["notes"][0]["fields"]["Lemma"] = destination
+    snapshot = capture(data)
+    proposal = request(snapshot, meaning=proposed, lemma=destination)
+    expected_plan = compose_plan(snapshot, state, [proposal], profile)
+    canonical = json.dumps(expected_plan, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    assert _encoded(expected_plan) == canonical
+    assert _digest(expected_plan) == hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    source = tmp_path / "request.json"
+    source.write_text(
+        json.dumps(
+            {
+                "binding": state["binding"],
+                "snapshot": snapshot.payload,
+                "baseline": state,
+                "proposals": [proposal],
+                "effective_profile": profile,
+            }
+        )
+    )
+    runner = CliRunner()
+    result = runner.invoke(app, ["managed", "plan", str(source)])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == expected_plan
+    assert all(char.encode("utf-8") not in result.stdout_bytes for char in controls)
+    assert result.stdout_bytes == (json.dumps(expected_plan) + "\n").encode("ascii")
+    source.write_text(result.stdout)
+    operation = next(op["id"] for op in expected_plan["notes"][0]["operations"] if op.get("field") == "Meaning")
+    result = runner.invoke(app, ["managed", "approve", str(source), "--operation", operation, "--review", review])
+    assert result.exit_code == 0, result.output
+    approval = json.loads(result.stdout)
+    expected_approval = approve_plan(expected_plan, [operation], review)
+    assert approval == expected_approval
+    assert approval["review"] == review
+    assert approval["targets"][proposal["identity"]]["fields"]["Meaning"] == proposed
+    assert approval["targets"][proposal["identity"]]["fields"]["Lemma"] == destination
+    assert all(char.encode("utf-8") not in result.stdout_bytes for char in controls)
+    assert result.stdout_bytes == (json.dumps(expected_approval) + "\n").encode("ascii")
+    verify_approval(expected_plan, approval, snapshot, state)
 
 
 def test_verification_recomputes_capabilities_not_only_an_editable_hash() -> None:

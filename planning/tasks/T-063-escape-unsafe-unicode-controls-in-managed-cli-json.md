@@ -1,11 +1,11 @@
 ---
 id: T-063-escape-unsafe-unicode-controls-in-managed-cli-json
 title: Escape unsafe Unicode controls in managed CLI JSON review output
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.0.md#managed-update-plans
 dependencies: []
-updated_at: "2026-10-05T07:29:14Z"
+updated_at: "2026-10-05T07:50:16Z"
 ---
 
 # T-063-escape-unsafe-unicode-controls-in-managed-cli-json Escape unsafe Unicode controls in managed CLI JSON review output
@@ -112,5 +112,35 @@ AnkiMobile presentation.
 
 ## Implementation Notes
 
-Unimplemented bug task. No source, tests, or runtime behavior changed during
-filing. Keep the fix confined to managed CLI presentation and its regressions.
+All five managed success-output paths now use ASCII JSON presentation, matching
+the existing form-parsing convention. Canonical serialization, hashing,
+persistence, domain values, operation selection, and approvals remain unchanged.
+
+Strict RED: the Unicode review regression failed its literal-control exclusion
+assertion with exit 0 and exact decoded plan data. GREEN: 32 managed plan/application
+tests passed, including asymmetric proposed Meaning, retained destination Lemma,
+profile metadata, and approval review with every C1 control, bidi formatting and
+isolate controls, Unicode separators, and ordinary accented/Greek/CJK text.
+Exact stdout bytes and decoded values are checked alongside independent canonical
+SHA-256 parity and selected-field approval verification.
+
+Initial and final validation: `uv run ruff check` passed; `uv run mypy` reported
+no issues in 87 source files; `uv run pytest -v` reported 838 passed. The standalone
+synthetic native replay reported exit 0, raw_RLO False, raw_C1_CSI False, and
+roundtrip True. The unchanged Anki 26.9.3 backend harness passed all 16 scenarios;
+this is not native GUI or AnkiMobile presentation certification.
+
+The dedicated code-simplifier loaded its skill, made no changes, and passed all
+18 plan tests. Separate General, Python, and Security code-reviewer lanes each
+returned verbatim: "No concrete task-relevant findings." General loaded the ECC
+code reviewer; Python loaded python-reviewer and python-patterns; Security loaded
+security-reviewer, security-review, and common security guidance. Database/framework
+lanes were omitted because no persistence or framework behavior changed. Fresh
+candidate validation found no candidates or rejected IDs; fresh disposition
+verification returned the same no-findings conclusion. No fixes, deferrals, or
+follow-up tasks were required. T-060, T-062, and T-038 gates remain unchanged.
+
+CLI example: raw U+202E/U+202C/U+009B review characters become visible JSON
+`\u202e`/`\u202c`/`\u009b` escapes; decoding restores the original strings.
+- 2026-10-05T07:50:05Z: verification pass
+- 2026-10-05T07:50:16Z: Terminal-only JSON escaping delivered after strict RED/GREEN, independent General/Python/Security review, candidate/disposition verification, final ruff/mypy/838 pytest and 16 Anki backend scenarios; verification 2026-10-05T07:50:05Z. Native presentation/release blockers unchanged.

@@ -25,6 +25,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - Principal-part previews separate wholly skipped entries from generated entries
   with omission/review warnings, and exports preserve extraction evidence.
 
+### Fixed
+
+- Managed CLI JSON escapes unsafe Unicode terminal controls in successful reviews
+  and reports while retaining exact content when decoded.
+
 ## [0.1.1] - 2026-10-04
 
 ### Added

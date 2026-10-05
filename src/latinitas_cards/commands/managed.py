@@ -8,7 +8,6 @@ import typer
 
 from ..destination_state import (
     BoundDestination,
-    _encoded,
     _object,
     load_state,
     read_snapshot,
@@ -40,7 +39,7 @@ def review_plan(request: InputPath) -> None:
         binding = _object(data["binding"])
         snapshot = read_snapshot(data["snapshot"], BoundDestination(**binding))
         result = compose_plan(snapshot, data.get("baseline"), data["proposals"], data["effective_profile"])
-        typer.echo(_encoded(result))
+        typer.echo(json.dumps(result))
     except (OSError, ValueError, KeyError, TypeError) as exc:
         _error(exc)
 
@@ -53,7 +52,7 @@ def approve(
 ) -> None:
     """Emit an operation-bound approval receipt, not a CSV or application."""
     try:
-        typer.echo(_encoded(approve_plan(_load(plan), operation or [], review)))
+        typer.echo(json.dumps(approve_plan(_load(plan), operation or [], review)))
     except (OSError, ValueError, KeyError, TypeError) as exc:
         _error(exc)
 
@@ -79,7 +78,7 @@ def emit(
             data["note_type"],
             data["deck"],
         )
-        typer.echo(_encoded(result))
+        typer.echo(json.dumps(result))
         if result["failed"] or result["emission"]["status"] == "unknown":
             raise typer.Exit(1)
     except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -103,7 +102,7 @@ def observe_result(
             else None
         )
         typer.echo(
-            _encoded(
+            json.dumps(
                 observe_updates(state, data["plan_id"], snapshot, data["report"], interval_confirmed=interval_confirmed)
             )
         )
@@ -125,7 +124,7 @@ def reconcile_result(
         result = review_reconciliation(load_state(state), snapshot, data["ownership"], data["review"])
         save_state(state, result)
         typer.echo(
-            _encoded({"status": "reconciled", "version": result["version"], "requires": "replan and renew approval"})
+            json.dumps({"status": "reconciled", "version": result["version"], "requires": "replan and renew approval"})
         )
     except (OSError, ValueError, KeyError, TypeError) as exc:
         _error(exc)
