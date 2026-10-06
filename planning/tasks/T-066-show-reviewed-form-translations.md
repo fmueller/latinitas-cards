@@ -4,7 +4,8 @@ title: Show reviewed translations of principal-part forms
 status: todo
 priority: medium
 spec_ref: specs/v0.2.1.md#reviewed-form-translations
-dependencies: []
+dependencies:
+    - T-068-publish-v0-2-0
 updated_at: "2026-10-06T19:55:00Z"
 ---
 

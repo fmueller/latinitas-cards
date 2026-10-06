@@ -4,7 +4,8 @@ title: Configure grammatical terminology language on generated cards
 status: todo
 priority: medium
 spec_ref: specs/v0.2.1.md#configurable-grammatical-terminology
-dependencies: []
+dependencies:
+    - T-068-publish-v0-2-0
 updated_at: "2026-10-06T18:22:04Z"
 ---
 

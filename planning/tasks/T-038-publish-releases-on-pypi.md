@@ -8,6 +8,7 @@ dependencies:
     - T-061-verify-managed-csv-import-safety-and-recovery-in
     - T-062-verify-morphology-presentation-on-ankimobile-and
     - T-060-generate-precision-gated-latin-form-parsing
+    - T-068-publish-v0-2-0
 updated_at: "2026-10-03T10:12:32Z"
 ---
 

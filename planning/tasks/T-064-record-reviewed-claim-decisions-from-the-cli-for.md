@@ -4,7 +4,8 @@ title: Record reviewed claim decisions from the CLI for all generated cards
 status: todo
 priority: medium
 spec_ref: specs/v0.2.1.md#reviewed-claim-decisions-for-all-generated-cards
-dependencies: []
+dependencies:
+    - T-068-publish-v0-2-0
 updated_at: "2026-10-06T18:13:52Z"
 ---
 
