@@ -1,13 +1,13 @@
 ---
 id: T-060-generate-precision-gated-latin-form-parsing
 title: Generate precision-gated Latin form parsing exercises
-status: blocked
+status: completed
 priority: medium
 spec_ref: specs/v0.2.0.md#calibrated-form-parsing
 dependencies:
     - T-052-generate-supported-principal-part-relationships
     - T-058-expose-deterministic-managed-plans-and-operation
-updated_at: "2026-10-05T07:08:19Z"
+updated_at: "2026-10-06T19:58:53Z"
 ---
 
 # T-060-generate-precision-gated-latin-form-parsing Generate precision-gated Latin form parsing exercises
@@ -127,7 +127,28 @@ and `taskrail next --json` reported `no eligible task`. No second task was start
 and no duplicate follow-up was created: the outstanding native work remains
 owned by this task and T-062.
 
+### Native retests — 2026-10-06
+
+- Unblocked and started through Taskrail after T-062's native session. The same
+  maintainer-run kit included two contextual parsing decks (`G` muted/light, `H`
+  monochrome/dark) exported by the `form-parsing export` CLI. The carrier package
+  delivered the parsing note type per the maintainer's 2026-10-06 waiver of hand-typed
+  setup.
+- Fresh import through the native Anki Desktop 26.09.2 dialog created 2 notes/cards per
+  deck. On Desktop and on AnkiMobile 25.09 (iPhone 16 Pro Max, iOS 26; iPad Air M4,
+  iPadOS 26) the maintainer confirmed: Latin-first prompt, reveal, only accepted lemma,
+  case and number for *puellae* (the unreviewed optional gender is absent), all six
+  accepted features for *amāvit*, no card for the withheld *Rosam puellae dat.*, and
+  readable light/dark plus client dark mode.
+- The maintainer accepted Latin terminology for now. Configurable Latin/user-language
+  terminology is specified as v0.2.1 T-065.
+- Limitations: no screenshots; synthetic stipulated cases; only the tested clients. See
+  `docs/contextual-form-parsing.md` and `docs/morphology-native-verification.md`.
+- Chain: `uv run ruff check` passed, `uv run mypy` passed (87 files), `uv run pytest -v`
+  passed (838).
+
 ## Implementation Notes
 
 - 2026-10-05T07:08:19Z: verification fail
 - 2026-10-05T07:08:19Z: Implementation delivered and reviewed, 837 tests and native backend retests pass. Required new contextual bindings AnkiMobile iPhone/iPad presentation and affected Desktop GUI manual setup/import/reveal/light-dark retests remain open under authorized device deferral. Browser/backend evidence is not native presentation proof; no lifecycle completion or release readiness. Hand off to approved parent synthetic adversarial E2E phase.
+- 2026-10-06T19:58:53Z: verification pass

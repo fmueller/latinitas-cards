@@ -127,7 +127,10 @@ disposable native Anki backend and verifies exact render content and no-op table
 It is an isolated test harness, **not general user-collection provisioning**.
 
 Backend and browser evidence do not prove AnkiMobile or Desktop GUI presentation.
-Native device/client reveal, readable light/dark appearance and affected import
-behavior remain open/deferred under T-060; T-062's authorized deferral is unchanged.
-Neither task status nor earlier recipe evidence certifies these new bindings.
-No release readiness is claimed.
+The native retests ran on 2026-10-06. Fresh CSV import through the Desktop dialog,
+light/dark reveal and readability passed on Anki Desktop 26.09.2 and AnkiMobile 25.09
+(iPhone 16 Pro Max, iPad Air M4), with the note type delivered by a carrier package
+per maintainer decision. See
+[the native acceptance run](morphology-native-verification.md#native-acceptance-run--2026-10-06).
+This covers the tested synthetic cases and clients only; no release readiness is
+claimed.

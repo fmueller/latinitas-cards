@@ -1,16 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-05T07:50:16Z"
+updated_at: "2026-10-06T19:58:53Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
-status_summary: blocked
-blockers:
-    - 'T-062-verify-morphology-presentation-on-ankimobile-and: Required native AnkiMobile iPhone/iPad devices/client unavailable in Linux orb. Partial Desktop 26.09.3 completion muted/light/static proof only; finish native Mobile and remaining Desktop/disclosure/manual setup/import parity gates before completion or release readiness.'
-    - 'T-060-generate-precision-gated-latin-form-parsing: Implementation delivered and reviewed, 837 tests and native backend retests pass. Required new contextual bindings AnkiMobile iPhone/iPad presentation and affected Desktop GUI manual setup/import/reveal/light-dark retests remain open under authorized device deferral. Browser/backend evidence is not native presentation proof; no lifecycle completion or release readiness. Hand off to approved parent synthetic adversarial E2E phase.'
-next_action: Resolve blocker on T-060-generate-precision-gated-latin-form-parsing
-last_verification_result: pass for T-063-escape-unsafe-unicode-controls-in-managed-cli-json at 2026-10-05T07:50:05Z
+status_summary: idle
+blockers: []
+next_action: Select the next eligible task
+last_verification_result: pass for T-060-generate-precision-gated-latin-form-parsing at 2026-10-06T19:58:53Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -28,20 +26,19 @@ continuation_notes:
 
 ## Status
 
-- blocked
+- idle
 
 ## Blockers
 
-- T-062-verify-morphology-presentation-on-ankimobile-and: Required native AnkiMobile iPhone/iPad devices/client unavailable in Linux orb. Partial Desktop 26.09.3 completion muted/light/static proof only; finish native Mobile and remaining Desktop/disclosure/manual setup/import parity gates before completion or release readiness.
-- T-060-generate-precision-gated-latin-form-parsing: Implementation delivered and reviewed, 837 tests and native backend retests pass. Required new contextual bindings AnkiMobile iPhone/iPad presentation and affected Desktop GUI manual setup/import/reveal/light-dark retests remain open under authorized device deferral. Browser/backend evidence is not native presentation proof; no lifecycle completion or release readiness. Hand off to approved parent synthetic adversarial E2E phase.
+- None
 
 ## Last Verification
 
-- pass for T-063-escape-unsafe-unicode-controls-in-managed-cli-json at 2026-10-05T07:50:05Z
+- pass for T-060-generate-precision-gated-latin-form-parsing at 2026-10-06T19:58:53Z
 
 ## Next Action
 
-- Resolve blocker on T-060-generate-precision-gated-latin-form-parsing
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -53,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 5
 - in_progress: 0
-- completed: 60
-- blocked: 2
+- completed: 62
+- blocked: 0
 - cancelled: 0
