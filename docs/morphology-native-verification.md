@@ -1,8 +1,10 @@
 # Morphology native presentation gate
 
-Native acceptance remains **blocked**, not complete. The required primary AnkiMobile
-iPhone/iPad acceptance has not been executed. Neither T-053 browser captures
-nor T-061 native backend import checks close this presentation gate.
+Native acceptance was completed on **2026-10-06** on Anki Desktop 26.09.2 and on
+AnkiMobile 25.09 (iPhone 16 Pro Max, iPad Air M4); see the
+[native acceptance run](#native-acceptance-run--2026-10-06) and its limitations.
+The 2026-10-05 Desktop run below is the earlier partial record. Neither T-053
+browser captures nor T-061 backend import checks count as presentation evidence.
 
 ## Executed partial Desktop check — 2026-10-05
 
@@ -89,26 +91,94 @@ Hashes bind this run, not stable native IDs across reruns.
 | Smoke script | `a9dbcbb4fb21e8440b352f275dabee1f1f2a40a0f2adade97bb5a23891129151` |
 | JSON report | `3d2d9ffe492f4e4f88497fb4beb345193a9816320ecf5e26ff7cace8cc42d630` |
 
-## Open native acceptance and fallback decision
 
-- Record real AnkiMobile version and actual iPhone **and** iPad devices. On each,
-  exercise reveal and touch expansion, core/compact visibility, accepted further
-  explanation and explicit absent/withheld rows, muted/monochrome light/dark.
-- Finish Desktop recognition/completion, both themes and appearances, real
-  reveal gestures and details/summary closed/open interactions. The partial
-  static completion capture above closes none of these remaining matrix cells.
-- Exercise the documented manual reference CSS/template setup and native CSV
-  import with preview parity; compare claims, withholding, eligibility, stable
-  note/card identities, recipe keys and frozen template slots across settings.
-  Do not use this API-created fixture or T-061 backend results as that proof.
-- Retain **static as the unverified-client default**. Desktop static has only
-  this limited observed reveal/readability evidence; Mobile static is untested.
-  No native details/summary decision is possible yet. Do not enable disclosure
-  as verified, call static a universal compatibility fix, or add untested JS.
-- Bind every remaining capture/interaction to client/version/device, tested
-  content/profile/setup and source hashes. Repeat affected checks for release
-  candidate changes. T-060 owns affected retests after its later recipe changes;
-  that ownership does not waive this blocked native gate.
+## Native acceptance run — 2026-10-06
 
-Required unavailable checks remain open. Obtain native iPhone/iPad access and
-resume this same task; do not mark T-062 complete or claim release readiness.
+The maintainer ran the checks by hand on their own clients. Source code matched
+[be41c4d](https://github.com/fmueller/latinitas-cards/commit/be41c4d); later commits
+changed only specs and tasks. Hashes of the bound source files are unchanged from the
+table above. `form_parsing.py` is
+`08bfbe2678d1f241edd14657074c8c72a89f0c7f7d4eaf5aee2b938cfc79cf5e` and
+`docs/contextual-form-parsing.md` before this update was
+`59f3e4da9d7e1f43bfb3c91ddde6f5c64c070d175be5900ff4b87e2ecc0b9f5e`.
+
+| Client | Version | Device / OS |
+|---|---|---|
+| Anki Desktop (secondary) | 26.09.2 (bb0dd6d1) | Linux desktop |
+| AnkiMobile (primary) | 25.09 | iPhone 16 Pro Max, iOS 26 |
+| AnkiMobile (primary) | 25.09 | iPad Air M4, iPadOS 26 (reported as iOS 26) |
+
+### Setup and delivery
+
+`scripts/build-native-acceptance-kit.py` (run with `anki==26.9.3`) built the kit.
+It contains a carrier `.apkg` with the reference note types (fields, frozen templates and
+reference CSS v2 taken from the authoritative contract) and exporter CSVs produced
+through `prepare_principal_part_export`/`write_principal_part_csv` and the
+`form-parsing export` CLI. Claims are stipulated fixture reviews
+(`native-test fixture`), not calibrated analysis. Per maintainer decision 2026-10-06
+the hand-typed GUI note-type setup was waived, and the carrier package delivered the
+note types. A disposable-backend dry run passed before handoff: carrier import, every
+CSV mapped (HTML, tags column, no missing note type), expected counts, and identical
+card IDs/ordinals after the retheme update.
+
+The maintainer backed up the collection and imported the carrier and CSVs A–F, G and H
+through the native Desktop dialog: update existing, note-type match scope, Personal
+Notes unmapped. The content lived in a separate `Latinitas Test` deck tree in the main
+profile. It reached both iOS devices through AnkiWeb sync after deck A was reimported in
+its original muted/light/static form.
+
+| Kit file | Content | SHA-256 |
+|---|---|---|
+| `0-note-types-carrier.apkg` | both note types + 2 placeholders | `a325c221c37f4c51220f3a164eaa23d572cbe1ce6c33f9f930866f30ff7a6e8c` |
+| `A-principal-parts.csv` | muted/light/static; amō, moneō, ferō, dīcō; 4 notes, 28 cards | `2b7902a0ffe2307715bf592a095ddc7eae19d0033c6c56087fd9a72ad700b7b3` |
+| `A2-retheme-update.csv` | same objects, monochrome/dark/disclosure | `de162fc2cf6daabf389a746fa1a04de885caacecdc5a5999cc69cc68bee1a66d` |
+| `B-principal-parts.csv` | amō muted/dark/static, 8 cards | `0e6febc84c288a82df28f0cc7ec02cfd5399680e32c8b09edb41467f8c2eb8d3` |
+| `C-principal-parts.csv` | amō monochrome/light/static | `a06c2cbcd77b7c4960c4530ba9d0d10f28e915247a3547bf8837631180fb84a7` |
+| `D-principal-parts.csv` | amō monochrome/dark/static | `d830f69ab9d6fc1a5c83640f16a0cf5078690897a70e4b1a83ad61f65c1cf690` |
+| `E-principal-parts.csv` | amō muted/light/disclosure | `a7db416764569ea42a82e2c56b2a5d84e3f78c258622524f3fe232f1f6951de5` |
+| `F-principal-parts.csv` | amō monochrome/dark/disclosure | `50bf7df8a3f2303fb7caf731e8360ae96baf389ddfa13181e234da67b9325c7e` |
+| `G-form-parsing.csv` | parsing muted/light; 2 cards | `1950bd6320f60a5dad6a89f1b3c64de56a3580fcc11baf98e0592a5bf4e47db7` |
+| `H-form-parsing.csv` | parsing monochrome/dark; 2 cards | `9044f9cbbe8c85b8c0ed42e34533f7465df3572bac6b0256e3707a8cb6ab7a6c` |
+
+The generator run had SHA-256
+`9bfc3260d566bfb371134b829ad4093a6b40956be425df57d6073cff989844f6`. The committed
+script differs only by `ruff format` and its usage line.
+
+### Observed results
+
+All checks passed, as reported by the maintainer.
+
+| Check | Desktop 26.09.2 | iPhone | iPad |
+|---|---|---|---|
+| Latin-first completion and recognition fronts | pass | pass | pass |
+| Real reveal (keyboard on Desktop, tap on iOS); core answer, compact comparison and four-role section readable | pass | pass | pass |
+| No clipping or horizontal scroll; portrait and landscape | — | pass | pass |
+| amō four roles with accepted splits/explanations; moneō supine withheld and no present split; ferō suppletive, no split; dīcō supine absent, coarse `dīx- \| -ī` | pass | pass | pass |
+| muted/dark, monochrome/light, monochrome/dark readable; monochrome understandable without colour | pass | pass | pass |
+| Disclosure: collapsed on reveal, core and compact comparison visible, opens and closes by click/touch (E, F) | pass | pass | pass |
+| Client dark mode (Anki dark theme / iOS dark mode) on A, D, F readable | pass | pass | pass |
+| Parsing G/H: 2 cards each, puellae without unreviewed gender, amāvit six features, no card for withheld *Rosam puellae dat.* | pass | pass | pass |
+| Retheme update: 4 updated / 0 new, still 28 cards with the same identities, new theme rendered, Personal Notes kept | pass | — | — |
+
+The maintainer raised three follow-ups, now specified for v0.2.1 and not defects of this
+gate: CLI claim review and inspection (T-064), configurable Latin or user-language
+terminology (T-065), and reviewed form translations (T-066).
+
+### Fallback decision
+
+Native `<details>/<summary>` disclosure works on every tested client: Desktop 26.09.2
+and AnkiMobile 25.09 on iPhone and iPad. Disclosure is therefore a **verified option**
+for those clients. **Static stays the profile default** because it is the readable
+choice for clients and versions not tested here. No JavaScript was added.
+
+### Limitations
+
+- No native screenshots were captured for this run (maintainer decision); evidence is
+  the reported observations above.
+- The maintainer observed and reported results; there is no automated capture of the
+  touch interactions.
+- Content is synthetic, with stipulated reviews. Hand-typed GUI setup was waived in
+  favour of the carrier package.
+- Only the listed client versions and devices are covered; AnkiDroid and the web
+  client are untested. Repeat affected checks when templates, CSS, answer markup or
+  recipes change for a release candidate.

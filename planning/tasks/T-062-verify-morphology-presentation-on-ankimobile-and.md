@@ -1,12 +1,12 @@
 ---
 id: T-062-verify-morphology-presentation-on-ankimobile-and
 title: Verify morphology presentation on AnkiMobile and Desktop
-status: blocked
+status: completed
 priority: high
 spec_ref: specs/v0.2.0.md#morphology-themes
 dependencies:
     - T-053-render-safe-principal-part-comparisons-with
-updated_at: "2026-10-05T05:57:54Z"
+updated_at: "2026-10-06T19:58:44Z"
 ---
 
 # T-062-verify-morphology-presentation-on-ankimobile-and Verify morphology presentation on AnkiMobile and Desktop
@@ -19,7 +19,7 @@ Perform native-client acceptance of new answer-side comparisons and themes. Brow
 
 - Record AnkiMobile client/version and iPhone/iPad devices as the primary targets, and Anki Desktop client/version as secondary. Required unavailable device checks remain explicit open gates.
 - Verify answer reveal, touch expansion, complete four-role comparison with accepted further explanation, explicit absent/withheld roles, and readable muted/monochrome light/dark presentation. Core answer and compact comparison remain visible regardless of expansion.
-- Verify completion and recognition prompts remain Latin-first and theme changes preserve semantic claims and note/card/template identities. Test the documented manual reference CSS/setup delivery path and the same effective theme in preview/imported notes.
+- Verify completion and recognition prompts remain Latin-first and theme changes preserve semantic claims and note/card/template identities. Deliver the reference note types (fields, templates and CSS from the authoritative contract) in a carrier package, import the exporter CSVs through the native dialog, and check the same effective theme in preview/imported notes. Maintainer decision 2026-10-06: hand-typed GUI note-type setup is waived for this gate.
 - Record native details/summary behavior and select the tested disclosure or static fully readable fallback; broken controls cannot hide required information. Static fallback still requires native reveal/readability evidence. Do not introduce untested JavaScript.
 - Run existing-recipe checks when the direct prerequisite is complete; form-parsing-exercises owns affected retests after its later changes. Bind evidence to tested content/setup and repeat affected checks for release-candidate changes.
 - Capture and inspect representative native screenshots and observed interactions. Record limitations before claiming client compatibility or release readiness.
@@ -87,7 +87,36 @@ Provide native device/client evidence and the fallback decision. Run the mandato
   complete, started a second task or created another thread. Parent loop must
   stop on this selected blocker even though another task is eligible.
 
+### Native acceptance — 2026-10-06
+
+- Unblocked and started through Taskrail with the maintainer available for native
+  testing. Maintainer decision: the hand-typed GUI note-type setup is waived and a
+  carrier `.apkg` built from the authoritative contract delivers the note types;
+  acceptance wording updated accordingly.
+- `scripts/build-native-acceptance-kit.py` (new, anki 26.9.3) built a carrier package
+  plus exporter CSVs: six theme/appearance/comparison variants, a retheme update, and two
+  form-parsing decks. Claims are stipulated fixture reviews. A disposable-backend dry run
+  verified import mapping, counts and identity preservation before handoff.
+- The maintainer imported into a separate `Latinitas Test` deck tree in the backed-up main
+  profile on Anki Desktop 26.09.2 (bb0dd6d1) and synced to AnkiMobile 25.09 on an iPhone 16
+  Pro Max (iOS 26) and an iPad Air M4 (iPadOS 26). Every Desktop check D1–D7 and Mobile
+  check M1–M7 passed: Latin-first fronts, real reveal, all four roles with explicit
+  absent/withheld rows, all theme/appearance combinations, native disclosure
+  click/touch, client dark mode, the parsing decks, and retheme identity plus Personal
+  Notes preservation.
+- Fallback decision: native details/summary is a verified option on the tested clients.
+  Static remains the profile default for untested clients. No JavaScript was added.
+- Limitations: no screenshots (maintainer decision); observations are maintainer-
+  reported; synthetic stipulated content; only the listed clients. Full record and hashes
+  are in `docs/morphology-native-verification.md`.
+- Follow-ups from the session were specified in v0.2.1 as T-064 (CLI claim review and
+  inspection), T-065 (terminology language), T-066 (form translations) and T-067
+  (automatic appearance).
+- Chain: `uv run ruff check` passed, `uv run mypy` passed (87 files), `uv run pytest -v`
+  passed (838).
+
 ## Implementation Notes
 
 - 2026-10-05T05:57:54Z: verification fail
 - 2026-10-05T05:57:54Z: Required native AnkiMobile iPhone/iPad devices/client unavailable in Linux orb. Partial Desktop 26.09.3 completion muted/light/static proof only; finish native Mobile and remaining Desktop/disclosure/manual setup/import parity gates before completion or release readiness.
+- 2026-10-06T19:58:44Z: verification pass
