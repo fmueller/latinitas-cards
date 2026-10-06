@@ -3,7 +3,7 @@ id: T-038-publish-releases-on-pypi
 title: Publish releases on PyPI
 status: todo
 priority: medium
-spec_ref: specs/v0.2.0.md#pypi-publishing
+spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies:
     - T-061-verify-managed-csv-import-safety-and-recovery-in
     - T-062-verify-morphology-presentation-on-ankimobile-and
@@ -15,9 +15,10 @@ updated_at: "2026-10-03T10:12:32Z"
 
 ## Description
 
-Deliver PyPI publishing for v0.2.0 and subsequent approved releases, following
-`specs/v0.2.0.md#pypi-publishing`. Add the release workflow and installation guidance;
-actual publication requires explicit maintainer approval.
+Deliver PyPI publishing for v0.3.0 and subsequent approved releases, following
+`specs/v0.3.0.md#pypi-publishing` (moved from v0.2.0 on 2026-10-06). Add the release
+workflow and installation guidance; actual publication requires explicit maintainer
+approval.
 
 ## Acceptance
 
@@ -32,7 +33,7 @@ actual publication requires explicit maintainer approval.
 - Use PyPI Trusted Publishing with approved release tags and a protected publishing
   environment; routine CI cannot publish, and publication follows passing release
   checks and explicit maintainer approval.
-- Before v0.2.0 publication, require completed native update and presentation
+- Before the first PyPI publication, require completed native update and presentation
   evidence gates and form-parsing work, including its affected native retests.
   Require evaluated claim-policy evidence and the documented supported-capability
   matrix. Bind the evidence to the release candidate; repeat affected checks when
