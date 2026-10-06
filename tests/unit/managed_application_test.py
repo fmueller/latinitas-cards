@@ -13,7 +13,13 @@ from managed_plans_test import request
 from typer.testing import CliRunner
 
 from latinitas_cards.cli import app
-from latinitas_cards.destination_state import ReconciliationRequired, load_state, review_reconciliation, save_state
+from latinitas_cards.destination_state import (
+    ReconciliationRequired,
+    load_state,
+    reconcile,
+    review_reconciliation,
+    save_state,
+)
 from latinitas_cards.managed_application import emit_updates, observe_updates
 from latinitas_cards.managed_plans import approve_plan, compose_plan
 
@@ -344,3 +350,59 @@ def test_published_csv_then_failed_journal_save_is_unknown(tmp_path: Path, monke
     assert load_state(path)["plans"][plan["plan_id"]]["emission"]["status"] == "pending"
     with pytest.raises(ReconciliationRequired, match="stale|pending"):
         emit_updates(plan, approval, snapshot, path, backup, "restore", tmp_path / "retry.csv", "Latinitas", "Latin")
+
+
+def _observe_selected(tmp_path: Path, snapshot: Any, plan: Any, approval: Any, path: Path, backup: Path) -> Any:
+    emit_updates(
+        plan,
+        approval,
+        snapshot,
+        path,
+        backup,
+        "restore",
+        tmp_path / f"{plan['plan_id'][:12]}.csv",
+        "Latinitas",
+        "Latin",
+    )
+    after = snapshot.payload
+    for identity, target in approval["targets"].items():
+        note = next(note for note in after["notes"] if note["identity"] == identity)
+        note["fields"] = dict(target["fields"])
+        note["tags"] = list(target["tags"])
+    observed = capture(after)
+    report = observe_updates(path, plan["plan_id"], observed, "imported", interval_confirmed=True)
+    assert report["observed"] == approval["selected_operations"]
+    return observed
+
+
+@pytest.mark.parametrize("decided", [False, True])
+def test_unapproved_divergent_field_stays_a_conflict_after_partial_observation(tmp_path: Path, decided: bool) -> None:
+    snapshot, _, _, path, backup = setup(tmp_path)
+    profile = {"generated_note_type": "Latinitas", "target_deck": "Latin"}
+    proposal = request(snapshot, meaning="selected A")
+    if decided:
+        proposal["decisions"] = {"field:Lemma": {"action": "keep_destination", "approval": "keep my edit for now"}}
+    identity = proposal["identity"]
+    plan = compose_plan(snapshot, load_state(path), [proposal], profile)
+    approval = approve_plan(plan, [f"{identity}/field/Meaning"], "apply selected A only")
+    baseline_lemma = load_state(path)["anchors"][identity]["fields"]["Lemma"]
+    observed = _observe_selected(tmp_path, snapshot, plan, approval, path, backup)
+
+    saved = load_state(path)
+    assert saved["anchors"][identity]["fields"]["Lemma"] == baseline_lemma
+    assert saved["anchors"][identity]["fields"]["Meaning"] == "selected A"
+    replan = compose_plan(observed, saved, [request(observed, meaning="selected B")], profile)
+    note = replan["notes"][0]
+    assert note["classification"] == "conflict"
+    lemma = next(op for op in note["operations"] if op.get("field") == "Lemma")
+    assert lemma["destination"] == "kept destination B"
+    assert lemma["supported"] is False
+    # The intentionally retained divergence is not mistaken for a restored backup.
+    renewed = approve_plan(replan, [f"{identity}/field/Meaning"], "apply selected B only")
+    after = _observe_selected(tmp_path, observed, replan, renewed, path, backup)
+    assert after.payload["notes"][0]["fields"]["Lemma"] == "kept destination B"
+    assert load_state(path)["anchors"][identity]["fields"]["Lemma"] == baseline_lemma
+    # Reverting the retained edit to the old baseline is still destination drift.
+    reverted = after.payload
+    reverted["notes"][0]["fields"]["Lemma"] = baseline_lemma
+    assert reconcile(capture(reverted), load_state(path)) == (identity,)

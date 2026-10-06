@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .destination_state import (
+    MANAGED_FIELDS,
     DestinationSnapshot,
     ReconciliationRequired,
     _text,
@@ -102,7 +103,22 @@ def emit_updates(
             )
             or (key.startswith("tag:") and f"{identity}/tags" in approval["selected_operations"])
         }
-        targets[identity] = {**target, **ownership, "decisions": {**anchor.get("decisions", {}), **decisions}}
+        # Only written or already-convergent fields advance the managed baseline;
+        # an unapproved divergent destination edit must stay a conflict next time.
+        note = notes[identity]
+        baseline_fields = {
+            name: target["fields"][name]
+            if f"{identity}/field/{name}" in approval["selected_operations"]
+            or note["destination_fields"][name] == note["proposed_fields"][name]
+            else anchor["fields"][name]
+            for name in MANAGED_FIELDS
+        }
+        targets[identity] = {
+            **target,
+            **ownership,
+            "decisions": {**anchor.get("decisions", {}), **decisions},
+            "baseline_fields": baseline_fields,
+        }
     journal = begin_observation(state, snapshot, plan["plan_id"], targets, approval["review"], reviewed_changes=True)
     pending = journal["plans"][plan["plan_id"]]
     pending.update(

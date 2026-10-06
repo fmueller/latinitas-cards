@@ -404,6 +404,8 @@ def _state(value: object) -> dict[str, Any]:
         if _note(anchor, binding)["identity"] != identity:
             raise ReconciliationRequired("anchor identity mismatch")
         _ownership(anchor, anchor["tags"])
+        if "observed_fields" in anchor:
+            _fields(anchor["observed_fields"], identity)
         _text(anchor.get("approval"))
         _reference(anchor.get("observed"))
     for plan in _object(state.get("plans")).values():
@@ -463,7 +465,7 @@ def reconcile(snapshot: DestinationSnapshot, state: object) -> tuple[str, ...]:
         for identity, anchor in sorted(baseline["anchors"].items())
         if identity not in notes
         or any(
-            notes[identity][key] != anchor[key]
+            notes[identity][key] != anchor.get("observed_fields" if key == "fields" else key, anchor[key])
             for key in ("fields", "tags", "source", "guid", "local_id", "note_type_id")
         )
         or (_preservation(anchor) is not None and _preservation(notes[identity]) != _preservation(anchor))
@@ -538,9 +540,15 @@ def begin_observation(
         for name in result["anchors"][identity]["keep_fields"]:
             if fields[name] != notes[identity]["fields"][name]:
                 raise ReconciliationRequired("user-owned keep override is not writable")
+        managed_baseline = target.get("baseline_fields")
         journal[identity] = {
             "before": notes[identity],
-            "target": {"fields": fields, "tags": tags, **origins},
+            "target": {
+                "fields": fields,
+                "tags": tags,
+                **origins,
+                **({"baseline_fields": _fields(managed_baseline, identity)} if managed_baseline is not None else {}),
+            },
             "status": "pending",
             "receipt": None,
             "observations": [],
@@ -610,8 +618,14 @@ def observe(
         if confirmed:
             assert actual is not None and after is not None
             operation["receipt"] = receipt
+            managed_baseline = target.get("baseline_fields")
             result["anchors"][identity] = {
                 **actual,
+                **(
+                    {"fields": managed_baseline, "observed_fields": actual["fields"]}
+                    if managed_baseline is not None and managed_baseline != actual["fields"]
+                    else {}
+                ),
                 **_ownership(target, actual["tags"]),
                 "observed": after.reference,
                 "approval": plan["approval"],
