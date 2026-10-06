@@ -1,7 +1,8 @@
 # Reviewed source-extraction fixtures (v0.2.0)
 
-This bounded contract prepares regression inputs for subsequent extraction work;
-it does **not** broaden today's parser. Machine-readable, hand-authored expectations
+This bounded contract supplied the regression inputs for the T-050 extraction work,
+which implemented pipe alternatives and the trailing `poet.` hint behind the opt-in
+`pipe_alternatives` and `trailing_poet_hint` profile flags; other layouts are unchanged. Machine-readable, hand-authored expectations
 are in `tests/fixtures/source-extraction/reviewed.jsonl`. No parser output was used
 to author them. Independent workflow review of these expectations is recorded in
 T-049's task notes. That review is structural/content adjudication by agents, not
@@ -63,8 +64,8 @@ delimiter profile is a new confirmation, not automatic fallback.
 | Literal four-slot layout, HTML text, single entity decoding | Existing promised-layout regressions; retain candidates and raw text | comma, markup, single-decode; double decoding is forbidden |
 | Explicit blank/markup-only non-leading slot | Existing fixed v0.1 regression; keep later positions | omitted-perfect, exceptional-omission; withhold only omitted-role cards |
 | Confirmed alternate role delimiter | Already mechanically supported by explicit profiles; additional reviewed source layouts, not new autodetection | dash, semicolon, slash; comma-profile failures remain correct |
-| Pipe alternatives | New candidate-list contract; current parser keeps pipe text verbatim | pipe-alternatives; no selection or deduplication |
-| Embedded hint | New bounded hint-extraction contract; current parser retains mixed form/hint display | embedded-hint; only specified hint/position, no linguistic assertion |
+| Pipe alternatives | Candidate-list contract, implemented behind opt-in `pipe_alternatives`; otherwise pipe text stays verbatim | pipe-alternatives; no selection or deduplication |
+| Embedded hint | Bounded hint-extraction contract, implemented behind opt-in `trailing_poet_hint`; otherwise mixed form/hint display is retained | embedded-hint; only specified hint/position, no linguistic assertion |
 | Fourth-role and shorter-profile boundaries | Existing profile semantics, newly explicit expectations | ppp-fourth, supine-fourth, deponent-confirmed; endings never assign roles |
 | Near-counterexamples | Withheld, not promised support | unmarked-short, extra-slot, mixed-delimiters, conflicting-hint; exact reasons in JSONL |
 
@@ -101,6 +102,6 @@ optional-gloss case rev-002 also generates, but is not an extraction omission.
 Regression consumers should assert raw provenance, profile role order, exact
 candidate lists, hint positions, omissions, rules and withholding reasons against
 this file. Do not regenerate expectations from the parser or automatically bless
-differences. The later implementation must test both new targets and unchanged
+differences. The implementation tests both new targets and unchanged
 comma-profile rejection before claiming support. These cases cannot establish
 universal coverage, calibrated morphology, or correctness of private sources.

@@ -6,29 +6,41 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
-- `form-parsing` previews individually reviewed contextual Latin features and exports
-  eligible exercises for a separate manual note type; automatic acceptance stays disabled.
-- `managed plan` exposes deterministic destination-aware JSON reviews;
-  `managed approve` binds selected compatible operations to their exact import footprint.
-- `managed emit` writes approved content/tag CSV handoffs with backup records;
-  `managed observe` and `managed reconcile` record offline results before retrying.
+- `managed` updates notes you already imported without losing their review history:
+  `plan` shows what would change, `approve` picks individual changes, `emit` writes an
+  update CSV for Anki's import, and `observe`/`reconcile` record what Anki actually did.
+- Principal-part answers can show individually reviewed German explanations and a
+  comparison of the principal parts in a muted or monochrome style, light or dark.
+  Choose it in the profile's `morphology` section and paste the reference CSS into Anki.
+- `form-parsing` previews and exports reviewed parsing exercises (case, tense, and
+  similar) for a separate note type; nothing is accepted automatically.
 
 ### Changed
 
-- Managed destination reviews reject historical identities and incompatible layouts;
-  explicit fresh-start plans require backup and a separate destination with new schedules.
-- Principal-part answers offer reviewed German explanations and restrained muted or
-  monochrome light/dark comparisons; static is the default, with manual CSS setup.
-  Fourth-form cards still require explicit PPP/supine review.
-- Principal-part profiles can retain reviewed pipe alternatives and the bounded
-  `poet.` hint as source evidence; unresolved targets are withheld in both recipes.
-- Principal-part previews separate wholly skipped entries from generated entries
-  with omission/review warnings, and exports preserve extraction evidence.
+- Profiles can opt in to keeping `|` alternatives and a trailing `poet.` hint from your
+  source; forms that stay ambiguous are left off the cards instead of guessed.
+- Previews list skipped entries separately from generated entries with warnings.
+- `managed` refuses decks built with older pre-release note layouts or IDs.
 
 ### Fixed
 
-- Managed CLI JSON escapes unsafe Unicode terminal controls in successful reviews
-  and reports while retaining exact content when decoded.
+- `managed` JSON output escapes hidden terminal control characters without changing
+  the actual text.
+
+### Limitations
+
+- `managed` updates were tested only through Anki 26.9.3's import engine on test data,
+  not the Desktop import dialog, which may skip tag-only changes. Skipped changes stay
+  pending until you record the result.
+- No command yet exports your current Anki state for `managed plan`; you build that
+  JSON from a closed full backup ([guide](docs/destination-snapshots-and-file-transport.md)).
+- `managed` cannot change card front/back text, so cards already in study don't get the
+  new explanations or themes that way.
+- Reviewing explanations and fourth-form (PPP vs. supine) labels currently needs the
+  Python API; decks built only with the CLI leave both out.
+- Explanation, theme, and `form-parsing` cards passed display checks only on Anki
+  Desktop 26.09.2 and AnkiMobile 25.09 with test notes; the static comparison stays
+  the default.
 
 ## [0.1.1] - 2026-10-04
 

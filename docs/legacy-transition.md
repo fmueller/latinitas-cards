@@ -151,8 +151,10 @@ models and stay in scope of the inventory:
   cards nor authorizes structural CSV effects; it leaves original notes/cards,
   personal fields, tags, source structure, review logs and identity manifests
   untouched. Valuable-history and personal-annotation notes still retain/defer.
-  Native fresh-start isolation proof remains a later native update gate; the
-  synthetic tests here establish policy and input preservation only.
+  Native isolation was checked in the T-061 run
+  ([managed-csv-native-verification.md](managed-csv-native-verification.md)) for
+  that fixture and client only; it is not a general certification. The planner
+  is a library API with no CLI command.
 - v0.1.0 ships the guard, the policy, and the rehearsal. It does not ship
   migration machinery, destination-aware merging, collection cleanup, or any
   live collection mutation.

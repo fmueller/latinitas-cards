@@ -2,18 +2,23 @@
 
 ## Project Overview
 
-Latinitas Cards is a Typer CLI for Latin Anki workflows. It supports deck inspection,
-card splitting, grammatical annotation, corpus-based cloze generation, and validation
-for CSV + Anki package inputs.
+Latinitas Cards is a Typer CLI for Latin Anki workflows. It supports deck profiles,
+principal-part card generation, authored-note import, managed CSV updates, reviewed
+form parsing, and experimental deck inspection, splitting, annotation, and corpus-based
+cloze generation for CSV + Anki package inputs.
 
 Current command set:
 - `inspect`: inspect note types/fields in `.apkg`/`.colpkg`
 - `split`: split multi-form notes into one-note-per-form
 - `annotate`: add CLTK-based annotations
 - `cloze`: generate corpus-based cloze examples from text or parallel corpora
-- `preview`: preview Vulgate clozes without writing output
-- `generate`: write Vulgate clozes back to CSV/APKG-compatible output
+- `preview`: preview principal-part cards (`--profile`) or experimental Vulgate clozes (`--usfx`)
+- `generate`: export principal-part CSV (`--profile`) or experimental Vulgate clozes (`--usfx`)
 - `validate`: validate corpus/input integrity
+- `setup`: inspect a source and confirm a reusable deck profile
+- `authored {validate,preview,export}`: import authored JSONL notes
+- `managed {plan,approve,emit,observe,reconcile}`: offline managed CSV update handoff
+- `form-parsing {preview,export}`: reviewed contextual form-parsing exercises
 
 ## Architecture
 
@@ -22,8 +27,10 @@ Code lives in `src/latinitas_cards/`.
 - `cli.py` contains shared/domain logic and the Typer app instance.
 - `commands/` contains one module per command. Older commands (`inspect`, `split`,
   `annotate`, `cloze`, `preview`, `generate`, `validate`) are thin re-exports of a
-  `*_impl` callback in `cli.py`; newer ones implement the command themselves
-  (`principal_parts.py`) or re-export it from a domain module (`setup.py`).
+  `*_impl` callback in `cli.py`; newer command groups implement Typer sub-apps
+  (`authored.py`, `managed.py`, `form_parsing.py`) or re-export a domain module
+  (`setup.py`). `principal_parts.py` holds the `--profile` helpers used by
+  `preview`/`generate`, not a command of its own.
 - Domain modules (`cards.py`, `profile.py`, `sources.py`, ...) sit beside `cli.py`.
 - `__main__.py` is the CLI entry module.
 
@@ -63,8 +70,8 @@ issue first, not necessarily a code regression.
 Planning and task state live in the repo, managed by the `taskrail` CLI.
 
 - `specs/` — versioned specs. `specs/v0.1.0.md` defines the first release and
-  `specs/v0.1.1.md` is active for authored-note import work. Activate later specs
-  through Taskrail.
+  `specs/v0.2.0.md` is active for managed updates, extraction, form parsing and
+  morphology themes. Activate later specs through Taskrail.
 - `planning/STATE.md` — current focus, blockers, next action.
 - `planning/tasks/` — one file per task, each linked to a spec heading via `spec_ref`.
 - `planning/artifacts/` — verification artifacts, gitignored.

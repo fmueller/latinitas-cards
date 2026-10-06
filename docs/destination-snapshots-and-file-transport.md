@@ -1,7 +1,9 @@
 # Destination snapshots and file transport contract
 
 This is the contract-first decision for [v0.2.0](../specs/v0.2.0.md#safe-update-application),
-not an implemented native snapshot acquisition command or a claim of verified managed import support.
+not an implemented native snapshot acquisition command. The offline contracts were
+implemented in T-054–T-059; native evidence for one Anki import API path is recorded in
+[managed-csv-native-verification.md](managed-csv-native-verification.md) (T-061).
 The initial application scope is **compatible content/tag CSV updates to existing
 notes**. Matching, freshness and native verification gates below must pass before
 advertising that capability. Unproved operations remain unsupported.
@@ -91,8 +93,9 @@ must appear in the application report even for an otherwise observed successful 
 
 ## Operation-by-transport matrix
 
-`Conditional` means the intended initial supported scope, **not yet evidenced managed
-support**: all gates and native checks in the next section are required. `Legacy` means
+`Conditional` means the intended initial supported scope, **evidenced only for the native
+API settings in [managed-csv-native-verification.md](managed-csv-native-verification.md)**:
+all gates in the next section are still required, and other import paths need their own checks. `Legacy` means
 the limited existing source-only workflow, with no destination-preservation guarantee.
 `Unsupported` means refuse that managed apply effect, even if Anki can technically
 import the file. An approved compatible content-only subplan may proceed separately.
@@ -192,8 +195,8 @@ The native backend report establishes the tested content/tag and isolated tag-on
 results for its exact client/settings/fixture. Other chosen import paths/settings,
 including Desktop GUI import, still need their own sanitized checks before support claims.
 Card addition, retirement/reactivation, APKG matching and consolidation are unproved and
-remain unsupported. Later tasks implement snapshot/plan/apply contracts and obtain that
-evidence; this decision does not authorize another task or widen release compatibility.
+remain unsupported. T-054–T-059 implemented the offline snapshot/plan/apply contracts and
+T-061 recorded native API evidence; this decision does not widen release compatibility.
 
 ## Offline state API (T-054)
 
@@ -328,7 +331,9 @@ obtained from `GeneratedNote.to_anki_fields()` excluding Tags and Personal Notes
 
 Plans expose create/update/unchanged/conflict/retire classifications, reasons,
 baseline/destination/proposal/resolved field differences, full tags, card effects,
-blocked operations and transport capability flags. Missing baselines require adoption;
+blocked operations and transport capability flags. Card effects are candidates for
+inspection: they carry no lifecycle approval and cannot be approved or applied in
+v0.2.0. Missing baselines require adoption;
 wrong, incomplete, stale, duplicate and incompatible evidence fails closed. An old CSS
 digest requires separately reviewed manual setup, never automatic template migration.
 
@@ -366,7 +371,9 @@ preservation claims.
 ## Managed CSV handoff and observation
 
 These commands implement the offline handoff, **not native import certification**.
-T-061 remains the native safety gate. Use one operator/writer and keep the journal,
+T-061 recorded native API evidence only; Desktop GUI and AnkiMobile imports remain
+uncertified (see [managed-csv-native-verification.md](managed-csv-native-verification.md)).
+Use one operator/writer and keep the journal,
 backup and before/after evidence local. No command opens a running collection.
 
 1. Acquire a fresh complete bound snapshot as above and a recoverable full collection

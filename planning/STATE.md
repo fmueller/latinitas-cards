@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-06T20:03:22Z"
+updated_at: "2026-10-06T20:17:46Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-069-check-v0-2-0-gaps-and-drift: Check v0.2.0 gaps, inconsistencies, and spec drift'
-last_verification_result: pass for T-060-generate-precision-gated-latin-form-parsing at 2026-10-06T19:58:53Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-070-keep-unapproved-divergent-fields-out-of-baseline at 2026-10-06T20:17:46Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-060-generate-precision-gated-latin-form-parsing at 2026-10-06T19:58:53Z
+- pass for T-070-keep-unapproved-divergent-fields-out-of-baseline at 2026-10-06T20:17:46Z
 
 ## Next Action
 
-- Start task T-069-check-v0-2-0-gaps-and-drift: Check v0.2.0 gaps, inconsistencies, and spec drift
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 7
+- todo: 17
 - in_progress: 0
-- completed: 62
+- completed: 64
 - blocked: 0
 - cancelled: 0

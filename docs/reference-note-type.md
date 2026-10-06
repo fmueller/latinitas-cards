@@ -21,7 +21,8 @@ Profile schema **2** owns `morphology`: `version: 1`, `theme: "muted"` or
 `"monochrome"`, `appearance: "light"` or `"dark"`, and `comparison: "static"`
 or `"disclosure"`. Defaults are muted/light/static. Effective profile overrides
 merge individual settings; setup's JSON report and principal-part preview report
-the effective values. Unknown versions, names and modes fail validation.
+the effective values. Unknown versions, names and modes fail validation. Choose a
+theme by editing the saved profile's `morphology` section; `setup` has no theme flags.
 Legacy schema 1 profiles **without** morphology settings are explicitly upgraded
 in memory to schema 2 with those defaults and serialize as schema 2. Schema 1
 with morphology settings is rejected; edit the version to 2 deliberately.
@@ -53,10 +54,10 @@ Linguistic claim review ignores only
 `morphology`; all evidence and linguistic configuration remain bound.
 Personal Notes are neither sanitized nor written by generation/CSV.
 
-Browser renders are **not native Anki proof**. Both static readability/reveal and
-disclosure require the future native presentation gate on AnkiMobile and Desktop.
-Do not claim compatibility or enable disclosure as a verified-client default from
-browser evidence alone.
+Browser renders are **not native Anki proof**. Native acceptance passed on
+2026-10-06 for Anki Desktop 26.09.2 and AnkiMobile 25.09 with synthetic content
+(see [morphology-native-verification.md](morphology-native-verification.md));
+disclosure is verified only on those clients and static remains the default.
 
 ## How the note type is organized
 
@@ -465,9 +466,9 @@ cards, or resets schedules: clearing a guard on import would let Anki drop the
 existing card, so the row is withheld for review instead. Missing, corrupt, or
 incompatible checkpoint state is a review gate requiring recovery/review or an
 explicit `--approve-fresh-import` confirmation; a read-only preview never
-advances the checkpoint. Until managed retirement in v0.2.0, you retain the
-existing notes or explicitly suspend affected cards in a backed-up manual
-workflow. Details: [deterministic-csv-export.md](deterministic-csv-export.md).
+advances the checkpoint. v0.2.0 managed plans show retirement as an unsupported,
+plan-only effect; until a supported transport applies it, retain the existing
+notes or explicitly suspend affected cards in a backed-up manual workflow. Details: [deterministic-csv-export.md](deterministic-csv-export.md).
 
 ## Read this before the first import and before every reimport
 

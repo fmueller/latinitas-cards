@@ -6,6 +6,10 @@ priority: high
 spec_ref: specs/v0.2.0.md#goals
 dependencies:
     - T-069-check-v0-2-0-gaps-and-drift
+    - T-070-keep-unapproved-divergent-fields-out-of-baseline
+    - T-071-record-explicit-decisions-for-unselected-tag-conflicts
+    - T-072-label-unreviewed-fourth-role-as-linguistic-review
+    - T-073-decide-representative-deck-native-acceptance
 updated_at: "2026-10-06T20:02:15Z"
 ---
 
@@ -34,8 +38,9 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
   Python 3.13/3.14 before tagging.
 - Publish one annotated v0.2.0 tag and matching GitHub release (not draft or
   prerelease, no uploaded assets); do not publish to PyPI.
-- Verify fresh-tag `uv sync --locked` install and `latinitas-cards --help`
-  reports 0.2.0; record publication evidence separately.
+- Verify fresh-tag `uv sync --locked` install, installed distribution metadata
+  reports 0.2.0, and `latinitas-cards --help` runs; record publication evidence
+  separately.
 
 ## Verification Notes
 
