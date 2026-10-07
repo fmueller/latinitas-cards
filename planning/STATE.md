@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-07T23:03:10Z"
+updated_at: "2026-10-07T23:14:07Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-074-refresh-cli-help-for-v0-2-0-workflows: Refresh CLI help for v0.2.0 workflows'
-last_verification_result: pass for T-082-persist-explicitly-selected-no-write at 2026-10-07T23:03:10Z
+next_action: 'Start task T-075-capture-snapshots-and-first-adoption-from-cli: Capture destination snapshots and first adoption from the CLI'
+last_verification_result: pass for T-074-refresh-cli-help-for-v0-2-0-workflows at 2026-10-07T23:14:07Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-082-persist-explicitly-selected-no-write at 2026-10-07T23:03:10Z
+- pass for T-074-refresh-cli-help-for-v0-2-0-workflows at 2026-10-07T23:14:07Z
 
 ## Next Action
 
-- Start task T-074-refresh-cli-help-for-v0-2-0-workflows: Refresh CLI help for v0.2.0 workflows
+- Start task T-075-capture-snapshots-and-first-adoption-from-cli: Capture destination snapshots and first adoption from the CLI
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 14
+- todo: 13
 - in_progress: 0
-- completed: 68
+- completed: 69
 - blocked: 0
 - cancelled: 0

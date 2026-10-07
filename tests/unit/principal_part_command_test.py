@@ -349,7 +349,10 @@ def test_generate_requires_fresh_import_approval_for_a_damaged_checkpoint(tmp_pa
     )
 
     assert gated.exit_code != 0
-    assert "fresh" in click.unstyle(gated.output).lower()
+    guidance = " ".join(click.unstyle(gated.output).split())
+    assert "--approve-fresh-import" in guidance
+    assert "new scheduling, not a scheduling migration" in guidance
+    assert "replaces retained card-evidence state" in guidance
     assert gated.exception is not None
     assert fresh.exit_code == 0
     assert "Notes: 1" in fresh.stdout

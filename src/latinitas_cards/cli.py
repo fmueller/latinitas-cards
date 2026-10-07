@@ -1531,8 +1531,9 @@ def update_csv_with_cloze(
 
 app = typer.Typer(
     help=(
-        "Build Latin study cards from Anki decks: inspect deck structure, split multi-form "
-        "cards, annotate grammar, and generate corpus-based cloze examples."
+        "Build principal-part study cards from Anki decks with a confirmed --profile. "
+        "Review authored notes, managed CSV updates, and contextual form parsing; "
+        "inspect, split, or annotate sources, or explore experimental USFX clozes."
     ),
     context_settings={"help_option_names": ["-h", "--help"]},
 )
@@ -1552,7 +1553,7 @@ def generate_impl(
     usfx: Annotated[
         Path | None,
         typer.Option(
-            help="Path to Latin USFX XML corpus (e.g., lat-clementine.usfx.xml)",
+            help="Experimental Latin USFX XML corpus for clozes; not used with --profile",
             exists=True,
             readable=True,
         ),
@@ -1642,7 +1643,8 @@ def generate_impl(
             "--approve-fresh-import",
             help=(
                 "Explicitly confirm a fresh import when the prior-export card-evidence checkpoint is "
-                "missing, corrupt, or incompatible; without it the damaged checkpoint stays review-only"
+                "missing, corrupt, or incompatible; replaces retained card-evidence state. "
+                "New scheduling, not a scheduling migration; without it the checkpoint stays review-only"
             ),
         ),
     ] = False,
@@ -1658,7 +1660,7 @@ def generate_impl(
     ] = None,
     preview_limit: Annotated[int, typer.Option(help="Max representative principal-part notes to print")] = 5,
 ) -> None:
-    """Update an Anki CSV or APKG file with cloze examples from a Latin USFX corpus."""
+    """Export principal-part CSV with --profile, or generate experimental USFX clozes."""
     if profile is not None:
         if legacy_note_type is not None and any(not name.strip() for name in legacy_note_type):
             raise typer.BadParameter("--legacy-note-type requires a non-empty note type name.")
@@ -1738,7 +1740,7 @@ def preview_impl(
     usfx: Annotated[
         Path | None,
         typer.Option(
-            help="Path to Latin USFX XML corpus (e.g., lat-clementine.usfx.xml)",
+            help="Experimental Latin USFX XML corpus for clozes; not used with --profile",
             exists=True,
             readable=True,
         ),
@@ -1833,7 +1835,7 @@ def preview_impl(
         ),
     ] = None,
 ) -> None:
-    """Show a sample of generated clozes without writing output."""
+    """Preview principal-part cards with --profile, or experimental USFX clozes, without writing output."""
     if profile is not None:
         if legacy_note_type is not None and any(not name.strip() for name in legacy_note_type):
             raise typer.BadParameter("--legacy-note-type requires a non-empty note type name.")

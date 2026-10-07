@@ -286,6 +286,27 @@ def test_cli_help_option() -> None:
     assert "Usage" in result.output
 
 
+@pytest.mark.parametrize("command", [[], ["preview"], ["generate"]])
+def test_cli_help_describes_profile_workflow_and_experimental_usfx(command: list[str]) -> None:
+    result = CliRunner().invoke(get_command(app), [*command, "--help"], terminal_width=160)
+    assert result.exit_code == 0
+    output = " ".join(click.unstyle(result.output).replace("│", " ").split())
+    assert "principal-part" in output
+    assert "--profile" in output
+    assert "experimental USFX clozes" in output
+    if command:
+        assert "Experimental Latin USFX XML corpus" in output
+
+
+def test_form_parsing_export_help_explains_fresh_import_approval() -> None:
+    result = CliRunner().invoke(get_command(app), ["form-parsing", "export", "--help"], terminal_width=160)
+    assert result.exit_code == 0
+    output = " ".join(click.unstyle(result.output).replace("│", " ").split())
+    assert "--approve-fresh-import" in output
+    assert "Confirm a fresh manual import with new scheduling" in output
+    assert "no scheduling migration or managed apply" in output
+
+
 def test_cli_short_help_option() -> None:
     runner = CliRunner()
     result = runner.invoke(get_command(app), ["-h"])

@@ -477,8 +477,8 @@ def deterministic_csv_bytes(result: PrincipalPartExportResult) -> bytes:
         )
     if result.checkpoint_pending and not result.fresh_import_approved:
         raise PrincipalPartExportError(
-            "Cannot export without usable prior-export checkpoint evidence: recover or review the "
-            "checkpoint, or explicitly approve a fresh import."
+            "Checkpoint unusable. Recover/review or --approve-fresh-import: fresh import, "
+            "new scheduling, not a scheduling migration; replaces retained card-evidence state."
         )
 
     notes = result.exportable_notes

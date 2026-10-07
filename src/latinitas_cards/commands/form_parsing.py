@@ -30,7 +30,16 @@ def preview(source: Path) -> None:
 def export_csv(
     source: Path,
     output: Path,
-    approve_fresh_import: Annotated[bool, typer.Option("--approve-fresh-import")] = False,
+    approve_fresh_import: Annotated[
+        bool,
+        typer.Option(
+            "--approve-fresh-import",
+            help=(
+                "Confirm a fresh manual import with new scheduling and separate reference setup; "
+                "no scheduling migration or managed apply"
+            ),
+        ),
+    ] = False,
 ) -> None:
     """Write eligible cards only; requires separate manual reference setup and new scheduling."""
     data = _load(source)
