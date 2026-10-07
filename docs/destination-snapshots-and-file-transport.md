@@ -1,8 +1,8 @@
 # Destination snapshots and file transport contract
 
 This is the contract-first decision for [v0.2.0](../specs/v0.2.0.md#safe-update-application),
-not an implemented native snapshot acquisition command. The offline contracts were
-implemented in T-054–T-059; native evidence for one Anki import API path is recorded in
+with an implemented [closed-backup capture and first-adoption CLI](managed-capture-and-adoption.md).
+The offline contracts were implemented in T-054–T-059; native evidence for one Anki import API path is recorded in
 [managed-csv-native-verification.md](managed-csv-native-verification.md) (T-061).
 The initial application scope is **compatible content/tag CSV updates to existing
 notes**. Matching, freshness and native verification gates below must pass before

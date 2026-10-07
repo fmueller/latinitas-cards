@@ -322,7 +322,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     commands.remove(authored)
     commands.extend(authored.commands.values())
     managed = cast(click.Group, click_app.commands["managed"])
-    assert set(managed.commands) == {"plan", "approve", "emit", "observe", "reconcile"}
+    assert set(managed.commands) == {"capture", "adopt", "plan", "approve", "emit", "observe", "reconcile"}
     commands.remove(managed)
     commands.extend(managed.commands.values())
     parsing = cast(click.Group, click_app.commands["form-parsing"])

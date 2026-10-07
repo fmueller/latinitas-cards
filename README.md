@@ -155,9 +155,36 @@ them before sharing an issue or other public report.
 ## Updating imported notes (`managed`)
 
 `managed` prepares a reviewed update CSV for notes already in your collection, so
-their scheduling is kept. It never opens your collection; you import the file in Anki.
+their scheduling can be kept under the offline checklist. It never opens Anki's
+collection backend; `capture` reads only an explicitly attested closed backup copy.
+You import the update file in Anki.
+
+Try the complete sequence on a **sanitized disposable fixture**, without assembling
+snapshot or baseline JSON by hand (run from this repository):
 
 ```bash
+work=$(mktemp -d)
+uv run --with anki==26.9.3 python scripts/check-managed-capture.py \
+  --output-dir "$work/evidence"
+```
+
+This runs the installed CLI's `capture`, `adopt`, `plan`, `approve`, `emit`, a
+fixture-only native import, another closed capture, and `observe`. It writes every
+request/result plus `commands.json` and checks full card/history/model/deck tables,
+personal text and manual tags. It does not verify the Desktop dialog or AnkiMobile.
+
+For your destination, first follow the [closed-backup acquisition and adoption
+guide](docs/managed-capture-and-adoption.md). Schema-18 protobuf definitions are
+optional; no Anki runtime is added to the default installation. The selection file
+records your collection/profile binding and the **whole immutable source/object
+membership**; the ownership file records each note's explicitly reviewed tag origins
+and keep overrides. Neither visible Latin text nor a deck name supplies identity.
+
+```bash
+uv run --with anki==26.9.3 latinitas-cards managed capture closed-backup.anki2 \
+  --selection selection.json --closed-backup --interval-confirmed > snapshot.json
+uv run latinitas-cards managed adopt snapshot.json --ownership ownership.json \
+  --review 'reviewed each note and its ownership' --state baseline.json
 uv run latinitas-cards managed plan request.json > plan.json      # what would change
 uv run latinitas-cards managed approve plan.json \
   --operation '<id from plan>' --review 'why this change is OK' > approval.json
@@ -168,8 +195,9 @@ uv run latinitas-cards managed observe observation.json --state baseline.json --
 
 Back up first and don't review or sync on any device until the result is recorded.
 Only content fields and tags can be updated; adding, retiring, or reactivating cards is
-not supported. You assemble the request JSON yourself from a closed full backup; the
-format and full checklist are in
+not supported. Capture/adoption are not apply approval. Proposals and the plan/handoff/
+observation envelopes remain explicit JSON; the runnable fixture demonstrates their
+construction, and the format and full checklist are in
 [destination snapshots and file transport](docs/destination-snapshots-and-file-transport.md).
 
 ## Explanations and themes

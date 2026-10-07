@@ -1,14 +1,18 @@
 """Offline managed review, CSV handoff and observed-result reconciliation."""
 
 import json
+import sqlite3
 from pathlib import Path
 from typing import Annotated, Any
 
 import typer
 
+from ..destination_capture import capture_backup, save_adoption
 from ..destination_state import (
     BoundDestination,
+    DestinationSnapshot,
     _object,
+    adopt,
     load_state,
     read_snapshot,
     review_reconciliation,
@@ -29,6 +33,55 @@ def _load(path: Path) -> dict[str, Any]:
 def _error(exc: Exception) -> None:
     typer.echo(f"Managed error: {encode_unsafe_controls(str(exc), preserve_line_breaks=False)}", err=True)
     raise typer.Exit(1) from exc
+
+
+@app.command("capture")
+def capture(
+    backup: InputPath,
+    selection: Annotated[
+        Path,
+        typer.Option(
+            exists=True,
+            dir_okay=False,
+            help="Whole-set immutable membership and operator destination/profile/note_type_id JSON.",
+        ),
+    ],
+    closed_backup: Annotated[
+        bool, typer.Option(help="Attest this is a closed checkpointed backup copy, never a live collection.")
+    ] = False,
+    interval_confirmed: Annotated[
+        bool, typer.Option(help="Attest fresh complete backup and no edits/reviews/sync on any device since backup.")
+    ] = False,
+) -> None:
+    """Print a validated version-1 snapshot; read SQLite only, never open Anki."""
+    try:
+        snapshot = capture_backup(
+            backup, _load(selection), closed_backup=closed_backup, interval_confirmed=interval_confirmed
+        )
+        typer.echo(json.dumps(snapshot.payload, ensure_ascii=False))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, sqlite3.Error) as exc:
+        _error(exc)
+
+
+@app.command("adopt")
+def first_adoption(
+    snapshot: InputPath,
+    ownership: Annotated[
+        Path,
+        typer.Option(
+            exists=True, dir_okay=False, help="Explicit ownership map keyed by every observed portable identity."
+        ),
+    ],
+    review: Annotated[str, typer.Option(help="Explicit per-note ownership review record; NOT apply approval.")],
+    state: Annotated[Path, typer.Option(help="NEW applied-baseline journal; existing files are never replaced.")],
+) -> None:
+    """Record observed values and reviewed origins, never adopt by visible text."""
+    try:
+        observed = DestinationSnapshot(json.dumps(_load(snapshot)))
+        save_adoption(state, adopt(observed, _load(ownership), review))
+        typer.echo(json.dumps({"status": "adopted", "version": 1, "requires": "plan and separate apply approval"}))
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        _error(exc)
 
 
 @app.command("plan")

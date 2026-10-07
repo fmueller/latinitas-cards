@@ -7,7 +7,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 ### Added
 
 - `managed` updates notes you already imported without losing their review history:
-  `plan` shows what would change, `approve` picks individual changes, `emit` writes an
+  `capture` reads a closed backup, `adopt` records reviewed ownership, `plan` shows
+  what would change, `approve` picks individual changes, `emit` writes an
   update CSV for Anki's import, and `observe`/`reconcile` record what Anki actually did.
 - Principal-part answers can show individually reviewed German explanations and a
   comparison of the principal parts in a muted or monochrome style, light or dark.
