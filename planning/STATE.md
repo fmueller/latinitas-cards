@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-07T22:43:16Z"
+updated_at: "2026-10-07T22:50:17Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-068-publish-v0-2-0: Publish v0.2.0'
+next_action: 'Start task T-082-persist-explicitly-selected-no-write: Persist explicitly selected no-write reconciliation decisions'
 last_verification_result: pass for T-073-decide-representative-deck-native-acceptance at 2026-10-07T21:07:40Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Start task T-068-publish-v0-2-0: Publish v0.2.0
+- Start task T-082-persist-explicitly-selected-no-write: Persist explicitly selected no-write reconciliation decisions
 
 ## Relevant Artifacts
 

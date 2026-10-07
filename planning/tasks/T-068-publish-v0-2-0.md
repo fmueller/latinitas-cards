@@ -10,6 +10,15 @@ dependencies:
     - T-071-record-explicit-decisions-for-unselected-tag-conflicts
     - T-072-label-unreviewed-fourth-role-as-linguistic-review
     - T-073-decide-representative-deck-native-acceptance
+    - T-074-refresh-cli-help-for-v0-2-0-workflows
+    - T-075-capture-snapshots-and-first-adoption-from-cli
+    - T-076-verify-managed-csv-desktop-import-dialog
+    - T-077-preserve-morphology-across-setup-reconfigure
+    - T-078-close-managed-lifecycle-classification-test-gaps
+    - T-079-add-extraction-parsing-fixtures-and-review-counts
+    - T-080-harden-managed-handoff-attestation-and-wording
+    - T-081-make-form-parsing-docs-usable
+    - T-082-persist-explicitly-selected-no-write
 updated_at: "2026-10-06T20:02:15Z"
 ---
 
@@ -49,3 +58,7 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
 ## Implementation Notes
 
 - This task does not activate v0.2.1 or implement T-038 PyPI publishing.
+- The 2026-10-07 orchestration restart tests first, implements confirmed findings
+  and the remaining v0.2.0 tasks sequentially, then repeats adversarial testing.
+  These implementation tasks precede publication; dependency ordering does not
+  authorize a release or replace the final testing and publication gates.
