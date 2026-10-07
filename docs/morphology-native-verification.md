@@ -1,8 +1,10 @@
 # Morphology native presentation gate
 
-Native acceptance was completed on **2026-10-06** on Anki Desktop 26.09.2 and on
-AnkiMobile 25.09 (iPhone 16 Pro Max, iPad Air M4); see the
+Native acceptance on **2026-10-06** is maintainer-reported for the synthetic four-verb
+kit on Anki Desktop 26.09.2 and AnkiMobile 25.09 (iPhone 16 Pro Max, iPad Air M4); see the
 [native acceptance run](#native-acceptance-run--2026-10-06) and its limitations.
+Only the additional representative-deck gate was waived on 2026-10-07; see the
+[dated decision](#additional-representative-deck-waiver--2026-10-07).
 The 2026-10-05 Desktop run below is the earlier partial record. Neither T-053
 browser captures nor T-061 backend import checks count as presentation evidence.
 
@@ -102,6 +104,11 @@ table above. `form_parsing.py` is
 `docs/contextual-form-parsing.md` before this update was
 `59f3e4da9d7e1f43bfb3c91ddde6f5c64c070d175be5900ff4b87e2ecc0b9f5e`.
 
+Client versions, devices and OS values below are **maintainer-reported**, not
+independently verified by this documentation update. The Desktop Linux distribution
+and OS version were not supplied; mobile OS values were reported only at major-version
+granularity, not exact patch/build versions.
+
 | Client | Version | Device / OS |
 |---|---|---|
 | Anki Desktop (secondary) | 26.09.2 (bb0dd6d1) | Linux desktop |
@@ -166,9 +173,10 @@ terminology (T-065), and reviewed form translations (T-066).
 
 ### Fallback decision
 
-Native `<details>/<summary>` disclosure works on every tested client: Desktop 26.09.2
-and AnkiMobile 25.09 on iPhone and iPad. Disclosure is therefore a **verified option**
-for those clients. **Static stays the profile default** because it is the readable
+Native `<details>/<summary>` disclosure passed the maintainer-reported 2026-10-06
+synthetic checks on Desktop 26.09.2 and AnkiMobile 25.09 on the listed iPhone and iPad.
+Disclosure is a **verified option only within that recorded scope**, not broad client
+certification. **Static stays the profile default** because it is the readable
 choice for clients and versions not tested here. No JavaScript was added.
 
 ### Limitations
@@ -179,6 +187,21 @@ choice for clients and versions not tested here. No JavaScript was added.
   touch interactions.
 - Content is synthetic, with stipulated reviews. Hand-typed GUI setup was waived in
   favour of the carrier package.
+- No additional sanitized representative-deck native run was performed. The synthetic
+  retheme update is not proof of a CSS change on an existing scheduled note type.
 - Only the listed client versions and devices are covered; AnkiDroid and the web
   client are untested. Repeat affected checks when templates, CSS, answer markup or
   recipes change for a release candidate.
+
+## Additional representative-deck waiver — 2026-10-07
+
+On **2026-10-07 (Europe/Berlin)**, Felix Müller (`fmezza`) wrote
+“I waive the addtional deck gate, continue” in the
+[source thread](https://ampcode.com/threads/T-01a10956-8f9e-709c-9421-9e42c4294a49).
+This is the maintainer decision for T-073: waive only the additional native acceptance
+on `tests/fixtures/representative-university-latin.apkg` requested by v0.2.0 delivery
+item 5. It retains the dated 2026-10-06 synthetic results and all limitations above;
+it is not a waiver of all native evidence, new screenshots or a new native run.
+It establishes neither existing-scheduled-CSS proof nor broader client compatibility,
+migration safety or full release readiness. The static default/unverified-client fallback
+and requirement to repeat affected native checks after presentation changes remain intact.

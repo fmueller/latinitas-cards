@@ -54,10 +54,13 @@ Linguistic claim review ignores only
 `morphology`; all evidence and linguistic configuration remain bound.
 Personal Notes are neither sanitized nor written by generation/CSV.
 
-Browser renders are **not native Anki proof**. Native acceptance passed on
-2026-10-06 for Anki Desktop 26.09.2 and AnkiMobile 25.09 with synthetic content
+Browser renders are **not native Anki proof**. The maintainer reported native acceptance
+passed on 2026-10-06 for Anki Desktop 26.09.2 and AnkiMobile 25.09 with the synthetic
+four-verb kit on the listed devices
 (see [morphology-native-verification.md](morphology-native-verification.md));
-disclosure is verified only on those clients and static remains the default.
+disclosure is verified only within that recorded scope and static remains the
+default/unverified-client fallback. The 2026-10-07 waiver of additional representative-deck
+acceptance is not broader compatibility or existing-scheduled-CSS proof.
 
 ## How the note type is organized
 

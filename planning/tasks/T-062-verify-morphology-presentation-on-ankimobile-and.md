@@ -115,6 +115,22 @@ Provide native device/client evidence and the fallback decision. Run the mandato
 - Chain: `uv run ruff check` passed, `uv run mypy` passed (87 files), `uv run pytest -v`
   passed (838).
 
+### Additional representative-deck waiver — 2026-10-07
+
+- Felix Müller (`fmezza`) wrote “I waive the addtional deck gate, continue” on
+  2026-10-07 (Europe/Berlin) in the
+  [source thread](https://ampcode.com/threads/T-01a10956-8f9e-709c-9421-9e42c4294a49).
+  T-073 records this as a waiver only of the additional sanitized representative-deck
+  native acceptance gate in v0.2.0 delivery item 5, not of all native evidence.
+- The 2026-10-06 maintainer-reported synthetic four-verb results remain the evidence
+  scope, including the listed client versions/devices and reported OS values. No native
+  screenshots were captured for that run; no additional representative-deck run or
+  proof of a CSS change on an existing scheduled note type is supplied by this waiver.
+- Disclosure is verified only within that recorded synthetic scope. Static remains the
+  profile default/unverified-client fallback; affected presentation changes still need
+  native retests. No broader compatibility, migration safety or full release readiness
+  is claimed. See `docs/morphology-native-verification.md` for the decision and limits.
+
 ## Implementation Notes
 
 - 2026-10-05T05:57:54Z: verification fail
