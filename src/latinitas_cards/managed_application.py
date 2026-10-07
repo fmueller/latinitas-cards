@@ -87,12 +87,22 @@ def emit_updates(
         if f"{identity}/tags" in approval["selected_operations"]:
             ownership = notes[identity]["ownership"]
         else:
-            managed = set(anchor["source_tags"] + anchor["configured_tags"] + anchor.get("lifecycle_tags", []))
+            # Observed tags are not a reviewed ownership decision. Retain the
+            # prior tag baseline until the tags operation is selected.
             ownership = {
-                **{key: anchor[key] for key in ("source_tags", "configured_tags", "keep_fields")},
-                "lifecycle_tags": anchor.get("lifecycle_tags", []),
-                "keep_tags": sorted(set(target["tags"]) - managed | (set(anchor["keep_tags"]) & set(target["tags"]))),
-                "suppressed_tags": sorted(managed - set(target["tags"])),
+                **{
+                    key: anchor[key]
+                    for key in (
+                        "source_tags",
+                        "configured_tags",
+                        "keep_fields",
+                        "keep_tags",
+                        "lifecycle_tags",
+                        "suppressed_tags",
+                    )
+                    if key in anchor
+                },
+                "baseline_tags": anchor["tags"],
             }
         decisions = {
             key: choice

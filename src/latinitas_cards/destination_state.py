@@ -406,6 +406,8 @@ def _state(value: object) -> dict[str, Any]:
         _ownership(anchor, anchor["tags"])
         if "observed_fields" in anchor:
             _fields(anchor["observed_fields"], identity)
+        if "observed_tags" in anchor:
+            _strings(anchor["observed_tags"])
         _text(anchor.get("approval"))
         _reference(anchor.get("observed"))
     for plan in _object(state.get("plans")).values():
@@ -420,7 +422,8 @@ def _state(value: object) -> dict[str, Any]:
                 raise ReconciliationRequired("operation identity mismatch")
             target = _object(operation.get("target"))
             _fields(target.get("fields"), identity)
-            _ownership(target, _strings(target.get("tags")))
+            _strings(target.get("tags"))
+            _ownership(target, _strings(target.get("baseline_tags", target.get("tags"))))
             if operation.get("status") not in ("pending", "unresolved", "confirmed", "abandoned"):
                 raise ReconciliationRequired("invalid operation status")
             if operation.get("status") == "confirmed":
@@ -465,7 +468,7 @@ def reconcile(snapshot: DestinationSnapshot, state: object) -> tuple[str, ...]:
         for identity, anchor in sorted(baseline["anchors"].items())
         if identity not in notes
         or any(
-            notes[identity][key] != anchor.get("observed_fields" if key == "fields" else key, anchor[key])
+            notes[identity][key] != anchor.get(f"observed_{key}" if key in ("fields", "tags") else key, anchor[key])
             for key in ("fields", "tags", "source", "guid", "local_id", "note_type_id")
         )
         or (_preservation(anchor) is not None and _preservation(notes[identity]) != _preservation(anchor))
@@ -526,7 +529,8 @@ def begin_observation(
         target = _object(proposed)
         fields = _fields(target.get("fields"), identity)
         tags = _strings(target.get("tags"))
-        origins = _ownership(target, tags)
+        baseline_tags = _strings(target.get("baseline_tags", tags))
+        origins = _ownership(target, baseline_tags)
         require_content_only_card_set(notes[identity], fields)
         if ("latinitas::retired" in tags) != ("latinitas::retired" in notes[identity]["tags"]):
             raise ReconciliationRequired("unsupported lifecycle tag effect; tags cannot approximate suspension")
@@ -547,6 +551,7 @@ def begin_observation(
                 "fields": fields,
                 "tags": tags,
                 **origins,
+                **({"baseline_tags": baseline_tags} if "baseline_tags" in target else {}),
                 **({"baseline_fields": _fields(managed_baseline, identity)} if managed_baseline is not None else {}),
             },
             "status": "pending",
@@ -619,6 +624,7 @@ def observe(
             assert actual is not None and after is not None
             operation["receipt"] = receipt
             managed_baseline = target.get("baseline_fields")
+            baseline_tags = target.get("baseline_tags", actual["tags"])
             result["anchors"][identity] = {
                 **actual,
                 **(
@@ -626,7 +632,8 @@ def observe(
                     if managed_baseline is not None and managed_baseline != actual["fields"]
                     else {}
                 ),
-                **_ownership(target, actual["tags"]),
+                **({"tags": baseline_tags, "observed_tags": actual["tags"]} if baseline_tags != actual["tags"] else {}),
+                **_ownership(target, baseline_tags),
                 "observed": after.reference,
                 "approval": plan["approval"],
             }

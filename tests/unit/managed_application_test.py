@@ -15,6 +15,7 @@ from typer.testing import CliRunner
 from latinitas_cards.cli import app
 from latinitas_cards.destination_state import (
     ReconciliationRequired,
+    adopt,
     load_state,
     reconcile,
     review_reconciliation,
@@ -406,3 +407,50 @@ def test_unapproved_divergent_field_stays_a_conflict_after_partial_observation(t
     reverted = after.payload
     reverted["notes"][0]["fields"]["Lemma"] = baseline_lemma
     assert reconcile(capture(reverted), load_state(path)) == (identity,)
+
+
+@pytest.mark.parametrize("decision", [None, "keep_destination", "accept_proposal"])
+def test_unselected_deleted_tag_remains_conflict(tmp_path: Path, decision: str | None) -> None:
+    snapshot, _ = fixture(generated())
+    data = snapshot.payload
+    data["notes"][0]["tags"] = ["generated", "shared", "manual-old"]
+    snapshot = capture(data)
+    identity = data["notes"][0]["identity"]
+    ownership = {
+        "source_tags": ["shared"],
+        "configured_tags": ["generated", "shared"],
+        "keep_tags": ["manual-old"],
+        "keep_fields": [],
+    }
+    state = adopt(snapshot, {identity: ownership}, "review initial tag origins")
+    path = tmp_path / "state.json"
+    save_state(path, state)
+    backup = tmp_path / "backup.colpkg"
+    backup.write_bytes(b"recoverable synthetic backup")
+    data["notes"][0]["tags"] = ["shared", "manual-old", "manual-new"]
+    snapshot = capture(data)
+    proposal = request(snapshot, meaning="approved meaning", lemma="amo")
+    proposal["contributions"] = {"source_tags": ["shared"], "configured_tags": ["generated", "shared"]}
+    if decision is not None:
+        proposal["decisions"] = {"tag:generated": {"action": decision, "approval": "review tag choice"}}
+    profile = {"generated_note_type": "Latinitas", "target_deck": "Latin"}
+    plan = compose_plan(snapshot, state, [proposal], profile)
+    approval = approve_plan(plan, [f"{identity}/field/Meaning"], "approve only meaning")
+    observed = _observe_selected(tmp_path, snapshot, plan, approval, path, backup)
+    saved = load_state(path)
+    anchor = saved["anchors"][identity]
+    assert anchor.get("suppressed_tags", []) == []
+    assert anchor["keep_tags"] == ["manual-old"]
+    assert anchor.get("decisions", {}) == {}
+    assert anchor["fields"]["Meaning"] == "approved meaning"
+    assert observed.payload["notes"][0]["tags"] == ["manual-new", "manual-old", "shared"]
+    assert reconcile(observed, saved) == ()
+    proposal.pop("decisions", None)
+    replan = compose_plan(observed, saved, [proposal], profile)
+    assert replan["notes"][0]["classification"] == "conflict"
+    assert "tag:generated" in replan["notes"][0]["reasons"]
+    assert replan["notes"][0]["operations"][0]["kind"] == "tags"
+    assert replan["notes"][0]["operations"][0]["supported"] is False
+    restored = observed.payload
+    restored["notes"][0]["tags"].append("generated")
+    assert reconcile(capture(restored), saved) == (identity,)
