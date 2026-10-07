@@ -24,6 +24,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `managed approve` can select reviewed keep-destination decisions and tag-ownership
+  changes even when the exported text and tags stay unchanged.
 - Principal-part previews and answers distinguish linguistic review from unresolved
   source evidence, and count unreviewed fourth roles as generated-entry warnings.
 - `managed` JSON output escapes hidden terminal control characters without changing

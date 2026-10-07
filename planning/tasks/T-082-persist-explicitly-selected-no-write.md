@@ -1,11 +1,11 @@
 ---
 id: T-082-persist-explicitly-selected-no-write
 title: Persist explicitly selected no-write reconciliation decisions
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.2.0.md#managed-update-plans
 dependencies: []
-updated_at: "2026-10-07T22:43:16Z"
+updated_at: "2026-10-07T23:03:10Z"
 ---
 
 # T-082-persist-explicitly-selected-no-write Persist explicitly selected no-write reconciliation decisions
@@ -97,3 +97,51 @@ unselected operations to fix this.
 - Confirmed on 2026-10-07 with fresh synthetic branches over closed Anki 26.9.3 fixture snapshots and the installed CLI; both missing operation selections returned exit 1. Domain-level keep/suppress reconciliation itself returns the correct values. No product fix implemented in this filing.
 
 ## Implementation Notes
+
+- Pinned to `specs/v0.2.0.md`; accepted remote main contained the requested
+  orchestration baseline. Initial `taskrail validate` passed and `next --json`
+  selected exactly T-082 before `start`.
+- Expose equal-value reviewed field/tag decisions and ownership-only tag changes
+  through existing operation IDs. Tag operations show old/new origins explicitly.
+  Approval, full-column CSV mapping, backup, and observation boundaries remain.
+- RED: four asymmetric field-keep, deleted-tag suppression, keep-as-user-owned,
+  and overlapping-origin cases failed with `unknown selected operation`.
+  GREEN: lifecycle tests exercise plan/approve/emit/observe/reload/replan,
+  exact values/origins, pending unattested observations, personal-field exclusion,
+  and selected decision provenance. Unselected origins remain separately pending.
+- Dedicated code-simplifier Task loaded its skill and made no changes; its
+  focused checks passed (54 tests). Independent read-only General, persistence,
+  Python, and Security Tasks each loaded code-reviewer and mapped guidance.
+  Persistence was routed through the Database lane; its SQL companions have
+  limited applicability to this file journal. Framework/ML/network lanes omitted
+  because no corresponding contract changed. All non-persistence lanes returned
+  "No concrete task-relevant findings."
+- Fresh candidate-validation Task reproduced and validated F1 below. Fixed
+  only reviewed-but-unselected convergence, retaining T-070's ordinary
+  convergence behavior. RED: reviewed case failed `already converged != old`,
+  ordinary case passed. GREEN: both passed. No rejected candidates or deferrals.
+- Fresh disposition-verification Task: "F1 — RESOLVED." and "No concrete
+  task-relevant findings." It independently passed ruff/mypy/full pytest.
+  One review/fix/recheck cycle; no unresolved findings.
+- Final exact chain: `uv run ruff check` passed; `uv run mypy` passed (87 source
+  files); `uv run pytest -v` passed (851 tests). Focused managed/reconciliation
+  tests passed. Synthetic installed-CLI plan/approve/emit/observe selected both
+  no-write field and origin operations and persisted exact provenance.
+- Optional `check-managed-anki.py` passed against Anki 26.9.3. Additional closed
+  disposable native no-write field/origin import observed both selections with
+  identical full notes/cards/revlog tables. The first exploratory native probe
+  failed due to an unclosed SQLite connection; explicitly closing it corrected
+  the fixture setup. No Desktop dialog, Mobile, migration or GUI proof claimed.
+
+### Validated review finding F1 (verbatim)
+
+> FINDING F1 — correctness
+> Severity: medium
+> Evidence: src/latinitas_cards/managed_plans.py:192 now creates a selectable operation for an equal-value reviewed field decision. In src/latinitas_cards/managed_application.py:119-124, however, baseline_fields advances a field when it is selected or when its destination equals its proposal. If that reviewed field is left unselected while another operation for the same note is approved, observation can still advance its baseline.
+> Finding: Do not advance the baseline for an unselected field merely because its destination equals its proposal.
+> Failure/impact: A plan can record a reviewed equal-value decision as selectable, but selecting only another operation can still persist the unselected field’s baseline when observation confirms. This violates the operation-level selection boundary and can change later reconciliation.
+> Recommended direction: Advance a field baseline only when its exact field operation is selected; add a mixed-selection regression test where an equal-value reviewed field remains unselected while another operation is observed.
+
+Disposition: fixed narrowly for reviewed decisions; automatic ordinary convergence
+remains supported. Regression tests distinguish both sides of this boundary.
+- 2026-10-07T23:03:10Z: verification pass

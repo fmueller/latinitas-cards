@@ -189,7 +189,7 @@ def compose_plan(
         for name in MANAGED_FIELDS:
             d, p, value = destination["fields"][name], fields[name], reconciliation["fields"][name]
             conflict = f"field:{name}" in conflicts
-            if d == value and not conflict:
+            if d == value and not conflict and f"field:{name}" not in reconciliation["decisions"]:
                 continue
             supported = name in CONTENT_FIELDS and not conflict and not retention_unsafe and not retire
             entry["operations"].append(
@@ -204,12 +204,23 @@ def compose_plan(
                     "supported": supported,
                     "reason": "unresolved conflict"
                     if conflict
+                    else "record reviewed field decision without changing destination"
+                    if supported and d == value
                     else "compatible content"
                     if supported
                     else "unsupported identity/schema/slot or unsafe retention effect",
                 }
             )
-        if reconciliation["tag_write"] or any(key.startswith("tag:") for key in conflicts):
+        anchor = baseline["anchors"][identity]
+        ownership_changed = any(
+            reconciliation["ownership"].get(key, []) != anchor.get(key, [])
+            for key in ("source_tags", "configured_tags", "lifecycle_tags", "keep_tags", "suppressed_tags")
+        )
+        if (
+            reconciliation["tag_write"]
+            or ownership_changed
+            or any(key.startswith("tag:") for key in (*conflicts, *reconciliation["decisions"]))
+        ):
             lifecycle_tag = ("latinitas::retired" in destination["tags"]) != (
                 "latinitas::retired" in reconciliation["tags"]
             )
@@ -220,8 +231,14 @@ def compose_plan(
                     "kind": "tags",
                     "destination": destination["tags"],
                     "value": reconciliation["tags"],
+                    "baseline_ownership": {key: anchor.get(key, []) for key in reconciliation["ownership"]},
+                    "ownership": reconciliation["ownership"],
                     "supported": supported,
-                    "reason": "reconciled full tag set" if supported else "unresolved or unsupported tag effect",
+                    "reason": "unresolved or unsupported tag effect"
+                    if not supported
+                    else "reconciled full tag set"
+                    if reconciliation["tag_write"]
+                    else "record reviewed tag decision or ownership without changing destination",
                 }
             )
         for effect in entry["card_effects"]:

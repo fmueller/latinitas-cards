@@ -113,13 +113,16 @@ def emit_updates(
             )
             or (key.startswith("tag:") and f"{identity}/tags" in approval["selected_operations"])
         }
-        # Only written or already-convergent fields advance the managed baseline;
-        # an unapproved divergent destination edit must stay a conflict next time.
+        # Ordinary convergence may advance automatically, but reviewed decisions
+        # require their own selection even when the destination value is unchanged.
         note = notes[identity]
         baseline_fields = {
             name: target["fields"][name]
             if f"{identity}/field/{name}" in approval["selected_operations"]
-            or note["destination_fields"][name] == note["proposed_fields"][name]
+            or (
+                note["destination_fields"][name] == note["proposed_fields"][name]
+                and f"field:{name}" not in note["decisions"]
+            )
             else anchor["fields"][name]
             for name in MANAGED_FIELDS
         }

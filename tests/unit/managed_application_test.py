@@ -454,3 +454,130 @@ def test_unselected_deleted_tag_remains_conflict(tmp_path: Path, decision: str |
     restored = observed.payload
     restored["notes"][0]["tags"].append("generated")
     assert reconcile(capture(restored), saved) == (identity,)
+
+
+@pytest.mark.parametrize("case", ["field", "suppression", "user-owned", "origins"])
+def test_selected_no_write_resolution_persists_only_after_observation(tmp_path: Path, case: str) -> None:
+    snapshot, _ = fixture(generated())
+    data = snapshot.payload
+    data["notes"][0]["tags"] = ["manual", "shared"]
+    snapshot = capture(data)
+    identity = data["notes"][0]["identity"]
+    state = adopt(
+        snapshot,
+        {
+            identity: {
+                "source_tags": ["shared"],
+                "configured_tags": ["shared"],
+                "keep_tags": ["manual"],
+                "keep_fields": [],
+            }
+        },
+        "review separate overlapping origins",
+    )
+    fields = dict(data["notes"][0]["fields"])
+    decisions = {}
+    contributions = {"source_tags": ["shared"], "configured_tags": ["shared"]}
+    if case == "field":
+        data["notes"][0]["fields"]["Lemma"] = "local asymmetric lemma"
+        decisions = {"field:Lemma": {"action": "keep_destination", "approval": "keep local lemma"}}
+    elif case == "suppression":
+        data["notes"][0]["tags"] = ["manual"]
+        decisions = {"tag:shared": {"action": "keep_destination", "approval": "keep required tag deleted"}}
+    elif case == "user-owned":
+        contributions = {"source_tags": [], "configured_tags": []}
+        decisions = {"tag:shared": {"action": "keep_as_user_owned", "approval": "retain removed tag personally"}}
+    else:
+        contributions["source_tags"] = []
+    snapshot = capture(data)
+    proposal = {"identity": identity, "fields": fields, "contributions": contributions, "decisions": decisions}
+    profile = {"generated_note_type": "Latinitas", "target_deck": "Latin"}
+    plan = compose_plan(snapshot, state, [proposal], profile)
+    operation = f"{identity}/field/Lemma" if case == "field" else f"{identity}/tags"
+    approval = approve_plan(plan, [operation], "select only reviewed no-write resolution")
+    target = approval["targets"][identity]
+    assert target["fields"] == snapshot.payload["notes"][0]["fields"]
+    assert target["tags"] == snapshot.payload["notes"][0]["tags"]
+    assert "Personal Notes" not in approval["import_columns"]
+    path = tmp_path / "state.json"
+    save_state(path, state)
+    backup = tmp_path / "backup.colpkg"
+    backup.write_bytes(b"synthetic recoverable backup")
+    output = tmp_path / "no-write.csv"
+    emit_updates(plan, approval, snapshot, path, backup, "restore", output, "Latinitas", "Latin")
+    assert load_state(path)["anchors"] == state["anchors"]
+    pending = observe_updates(path, plan["plan_id"], snapshot, "no attested interval", interval_confirmed=False)
+    assert pending["observed"] == []
+    assert pending["unresolved"] == [operation]
+    assert load_state(path)["anchors"] == state["anchors"]
+    report = observe_updates(path, plan["plan_id"], snapshot, "observed unchanged destination", interval_confirmed=True)
+    assert report["observed"] == [operation]
+    saved = load_state(path)
+    anchor = saved["anchors"][identity]
+    assert anchor.get("decisions", {}) == plan["notes"][0]["decisions"]
+    if case == "field":
+        assert anchor["fields"]["Lemma"] == "local asymmetric lemma"
+        assert anchor["source_tags"] == ["shared"]
+    else:
+        assert anchor["source_tags"] == ([] if case in ("user-owned", "origins") else ["shared"])
+        assert anchor["configured_tags"] == ([] if case == "user-owned" else ["shared"])
+        assert anchor["keep_tags"] == (["manual", "shared"] if case == "user-owned" else ["manual"])
+        assert anchor.get("suppressed_tags", []) == (["shared"] if case == "suppression" else [])
+    assert "Personal Notes" not in anchor["fields"]
+    proposal.pop("decisions")
+    replan = compose_plan(snapshot, saved, [proposal], profile)
+    assert replan["notes"][0]["classification"] != "conflict"
+    if case != "field":
+        assert replan["notes"][0]["operations"] == []
+
+
+@pytest.mark.parametrize("reviewed", [False, True])
+def test_unselected_convergent_review_does_not_advance_field_baseline(tmp_path: Path, reviewed: bool) -> None:
+    snapshot, _, _, path, backup = setup(tmp_path)
+    data = snapshot.payload
+    data["notes"][0]["fields"]["Meaning"] = "already converged"
+    snapshot = capture(data)
+    state = load_state(path)
+    proposal = request(snapshot, meaning="already converged", lemma="selected replacement")
+    proposal["decisions"] = {"field:Lemma": {"action": "accept_proposal", "approval": "replace local lemma"}}
+    if reviewed:
+        proposal["decisions"]["field:Meaning"] = {"action": "keep_destination", "approval": "review converged meaning"}
+    identity = proposal["identity"]
+    profile = {"generated_note_type": "Latinitas", "target_deck": "Latin"}
+    plan = compose_plan(snapshot, state, [proposal], profile)
+    approval = approve_plan(plan, [f"{identity}/field/Lemma"], "select lemma only")
+    _observe_selected(tmp_path, snapshot, plan, approval, path, backup)
+    anchor = load_state(path)["anchors"][identity]
+    assert anchor["fields"]["Meaning"] == (
+        state["anchors"][identity]["fields"]["Meaning"] if reviewed else "already converged"
+    )
+    assert "field:Meaning" not in anchor["decisions"]
+
+
+def test_unselected_origin_only_change_retains_overlapping_ownership(tmp_path: Path) -> None:
+    snapshot, _ = fixture(generated())
+    data = snapshot.payload
+    data["notes"][0]["tags"] = ["manual", "shared"]
+    snapshot = capture(data)
+    identity = data["notes"][0]["identity"]
+    owner = {"source_tags": ["shared"], "configured_tags": ["shared"], "keep_tags": ["manual"], "keep_fields": []}
+    state = adopt(snapshot, {identity: owner}, "review both origins")
+    path = tmp_path / "state.json"
+    save_state(path, state)
+    backup = tmp_path / "backup.colpkg"
+    backup.write_bytes(b"synthetic recoverable backup")
+    proposal = request(snapshot, meaning="only selected content", lemma=data["notes"][0]["fields"]["Lemma"])
+    proposal["contributions"] = {"source_tags": [], "configured_tags": ["shared"]}
+    profile = {"generated_note_type": "Latinitas", "target_deck": "Latin"}
+    plan = compose_plan(snapshot, state, [proposal], profile)
+    tags = next(op for op in plan["notes"][0]["operations"] if op["kind"] == "tags")
+    assert tags["destination"] == tags["value"] == ["manual", "shared"]
+    assert tags["baseline_ownership"]["source_tags"] == ["shared"]
+    assert tags["ownership"]["source_tags"] == []
+    approval = approve_plan(plan, [f"{identity}/field/Meaning"], "select meaning, not origins")
+    observed = _observe_selected(tmp_path, snapshot, plan, approval, path, backup)
+    saved = load_state(path)
+    assert saved["anchors"][identity]["source_tags"] == ["shared"]
+    assert saved["anchors"][identity]["configured_tags"] == ["shared"]
+    replan = compose_plan(observed, saved, [proposal], profile)
+    assert [op["id"] for op in replan["notes"][0]["operations"]] == [f"{identity}/tags"]
