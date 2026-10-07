@@ -43,6 +43,16 @@ ambiguous: 4.
 
 Population B: generated 3, incomplete 1, unsupported 1, ambiguous 0.
 
+These are the historical extraction strata, not today's disjoint generation
+outcomes. With linguistic review gates, population A generates 13/25 entries
+(the ten full entries plus three optional omissions), wholly skips 12/25, and
+has 13 generated entries with warnings. All thirteen require individual fourth-role
+linguistic review; two also contain unresolved source evidence. Population B
+generates 3/5, wholly skips 2/5, and has 3 generated entries with warnings: two
+need fourth-role linguistic review and one has unresolved alternatives in all roles.
+Warning memberships overlap generated outcomes; multiple warnings on one entry
+count once. Clean extraction is not PPP/supine claim approval.
+
 The review deep-reviewed 15 population-A entries (two per stratum, covering
 every distinct outcome class) plus all 5 sanitized entries; the unreviewed
 remainder: 10 population-A entries (`rev-003` through `rev-010`, `rev-017`,

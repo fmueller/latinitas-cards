@@ -233,7 +233,7 @@ def test_preview_result_reports_representative_objects_and_structured_counts(tmp
 
     assert result.generated_count == 1
     assert result.skipped_count == 2
-    assert result.ambiguous_count == 1
+    assert result.ambiguous_count == 2
     assert result.generation.notes[0].provenance.source_path is None
     assert result.generation.notes[0].provenance.source_identity == "entry-β"
     assert any(skip.code == "unmarked_omission" and skip.status == "ambiguous" for skip in result.generation.skips)
@@ -757,7 +757,7 @@ def test_export_reports_source_entries_objects_cards_and_zero_eligible_notes_sep
     assert result.card_count == 12
     assert result.zero_card_note_count == 0
     assert result.skipped_count == 1
-    assert result.generation.generated_warning_count == 1
+    assert result.generation.generated_warning_count == 2
     assert any(skip.code == "omitted_principal_part" for skip in result.generation.skips)
     assert any(skip.code == "unmarked_omission" for skip in result.generation.skips)
 
@@ -1844,4 +1844,5 @@ def test_manifest_snapshot_and_removal_reviews_are_not_ambiguous_current_entries
     assert {review.kind for review in reviewed.manifest_reviews} == {"removed", "stale_manifest"}
     assert reviewed.source_entry_count == reviewed.generated_count == 1
     assert reviewed.skipped_count == 0
-    assert reviewed.ambiguous_count == 0
+    assert reviewed.ambiguous_count == 1
+    assert [skip.code for skip in reviewed.generation.skips] == ["linguistic_review_required"]

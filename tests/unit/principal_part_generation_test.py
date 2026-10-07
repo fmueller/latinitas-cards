@@ -82,7 +82,7 @@ def test_one_source_note_yields_one_learning_object_note_with_knowledge_and_card
     result = _generate((_record("dīcere, dīcō, dīxī, dictum", profile=profile),), profile)
 
     assert isinstance(result, LearningObjectGenerationResult)
-    assert not result.skips
+    assert [skip.code for skip in result.skips] == ["linguistic_review_required"]
     assert len(result.notes) == 1
     note = result.notes[0]
     assert note.object_key == SINGLE_LEXEME_OBJECT_KEY
@@ -162,7 +162,7 @@ def test_generated_notes_inherit_all_valid_parent_tags_additively() -> None:
 
     result = _generate(records, profile)
 
-    assert not result.skips
+    assert [skip.code for skip in result.skips] == ["linguistic_review_required"] * 3
     expected_tags_by_parent = {
         "entry-a": ("latin", "verb::irregular", "Vokabeln-Übung", "latinitas"),
         "entry-b": ("grammar", "latinitas", "latin"),
@@ -369,7 +369,7 @@ def test_manifest_identity_and_scope_are_used_for_note_identity_and_provenance()
         source_scope="scope-alpha",
     )
 
-    assert [skip.code for skip in result.skips] == ["note_type_mismatch"]
+    assert [skip.code for skip in result.skips] == ["note_type_mismatch", "linguistic_review_required"]
     assert result.notes
     assert all(note.provenance.source_identity == "manifest-17" for note in result.notes)
     assert all(note.provenance.source_scope == "scope-alpha" for note in result.notes)
@@ -520,8 +520,22 @@ def test_generated_note_knowledge_uses_role_labels_for_every_confirmed_role() ->
         "<strong>Präsens, 1. Person Singular:</strong> ferō<br>"
         "<strong>Infinitiv:</strong> ferre<br>"
         "<strong>Perfekt, 1. Person Singular:</strong> tulī<br>"
-        "<strong>Supinum:</strong> lātum <em>(unresolved source evidence; target withheld)</em>"
+        "<strong>Supinum:</strong> lātum <em>(linguistic review required; target withheld)</em>"
     )
+    assert (result.generated_count, result.skipped_count, result.generated_warning_count) == (1, 0, 1)
+    assert [skip.code for skip in result.skips] == ["linguistic_review_required"]
+    assert result.skips[0].evidence is not None
+    assert result.skips[0].evidence.candidates is not None
+    assert result.skips[0].evidence.candidates[-1] == ("lātum",)
+    assert replace(result, source_entry_count=None).skipped_count == 0
+    assert all("Linguistic review required" in card.answer for card in result.notes[0].cards if card.eligible)
+    completion_cards = [
+        card for card in result.notes[0].cards if card.eligible and card.slot.recipe == "principal_part_completion"
+    ]
+    assert len(completion_cards) == 3
+    for card in completion_cards:
+        assert "— (linguistic review required)" in card.prompt
+        assert "unresolved source evidence" not in card.prompt
 
 
 def _markup_only_profile() -> DeckProfile:

@@ -16,7 +16,7 @@ import json
 import re
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass
 from typing import Literal
 
 from .cards import render_cards, role_display_label
@@ -41,7 +41,7 @@ from .principal_parts import (
     normalize_principal_part_for_comparison,
     parse_principal_parts,
 )
-from .principal_relationships import compare_principal_parts
+from .principal_relationships import PrincipalPartComparison, compare_principal_parts
 from .profile import DeckProfile, tag_character_violation
 from .profile_setup import encode_unsafe_controls
 from .source_extraction import SourceExtraction
@@ -81,7 +81,10 @@ class LearningObjectGenerationResult:
     def skipped_count(self) -> int:
         if self.source_entry_count is not None:
             return self.source_entry_count - self.generated_count
-        return sum(skip.code not in {"omitted_principal_part", "unresolved_source_evidence"} for skip in self.skips)
+        return sum(
+            skip.code not in {"omitted_principal_part", "unresolved_source_evidence", "linguistic_review_required"}
+            for skip in self.skips
+        )
 
     @property
     def generated_warning_count(self) -> int:
@@ -252,13 +255,39 @@ def generate_learning_object_notes(
                 )
             )
 
+        comparison = compare_principal_parts(
+            parsed.value,
+            profile,
+            claim_assessments,
+            source_identity=derive_latinitas_id(
+                source_identity.value, SINGLE_LEXEME_OBJECT_KEY, source_scope=source_identity.scope
+            ),
+        )
+        review_roles = tuple(
+            role.role
+            for role in comparison.roles
+            if role.status == "withheld" and not parsed.value.by_role[role.role].unresolved
+        )
+        if review_roles:
+            skipped.append(
+                GenerationSkip(
+                    status="ambiguous",
+                    code="linguistic_review_required",
+                    message="Linguistic review required; targets withheld for: "
+                    + ", ".join(review_roles)
+                    + ". Review individual role claims; successful extraction is not linguistic approval.",
+                    source_identity=source_identity.value,
+                    source_location=record.provenance.location,
+                    evidence=parsed.value.evidence,
+                )
+            )
         note = _render_note(
             record,
             parsed.value,
             source_identity,
             profile=profile,
             metadata=metadata,
-            claim_assessments=claim_assessments,
+            comparison=comparison,
         )
         if note.latinitas_id in note_ids:
             skipped.append(
@@ -327,23 +356,12 @@ def _render_note(
     *,
     profile: DeckProfile,
     metadata: GenerationMetadata,
-    claim_assessments: Sequence[ClaimAssessment],
+    comparison: PrincipalPartComparison,
 ) -> GeneratedNote:
     meaning = _meaning(record, profile)
     meaning_text = source_html_to_text(meaning)
     tags = _combined_tags(record, profile)
-    comparison = compare_principal_parts(
-        parsed,
-        profile,
-        claim_assessments,
-        source_identity=derive_latinitas_id(
-            source_identity.value, SINGLE_LEXEME_OBJECT_KEY, source_scope=source_identity.scope
-        ),
-    )
     withheld = {role.role for role in comparison.roles if role.status == "withheld"}
-    parsed = replace(
-        parsed, parts=tuple(replace(part, unresolved=True) if part.role in withheld else part for part in parsed.parts)
-    )
     content = ManagedNoteContent(
         lemma=_escape_normalized_lines(parsed.lexical_entry),
         principal_parts=(
@@ -353,7 +371,7 @@ def _render_note(
             if parsed.evidence is not None
             else ""
         )
-        + _render_parts(parsed.parts)
+        + _render_parts(parsed.parts, withheld)
         + '<span hidden class="principal-part-review">'
         + _escape_text(
             json.dumps(asdict(comparison), ensure_ascii=False, default=lambda value: value.model_dump(mode="json"))
@@ -384,12 +402,14 @@ def _render_note(
     )
 
 
-def _render_parts(parts: Sequence[PrincipalPartValue]) -> str:
+def _render_parts(parts: Sequence[PrincipalPartValue], withheld: set[str]) -> str:
     lines = []
     for part in parts:
         value = "—" if part.is_omitted else _escape_normalized_lines(part.display or "")
         if part.unresolved:
             value += " <em>(unresolved source evidence; target withheld)</em>"
+        elif part.role in withheld:
+            value += " <em>(linguistic review required; target withheld)</em>"
         lines.append(f"<strong>{_escape_text(role_display_label(part.role))}:</strong> {value}")
     return "<br>".join(lines)
 

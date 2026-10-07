@@ -85,11 +85,12 @@ def compare_principal_parts(
         label_withheld = any(item.claim.kind == "label" and item.status == "withheld" for item in bound)
         fourth_unreviewed = role in FOURTH_ROLES and accepted.get("label") != {role}
         blocked = part.unresolved or conflict or label_withheld or fourth_unreviewed
-        reason = (
-            "Zurückgehalten; Alternativen, Rollenprofil und einzelne Belege ausdrücklich prüfen."
-            if blocked
-            else "Quellform im bestätigten Rollenprofil; Analyse benötigt gesonderte Prüfung."
-        )
+        if part.unresolved:
+            reason = "Unresolved source evidence; target withheld. Alternativen und Hinweise prüfen."
+        elif blocked:
+            reason = "Linguistic review required; target withheld. Einzelne Rollenbelege ausdrücklich prüfen."
+        else:
+            reason = "Quellform im bestätigten Rollenprofil; Analyse benötigt gesonderte Prüfung."
         segmentation = accepted.get("segmentation", set())
         explanation = accepted.get("explanation", set())
         withheld_kinds = {item.claim.kind for item in bound if item.status == "withheld"}

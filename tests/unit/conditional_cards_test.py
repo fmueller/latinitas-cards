@@ -339,7 +339,8 @@ def test_card_prompts_render_the_series_with_the_target_blanked() -> None:
     assert "ferō" in completion.prompt
     assert "ferre" in completion.prompt
     assert "lātum" not in completion.prompt
-    assert "unresolved source evidence" in completion.prompt
+    assert "linguistic review required" in completion.prompt
+    assert "unresolved source evidence" not in completion.prompt
     assert "tulī" not in completion.prompt
     assert "____" in completion.prompt
     assert completion.answer.startswith('tulī<section class="morphology-v1')

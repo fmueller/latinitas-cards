@@ -141,7 +141,7 @@ def _review(
     for skip in result.skips:
         # Keep the historical extraction strata independent of the new,
         # overlapping claim/selection warnings (tested in T-050 regressions).
-        if skip.code == "unresolved_source_evidence":
+        if skip.code in {"unresolved_source_evidence", "linguistic_review_required"}:
             continue
         identity = skip.source_identity or ""
         skips_by_id.setdefault(identity, ())
@@ -198,6 +198,25 @@ def test_corpus_population_matches_the_recorded_review_counts() -> None:
     for category, _ in RECORDED_OUTCOMES.values():
         counts[category] += 1
     assert counts == RECORDED_POPULATION_COUNTS
+
+
+def test_current_generation_counts_keep_linguistic_review_separate_from_extraction() -> None:
+    corpus = generate_learning_object_notes(_corpus_records(), _corpus_profile(), source_scope="review")
+    sanitized = generate_learning_object_notes(
+        read_source_records(SANITIZED_FIXTURE), _sanitized_profile(), source_scope="review"
+    )
+    # Hand counted: ten full and three optional-omission entries generate;
+    # all thirteen have an unreviewed fourth label, even where other roles are unresolved.
+    assert (corpus.source_entry_count, corpus.generated_count, corpus.skipped_count) == (25, 13, 12)
+    assert corpus.generated_warning_count == 13
+    assert sum(skip.code == "linguistic_review_required" for skip in corpus.skips) == 13
+    assert sum(skip.code == "unresolved_source_evidence" for skip in corpus.skips) == 2
+    # Two single-candidate fourth roles need linguistic review; the third note
+    # has unresolved alternatives in all roles, not clean extraction.
+    assert (sanitized.source_entry_count, sanitized.generated_count, sanitized.skipped_count) == (5, 3, 2)
+    assert sanitized.generated_warning_count == 3
+    assert sum(skip.code == "linguistic_review_required" for skip in sanitized.skips) == 2
+    assert sum(skip.code == "unresolved_source_evidence" for skip in sanitized.skips) == 1
 
 
 def test_stratified_sample_selection_is_deterministic_and_recorded() -> None:
@@ -304,7 +323,7 @@ def test_markup_only_sample_adjudications_keep_notes_and_omit_blank_answers() ->
             if line.split("</strong>")[-1].strip() != "—"
         ]
         assert eligible_answers[:2] == ["amāre", "amō"]
-        assert eligible_answers[2].startswith("amātum <em>(unresolved source evidence; target withheld)</em>")
+        assert eligible_answers[2].startswith("amātum <em>(linguistic review required; target withheld)</em>")
 
 
 def test_unsupported_and_ambiguous_sample_adjudications_match_the_matrix() -> None:

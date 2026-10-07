@@ -168,6 +168,7 @@ def card_is_eligible(
     parsed: ParsedPrincipalParts,
     *,
     selected_recipes: Sequence[str],
+    withheld_roles: Sequence[str] = (),
 ) -> bool:
     """Evaluate one card's eligibility from already-normalized semantic values.
 
@@ -180,12 +181,15 @@ def card_is_eligible(
 
     if recipe not in selected_recipes or slot_for_recipe_role(recipe, part.role) is None:
         return False
-    if part.is_omitted or part.unresolved or not (part.display or "").strip():
+    if part.is_omitted or part.unresolved or part.role in withheld_roles or not (part.display or "").strip():
         return False
     if recipe == RECOGNITION_RECIPE:
         return bool(parsed.lexical_entry.strip())
     if recipe == COMPLETION_RECIPE:
-        return any(other is not part and not other.is_omitted and not other.unresolved for other in parsed.parts)
+        return any(
+            other is not part and not other.is_omitted and not other.unresolved and other.role not in withheld_roles
+            for other in parsed.parts
+        )
     return False
 
 
@@ -206,15 +210,18 @@ def render_cards(
 
     gloss = _escape_text(meaning) if meaning.strip() else ""
     settings = morphology or MorphologySettings()
+    withheld = tuple(role.role for role in comparison.roles if role.status == "withheld") if comparison else ()
     cards: list[RenderedCard] = []
     for slot in TEMPLATE_REGISTRY:
         part = parsed.by_role.get(slot.role)
-        if part is None or not card_is_eligible(slot.recipe, part, parsed, selected_recipes=selected_recipes):
+        if part is None or not card_is_eligible(
+            slot.recipe, part, parsed, selected_recipes=selected_recipes, withheld_roles=withheld
+        ):
             cards.append(RenderedCard(slot=slot, eligible=False, guard="", prompt="", answer=""))
             continue
         target = _escape_text(part.display or "")
         if slot.recipe == COMPLETION_RECIPE:
-            prompt = _completion_prompt(parsed, part, gloss)
+            prompt = _completion_prompt(parsed, part, gloss, withheld)
             answer = target
         else:
             prompt = _recognition_prompt(parsed, part, gloss)
@@ -285,12 +292,16 @@ def _render_comparison(
     )
 
 
-def _completion_prompt(parsed: ParsedPrincipalParts, target: PrincipalPartValue, gloss: str) -> str:
+def _completion_prompt(
+    parsed: ParsedPrincipalParts, target: PrincipalPartValue, gloss: str, withheld_roles: Sequence[str]
+) -> str:
     lines = []
     for part in parsed.parts:
         value = _BLANK_MARKER if part is target else ("—" if part.is_omitted else _escape_text(part.display or ""))
         if part.unresolved:
             value = "— (unresolved source evidence)"
+        elif part.role in withheld_roles:
+            value = "— (linguistic review required)"
         lines.append(f"<strong>{_escape_text(role_display_label(part.role))}:</strong> {value}")
     if gloss:
         lines.append(gloss)

@@ -230,6 +230,9 @@ def test_preview_export_review_handoff_rechecks_scope_evidence_and_conflicts(tmp
 
     generation = reviewed.generation
     assert len(generation.notes[0].card_keys) == 4
+    assert (generation.generated_count, generation.skipped_count, generation.generated_warning_count) == (1, 0, 0)
+    assert not generation.skips
+    assert "linguistic review required" not in generation.notes[0].content.principal_parts
     payload = generation.notes[0].content.principal_parts.split('class="principal-part-review">')[1].split("</span>")[0]
     evidence = json.loads(unescape(payload))
     assert evidence["roles"][3]["claims"][0]["claim"]["evidence"][0]["reference"] == "explicit supine context"
@@ -238,6 +241,7 @@ def test_preview_export_review_handoff_rechecks_scope_evidence_and_conflicts(tmp
         read_source_records(source, source_id_field="ID"), profile, source_scope="other", claim_assessments=(accepted,)
     )
     assert len(other_scope.notes[0].card_keys) == 3
+    assert [skip.code for skip in other_scope.skips] == ["linguistic_review_required"]
     conflict = replace(label, value="perfect_passive_participle")
     conflict_review = assess_claim(
         conflict, review_claim(conflict, status="accepted", reviewer="fixture", reason="Conflict")

@@ -199,7 +199,10 @@ def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_expo
     assert "Objects: 3" in preview.stdout
     assert "Cards: 12" in preview.stdout
     assert "Skipped: 2" in preview.stdout
-    assert "Ambiguous: 1" in preview.stdout
+    assert "Ambiguous: 3" in preview.stdout
+    assert "Generated entries with warnings: 3 (overlaps generated)" in preview.stdout
+    assert "linguistic_review_required" in preview.stdout
+    assert "unresolved_source_evidence" in preview.stdout
     assert "Zero-eligible notes: 1" in preview.stdout
     assert "Partizip Perfekt Passiv (PPP)" in preview.stdout
     assert "Output:" not in preview.stdout

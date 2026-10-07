@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-07T20:18:30Z"
+updated_at: "2026-10-07T20:38:13Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-071-record-explicit-decisions-for-unselected-tag-conflicts at 2026-10-07T20:18:30Z
+last_verification_result: pass for T-072-label-unreviewed-fourth-role-as-linguistic-review at 2026-10-07T20:38:13Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-071-record-explicit-decisions-for-unselected-tag-conflicts at 2026-10-07T20:18:30Z
+- pass for T-072-label-unreviewed-fourth-role-as-linguistic-review at 2026-10-07T20:38:13Z
 
 ## Next Action
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 16
+- todo: 15
 - in_progress: 0
-- completed: 65
+- completed: 66
 - blocked: 0
 - cancelled: 0

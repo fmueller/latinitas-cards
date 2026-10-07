@@ -1,11 +1,11 @@
 ---
 id: T-072-label-unreviewed-fourth-role-as-linguistic-review
 title: Label unreviewed fourth-role withholding as linguistic review
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.2.0.md#evidence-led-source-extraction
 dependencies: []
-updated_at: "2026-10-06T20:16:22Z"
+updated_at: "2026-10-07T20:38:13Z"
 ---
 
 # T-072-label-unreviewed-fourth-role-as-linguistic-review Label unreviewed fourth-role withholding as linguistic review
@@ -27,8 +27,31 @@ review output. Release-blocking for T-068.
 
 ## Verification Notes
 
-- Pending.
+- Verification run 2026-10-07T20:38:13Z: pinned v0.2.0; exact ruff/mypy/pytest
+  chain passed (844 tests, 87 mypy files) after review and dispositions.
+- RED/GREEN: asymmetric ferō/ferre/tulī/lātum answer wording failed before the
+  fix. Independent Python finding T072-PY-01: "Completion-card prompts describe
+  a cleanly extracted, linguistically withheld role as unresolved source evidence."
+  Fresh candidate validation confirmed it. A sibling prompt assertion reproduced
+  the failure; the card-rendering source of truth now separates linguistic
+  withholding from parser uncertainty, including target/context eligibility.
+- Dedicated code-simplifier reused the withheld set and simplified reason
+  branches; 151 focused tests passed. Separate General/Python review lanes loaded
+  mapped reviewer guidance. General: "No concrete task-relevant findings."
+  Fresh disposition verification: "T072-PY-01 — RESOLVED" and "No concrete
+  task-relevant findings." One cycle; no deferred or rejected findings.
+- Literal generation counts: synthetic 13/25 generated, 12/25 wholly skipped,
+  13 generated warnings; sanitized 3/5 generated, 2/5 skipped, 3 warnings (two
+  linguistic, one unresolved extraction). Historical extraction strata retained.
+- Inspected 2x Chromium reference-template/CSS renders for review-required,
+  unresolved alternatives, and accepted fourth labels: four comparison rows,
+  no clipping/overflow, distinct prompt/answer/context wording. Accepted labels
+  still withhold unreviewed explanations. Browser evidence is not native Anki
+  compatibility evidence; captures are linked in the execution report.
+- No identity, recipe, slot, individual-claim binding, or fourth-role gate
+  changes. No follow-up task or second implementation cycle.
 
 ## Implementation Notes
 
-
+- 2026-10-07T20:38:13Z: verification pass
+- 2026-10-07T20:38:13Z: Implemented distinct linguistic-review warning and rendered labels; independent finding fixed, final 844-test chain and browser reference checks pass.
