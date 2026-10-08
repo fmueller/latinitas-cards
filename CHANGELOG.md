@@ -25,6 +25,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `managed plan` flags previously adopted notes missing from a complete destination
+  as conflicts requiring review, rather than proposing to create them again.
 - `setup --reconfigure` preserves hand-edited morphology settings; explicit morphology
   sections without a version now fail with instructions instead of assuming one.
 - `managed approve` can select reviewed keep-destination decisions and tag-ownership

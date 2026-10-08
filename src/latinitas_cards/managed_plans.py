@@ -129,6 +129,10 @@ def compose_plan(
         }
         entries.append(entry)
         if destination is None:
+            if baseline is not None and identity in baseline["anchors"]:
+                reason = "previously anchored note absent; destination reconciliation required"
+                entry.update(classification="conflict", reasons=[reason], blocked=[reason])
+                continue
             entry.update(classification="create", reasons=["absent in complete bound destination"])
             entry["operations"] = [
                 {

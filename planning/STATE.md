@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-08T00:34:53Z"
+updated_at: "2026-10-08T00:45:12Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-078-close-managed-lifecycle-classification-test-gaps: Close managed lifecycle and classification test gaps'
-last_verification_result: pass for T-077-preserve-morphology-across-setup-reconfigure at 2026-10-08T00:34:53Z
+next_action: 'Start task T-079-add-extraction-parsing-fixtures-and-review-counts: Add extraction and parsing acceptance fixtures and preview review counts'
+last_verification_result: pass for T-078-close-managed-lifecycle-classification-test-gaps at 2026-10-08T00:45:12Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-077-preserve-morphology-across-setup-reconfigure at 2026-10-08T00:34:53Z
+- pass for T-078-close-managed-lifecycle-classification-test-gaps at 2026-10-08T00:45:12Z
 
 ## Next Action
 
-- Start task T-078-close-managed-lifecycle-classification-test-gaps: Close managed lifecycle and classification test gaps
+- Start task T-079-add-extraction-parsing-fixtures-and-review-counts: Add extraction and parsing acceptance fixtures and preview review counts
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 10
+- todo: 9
 - in_progress: 0
-- completed: 72
+- completed: 73
 - blocked: 0
 - cancelled: 0

@@ -11,7 +11,7 @@ from card_lifecycle_test import capture, fixture, generated
 from typer.testing import CliRunner
 
 from latinitas_cards.cli import app
-from latinitas_cards.destination_state import DestinationSnapshot, ReconciliationRequired, _digest, _encoded
+from latinitas_cards.destination_state import DestinationSnapshot, ReconciliationRequired, _digest, _encoded, adopt
 from latinitas_cards.managed_plans import approve_plan, compose_plan, verify_approval
 
 
@@ -74,6 +74,75 @@ def test_noop_and_convergence_have_no_writes() -> None:
     snapshot = capture(data)
     proposal = request(snapshot, meaning="convergent", lemma="amo")
     assert compose_plan(snapshot, state, [proposal], {})["notes"][0]["classification"] == "unchanged"
+
+
+def test_anchored_absence_is_conflict_but_never_anchored_absence_is_create() -> None:
+    snapshot, state = fixture(generated())
+    proposal = request(snapshot)
+    data = snapshot.payload
+    data["notes"] = []
+    data["expected_count"] = 0
+    empty = capture(data)
+    before = deepcopy(state)
+    entry = compose_plan(empty, state, [proposal], {})["notes"][0]
+    assert entry["classification"] == "conflict"
+    assert entry["reasons"] == ["previously anchored note absent; destination reconciliation required"]
+    assert entry["blocked"] == entry["reasons"]
+    assert entry["operations"] == entry["card_effects"] == []
+    assert state == before
+    never_anchored = deepcopy(state)
+    never_anchored["anchors"] = {}
+    assert compose_plan(empty, never_anchored, [proposal], {})["notes"][0]["classification"] == "create"
+    data["complete"] = False
+    with pytest.raises(ReconciliationRequired, match="incomplete"):
+        capture(data)
+
+
+def test_retire_keeps_underlying_field_and_tag_conflicts_visible() -> None:
+    snapshot, state = fixture(generated())
+    identity = generated().latinitas_id
+    state["anchors"][identity]["configured_tags"] = ["managed"]
+    state["anchors"][identity]["tags"] = ["managed"]
+    data = snapshot.payload
+    data["notes"][0]["fields"]["Meaning"] = "user meaning"
+    snapshot = capture(data)
+    proposal = request(snapshot)
+    proposal.update(retire=True, contributions={"configured_tags": ["managed"]})
+    entry = compose_plan(snapshot, state, [proposal], {})["notes"][0]
+    assert entry["classification"] == "retire"
+    assert "field:Meaning" in entry["reasons"]
+    assert "tag:managed" in entry["reasons"]
+    assert all(not operation["supported"] for operation in entry["operations"])
+
+
+def test_card_reactivation_is_inspectable_but_refused_at_approval() -> None:
+    old = generated()
+    snapshot, state = fixture(old)
+    data = snapshot.payload
+    row = data["notes"][0]["cards"]["rows"][1]
+    row.update(
+        suspended=True,
+        retirement={
+            "approval": "retire-review",
+            "pre_suspended": False,
+            "tool_suspended": True,
+            "observed": snapshot.reference,
+        },
+    )
+    snapshot = capture(data)
+    state = adopt(snapshot, {old.latinitas_id: state["anchors"][old.latinitas_id]}, "review")
+    before = deepcopy(state)
+    entry = compose_plan(snapshot, state, [request(snapshot, meaning="old", lemma="amo")], {})
+    note = entry["notes"][0]
+    effect = note["card_effects"][1]
+    assert (effect["effect"], effect["card_id"], effect["unsuspend"]) == ("reactivate", "card-love-7", True)
+    operation = next(op for op in note["operations"] if op["kind"] == "reactivate")
+    assert operation["id"] == f"{old.latinitas_id}/card/principal_part_recognition:perfect_1s"
+    assert not operation["supported"]
+    with pytest.raises(ReconciliationRequired, match="unsupported"):
+        approve_plan(entry, [operation["id"]], "review")
+    assert state == before
+    assert snapshot.payload == data
 
 
 def test_missing_baseline_and_create_retire_are_inspectable_not_applicable() -> None:

@@ -227,6 +227,67 @@ def test_reactivation_preserves_identity_and_only_reverses_known_tool_suspension
         assert result["blocked"]
 
 
+@pytest.mark.parametrize(
+    "pre,suspended,reason",
+    [
+        (True, True, "unknown/conflicting suspension ownership"),
+        (False, False, "changed tool suspension requires review"),
+    ],
+)
+def test_reactivation_blocks_conflicting_or_changed_tool_suspension(pre: bool, suspended: bool, reason: str) -> None:
+    old = generated()
+    snapshot, state = fixture(old, generated(sense="other"))
+    data = snapshot.payload
+    destination = next(note for note in data["notes"] if note["identity"] == old.latinitas_id)
+    row = destination["cards"]["rows"][1]
+    row.update(
+        suspended=suspended,
+        retirement={
+            "approval": "retire-review",
+            "pre_suspended": pre,
+            "tool_suspended": True,
+            "observed": snapshot.reference,
+        },
+    )
+    snapshot = capture(data)
+    state = adopt(snapshot, {n: a for n, a in state["anchors"].items()}, "review")
+    before = deepcopy(state)
+    result = plan_card_lifecycle(snapshot, state, old.latinitas_id, old, approvals={PERFECT: "reactivate-review"})
+    assert result["blocked"] == [f"{PERFECT}: {reason}"]
+    effect = result["effects"][1]
+    assert (effect["effect"], effect["card_id"], effect["unsuspend"]) == ("reactivate", "card-love-7", False)
+    assert result["effects"][0]["card_id"] == "card-love-5"
+    assert result["effects"][0]["effect"] == "retain"
+    assert "target" not in result
+    assert state == before
+    assert snapshot.payload == data
+
+
+def test_retiring_user_suspended_card_preserves_siblings_and_history() -> None:
+    old = generated()
+    snapshot, state = fixture(old, generated(sense="other"))
+    data = snapshot.payload
+    destination = next(note for note in data["notes"] if note["identity"] == old.latinitas_id)
+    destination["cards"]["rows"][1]["suspended"] = True
+    snapshot = capture(data)
+    state = adopt(snapshot, {n: a for n, a in state["anchors"].items()}, "review")
+    before = deepcopy(state)
+    result = plan_card_lifecycle(
+        snapshot, state, old.latinitas_id, generated(perfect=None), approvals={PERFECT: "review"}
+    )
+    effect = result["effects"][1]
+    assert (effect["effect"], effect["card_id"], effect["pre_suspended"]) == ("retire", "card-love-7", True)
+    assert effect["suspension_owner"] == "user_or_unknown"
+    assert effect["unsuspend"] is False
+    assert result["effects"][0]["card_id"] == "card-love-5"
+    assert result["effects"][0]["effect"] == "retain"
+    assert result["lifecycle_tags"] == []
+    assert result["unsupported"] == [PERFECT]
+    assert "target" not in result
+    assert state == before
+    assert snapshot.payload == data
+
+
 def test_two_senses_equal_lemma_never_merge_and_mutable_content_keeps_ids() -> None:
     first, second = generated(), generated(sense="like")
     snapshot, state = fixture(first, second)
