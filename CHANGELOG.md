@@ -25,6 +25,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `setup --reconfigure` preserves hand-edited morphology settings; explicit morphology
+  sections without a version now fail with instructions instead of assuming one.
 - `managed approve` can select reviewed keep-destination decisions and tag-ownership
   changes even when the exported text and tags stay unchanged.
 - Principal-part previews and answers distinguish linguistic review from unresolved

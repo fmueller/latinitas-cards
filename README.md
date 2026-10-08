@@ -211,6 +211,9 @@ Set the look of principal-part answers in the saved profile's `morphology` secti
 
 `theme` is `muted` or `monochrome`; `appearance` is `light` or `dark` (fixed, not
 following device night mode); `comparison` is `static` (default) or `disclosure`.
+`setup --reconfigure` preserves these saved settings while proposing source mappings
+again. An explicit `morphology` object must include `"version": 1`; omitting the whole
+section uses muted/light/static defaults, including when upgrading a schema-1 profile.
 Paste the reference CSS into your note type by hand; see
 [reference note type](docs/reference-note-type.md#morphology-presentation-contract).
 

@@ -352,6 +352,13 @@ class DeckProfile(_ProfileModel):
     selected_recipes: tuple[str, ...] = Field(default=DEFAULT_SELECTED_RECIPES, min_length=1)
     morphology: MorphologySettings = Field(default_factory=MorphologySettings)
 
+    @field_validator("morphology", mode="before")
+    @classmethod
+    def _explicit_morphology_version(cls, value: Any) -> Any:
+        if isinstance(value, Mapping) and "version" not in value:
+            raise ValueError("morphology.version is required; add version: 1 for supported presentation settings")
+        return value
+
     @model_validator(mode="before")
     @classmethod
     def _upgrade_legacy(cls, value: Any) -> Any:

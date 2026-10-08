@@ -825,3 +825,83 @@ def test_nfd_decomposed_values_still_rank_by_content(tmp_path: Path) -> None:
 
     assert proposal.profile.fields.lexical_entry_field == "Latein"
     assert proposal.field_choices_required == ()
+
+
+@pytest.mark.parametrize("confirm", [False, True])
+def test_reconfigure_preserves_morphology_and_applies_explicit_corrections(tmp_path: Path, confirm: bool) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_csv(source)
+    original = propose_profile(source).profile.apply_overrides(
+        {"morphology": {"theme": "monochrome", "appearance": "dark", "comparison": "disclosure"}}
+    )
+    original.save(profile_path)
+    before = profile_path.read_bytes()
+    source_before = source.read_bytes()
+    arguments = [
+        "--input",
+        str(source),
+        "--profile",
+        str(profile_path),
+        "--reconfigure",
+        "--non-interactive",
+        "--json",
+        "--target-deck",
+        "Reviewed Latin",
+    ]
+    if confirm:
+        arguments.append("--confirm")
+    result = _command(CliRunner(), arguments)
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["status"] == ("saved" if confirm else "cancelled")
+    loaded = DeckProfile.from_json(profile_path.read_text(encoding="utf-8"))
+    assert loaded.morphology == original.morphology
+    assert DeckProfile.from_json(loaded.to_json()) == loaded
+    assert source.read_bytes() == source_before
+    if confirm:
+        assert payload["effective_profile"]["morphology"] == {
+            "version": 1,
+            "theme": "monochrome",
+            "appearance": "dark",
+            "comparison": "disclosure",
+        }
+        assert loaded.target_deck == "Reviewed Latin"
+        assert loaded.fields == original.fields
+        reused = _command(
+            CliRunner(),
+            [
+                "--input",
+                str(source),
+                "--profile",
+                str(profile_path),
+                "--non-interactive",
+                "--json",
+            ],
+        )
+        assert reused.exit_code == 0, reused.output
+        assert json.loads(reused.stdout)["effective_profile"] == loaded.to_machine_readable()
+    else:
+        assert profile_path.read_bytes() == before
+
+
+@pytest.mark.parametrize("reconfigure", [False, True])
+def test_setup_rejects_versionless_morphology_without_overwriting_profile(tmp_path: Path, reconfigure: bool) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_csv(source)
+    data = propose_profile(source).profile.to_machine_readable()
+    data["morphology"] = {"theme": "monochrome"}
+    profile_path.write_text(json.dumps(data), encoding="utf-8")
+    before = profile_path.read_bytes()
+    arguments = ["--input", str(source), "--profile", str(profile_path), "--non-interactive", "--confirm"]
+    if reconfigure:
+        arguments.append("--reconfigure")
+
+    result = _command(CliRunner(), arguments)
+
+    assert result.exit_code == 2, result.output
+    assert "morphology" in result.output and "version" in result.output
+    assert "required" in result.output
+    assert profile_path.read_bytes() == before

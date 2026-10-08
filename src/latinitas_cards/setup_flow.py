@@ -158,6 +158,9 @@ def setup(
 
     try:
         proposal = propose_profile_from_inspection(inspection, input, note_type=note_type)
+        if profile.exists():
+            saved_profile = load_profile(profile)
+            proposal = apply_profile_overrides(proposal, {"morphology": saved_profile.morphology.model_dump()})
         proposal = apply_profile_overrides(proposal, explicit_overrides)
         if not json_output:
             _print_proposal(proposal, status="proposal")
@@ -174,7 +177,7 @@ def setup(
         issues = profile_source_issues(proposal.profile, inspection)
         if issues:
             raise ProfileSetupError("Profile is not compatible with the inspected source: " + "; ".join(issues))
-    except (CanonicalSourceError, ProfileSetupError, ProfileValidationError, ValueError) as error:
+    except (OSError, CanonicalSourceError, ProfileSetupError, ProfileValidationError, ValueError) as error:
         _error(str(error), json_output)
         raise typer.Exit(code=2) from error
 

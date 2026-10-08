@@ -42,6 +42,29 @@ def test_versioned_theme_roundtrip_overrides_and_legacy() -> None:
         DeckProfile.from_mapping(legacy)
 
 
+@pytest.mark.parametrize("morphology", [{}, {"theme": "monochrome"}])
+def test_explicit_profile_morphology_requires_version(morphology: dict[str, object]) -> None:
+    data = profile().to_machine_readable()
+    data["morphology"] = morphology
+    with pytest.raises(ProfileValidationError, match="morphology.*version.*required"):
+        DeckProfile.from_mapping(data)
+
+
+def test_absent_morphology_defaults_and_versioned_partial_settings_roundtrip() -> None:
+    data = profile().to_machine_readable()
+    data.pop("morphology")
+    assert DeckProfile.from_mapping(data).morphology == profile().morphology
+    data["morphology"] = {"version": 1, "theme": "monochrome"}
+    loaded = DeckProfile.from_mapping(data)
+    assert loaded.to_machine_readable()["morphology"] == {
+        "version": 1,
+        "theme": "monochrome",
+        "appearance": "light",
+        "comparison": "static",
+    }
+    assert DeckProfile.from_json(loaded.to_json()) == loaded
+
+
 @pytest.mark.parametrize("override", [{"version": 99}, {"theme": "neon"}, {"appearance": "auto"}, {"comparison": "js"}])
 def test_unknown_presentation_rejected(override: dict[str, object]) -> None:
     with pytest.raises(ProfileValidationError):
