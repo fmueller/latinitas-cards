@@ -19,6 +19,7 @@ dependencies:
     - T-080-harden-managed-handoff-attestation-and-wording
     - T-081-make-form-parsing-docs-usable
     - T-082-persist-explicitly-selected-no-write
+    - T-083-restore-native-managed-absence-verification
 updated_at: "2026-10-06T20:02:15Z"
 ---
 

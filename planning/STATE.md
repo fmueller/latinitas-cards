@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-08T01:49:03Z"
+updated_at: "2026-10-08T01:53:25Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-068-publish-v0-2-0: Publish v0.2.0'
+next_action: 'Start task T-083-restore-native-managed-absence-verification: Restore native managed verification after anchored-absence classification'
 last_verification_result: pass for T-081-make-form-parsing-docs-usable at 2026-10-08T01:25:54Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Start task T-068-publish-v0-2-0: Publish v0.2.0
+- Start task T-083-restore-native-managed-absence-verification: Restore native managed verification after anchored-absence classification
 
 ## Relevant Artifacts
 
