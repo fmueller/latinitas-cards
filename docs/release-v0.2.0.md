@@ -112,3 +112,35 @@ urllib3 is separately updated and those paths verified. Optional-resource
 network behavior and exploit conditions were assessed from authoritative source,
 not tested by installing CLTK or contacting a malicious server. Remediation
 remains follow-up; this release does not claim the repository is vulnerability-free.
+
+### Post-publication advisory addendum — 2026-10-08
+
+The separate publication-evidence push revealed newly created alert
+[#144](https://github.com/fmueller/latinitas-cards/security/dependabot/144),
+**GHSA-27vj-qcqg-25rc**, high severity: fsspec reference-filesystem template
+injection can execute Python code when opening attacker-controlled
+Kerchunk/reference JSON. GitHub created the alert at **20:39:17Z**, after the
+pre-tag assessment above and before publication at 20:40:39Z; it was first
+observed during the later evidence push. The current total is **four open alerts:
+three high, one moderate**, not only the earlier three urllib3 alerts.
+The published tag is unchanged; this addendum and release-note disclosure are
+separate from its immutable contents.
+
+Locked fsspec 2026.2.0 is within the affected range `>=0.9.0,<2026.6.0`;
+the advisory lists 2026.6.0 as patched. Fresh locked exports exclude fsspec
+from the default environment and include it in both annotation extras, through
+their model/dependency stack. No version was changed or alert dismissed.
+
+The vulnerable
+[ReferenceFileSystem parser](https://github.com/fsspec/filesystem_spec/blob/2026.2.0/fsspec/implementations/reference.py#L1005-L1087)
+renders reference-document templates with unsandboxed Jinja. Source inspection
+found no reference-filesystem construction in this application's annotation
+path or the examined CLTK/Stanza model initialization/download path. Stanza's
+[checkpoint loader](https://github.com/stanfordnlp/stanza/blob/v1.14.0/stanza/models/common/trainer.py#L8-L20)
+uses local `torch.load(..., weights_only=True)`, not a reference-JSON parser.
+Application CSV entry points use local `Path` inputs; there is no exposed
+Kerchunk/reference-JSON workflow. This is a bounded source assessment, not
+proof that every possible consumer in an annotation environment is safe, and
+no exploit was executed. Do not open untrusted Kerchunk/reference documents
+with the affected library. Optional-dependency remediation remains follow-up;
+default offline release workflows still do not install either affected library.

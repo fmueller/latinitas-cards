@@ -20,7 +20,7 @@ dependencies:
     - T-081-make-form-parsing-docs-usable
     - T-082-persist-explicitly-selected-no-write
     - T-083-restore-native-managed-absence-verification
-updated_at: "2026-10-08T20:42:28Z"
+updated_at: "2026-10-08T20:52:00Z"
 ---
 
 # T-068-publish-v0-2-0 Publish v0.2.0
@@ -125,10 +125,26 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
   The 17-case retest therefore binds the final tagged application; no new GUI,
   Mobile or representative-deck test is claimed. Prior evidence and narrow waiver
   remain unchanged, with exact limits in docs/release-v0.2.0.md.
-- Current advisory assessment remains three open optional urllib3 alerts,
+- The pre-tag advisory assessment found three open optional urllib3 alerts,
   two high and one moderate, patched by 2.8.0 but still locked at 2.7.0.
   Default offline workflows exclude it; optional streaming resource downloads
   reach affected paths conditionally. Exposure is documented, not dismissed.
+- The evidence push then surfaced new fsspec alert #144, GHSA-27vj-qcqg-25rc,
+  high severity, created at 20:39:17Z. Current total is four alerts: three high,
+  one moderate. Locked fsspec 2026.2.0 is affected, patched at 2026.6.0; fresh
+  exports show it absent by default, present in both annotation extras. Inspected
+  local Path CSV inputs and annotation call path; authoritative dependency-source
+  assessment found no reference-filesystem construction in examined CLTK/Stanza
+  model path. Vulnerable Kerchunk/reference-JSON parsing is not a supported app
+  workflow; other consumers in that optional environment remain exposed.
+  No exploit or universal safety claim. Separate readiness addendum and release
+  notes disclose this late discovery without rewriting the immutable tag.
+- Addendum workflow: shell content assertion failed before disclosure and passed
+  after. Dedicated code-simplifier Task made no changes. Parallel independent
+  General/Security code-reviewer Tasks and fresh candidate-validation Task each
+  returned "No concrete task-relevant findings." No candidates or deferrals.
+  Final local gates and fresh disposition verification precede the separate
+  advisory evidence commit; no application, dependency or tagged content changes.
 
 ## Implementation Notes
 
@@ -140,3 +156,4 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
 - 2026-10-08T20:37:32Z: verification pass
 - 2026-10-08T20:42:28Z: verification pass
 - 2026-10-08T20:42:28Z: Published immutable v0.2.0 GitHub release/tag; fresh installation and exact-release CI pass. Evidence recorded separately; optional annotation advisories remain documented and unresolved.
+- 2026-10-08T20:52:00Z: verification pass
