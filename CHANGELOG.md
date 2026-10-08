@@ -27,6 +27,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `managed` rejects unsafe active controls such as NUL before CSV handoff and
+  reports backup/freshness attestations and the manual import boundary explicitly.
 - `managed plan` flags previously adopted notes missing from a complete destination
   as conflicts requiring review, rather than proposing to create them again.
 - `setup --reconfigure` preserves hand-edited morphology settings; explicit morphology

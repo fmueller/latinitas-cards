@@ -40,9 +40,17 @@ def application_report(state: dict[str, Any], plan_id: str) -> dict[str, Any]:
         "unresolved": [operation for operation, status in statuses.items() if status == "unresolved"],
         "emission": plan["emission"],
         "backup": plan["backup"],
-        "native_safety": "unverified; T-061 gate required",
+        "backup_assurance": (
+            "Recoverability is operator-attested; a nonempty file and its hash are not proof of native recoverability."
+        ),
+        "native_safety": (
+            "Supported offline CSV emission, manual native import, then observed-result reconciliation; "
+            "no automated collection apply or unconditional native safety certification. "
+            "Follow the verified client/version/settings checklist."
+        ),
         "interval": (
-            "Fresh snapshot and no intervening edits through GUI import required; "
+            "Freshness and no edits/reviews/sync on any device through import and observation are operator-attested; "
+            "no snapshot age bound or collection lock is enforced. "
             "unknown interval requires reconciliation/replan."
         ),
     }

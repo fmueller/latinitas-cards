@@ -116,7 +116,12 @@ def emit(
     state: Annotated[Path, typer.Option(help="Atomic applied-baseline journal.")],
     output: Annotated[Path, typer.Option(help="New CSV artifact; never proof of import.")],
 ) -> None:
-    """Revalidate JSON handoff with fresh snapshot, selected approval and backup."""
+    """Emit offline CSV for manual native import, then observe the result.
+
+    Backup recoverability, freshness and no edits/reviews/sync through observation
+    are operator attestations. A nonempty backup/hash is not restoration proof;
+    no snapshot age bound or collection lock is enforced.
+    """
     try:
         data = _load(request)
         snapshot = read_snapshot(data["snapshot"], BoundDestination(**_object(data["binding"])))

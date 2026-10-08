@@ -78,6 +78,21 @@ capture timestamp proves freshness or original collection identity. If either as
 is false or uncertain, do not pass the flags; recapture/replan instead. No TTL makes a
 stale backup safe.
 
+For `managed emit`, the backup prerequisite is **operator-attested recoverability**:
+the command checks for a nonempty file, prevents journal/output aliases, and records
+its SHA-256 plus your recovery instructions. It does not test restoration, validate
+the file as a native backup, or prove that schedules/history/settings are recoverable.
+Keep a real full backup and verify your recovery procedure independently. Snapshot
+`fresh: true` and interval confirmations are assertions, not age-bound enforcement.
+Closed-backup capture's boundary checks do not lock the original collection.
+
+Managed field values reject active C0/C1 controls (including NUL, ESC, the native
+field separator U+001F, and DEL), except tab, CR and LF. Supported multiline and
+non-ASCII text is retained exactly in the offline CSV/journal; this is not a claim
+that a native importer never normalizes text. Terminal JSON escaping is a separate
+presentation safeguard, not CSV sanitization. Personal Notes are outside managed
+validation/writes and are never sanitized or mutated by this policy.
+
 Output is local sensitive evidence: `export_options.tables` retains every column of
 `col`, `config`, notes, cards, revlog, notetypes, fields, templates, decks and deck_config;
 binary configs are hex encoded without dropping settings. It includes raw personal

@@ -220,12 +220,10 @@ def test_cli_review_and_explicit_approval(tmp_path: Path) -> None:
 
 
 def test_cli_unicode_review_is_escaped_without_changing_canonical_data(tmp_path: Path) -> None:
-    controls = (
-        "".join(chr(code) for code in range(0x80, 0xA0))
-        + "\u2028\u2029\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
-    )
-    proposed = "proposed ā Ω " + controls + " end A"
-    destination = "destination é " + controls[::-1] + " end B"
+    field_controls = "\u2028\u2029\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+    controls = "".join(chr(code) for code in range(0x80, 0xA0)) + field_controls
+    proposed = "proposed ā Ω " + field_controls + " end A"
+    destination = "destination é " + field_controls[::-1] + " end B"
     profile = {"theme": "profile 漢 " + controls + " end C"}
     review = "review ü " + controls[::-1] + " end D"
     snapshot, state = fixture(generated())

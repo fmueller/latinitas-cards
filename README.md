@@ -194,6 +194,10 @@ uv run latinitas-cards managed observe observation.json --state baseline.json --
 ```
 
 Back up first and don't review or sync on any device until the result is recorded.
+Backup recoverability, snapshot freshness and the edit-free interval are operator
+attestations: a nonempty backup/hash is not restoration proof, and the tool enforces
+no snapshot age bound or collection lock. Emission is supported offline handoff,
+not automated collection application or proof of a successful native import.
 Only content fields and tags can be updated; adding, retiring, or reactivating cards is
 not supported. Capture/adoption are not apply approval. Proposals and the plan/handoff/
 observation envelopes remain explicit JSON; the runnable fixture demonstrates their

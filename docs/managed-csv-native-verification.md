@@ -134,8 +134,9 @@ reruns: Anki allocates fresh local IDs and modification metadata each time.
 - The file transport cannot lock or observe an intervening GUI edit. Fresh
   acquisition and a genuinely edit-free interval remain operator obligations;
   artifact emission, import-dialog success and equal later values are not proof.
-  The CLI's conservative `native_safety` report remains unchanged; it does not
-  dynamically certify a client or acquire/import a collection itself.
+  The CLI's `native_safety` report describes offline emission, manual native handoff
+  and observed application; it does not dynamically certify a client or import
+  a collection itself. Backup recoverability and freshness remain operator attestations.
 - No rendering, Desktop dialog interaction, AnkiMobile presentation, sync,
   review-session scheduler or real user-data compatibility is certified here.
   T-062 remains the separate mobile gate. T-060 owns affected recipe retests

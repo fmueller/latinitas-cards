@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import tempfile
+import unicodedata
 from collections.abc import Mapping
 from contextlib import suppress
 from dataclasses import dataclass
@@ -161,6 +162,10 @@ def _fields(value: object, identity: str) -> dict[str, str]:
         raise ReconciliationRequired("incomplete managed fields or user-owned field")
     if fields["LatinitasID"] != identity or fields["Note Schema"] != NOTE_SCHEMA_VERSION:
         raise ReconciliationRequired("inconsistent portable identity/schema. " + INCOMPATIBLE_LAYOUT_CHOICES)
+    for name, text in fields.items():
+        for char in text:
+            if unicodedata.category(char) == "Cc" and char not in "\t\r\n":
+                raise ReconciliationRequired(f"unsafe control U+{ord(char):04X} in managed field {name}")
     return {name: fields[name] for name in MANAGED_FIELDS}
 
 

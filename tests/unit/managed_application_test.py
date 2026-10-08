@@ -15,6 +15,7 @@ from typer.testing import CliRunner
 from latinitas_cards.cli import app
 from latinitas_cards.destination_state import (
     ReconciliationRequired,
+    _digest,
     adopt,
     load_state,
     reconcile,
@@ -43,6 +44,85 @@ def setup(tmp_path: Path) -> tuple[Any, ...]:
     backup = tmp_path / "backup.colpkg"
     backup.write_bytes(b"recoverable synthetic backup")
     return snapshot, plan, approval, path, backup
+
+
+@pytest.mark.parametrize("control", ["\x00", "\x01", "\x1b", "\x1f", "\x7f", "\x85", "\x9b"])
+@pytest.mark.parametrize("origin", ["proposal", "destination"])
+def test_unsafe_managed_fields_fail_before_handoff(tmp_path: Path, control: str, origin: str) -> None:
+    snapshot, _, _, path, _ = setup(tmp_path)
+    before = path.read_bytes()
+    value = f"amō{control}different ending"
+    with pytest.raises(ReconciliationRequired, match="unsafe control.*Meaning"):
+        if origin == "destination":
+            data = snapshot.payload
+            data["notes"][0]["fields"]["Meaning"] = value
+            snapshot = capture(data)
+        compose_plan(snapshot, load_state(path), [request(snapshot, meaning=value)], {})
+    assert path.read_bytes() == before
+    assert not (tmp_path / "updates.csv").exists()
+
+
+def test_unicode_multiline_tab_handoff_is_lossless_and_truthful(tmp_path: Path) -> None:
+    snapshot, _, _, path, backup = setup(tmp_path)
+    meaning = "amō\t“love”,\n第二行\r\nfinis"
+    proposal = request(snapshot, meaning=meaning)
+    plan = compose_plan(
+        snapshot, load_state(path), [proposal], {"generated_note_type": "Latinitas", "target_deck": "Latin"}
+    )
+    assert plan["transport"]["application_implemented"] is True
+    assert plan["transport"]["automated_collection_apply"] is False
+    operation = next(op["id"] for op in plan["notes"][0]["operations"] if op.get("field") == "Meaning")
+    approval = approve_plan(plan, [operation], "review exact multiline text")
+    report = emit_updates(
+        plan,
+        approval,
+        snapshot,
+        path,
+        backup,
+        "operator restore procedure",
+        tmp_path / "updates.csv",
+        "Latinitas",
+        "Latin",
+    )
+    rows = list(csv.reader(io.StringIO((tmp_path / "updates.csv").read_bytes().decode())))
+    assert rows[-1][approval["import_columns"].index("Meaning")] == meaning
+    assert report["observed"] == []
+    assert "operator-attested" in report["backup_assurance"]
+    assert "not proof of native recoverability" in report["backup_assurance"]
+    assert "manual native import" in report["native_safety"]
+    assert "T-061" not in json.dumps(report)
+    assert "no snapshot age bound" in report["interval"]
+
+
+@pytest.mark.parametrize("origin", ["proposal", "destination"])
+def test_cli_emit_rejects_nul_without_journal_or_csv_writes(tmp_path: Path, origin: str) -> None:
+    snapshot, plan, approval, path, backup = setup(tmp_path)
+    data = {
+        "binding": load_state(path)["binding"],
+        "snapshot": snapshot.payload,
+        "plan": plan,
+        "approval": approval,
+        "backup": str(backup),
+        "recovery": "restore closed backup including scheduling",
+        "note_type": "Latinitas",
+        "deck": "Latin",
+    }
+    if origin == "destination":
+        data["snapshot"]["notes"][0]["fields"]["Meaning"] = "left\x00right"
+    else:
+        plan["requests"][0]["fields"]["Meaning"] = "left\x00right"
+        del plan["plan_id"]
+        plan["plan_id"] = _digest(plan)
+    handoff = tmp_path / "handoff.json"
+    handoff.write_text(json.dumps(data))
+    before = path.read_bytes()
+    output = tmp_path / "out.csv"
+    result = CliRunner().invoke(app, ["managed", "emit", str(handoff), "--state", str(path), "--output", str(output)])
+    assert result.exit_code == 1
+    assert "Managed error: unsafe control U+0000 in managed field Meaning" in result.output
+    assert "\x00" not in result.output
+    assert path.read_bytes() == before
+    assert not output.exists()
 
 
 def test_emitted_mapping_and_observed_only_advancement(tmp_path: Path) -> None:
