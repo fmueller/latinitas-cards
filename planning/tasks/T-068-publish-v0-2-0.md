@@ -1,7 +1,7 @@
 ---
 id: T-068-publish-v0-2-0
 title: Publish v0.2.0
-status: in_progress
+status: completed
 priority: high
 spec_ref: specs/v0.2.0.md#goals
 dependencies:
@@ -20,7 +20,7 @@ dependencies:
     - T-081-make-form-parsing-docs-usable
     - T-082-persist-explicitly-selected-no-write
     - T-083-restore-native-managed-absence-verification
-updated_at: "2026-10-08T20:37:32Z"
+updated_at: "2026-10-08T20:42:28Z"
 ---
 
 # T-068-publish-v0-2-0 Publish v0.2.0
@@ -95,9 +95,40 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
   mise run check passed with format and all policy/mutation guards. Fresh Task
   loaded code-reviewer in disposition-verification mode: SEC-T068-001 resolved;
   "No concrete task-relevant findings." One review/fix/recheck cycle.
-- Step 8: Preparation ready for Taskrail verification. Exact release-commit CI,
-  annotated tag, GitHub publication and fresh-tag installation remain pending;
-  task stays in progress until actual publication evidence is recorded separately.
+- Step 8: Preparation verification passed at 2026-10-08T20:37:32Z;
+  publication then completed as recorded below. Evidence is separate from the
+  immutable released commit. Final Taskrail closure follows fresh local gates.
+
+## Publication evidence — 2026-10-08
+
+- Published at 2026-10-08T20:40:39Z (22:40:39 Europe/Berlin):
+  [v0.2.0 GitHub release](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.0).
+  API confirms not draft, not prerelease, assets empty. No PyPI publication,
+  deployment, other release, spec activation or unrelated shared-state action.
+- One annotated [v0.2.0 tag](https://github.com/fmueller/latinitas-cards/tree/v0.2.0),
+  tag object `073e0b30b2c3a4678822fe04058d2a018ed5325f`, targets
+  [3b3616c](https://github.com/fmueller/latinitas-cards/commit/3b3616cef6c948da24d77214f64f2204a7031ba0).
+  Remote tag object and peeled commit match; tagger is the maintainer.
+  No published ref was rewritten. The candidate main push contains accepted
+  e13bef1; publication-evidence commit follows it without changing the tag.
+- [Exact-release-commit CI](https://github.com/fmueller/latinitas-cards/actions/runs/37840918189)
+  completed successfully before tag creation: Python 3.13 and 3.14 each passed
+  926 tests, lint/type/format and policy/infrastructure guards passed.
+  Trigger was the normal authorized main push, not manual workflow dispatch.
+- Fresh remote-tag clone passed README `uv sync --locked`; installed distribution
+  metadata is 0.2.0. Root, managed and form-parsing help all exit 0 without optional
+  CLTK/analyzer setup. HEAD equals released commit, local tag is annotated,
+  and checkout remains clean.
+- All 34 application-source hashes in the fresh native report match both the
+  released checkout and the fresh tag clone; all 84 artifact hashes verify.
+  Native script/application/dependency inputs are unchanged by release metadata.
+  The 17-case retest therefore binds the final tagged application; no new GUI,
+  Mobile or representative-deck test is claimed. Prior evidence and narrow waiver
+  remain unchanged, with exact limits in docs/release-v0.2.0.md.
+- Current advisory assessment remains three open optional urllib3 alerts,
+  two high and one moderate, patched by 2.8.0 but still locked at 2.7.0.
+  Default offline workflows exclude it; optional streaming resource downloads
+  reach affected paths conditionally. Exposure is documented, not dismissed.
 
 ## Implementation Notes
 
@@ -107,3 +138,5 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
   These implementation tasks precede publication; dependency ordering does not
   authorize a release or replace the final testing and publication gates.
 - 2026-10-08T20:37:32Z: verification pass
+- 2026-10-08T20:42:28Z: verification pass
+- 2026-10-08T20:42:28Z: Published immutable v0.2.0 GitHub release/tag; fresh installation and exact-release CI pass. Evidence recorded separately; optional annotation advisories remain documented and unresolved.
