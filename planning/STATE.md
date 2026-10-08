@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-08T01:53:25Z"
+updated_at: "2026-10-08T02:03:23Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-083-restore-native-managed-absence-verification: Restore native managed verification after anchored-absence classification'
-last_verification_result: pass for T-081-make-form-parsing-docs-usable at 2026-10-08T01:25:54Z
+next_action: 'Start task T-068-publish-v0-2-0: Publish v0.2.0'
+last_verification_result: pass for T-083-restore-native-managed-absence-verification at 2026-10-08T02:03:23Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-081-make-form-parsing-docs-usable at 2026-10-08T01:25:54Z
+- pass for T-083-restore-native-managed-absence-verification at 2026-10-08T02:03:23Z
 
 ## Next Action
 
-- Start task T-083-restore-native-managed-absence-verification: Restore native managed verification after anchored-absence classification
+- Start task T-068-publish-v0-2-0: Publish v0.2.0
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 7
+- todo: 6
 - in_progress: 0
-- completed: 76
+- completed: 77
 - blocked: 0
 - cancelled: 0

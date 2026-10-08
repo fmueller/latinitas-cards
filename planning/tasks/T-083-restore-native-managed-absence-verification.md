@@ -1,11 +1,11 @@
 ---
 id: T-083-restore-native-managed-absence-verification
 title: Restore native managed verification after anchored-absence classification
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.0.md#safe-update-application
 dependencies: []
-updated_at: "2026-10-08T01:49:03Z"
+updated_at: "2026-10-08T02:03:23Z"
 ---
 
 # T-083-restore-native-managed-absence-verification Restore native managed verification after anchored-absence classification
@@ -83,3 +83,48 @@ No existing open task covers this downstream verification regression.
 Keep the fix in the native verification harness and focused regression coverage.
 No production behavior change, release action, dependency change, task lifecycle
 transition, or new transport capability is requested by this finding.
+
+### Executed implementation and review — 2026-10-08
+
+- Pinned v0.2.0; fetched main contains accepted b5e2e8c and filing
+  7021942. Taskrail validate/next selected only T-083 before start.
+- Original documented native recipe on a fresh disposable directory exited 1
+  at line 697: `AssertionError: unsafe operation was accepted`.
+- Extracted the existing absence check unchanged into its owning harness
+  helper; the focused test failed with that same assertion (RED). The helper
+  now asserts anchored conflict/reconciliation, zero operations/card effects,
+  and a verified empty approval with no targets/import rows. Fresh adoption
+  of actual remaining members separately produces a nonempty create selection
+  whose approval is refused (GREEN: one focused test passed).
+- Optional backend imports are local to native entry points so default unit
+  tests exercise the real helper without installing Anki. Production modules,
+  classification and empty-selection behavior remain unchanged.
+- Dedicated code-simplifier Task loaded its skill and made no changes; focused
+  test and scoped ruff passed afterward.
+- Separate read-only code-reviewer Tasks selected General, Python and Database
+  (persistence/evidence) lanes. Each returned verbatim:
+  "No concrete task-relevant findings."
+  Security/framework lanes were omitted: no new trust boundary, transport,
+  production persistence, or framework behavior. Candidate validation confirmed
+  the empty candidate set; no rejected candidates, fixes or deferrals.
+- Fresh disposition-verification Task returned verbatim:
+  "No unresolved or newly identified task-relevant findings."
+  It confirmed all 84 report-bound evidence hashes and reran the exact check
+  chain successfully. One review/disposition cycle; no follow-up findings.
+- Final exact chain: `uv run ruff check` passed; `uv run mypy` passed (90
+  source files); `uv run pytest -v` passed (926 tests).
+- Final documented native recipe using `anki==26.9.3` exited 0 on a new
+  disposable directory and wrote report.json with 17 top-level cases. Both
+  absence branches preserved every captured destination table. CSS mismatch,
+  separate fresh start, and tag add/remove/final-remove all ran; the three
+  tag-only outcomes were observed. Existing exact card/revlog/user-data and
+  unresolved native-mismatch assertions remain intact.
+- Executed script SHA-256:
+  `2be32b1bd9617db35f03d577cd7fd34301c7fce2ec63b2129239f499d1a59f14`.
+  Final report SHA-256:
+  `ad142a82b4875333e857a2240afe3833513e095015cca5f85254ab3961e2d493`.
+  Hashes bind executed content, not deterministic native IDs across reruns.
+- Evidence is native Linux backend API only; no GUI/Mobile, migration,
+  scheduler execution, or broad compatibility claim. No release action.
+- 2026-10-08T02:03:23Z: verification pass
+- 2026-10-08T02:03:23Z: Reviewed harness-only fix; mandatory chain and full 17-case native backend recipe pass. Evidence content hashes and review dispositions recorded in task notes.

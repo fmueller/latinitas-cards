@@ -21,9 +21,6 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from anki.collection import Collection
-from anki.import_export_pb2 import CsvMetadata, ImportCsvRequest
-
 from latinitas_cards.cards import TEMPLATE_REGISTRY, render_cards
 from latinitas_cards.destination_state import (
     MANAGED_FIELDS,
@@ -105,6 +102,8 @@ def create(
     csv_path: Path,
     before_import: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
+    from anki.collection import Collection
+
     collection = Collection(str(path))
     try:
         collection.decks.id(DECK)
@@ -138,6 +137,9 @@ def create(
 
 
 def native_import(path: Path, csv_path: Path, *, omit_tags: bool = False) -> dict[str, Any]:
+    from anki.collection import Collection
+    from anki.import_export_pb2 import CsvMetadata, ImportCsvRequest
+
     collection = Collection(str(path))
     try:
         metadata = collection.get_csv_metadata(str(csv_path), None)
@@ -157,6 +159,8 @@ def native_import(path: Path, csv_path: Path, *, omit_tags: bool = False) -> dic
 
 
 def snapshot(path: Path, notes: list[GeneratedNote], label: str, output: Path) -> DestinationSnapshot:
+    from anki.collection import Collection
+
     # This dedicated backend owns the disposable collection; no GUI/client is running.
     collection = Collection(str(path))
     try:
@@ -288,6 +292,33 @@ def reject(action: Callable[[], Any]) -> str:
     raise AssertionError("unsafe operation was accepted")
 
 
+def check_absent_note(absent: DestinationSnapshot, state: dict[str, Any], proposal: dict[str, Any]) -> dict[str, Any]:
+    anchored = compose_plan(absent, state, [proposal], PROFILE)
+    entry = anchored["notes"][0]
+    assert entry["classification"] == "conflict"
+    assert (
+        entry["blocked"] == entry["reasons"] == ["previously anchored note absent; destination reconciliation required"]
+    )
+    assert entry["operations"] == entry["card_effects"] == []
+    receipt = approve_plan(anchored, [], "review anchored absence; no writes authorized")
+    assert receipt["targets"] == {} and receipt["selected_operations"] == receipt["import_rows"] == []
+    verify_approval(anchored, receipt, absent, state)
+
+    # A fresh baseline adopts only actual members: the missing member was never anchored.
+    fresh_state = adopt(absent, ownership(absent), "review actual remaining destination members")
+    create_plan = compose_plan(absent, fresh_state, [proposal], PROFILE)
+    entry = create_plan["notes"][0]
+    assert entry["classification"] == "create"
+    assert len(entry["operations"]) == 1 and entry["operations"][0]["kind"] == "create"
+    ops = [entry["operations"][0]["id"]]
+    refusal = reject(lambda: approve_plan(create_plan, ops, "must refuse actual creation"))
+    assert refusal == "unsupported or unresolved selected operation"
+    return {
+        "anchored": {"plan": anchored, "approval": receipt},
+        "never_anchored": {"plan": create_plan, "selected_operations": ops, "rejection": refusal},
+    }
+
+
 def compare(before: dict[str, Any], after: dict[str, Any], expected: dict[str, Any]) -> list[dict[str, Any]]:
     # Check all columns, not a convenient scheduling subset; all sibling rows included.
     for table in TABLES[1:]:
@@ -321,6 +352,8 @@ def compare(before: dict[str, Any], after: dict[str, Any], expected: dict[str, A
 
 
 def main() -> None:
+    from anki.collection import Collection
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
     root = parser.parse_args().output_dir.resolve()
@@ -692,10 +725,11 @@ def main() -> None:
         db.execute("delete from cards where nid=?", (nid,))
         db.execute("delete from notes where id=?", (nid,))
     absent = snapshot(path, notes, "absent-note", root)
-    unsafe = compose_plan(absent, state, [propose(initial, Meaning="cannot create")], PROFILE)
-    ops = [op["id"] for entry in unsafe["notes"] for op in entry["operations"]]
-    reports["cases"]["unsupported"]["create"] = reject(lambda: approve_plan(unsafe, ops, "must refuse"))
-    assert len(tables(path)["notes"]) == 1 and len(tables(path)["cards"]) == 4
+    absent_tables = tables(path)
+    reports["cases"]["absence"] = check_absent_note(absent, state, propose(initial, Meaning="cannot create"))
+    assert tables(path) == absent_tables, "absence planning/approval changed destination tables"
+    assert len(absent_tables["notes"]) == 1 and len(absent_tables["cards"]) == 4
+    reports["cases"]["absence"]["full_tables_unchanged"] = True
 
     # CSS drift is acquired from the real native model, never asserted as a matching contract.
     shutil.copyfile(backup, path)
