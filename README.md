@@ -9,7 +9,7 @@ CSV export into repeatable principal-part study cards. It inspects a source, sav
 confirmed profile, previews generated cards, and writes a deterministic UTF-8 Anki
 text-import CSV without modifying the source.
 
-> **Release:** [v0.1.1](https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.1)
+> **Release:** [v0.2.0](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.0)
 > is available on GitHub. PyPI publishing is deferred; install from the release tag below.
 
 ## Workflow
@@ -45,7 +45,7 @@ Anki setup details.
 **Prerequisites:** Python 3.13 or 3.14 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone --branch v0.1.1 --depth 1 https://github.com/fmueller/latinitas-cards.git
+git clone --branch v0.2.0 --depth 1 https://github.com/fmueller/latinitas-cards.git
 cd latinitas-cards
 uv sync --locked
 uv run latinitas-cards --help
@@ -264,6 +264,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 - [Changelog](CHANGELOG.md)
 - [v0.1.0 release readiness](docs/release-readiness.md)
 - [v0.1.1 release readiness and limitations](docs/release-v0.1.1.md)
+- [v0.2.0 release readiness and limitations](docs/release-v0.2.0.md)
 - [Authored note JSONL import format](docs/authored-note-import.md)
 - [Stable generated-note identity](docs/stable-generated-note-identity.md)
 - [Principal-part parser support matrix](docs/principal-part-parsing.md)

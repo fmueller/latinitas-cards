@@ -4,6 +4,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-08
+
 ### Added
 
 - `managed` updates notes you already imported without losing their review history:
@@ -54,6 +56,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - Explanation, theme, and `form-parsing` cards passed display checks only on Anki
   Desktop 26.09.2 and AnkiMobile 25.09 with test notes; the static comparison stays
   the default.
+- Experimental annotation extras still include urllib3 2.7.0 with two high and one
+  moderate network advisories; avoid untrusted downloads or proxy-sensitive use.
 
 ## [0.1.1] - 2026-10-04
 
@@ -111,6 +115,7 @@ and export them for import into Anki, without modifying the source.
 - Legacy splitting/APKG mutation, annotation, Ollama analysis, and corpus cloze
   workflows remain experimental. This release is available on GitHub, not PyPI.
 
-[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/fmueller/latinitas-cards/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/fmueller/latinitas-cards/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.0

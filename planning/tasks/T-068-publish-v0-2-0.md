@@ -1,7 +1,7 @@
 ---
 id: T-068-publish-v0-2-0
 title: Publish v0.2.0
-status: todo
+status: in_progress
 priority: high
 spec_ref: specs/v0.2.0.md#goals
 dependencies:
@@ -20,7 +20,7 @@ dependencies:
     - T-081-make-form-parsing-docs-usable
     - T-082-persist-explicitly-selected-no-write
     - T-083-restore-native-managed-absence-verification
-updated_at: "2026-10-06T20:02:15Z"
+updated_at: "2026-10-08T20:37:32Z"
 ---
 
 # T-068-publish-v0-2-0 Publish v0.2.0
@@ -54,7 +54,50 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
 
 ## Verification Notes
 
-- Pending.
+- Step 1: Fetch confirmed HEAD and origin/main at accepted
+  [e13bef1](https://github.com/fmueller/latinitas-cards/commit/e13bef1a5643160db9e59a19ce4ecbf49df865e6).
+  Validate/next selected only T-068, all dependencies completed, no active owner.
+  Spec remains v0.2.0, SHA-256
+  `f54ab9cc84246cbbb8f7fa3399a7bec30012d09e3092c7b13c6499f09a1657ed`.
+  Unshallowed history and reused docs/release-v0.1.1.md/T-047 procedure;
+  historical release commits have no thread provenance trailers by repo policy.
+- Step 2: Metadata RED failed at 0.1.1 != 0.2.0 before bump; GREEN passed
+  after project/lock, changelog, README, index and readiness updates. Lock diff
+  changes only project version; no runtime or dependency changes.
+- Step 3: Initial ruff/mypy/pytest passed (90 files, 926 tests). Fresh native
+  Anki 26.9.3 managed gate passed 17 cases on 2026-10-08. Report hash
+  `45f2d6c46c7f5e15b10575e459a0688461de0e028837164db57f1cdb65935d6a`;
+  script hash `2be32b1bd9617db35f03d577cd7fd34301c7fce2ec63b2129239f499d1a59f14`.
+  Application-source bindings match accepted implementation; GUI/Mobile evidence
+  is prior, not repeated. Readiness preserves exact native scope and waiver.
+- Step 4: Dedicated Task loaded code-simplifier; simplified spec-index assertion
+  and wrapped index text only. Focused metadata test and format check passed;
+  parent inspected diff and reran the focused test successfully.
+- Step 5: Parallel independent General and Security Tasks loaded code-reviewer
+  and mapped guidance (General ECC code-reviewer; Security ECC security-reviewer,
+  security-review companion and common security rules). Security lane selected
+  for advisory/readiness assessment. Python specialist omitted: assertion-only
+  metadata test changes, covered by General; no runtime language changes.
+  Database/framework lanes omitted: no application, schema or persistence changes.
+  General: "No concrete task-relevant findings." Fresh candidate-validation Task
+  validated SEC-T068-001, rejected none, no duplicates.
+- Validated SEC-T068-001 verbatim: "The release readiness document’s CLTK source
+  citation is broken, preventing readers from checking the stated model-download
+  behavior." Evidence: docs/release-v0.2.0.md:94 linked cltk/cltk/blob/main;
+  nonexistent branch returned 404; master source resolved with REUSE_RESOURCES.
+- Step 6: SEC-T068-001 fixed using an immutable CLTK commit citation. New
+  assertion failed before doc fix, then passed after it. Pinned raw URL returned
+  HTTP 200, source line 62 uses REUSE_RESOURCES, pyproject reports CLTK 2.5.1.
+  No deferrals. Optional urllib3 alerts #141/#142/#143 remain open, two high and
+  one moderate; source and fresh lock-export assessment documents conditional
+  network reachability, not vulnerability-free certification or exploit proof.
+- Step 7: Final exact ruff/mypy/pytest chain passed (90 files, 926 tests), then
+  mise run check passed with format and all policy/mutation guards. Fresh Task
+  loaded code-reviewer in disposition-verification mode: SEC-T068-001 resolved;
+  "No concrete task-relevant findings." One review/fix/recheck cycle.
+- Step 8: Preparation ready for Taskrail verification. Exact release-commit CI,
+  annotated tag, GitHub publication and fresh-tag installation remain pending;
+  task stays in progress until actual publication evidence is recorded separately.
 
 ## Implementation Notes
 
@@ -63,3 +106,4 @@ PyPI publishing stays in specs/v0.3.0.md (T-038).
   and the remaining v0.2.0 tasks sequentially, then repeats adversarial testing.
   These implementation tasks precede publication; dependency ordering does not
   authorize a release or replace the final testing and publication gates.
+- 2026-10-08T20:37:32Z: verification pass

@@ -332,7 +332,7 @@ def test_release_candidate_managed_updates_preserve_user_owned_notes() -> None:
     assert changed.personal_notes == "Review this next week"
 
 
-def test_release_metadata_and_current_lock_audit_are_versioned_for_v011() -> None:
+def test_release_metadata_and_current_lock_audit_are_versioned_for_v020() -> None:
     with (ROOT / "pyproject.toml").open("rb") as project_file:
         project = tomllib.load(project_file)
     with (ROOT / "uv.lock").open("rb") as lock_file:
@@ -343,13 +343,23 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v011() -> Non
     audit = (ROOT / "docs" / "license-compatibility-audit.md").read_text(encoding="utf-8")
     notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
 
-    assert project["project"]["version"] == "0.1.1"
-    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.1.1"
+    assert project["project"]["version"] == "0.2.0"
+    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.2.0"
+    assert "## [0.2.0] - 2026-10-08" in changelog
+    assert "compare/v0.2.0...HEAD" in changelog
+    assert "compare/v0.1.1...v0.2.0" in changelog
+    assert not changelog.split("## [Unreleased]", 1)[1].split("## [0.2.0]", 1)[0].strip()
     assert "## [0.1.1] - 2026-10-04" in changelog
-    assert "compare/v0.1.1...HEAD" in changelog
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "git clone --branch v0.1.1 --depth 1" in readme
-    assert "**Release:** [v0.1.1]" in readme
+    assert "git clone --branch v0.2.0 --depth 1" in readme
+    assert "**Release:** [v0.2.0]" in readme
+    spec_index = (ROOT / "specs" / "README.md").read_text(encoding="utf-8")
+    assert "`specs/v0.2.0.md` defines the completed, still-active spec" in spec_index
+    readiness = (ROOT / "docs" / "release-v0.2.0.md").read_text(encoding="utf-8")
+    assert "`0.2.0` and `v0.2.0`" in readiness
+    assert "2026-10-07" in readiness and "maintainer-reported" in readiness
+    assert "urllib3 2.7.0" in readiness
+    assert "https://github.com/cltk/cltk/blob/33e1653331fc2499e3f2f5da45237d87db0313cc/" in readiness
     assert "## [0.1.0] - 2026-10-02" in changelog
     assert "## [Unreleased]" in changelog
     assert "Prepared version: `v0.1.0`" in release
