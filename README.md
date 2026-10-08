@@ -266,6 +266,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 - [Legacy note-model transitions](docs/legacy-transition.md)
 - [Destination snapshots and file transport](docs/destination-snapshots-and-file-transport.md)
 - [Managed CSV native verification](docs/managed-csv-native-verification.md)
+- [Managed CSV Desktop dialog verification](docs/managed-csv-desktop-verification.md)
 - [Claim review policy](docs/claim-review-policy.md)
 - [Contextual form parsing](docs/contextual-form-parsing.md)
 - [Morphology native verification](docs/morphology-native-verification.md)

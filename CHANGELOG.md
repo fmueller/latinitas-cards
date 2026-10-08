@@ -34,9 +34,9 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Limitations
 
-- `managed` updates were tested only through Anki 26.9.3's import engine on test data,
-  not the Desktop import dialog, which may skip tag-only changes. Skipped changes stay
-  pending until you record the result.
+- `managed` content and tag-only updates passed Anki Desktop 26.09.3's import dialog
+  on test data with [specific settings](docs/managed-csv-desktop-verification.md), not
+  arbitrary clients/collections. Skipped effects stay unresolved after observation.
 - No command yet exports your current Anki state for `managed plan`; you build that
   JSON from a closed full backup ([guide](docs/destination-snapshots-and-file-transport.md)).
 - `managed` cannot change card front/back text, so cards already in study don't get the

@@ -7,6 +7,11 @@ dialog, AnkiMobile, or structural transports. The executable recipe is
 subset approval, pending emission, native import, closed destination capture,
 observation and recovery; no mocked importer is used.
 
+The [Desktop dialog gate](managed-csv-desktop-verification.md) separately exercises
+actual Desktop 26.09.3 controls and reports its exact settings, tag-only outcomes,
+native screenshots and complete card/review-log comparisons. API results below
+are not substitutes for that GUI evidence.
+
 ## Reproduction and fixture
 
 ```bash
