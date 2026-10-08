@@ -20,6 +20,55 @@ from latinitas_cards.form_parsing import (
 from latinitas_cards.profile import DeckProfile
 
 
+def test_documented_reviewed_example_cli_contract(tmp_path: Path) -> None:
+    runner = CliRunner()
+    source = tmp_path / "cases.json"
+    sample = Path(__file__).parents[2] / "docs/examples/form-parsing-cases.json"
+    source.write_bytes(sample.read_bytes())
+    preview = runner.invoke(app, ["form-parsing", "preview", str(source)])
+    assert preview.exit_code == 0, preview.output
+    (result,) = json.loads(preview.stdout)
+    assert result["eligible"] is True and result["skips"] == []
+    assert result["semantic_key"] == "form_parsing:contextual_analysis"
+    assert result["latinitas_id"] == "latinitas-v2-ea8b6ea917204b230894b6b0f5ca2edc91201a958b1734092aea51b1d796e9ef"
+    assert result["form"] == "puellae" and result["context"] == "Puellae rosas portant."
+    assert [(c["feature"], c["value"], c["status"]) for c in result["claims"]] == [
+        ("lemma", "puella", "accepted"),
+        ("case", "nominativus", "accepted"),
+        ("number", "pluralis", "accepted"),
+        ("gender", "femininum", "withheld"),
+    ]
+    assert result["answer"] == (
+        '<section class="morphology-v1 morphology-muted morphology-light">'
+        "Lemma: puella<br>Casus: nominativus<br>Numerus: pluralis</section>"
+    )
+    output = tmp_path / "parsing.csv"
+    args = ["form-parsing", "export", str(source), str(output)]
+    refused = runner.invoke(app, args)
+    assert refused.exit_code == 2 and not output.exists()
+    assert "scheduling migration/apply" in refused.output
+    exported = runner.invoke(app, [*args, "--approve-fresh-import"])
+    assert exported.exit_code == 0, exported.output
+    payload = output.read_bytes()
+    assert b"Personal Notes" not in payload and b"femininum" not in payload
+    assert b"Latinitas Contextual Form Parsing v1" in payload
+    overwritten = runner.invoke(app, [*args, "--approve-fresh-import"])
+    assert overwritten.exit_code == 2 and output.read_bytes() == payload
+    data = json.loads(source.read_text())
+    data["cases"][0]["context"] = "Rosam puellae dat."
+    source.write_text(json.dumps(data), encoding="utf-8")
+    stale = runner.invoke(app, ["form-parsing", "preview", str(source)])
+    (changed,) = json.loads(stale.stdout)
+    assert changed["latinitas_id"] == result["latinitas_id"]
+    assert changed["eligible"] is False and changed["answer"] == ""
+    assert all(c["status"] == "withheld" for c in changed["claims"])
+    empty = tmp_path / "stale.csv"
+    assert (
+        runner.invoke(app, ["form-parsing", "export", str(source), str(empty), "--approve-fresh-import"]).exit_code == 0
+    )
+    assert b"puellae" not in empty.read_bytes()
+
+
 def example() -> ParsingInput:
     return ParsingInput(
         profile=DeckProfile.default(note_type="Latin", lexical_entry_field="Lemma", principal_parts_field="Forms"),

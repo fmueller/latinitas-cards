@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "profile": {
+    "schema_version": 2,
+    "source_identity": {"strategy": "note_guid", "field": null},
+    "note_type": "Latin",
+    "fields": {"lexical_entry_field": "Lemma", "principal_parts_field": "Forms", "meaning_field": null},
+    "principal_parts": {
+      "roles": ["present_1s", "present_infinitive", "perfect_1s", "supine"],
+      "separators": [" — "],
+      "pipe_alternatives": false,
+      "trailing_poet_hint": false
+    },
+    "language_tag": "de",
+    "generated_note_type": "Latinitas Principal Parts",
+    "target_deck": "Latin::Latinitas",
+    "tags": ["latinitas"],
+    "selected_recipes": ["principal_part_completion", "principal_part_recognition"],
+    "morphology": {"version": 1, "theme": "muted", "appearance": "light", "comparison": "static"}
+  },
+  "cases": [{
+    "source_identity": "sample-sentence-1",
+    "source_scope": "latinitas-docs/contextual-example/v1",
+    "object_key": "token-1",
+    "form": "puellae",
+    "context": "Puellae rosas portant.",
+    "applicable_features": ["lemma", "case", "number", "gender"],
+    "required_features": ["lemma", "case", "number"],
+    "proposals": [
+      {
+        "feature": "lemma", "value": "puella", "analyzer": "authored-example/v1",
+        "evidence": [{"source": "Authored documentation example", "reference": "sentence 1, token 1, lemma", "version": "v1", "text": "The intended noun is puella, a first-declension noun; puellae is its inflected form."}],
+        "alternatives": [], "supported": true,
+        "decision": {"claim_fingerprint": "166dcd6d5d39a69075798b2bdce59316ea8bdef24f35cc9c8c9df6f366be15b4", "status": "accepted", "reviewer": "Documentation sample author (not expert validation)", "reason": "Explicit sample judgment: puella is the intended lemma of this token, not an inference from export success."}
+      },
+      {
+        "feature": "case", "value": "nominativus", "analyzer": "authored-example/v1",
+        "evidence": [{"source": "Authored documentation example", "reference": "sentence 1, token 1, case", "version": "v1", "text": "In the intended reading, the girls are the subject of portant; rosas is the accusative object."}],
+        "alternatives": ["genetivus singularis", "dativus singularis"], "supported": true,
+        "decision": {"claim_fingerprint": "7b81a8122dfcb0af697105f84da265c1f3f6504bf37eb83182abb0c92e2836f6", "status": "accepted", "reviewer": "Documentation sample author (not expert validation)", "reason": "Explicit sample judgment: the intended subject takes nominative; the singular genitive/dative readings are not intended here."}
+      },
+      {
+        "feature": "number", "value": "pluralis", "analyzer": "authored-example/v1",
+        "evidence": [{"source": "Authored documentation example", "reference": "sentence 1, token 1, number", "version": "v1", "text": "The subject denotes multiple girls and agrees with the third-person plural verb portant."}],
+        "alternatives": ["singularis"], "supported": true,
+        "decision": {"claim_fingerprint": "45f55566f974480ed18168ddc8ea4a1486a35926a99d38237090eac6fabb9401", "status": "accepted", "reviewer": "Documentation sample author (not expert validation)", "reason": "Explicit sample judgment: multiple subject girls agree with plural portant, rather than singular puellae readings."}
+      },
+      {
+        "feature": "gender", "value": "femininum", "analyzer": "authored-example/v1",
+        "evidence": [{"source": "Authored documentation example", "reference": "sentence 1, token 1, gender", "version": "v1", "text": "A proposed lexical gender for puella; this optional claim has deliberately not been reviewed in this sample."}],
+        "alternatives": [], "supported": true
+      }
+    ]
+  }]
+}

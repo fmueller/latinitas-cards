@@ -4,10 +4,55 @@
 alternatives, review reasons and eligibility skips. `form-parsing export cases.json
 parsing.csv --approve-fresh-import` exports eligible cases only. Core operation is
 offline: no CLTK, Stanza, LLM, or network service is needed. This is explicit reviewed
-generation, not an automatic token analyzer. T-051 has no approved automatic policy;
+generation, not an automatic token analyzer. There is no approved automatic policy;
 no precision threshold or measured accuracy is claimed here. Future automatic
 acceptance needs domain-relevant measured precision and approved policy **for each
 feature category**, not a principal-part comparison or analyzer self-confidence.
+
+## Complete runnable example
+
+The [complete cases.json sample](examples/form-parsing-cases.json) includes the
+profile, evidence, alternatives and three explicit accepted decisions for the
+intended reading of **Puellae rosas portant.** (The girls carry roses.) These are
+independently authored sample judgments, not parser-generated expectations,
+expert validation, an automatic acceptance policy or a calibration corpus.
+The optional gender proposal is deliberately unreviewed and withheld.
+
+With `latinitas-cards` installed and on PATH, run this from the repository root
+(or download the linked sample and copy its absolute path instead):
+
+```sh
+sample="$PWD/docs/examples/form-parsing-cases.json"
+work=$(mktemp -d)
+cp "$sample" "$work/cases.json"
+cd "$work"
+latinitas-cards form-parsing preview cases.json
+latinitas-cards form-parsing export cases.json parsing.csv --approve-fresh-import
+```
+
+Preview must contain exactly one eligible exercise, semantic key
+`form_parsing:contextual_analysis`, and ID
+`latinitas-v2-ea8b6ea917204b230894b6b0f5ca2edc91201a958b1734092aea51b1d796e9ef`.
+Accepted facts are `Lemma: puella`, `Casus: nominativus`, `Numerus: pluralis`;
+`femininum` remains withheld and is absent from the answer. Export prints:
+
+```text
+Fresh contextual CSV only; managed application and template provisioning unsupported.
+```
+
+The CSV contains one data row for **Latinitas Contextual Form Parsing v1**, not
+the principal-part note type named in the profile. It has no Personal Notes field.
+Use the [separate manual setup below](#stable-bindings-and-manual-reference-setup)
+before importing. `--approve-fresh-import` acknowledges new scheduling and separate
+manual setup; it does not approve claims or preserve old card histories. Without
+it, export refuses to write. Repeating export to `parsing.csv` refuses overwrite.
+
+The supplied decisions reproduce only with the exact sample form, context,
+source assignments, feature lists, proposals, evidence and linguistic profile.
+For example, editing only context to `Rosam puellae dat.` retains the note ID
+but makes the three decisions stale: preview is ineligible with an empty answer,
+and export to a new file contains no data rows. Re-review the changed claims;
+do not transplant the sample fingerprints or reasons to your own material.
 
 ## Input and individual review
 
@@ -52,18 +97,22 @@ principal-part roles are never token-level proof. Unknown formats stay review wo
 After linguistic review of **that proposal in that context**, add a `decision`
 object to that proposal with `claim_fingerprint` from preview, `status` equal to
 `accepted` or `withheld`, nonempty `reviewer`, and an explanatory `reason`. A review
-is a user-authored attestation, not authentication or an export approval. Python
-callers may use `review_claim(proposal.to_claim(case, profile), ...)` and serialize
-the resulting `ReviewDecision`. Never mechanically approve all proposals.
+is a user-authored attestation, not authentication or an export approval. There is
+currently no CLI command to author decisions: edit JSON manually after reviewing
+each claim. Copy that claim's `fingerprint` from the supported preview command
+into `decision.claim_fingerprint`; no hash reconstruction is needed. The complete
+sample shows the exact decision shape. Use your own reviewer identity and reason,
+then preview again to check whether the decision is current. Never mechanically
+approve all proposals.
 
 Changing the form, context, category, evidence, alternatives, applicable/required
 features or linguistic profile invalidates the review. Presentation changes do
 not. Unsupported proposals cannot be accepted. Conflicting accepted alternatives
 block the entire card, even for an optional feature. Preview retains each proposal
 and its status, but only uncontested accepted claims can appear on study cards.
-The sanitized `puellae` fixtures exercise contextual singular/plural alternatives,
-withholding, conflicts and absent features; they are not a calibration corpus or
-a claim of universal grammatical coverage.
+The complete sample demonstrates one intended contextual reading and optional
+withholding, not universal grammatical coverage. A plausible ending alone does
+not resolve all contextual alternatives.
 
 ## Stable bindings and manual reference setup
 
@@ -102,8 +151,9 @@ And this back:
 {{#ParsingEnabled}}{{FrontSide}}<hr id=answer>{{ParsingAnswer}}{{#Personal Notes}}<div>{{Personal Notes}}</div>{{/Personal Notes}}{{/ParsingEnabled}}
 ```
 
-Copy the current `REFERENCE_CARD_CSS` from `reference_templates.py` (reference
-style v2, morphology markup v1), not a modified principal-part template. The
+Copy the published [shared reference CSS](reference-note-type.md#shared-styling-paste-once-into-the-note-types-styling)
+(reference style v2, morphology markup v1), but use the contextual fields and
+single template above, not the principal-part fields or templates. The
 parsing answer is static and Latin-first; no disclosure or custom script is added.
 Use a backed-up, explicitly separate new destination for this experimental manual
 setup. Import CSV as HTML with LatinitasID first-field matching, the exported Tags
