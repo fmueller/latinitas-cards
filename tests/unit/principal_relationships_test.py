@@ -14,6 +14,134 @@ def _source_evidence(form: str, role: str = "perfect_1s") -> SourceExtraction:
     return SourceExtraction(form, (role,), "supported", ((form,),))
 
 
+@pytest.mark.parametrize("recipe", ["principal_part_completion", "principal_part_recognition"])
+@pytest.mark.parametrize(
+    ("lemma", "forms", "roles", "expected"),
+    [
+        (
+            "sequor",
+            "sequor — sequī — secūtus sum",
+            ("present_1s", "present_infinitive", "perfect_1s"),
+            [
+                ("present_1s", "sequor", "present"),
+                ("present_infinitive", "sequī", "present"),
+                ("perfect_1s", "secūtus sum", "present"),
+                ("fourth_role", None, "absent"),
+            ],
+        ),
+        (
+            "dīcō",
+            "dīcō — dīcere — <b></b> — dictum",
+            ("present_1s", "present_infinitive", "perfect_1s", "supine"),
+            [
+                ("present_1s", "dīcō", "present"),
+                ("present_infinitive", "dīcere", "present"),
+                ("perfect_1s", None, "absent"),
+                ("supine", "dictum", "withheld"),
+            ],
+        ),
+    ],
+)
+def test_confirmed_profiles_render_deponent_and_middle_omission_end_to_end(
+    tmp_path: Path,
+    recipe: str,
+    lemma: str,
+    forms: str,
+    roles: tuple[str, ...],
+    expected: list[tuple[str, str | None, str]],
+) -> None:
+    from latinitas_cards.preview_export import deterministic_csv_bytes, prepare_principal_part_export
+    from latinitas_cards.profile import SourceIdentityConfig, load_profile
+
+    source = tmp_path / "confirmed.csv"
+    source.write_text(f"ID,Lemma,Forms\nx,{lemma},{forms}\n", encoding="utf-8")
+    profile_path = tmp_path / "confirmed.json"
+    DeckProfile.default(
+        note_type="Latin",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        principal_part_roles=roles,
+        separators=(" — ",),
+        selected_recipes=(recipe,),
+        source_identity=SourceIdentityConfig(strategy="source_id_field", field="ID"),
+    ).save(profile_path)
+    result = prepare_principal_part_export(source, load_profile(profile_path), approve_new_scope=True)
+    comparison = result.generation.principal_part_comparisons[0]
+    assert [(role.role, role.form, role.status) for role in comparison.roles] == expected
+    assert all(not role.claims and role.segmentation is None and role.explanation is None for role in comparison.roles)
+    note = result.generation.notes[0]
+    assert len(note.card_keys) == (3 if lemma == "sequor" else 2)
+    for card in note.cards:
+        if card.eligible:
+            absent_label = "fourth_role" if lemma == "sequor" else "Perfekt, 1. Person Singular"
+            assert f"<strong>{absent_label}:</strong> — (Nicht vorhanden)" in card.answer
+            assert "secūtus sum" in card.answer if lemma == "sequor" else "dīcere" in card.answer
+            assert "Partizip Perfekt Passiv (PPP)" not in card.answer
+            assert "Analyse zurückgehalten; einzelne Belege prüfen." in card.answer
+    assert "— (Nicht vorhanden)" in deterministic_csv_bytes(result).decode()
+
+
+@pytest.mark.parametrize("limit", [0, 1])
+def test_preview_counts_bound_claim_states_not_cards_or_extraction(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    limit: int,
+) -> None:
+    from latinitas_cards.commands.principal_parts import render_principal_part_preview
+    from latinitas_cards.preview_export import prepare_principal_part_export, write_principal_part_csv
+    from latinitas_cards.profile import SourceIdentityConfig
+
+    source = tmp_path / "sample.csv"
+    source.write_text(
+        'ID,Lemma,Forms\na,amō,"amō, amāre, amāvī, amātum"\nb,ferō,"ferō, ferre, tulī, lātum"\nc,videō,vidēre\n',
+        encoding="utf-8",
+    )
+    profile = DeckProfile.default(
+        note_type="Latin",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        separators=(",",),
+        source_identity=SourceIdentityConfig(strategy="source_id_field", field="ID"),
+    )
+    initial = prepare_principal_part_export(source, profile, approve_new_scope=True)
+    write_principal_part_csv(initial, tmp_path / "bootstrap.csv")
+    note = initial.generation.notes[0]
+    from latinitas_cards.principal_parts import PrincipalPartParseSuccess, parse_principal_parts
+    from latinitas_cards.sources import read_source_records
+
+    parsed = parse_principal_parts(read_source_records(source, source_id_field="ID")[0], profile)
+    assert isinstance(parsed, PrincipalPartParseSuccess)
+    split = Claim(
+        note.latinitas_id + ":perfect_1s",
+        "amāvī",
+        "segmentation",
+        "amāv- | -ī",
+        "fixture/v1",
+        (Evidence("fixture", "authored coarse split", "v1", "Synthetic independent judgment"),),
+        profile,
+        "v1",
+        extraction=parsed.evidence,
+    )
+    accepted = assess_claim(split, review_claim(split, status="accepted", reviewer="fixture", reason="Checked"))
+    unreviewed = assess_claim(replace(split, kind="explanation", value="Proposal only"))
+    stale = replace(accepted, claim=replace(split, candidate_text="tulī"))
+    rejected = assess_claim(split, review_claim(split, status="withheld", reviewer="fixture", reason="Withhold split"))
+    unrelated = assess_claim(replace(split, candidate_id="not-in-sample:perfect_1s"))
+    result = prepare_principal_part_export(
+        source,
+        profile,
+        claim_assessments=(accepted, unreviewed, stale, rejected, unrelated),
+    )
+    render_principal_part_preview(result, limit=limit)
+    output = capsys.readouterr().out
+    assert "Claim sample: 2 generated objects from 3 source entries (not limited by --limit)" in output
+    assert "Accepted reviewed claims: 1/4 bound claim assessments" in output
+    assert "Withheld assessed claims: 3/4 bound claim assessments" in output
+    assert "Withheld roles without claim assessments: 2/8 non-absent comparison roles" in output
+    assert "No calibration or linguistic accuracy is measured by these counts." in output
+    assert ("Representative note" in output) == (limit > 0)
+
+
 def test_only_bound_individually_reviewed_claims_enrich_the_tested_form() -> None:
     profile = DeckProfile.default(note_type="Latin", lexical_entry_field="Lemma", principal_parts_field="Forms")
     parsed = ParsedPrincipalParts(

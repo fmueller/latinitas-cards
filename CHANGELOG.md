@@ -21,6 +21,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - Profiles can opt in to keeping `|` alternatives and a trailing `poet.` hint from your
   source; forms that stay ambiguous are left off the cards instead of guessed.
 - Previews list skipped entries separately from generated entries with warnings.
+- Principal-part previews count accepted reviewed and withheld assessed claims separately
+  from roles missing claim assessments, with sample denominators and no accuracy claim.
 - `managed` refuses decks built with older pre-release note layouts or IDs.
 
 ### Fixed

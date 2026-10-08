@@ -105,3 +105,30 @@ this file. Do not regenerate expectations from the parser or automatically bless
 differences. The implementation tests both new targets and unchanged
 comma-profile rejection before claiming support. These cases cannot establish
 universal coverage, calibrated morphology, or correctness of private sources.
+
+## Principal-part preview claim sample
+
+Principal-part preview reports the full generated-object sample, not just the
+representative notes selected by `--limit`. Accepted reviewed claims and withheld
+assessed claims count **bound assessment records** rechecked against the current
+candidate, extraction, profile and scoped identity. Their common denominator is
+the number of those assessment records on generated objects; repeated or conflicting
+assessments remain separate records. Stale and unreviewed proposals are withheld.
+An accepted assessment does not mean its assertion is displayed when another
+assessment conflicts with or withholds that kind of claim.
+
+Withheld roles **without any claim assessment** are reported separately, over all
+non-absent roles in the generated comparisons. Missing fourth-role review is not
+an assessed claim, and an explicitly absent role is neither. Wholly skipped entries
+and checkpoint-withheld export rows are not new linguistic assessments. A sample
+with no assessments reports `0/0`, not a success rate. None of these counts measure
+calibration, linguistic accuracy, extraction review coverage or card eligibility.
+
+The end-to-end acceptance tests in `principal_relationships_test.py` use saved,
+explicitly confirmed synthetic profiles for `sequor — sequī — secūtus sum` with
+three roles, and `dīcō — dīcere — <b></b> — dictum` with a markup-only middle
+perfect slot. Both recipes retain the four-name comparison: the first has an
+absent unnamed fourth role; the second has an absent perfect and a withheld,
+unreviewed supine. The multiword third form stays in its confirmed source slot;
+no deponent voice/person analysis or segmentation is inferred. These are authored
+acceptance expectations, not a Latin expert's approval or a morphology evaluation.

@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-08T00:45:12Z"
+updated_at: "2026-10-08T00:59:59Z"
 active_spec_version: v0.2.0
 active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-079-add-extraction-parsing-fixtures-and-review-counts: Add extraction and parsing acceptance fixtures and preview review counts'
-last_verification_result: pass for T-078-close-managed-lifecycle-classification-test-gaps at 2026-10-08T00:45:12Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-079-add-extraction-parsing-fixtures-and-review-counts at 2026-10-08T00:59:58Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-078-close-managed-lifecycle-classification-test-gaps at 2026-10-08T00:45:12Z
+- pass for T-079-add-extraction-parsing-fixtures-and-review-counts at 2026-10-08T00:59:58Z
 
 ## Next Action
 
-- Start task T-079-add-extraction-parsing-fixtures-and-review-counts: Add extraction and parsing acceptance fixtures and preview review counts
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 9
+- todo: 8
 - in_progress: 0
-- completed: 73
+- completed: 74
 - blocked: 0
 - cancelled: 0

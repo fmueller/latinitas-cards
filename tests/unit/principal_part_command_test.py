@@ -69,11 +69,35 @@ def test_profile_preview_requests_csv_scope_confirmation_without_minted_output(t
     assert result.exit_code == 0
     assert "Objects: 0" in result.stdout
     assert "Cards: 0" in result.stdout
+    assert "Claim sample: 0 generated objects from 1 source entries" in result.stdout
+    assert "Accepted reviewed claims: 0/0 bound claim assessments" in result.stdout
+    assert "Withheld assessed claims: 0/0 bound claim assessments" in result.stdout
+    assert "Withheld roles without claim assessments: 0/0 non-absent comparison roles" in result.stdout
     assert "source scope" in result.stdout.lower()
     assert "scope confirmation" in result.stdout.lower()
     assert "latinitas-v2-" not in result.stdout
     assert "Output:" not in result.stdout
     assert not Path(f"{source}.latinitas.json").exists()
+
+
+def test_cli_preview_counts_missing_reviews_separately_from_claims(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_source(source)
+    _profile().save(profile_path)
+    _commit_scope_state(source, _profile())
+    result = CliRunner().invoke(
+        _command(),
+        ["preview", "--input", str(source), "--profile", str(profile_path), "--limit", "0"],
+    )
+    assert result.exit_code == 0
+    assert "Claim sample: 1 generated objects from 1 source entries" in result.stdout
+    assert "Accepted reviewed claims: 0/0 bound claim assessments" in result.stdout
+    assert "Withheld assessed claims: 0/0 bound claim assessments" in result.stdout
+    assert "Withheld roles without claim assessments: 1/4 non-absent comparison roles" in result.stdout
+    assert "Cards: 3" in result.stdout
+    assert "Generated entries with warnings: 1 (overlaps generated)" in result.stdout
+    assert "Wholly skipped entries: 0/1" in result.stdout
 
 
 def test_read_only_preview_rejects_scope_approval(tmp_path: Path) -> None:

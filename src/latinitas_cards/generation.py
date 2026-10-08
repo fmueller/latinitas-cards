@@ -72,6 +72,8 @@ class LearningObjectGenerationResult:
     notes: tuple[GeneratedNote, ...]
     skips: tuple[GenerationSkip, ...]
     source_entry_count: int | None = None
+    # Current bound evidence for generated objects, before export/checkpoint filtering.
+    principal_part_comparisons: tuple[PrincipalPartComparison, ...] = ()
 
     @property
     def generated_count(self) -> int:
@@ -169,6 +171,7 @@ def generate_learning_object_notes(
     }
     metadata = GenerationMetadata(profile_digest=profile_digest(profile))
     notes: list[GeneratedNote] = []
+    comparisons: list[PrincipalPartComparison] = []
     note_ids: set[str] = set()
     for record, source_identity in resolved_records:
         if source_identity is None:
@@ -302,8 +305,14 @@ def generate_learning_object_notes(
             continue
         note_ids.add(note.latinitas_id)
         notes.append(note)
+        comparisons.append(comparison)
 
-    return LearningObjectGenerationResult(notes=tuple(notes), skips=tuple(skipped), source_entry_count=len(records))
+    return LearningObjectGenerationResult(
+        notes=tuple(notes),
+        skips=tuple(skipped),
+        source_entry_count=len(records),
+        principal_part_comparisons=tuple(comparisons),
+    )
 
 
 def _parse_failure_skip(

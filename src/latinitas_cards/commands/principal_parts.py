@@ -122,6 +122,20 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
     typer.echo(f"Manifest review events: {len(result.manifest_reviews)} (includes snapshot/removal reviews)")
     typer.echo(f"Generated entries with warnings: {result.generation.generated_warning_count} (overlaps generated)")
     typer.echo("Ambiguous is a review membership, not an additional disjoint outcome; cards are counted separately.")
+    roles = [role for comparison in result.generation.principal_part_comparisons for role in comparison.roles]
+    claims = [claim for role in roles for claim in role.claims]
+    accepted = sum(claim.status == "accepted" for claim in claims)
+    withheld = sum(claim.status == "withheld" for claim in claims)
+    missing = sum(role.status == "withheld" and not role.claims for role in roles)
+    present = sum(role.status != "absent" for role in roles)
+    typer.echo(
+        f"Claim sample: {result.object_count} generated objects from {result.source_entry_count} source entries "
+        "(not limited by --limit)"
+    )
+    typer.echo(f"Accepted reviewed claims: {accepted}/{len(claims)} bound claim assessments")
+    typer.echo(f"Withheld assessed claims: {withheld}/{len(claims)} bound claim assessments")
+    typer.echo(f"Withheld roles without claim assessments: {missing}/{present} non-absent comparison roles")
+    typer.echo("No calibration or linguistic accuracy is measured by these counts.")
     if result.scope_pending:
         typer.echo(
             "Source scope confirmation required: "
