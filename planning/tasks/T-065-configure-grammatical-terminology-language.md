@@ -6,6 +6,7 @@ priority: medium
 spec_ref: specs/v0.2.1.md#configurable-grammatical-terminology
 dependencies:
     - T-068-publish-v0-2-0
+    - T-064-record-reviewed-claim-decisions-from-the-cli-for
 updated_at: "2026-10-06T18:22:04Z"
 ---
 
@@ -30,10 +31,17 @@ hard-coded Latin (`form_parsing.py` `_LABELS`) and principal-part role labels Ge
   are not silently translated.
 - Switching terminology keeps claim fingerprints, review status, note/card identities
   and slots unchanged; prompts stay Latin-first and prose stays in the user language.
+- Report effective overrides; changing existing generated answer payloads requires
+  renewed managed approval, not renewed linguistic review for display mapping alone.
 - `uv run ruff check`, `uv run mypy`, and `uv run pytest -v` pass.
 
 ## Verification Notes
 
-- TODO: record verification evidence paths.
+- Record verification timestamps and results; do not commit gitignored artifact paths.
 
 ## Implementation Notes
+
+- T-064 supplies canonical reviewed claims. This task owns shared terminology
+  mapping plus principal-part/form-parsing adapters; T-086 consumes it for phrases.
+- T-088 owns safe retained-slot managed payload application. Until that extension
+  lands, report unsupported operations rather than implying approval enables emission.

@@ -33,6 +33,16 @@ T-062 native acceptance.
 
 ## Verification Notes
 
-- TODO: record verification evidence paths.
+- Record verification timestamps and results; do not commit gitignored artifact paths.
 
 ## Implementation Notes
+
+- This task can run independently of shared claim decisions. Browser CSS checks
+  support implementation but do not substitute for native Desktop/AnkiMobile
+  acceptance. Missing native access is a blocker to verification, not a waiver.
+- Document the reference-style version bump and manual/carrier installation; CSV
+  does not install CSS. Existing fixed appearance modes remain unchanged.
+- Provide a native install/toggle checklist recording Desktop/AnkiMobile versions,
+  both palettes, default/fixed/auto states and readability. T-088 owns layout/style
+  rebinding guidance; old CSS digests require reviewed manual setup/reconciliation,
+  not payload approval alone. Never silently rebind scheduled templates.

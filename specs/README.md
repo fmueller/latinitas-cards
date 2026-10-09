@@ -7,11 +7,12 @@ This repository uses versioned specs under `specs/`.
   deterministic Anki CSV output.
 - `specs/v0.1.1.md` defines the completed import of authored vocabulary,
   form, and question/answer notes through the v0.1.0 identity and export contracts.
-- `specs/v0.2.0.md` defines the completed, still-active spec for managed updates,
+- `specs/v0.2.0.md` defines the completed release spec for managed updates,
   evidence-led extraction, calibrated form parsing, and morphology themes.
-- `specs/v0.2.1.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
-  preserve the agreed progression through deck-based phrase and grammar practice,
-  normalized corpora and agent contracts,
+- `specs/v0.2.1.md` is the active, unreleased spec for deck-based phrase and grammar
+  practice, shared claim decisions, terminology, form translations and automatic appearance.
+- `specs/v0.3.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
+  preserve the agreed progression through normalized corpora and agent contracts,
   corpus-first generation, grammar/syntax study, optional direct Anki integration,
   reproducible projects, CLI/migration hardening, release validation, and the v1 stable
   contract.
@@ -20,7 +21,7 @@ This repository uses versioned specs under `specs/`.
 - `specs/v0.3.0.md` also carries PyPI publishing, moved from v0.2.0.
 - The `v0.1.0`, `v0.1.1`, and `v0.2.0` tags record the released deck-first,
   authored-note, and managed-update workflows. Spec transitions are managed through
-  Taskrail; publication does not activate v0.2.1.
+  Taskrail; v0.2.1 was activated separately after v0.2.0 publication.
 - Tracked work in `planning/tasks/` links to its headings via `spec_ref`.
 
 ## Reading Order

@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-08T20:52:00Z"
-active_spec_version: v0.2.0
-active_spec_path: specs/v0.2.0.md
+updated_at: "2026-10-09T20:14:41Z"
+active_spec_version: v0.2.1
+active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
+next_action: 'Start task T-064-record-reviewed-claim-decisions-from-the-cli-for: Record reviewed claim decisions from the CLI for all generated cards'
 last_verification_result: pass for T-068-publish-v0-2-0 at 2026-10-08T20:52:00Z
 relevant_artifacts: []
 continuation_notes:
@@ -18,7 +18,7 @@ continuation_notes:
 
 ## Active Spec
 
-- `specs/v0.2.0.md`
+- `specs/v0.2.1.md`
 
 ## Current Focus
 
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-064-record-reviewed-claim-decisions-from-the-cli-for: Record reviewed claim decisions from the CLI for all generated cards
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 5
+- todo: 11
 - in_progress: 0
 - completed: 78
 - blocked: 0

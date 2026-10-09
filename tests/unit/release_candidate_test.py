@@ -354,7 +354,7 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v020() -> Non
     assert "git clone --branch v0.2.0 --depth 1" in readme
     assert "**Release:** [v0.2.0]" in readme
     spec_index = (ROOT / "specs" / "README.md").read_text(encoding="utf-8")
-    assert "`specs/v0.2.0.md` defines the completed, still-active spec" in spec_index
+    assert "`specs/v0.2.0.md` defines the completed release spec" in spec_index
     readiness = (ROOT / "docs" / "release-v0.2.0.md").read_text(encoding="utf-8")
     assert "`0.2.0` and `v0.2.0`" in readiness
     assert "2026-10-07" in readiness and "maintainer-reported" in readiness
