@@ -2,9 +2,10 @@
 
 `claims` reviews individual linguistic claims, not reviewer authentication,
 source identity, export approval, scheduling migration, or managed destination
-approval. No command accepts every open claim automatically. Phrase adapters are
-not yet supported; the shared contract covers both principal-part recipes and
-contextual form parsing.
+approval. No command accepts every open claim automatically. The shared contract
+covers principal-part recipes, contextual form parsing, and versioned
+[phrase lexical/pattern inputs](reviewed-phrase-inputs.md) via `--phrase-input` on
+`claims list` and `claims record`; it does not yet inspect generated phrase cards.
 
 ## List and record
 

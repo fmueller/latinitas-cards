@@ -2445,6 +2445,7 @@ def _register_commands() -> None:
     from .commands.generate import generate
     from .commands.inspect import inspect
     from .commands.managed import app as managed_app
+    from .commands.phrases import app as phrases_app
     from .commands.preview import preview
     from .commands.setup import setup
     from .commands.split import split
@@ -2462,6 +2463,7 @@ def _register_commands() -> None:
     app.add_typer(managed_app, name="managed")
     app.add_typer(form_parsing_app, name="form-parsing")
     app.add_typer(claims_app, name="claims")
+    app.add_typer(phrases_app, name="phrases")
 
 
 _register_commands()

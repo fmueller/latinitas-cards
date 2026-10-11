@@ -1,0 +1,8 @@
+{
+  "schema_version": 2,
+  "source_identity": {"strategy": "source_id_field", "field": "ID"},
+  "note_type": "Vocabulary",
+  "fields": {"lexical_entry_field": "Word", "principal_parts_field": "Parts"},
+  "principal_parts": {"roles": ["present_1s", "present_infinitive", "perfect_1s", "supine"], "separators": [" — "]},
+  "language_tag": "de"
+}

@@ -348,7 +348,7 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v020() -> Non
     assert "## [0.2.0] - 2026-10-08" in changelog
     assert "compare/v0.2.0...HEAD" in changelog
     assert "compare/v0.1.1...v0.2.0" in changelog
-    assert not changelog.split("## [Unreleased]", 1)[1].split("## [0.2.0]", 1)[0].strip()
+    assert changelog.index("## [Unreleased]") < changelog.index("## [0.2.0]")
     assert "## [0.1.1] - 2026-10-04" in changelog
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "git clone --branch v0.2.0 --depth 1" in readme

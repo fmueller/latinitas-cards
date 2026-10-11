@@ -1,12 +1,12 @@
 ---
 id: T-084-define-reviewed-deck-lexical-inputs-and
 title: Define reviewed deck lexical inputs and construction patterns
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.2.1.md#deck-based-phrase-and-grammar-practice
 dependencies:
     - T-064-record-reviewed-claim-decisions-from-the-cli-for
-updated_at: "2026-10-09T20:05:15Z"
+updated_at: "2026-10-11T11:30:57Z"
 ---
 
 # T-084-define-reviewed-deck-lexical-inputs-and Define reviewed deck lexical inputs and construction patterns
@@ -50,3 +50,39 @@ review system. No corpus or LLM is required.
 
 - Start from profile.py, sources.py, source_extraction.py and claim_review.py;
   use focused domain/command modules, not new logic in cli.py.
+- Implemented version-1 file imports and `phrases inspect/select` in focused
+  modules. `claims list/record --phrase-input` uses the T-064 sidecar, locking,
+  fingerprints and individual review; structured corrections come from the
+  imported file with evidence, not free-text substitutions or deck mutations.
+- Bind confirmed deck identities/scopes, stable sense/pattern/form keys and
+  canonical constituent roles before saving. Composite phrase source identity
+  includes every role/source binding; the separate object key includes the
+  construction and tested sense/form choices. No word is chosen as owner.
+- Shipped bounded synthetic fixtures for all four pattern families, explicit
+  function words, governed cases, nominal/verb agreement, valency and finite
+  compatibility allowlists. Unknown selections and invalid limits fail closed;
+  writes are atomic and protect source/profile/manifest/review files and locks.
+- Dedicated code-simplifier passes made no edits. Independent parallel General,
+  Python and FastAPI/Pydantic lanes found no concrete task-relevant findings.
+  Security S-001 (selection output could replace the shared review lock) was
+  freshly validated, fixed with direct/symlink/hard-link RED-to-GREEN tests,
+  and independently verified RESOLVED. No findings were deferred.
+- TDD evidence: missing `phrases` command failed before implementation; initial
+  eight tests passed. Strict-version regression rejected boolean/float/string
+  versions after demonstrating boolean acceptance. Text inspection regression
+  failed on truncated later patterns before full escaped text output. Security
+  lock regression failed in all three alias cases, then passed in all three.
+- Manual CLI checks on 2026-10-11: unreviewed selection exited 1 without output;
+  explicit individual fixture batch recorded 23 claims; reviewed inspection
+  passed; all four selections saved; reordered requests were byte-identical;
+  wrong governed case exited 1 and retained prior output; source CSV SHA-256
+  remained unchanged. Text output exposed all four families. Lock output was
+  rejected and subsequent reviewed inspection passed. Existing CSV scope
+  bootstrap via `generate --approve-scope --approve-fresh-import` succeeded.
+- Validation on 2026-10-11: full ruff/mypy/pytest chain passed with 965 tests,
+  including 22 focused phrase-input cases. Full-suite integration updated the
+  CLI-group callback test and removed the obsolete empty-Unreleased assumption
+  without changing release metadata. Phrase generation, recipe rendering,
+  generated-answer approval and export remain later tasks, not this cycle.
+- 2026-10-11T11:30:57Z: verification pass
+- 2026-10-11T11:30:57Z: Implemented reviewed version-1 lexical/pattern input and deterministic role-bound selections; final mandatory checks pass (965 tests), manual CLI pass, independent review S-001 resolved; phrase generation/render/export remain later tasks.

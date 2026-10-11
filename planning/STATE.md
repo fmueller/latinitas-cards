@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-11T11:03:44Z"
+updated_at: "2026-10-11T11:30:57Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
-last_verification_result: pass for T-064-record-reviewed-claim-decisions-from-the-cli-for at 2026-10-11T11:03:34Z
+next_action: 'Start task T-085-generate-bounded-meaningful-deck-phrases-from: Generate bounded meaningful deck phrases from reviewed patterns'
+last_verification_result: pass for T-084-define-reviewed-deck-lexical-inputs-and at 2026-10-11T11:30:57Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-064-record-reviewed-claim-decisions-from-the-cli-for at 2026-10-11T11:03:34Z
+- pass for T-084-define-reviewed-deck-lexical-inputs-and at 2026-10-11T11:30:57Z
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-085-generate-bounded-meaningful-deck-phrases-from: Generate bounded meaningful deck phrases from reviewed patterns
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 10
+- todo: 9
 - in_progress: 0
-- completed: 79
+- completed: 80
 - blocked: 0
 - cancelled: 0

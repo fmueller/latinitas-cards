@@ -10,7 +10,8 @@ from typing import Annotated
 import typer
 
 from ..claim_sidecar import claim_report, record_batch, sidecar_path
-from ..profile_setup import safe_source_value
+from ..phrase_inputs import load_inputs
+from ..review_adapters import ReviewState
 from ..review_inspection import inspect_artifact, inspect_workspace, workspace
 
 app = typer.Typer(help="List, individually attest and inspect claims; not destination/export approval.")
@@ -23,7 +24,8 @@ def _emit(report: dict[str, object], machine: bool) -> None:
     else:
         for key, value in report.items():
             typer.echo(f"{key}:")
-            typer.echo(safe_source_value(json.dumps(value, indent=2, ensure_ascii=False), key))
+            # JSON escaping keeps terminal controls inert without hiding later items/fingerprints.
+            typer.echo(json.dumps(value, indent=2, ensure_ascii=True))
 
 
 def _error(error: Exception, machine: bool) -> None:
@@ -31,15 +33,25 @@ def _error(error: Exception, machine: bool) -> None:
     raise typer.Exit(1)
 
 
+def _state(source: Path, profile: Path | None, phrase_input: bool) -> ReviewState:
+    if phrase_input:
+        if profile is not None:
+            raise ValueError("phrase inputs name their confirmed profile; do not combine --phrase-input and --profile")
+        return load_inputs(source).state
+    return workspace(source, profile).state
+
+
 @app.command(name="list")
-def list_claims(source: Path, profile: Path | None = None, machine: JsonOption = False) -> None:
-    """List claims; --profile selects principal parts, otherwise contextual JSON."""
+def list_claims(
+    source: Path, profile: Path | None = None, phrase_input: bool = False, machine: JsonOption = False
+) -> None:
+    """List principal-part, contextual, or --phrase-input file claims."""
     try:
-        work = workspace(source, profile)
+        state = _state(source, profile, phrase_input)
         _emit(
             {
-                "claims": [claim_report(b) for b in work.state.claims],
-                "diagnostics": [asdict(d) for d in work.state.diagnostics],
+                "claims": [claim_report(b) for b in state.claims],
+                "diagnostics": [asdict(d) for d in state.diagnostics],
             },
             machine,
         )
@@ -58,6 +70,7 @@ def record(
     reason: str | None = None,
     value: str | None = None,
     evidence: Path | None = None,
+    phrase_input: bool = False,
     machine: JsonOption = False,
 ) -> None:
     """Record one fingerprint or an explicit JSON array; no approve-all path."""
@@ -75,8 +88,8 @@ def record(
             if evidence is not None:
                 item["evidence"] = json.loads(evidence.read_text(encoding="utf-8"))
             items = [item]
-        work = workspace(source, profile)
-        diagnostics = record_batch(sidecar_path(source), work.state.bases, items)
+        state = _state(source, profile, phrase_input)
+        diagnostics = record_batch(sidecar_path(source), state.bases, items)
         _emit(
             {"diagnostics": [asdict(d) for d in diagnostics], "recorded": len(items) if not diagnostics else 0}, machine
         )

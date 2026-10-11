@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "source": "deck.csv",
+  "profile": "profile.json",
+  "entries": [
+    {
+      "identity": "friend", "pos": "noun", "gender": "masculine",
+      "evidence": [{"source": "Synthetic teaching fixture", "reference": "amicus", "version": "1", "text": "masculine noun; checked bounded forms"}],
+      "senses": [{"key": "person", "meaning": "Freund", "valency": {}, "evidence": [{"source": "Synthetic teaching fixture", "reference": "friend-person", "version": "1", "text": "human participant"}]}],
+      "forms": [
+        {"key": "nom-sg", "text": "amicus", "features": {"case": "nominative", "number": "singular", "gender": "masculine"}},
+        {"key": "acc-sg", "text": "amicum", "features": {"case": "accusative", "number": "singular", "gender": "masculine"}},
+        {"key": "abl-sg", "text": "amico", "features": {"case": "ablative", "number": "singular", "gender": "masculine"}},
+        {"key": "gen-sg", "text": "amici", "features": {"case": "genitive", "number": "singular", "gender": "masculine"}}
+      ]
+    },
+    {
+      "identity": "girl", "pos": "noun", "gender": "feminine",
+      "evidence": [{"source": "Synthetic teaching fixture", "reference": "puella", "version": "1", "text": "feminine noun; checked bounded forms"}],
+      "senses": [{"key": "person", "meaning": "Mädchen", "valency": {}, "evidence": [{"source": "Synthetic teaching fixture", "reference": "girl-person", "version": "1", "text": "human participant"}]}],
+      "forms": [
+        {"key": "nom-sg", "text": "puella", "features": {"case": "nominative", "number": "singular", "gender": "feminine"}},
+        {"key": "acc-sg", "text": "puellam", "features": {"case": "accusative", "number": "singular", "gender": "feminine"}}
+      ]
+    },
+    {
+      "identity": "book", "pos": "noun", "gender": "masculine",
+      "evidence": [{"source": "Synthetic teaching fixture", "reference": "liber", "version": "1", "text": "masculine noun; nominative singular liber"}],
+      "senses": [{"key": "volume", "meaning": "Buch", "valency": {}, "evidence": [{"source": "Synthetic teaching fixture", "reference": "book-volume", "version": "1", "text": "possessable volume"}]}],
+      "forms": [{"key": "nom-sg", "text": "liber", "features": {"case": "nominative", "number": "singular", "gender": "masculine"}}]
+    },
+    {
+      "identity": "see", "pos": "verb",
+      "evidence": [{"source": "Synthetic teaching fixture", "reference": "video", "version": "1", "text": "third-person present active indicative forms"}],
+      "senses": [{"key": "perceive", "meaning": "sehen", "valency": {"subject": "nominative", "object": "accusative"}, "evidence": [{"source": "Synthetic teaching fixture", "reference": "see-perceive", "version": "1", "text": "subject sees direct accusative object"}]}],
+      "forms": [
+        {"key": "present-sg", "text": "videt", "features": {"person": "3", "number": "singular", "tense": "present", "mood": "indicative", "voice": "active"}},
+        {"key": "present-pl", "text": "vident", "features": {"person": "3", "number": "plural", "tense": "present", "mood": "indicative", "voice": "active"}}
+      ]
+    },
+    {
+      "identity": "good", "pos": "adjective",
+      "evidence": [{"source": "Synthetic teaching fixture", "reference": "bonus", "version": "1", "text": "contrasting masculine and feminine nominative singular"}],
+      "senses": [{"key": "quality", "meaning": "gut", "valency": {}, "evidence": [{"source": "Synthetic teaching fixture", "reference": "good-quality", "version": "1", "text": "quality attributed to friend in bounded fixture"}]}],
+      "forms": [
+        {"key": "masc-sg", "text": "bonus", "features": {"case": "nominative", "number": "singular", "gender": "masculine"}},
+        {"key": "fem-sg", "text": "bona", "features": {"case": "nominative", "number": "singular", "gender": "feminine"}}
+      ]
+    }
+  ],
+  "patterns": [
+    {"key": "with", "family": "preposition-noun", "function_words": ["cum"],
+     "roles": {"object": {"pos": "noun", "senses": ["friend/person"], "requires": {"case": "ablative"}}},
+     "evidence": [{"source": "Synthetic teaching fixture", "reference": "cum amico", "version": "1", "text": "cum governs ablative; with a friend"}]},
+    {"key": "possessor", "family": "noun-genitive", "function_words": [],
+     "roles": {"head": {"pos": "noun", "senses": ["book/volume"], "requires": {"case": "nominative"}}, "dependent": {"pos": "noun", "senses": ["friend/person"], "requires": {"case": "genitive"}}},
+     "evidence": [{"source": "Synthetic teaching fixture", "reference": "liber amici", "version": "1", "text": "possessor dependent in genitive; the friend's book"}]},
+    {"key": "sees", "family": "verb-noun", "function_words": [],
+     "roles": {"subject": {"pos": "noun", "senses": ["girl/person", "friend/person"], "requires": {"case": "nominative"}}, "object": {"pos": "noun", "senses": ["friend/person", "girl/person"], "requires": {"case": "accusative"}}, "verb": {"pos": "verb", "senses": ["see/perceive"], "requires": {"person": "3", "tense": "present", "mood": "indicative", "voice": "active"}}},
+     "evidence": [{"source": "Synthetic teaching fixture", "reference": "puella amicum videt", "version": "1", "text": "third-person subject agreement and transitive accusative valency; either human can see the other"}]},
+    {"key": "quality", "family": "adjective-noun", "function_words": [],
+     "roles": {"head": {"pos": "noun", "senses": ["friend/person"], "requires": {"case": "nominative"}}, "modifier": {"pos": "adjective", "senses": ["good/quality"], "requires": {}}},
+     "evidence": [{"source": "Synthetic teaching fixture", "reference": "amicus bonus", "version": "1", "text": "adjective agrees in case, number and gender; a good friend"}]}
+  ],
+  "example_selection": {
+    "version": 1, "limits": {"max_exercises": 20, "variants_per_binding": 2},
+    "selections": [
+      {"pattern": "with", "bindings": [{"role": "object", "entry": "friend", "sense": "person", "form": "abl-sg"}]},
+      {"pattern": "possessor", "bindings": [{"role": "head", "entry": "book", "sense": "volume", "form": "nom-sg"}, {"role": "dependent", "entry": "friend", "sense": "person", "form": "gen-sg"}]},
+      {"pattern": "sees", "bindings": [{"role": "subject", "entry": "girl", "sense": "person", "form": "nom-sg"}, {"role": "object", "entry": "friend", "sense": "person", "form": "acc-sg"}, {"role": "verb", "entry": "see", "sense": "perceive", "form": "present-sg"}]},
+      {"pattern": "quality", "bindings": [{"role": "head", "entry": "friend", "sense": "person", "form": "nom-sg"}, {"role": "modifier", "entry": "good", "sense": "quality", "form": "masc-sg"}]}
+    ]
+  }
+}

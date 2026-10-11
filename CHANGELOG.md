@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `phrases` inspects and saves reviewed deck vocabulary, sense, form and bounded
+  construction-pattern selections; phrase generation and export are not yet available.
+
 ## [0.2.0] - 2026-10-08
 
 ### Added
