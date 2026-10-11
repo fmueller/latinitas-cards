@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-11T18:41:19Z"
+updated_at: "2026-10-11T19:34:44Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: No active-spec task is ready
+next_action: 'Start task T-092-reject-unsafe-controls-in-initial-phrase-exports: Reject unsafe controls in initial phrase exports and checks'
 last_verification_result: pass for T-091-apply-configured-appearance-to-both-phrase-recipes at 2026-10-11T18:41:11Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- No active-spec task is ready
+- Start task T-092-reject-unsafe-controls-in-initial-phrase-exports: Reject unsafe controls in initial phrase exports and checks
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 4
 - in_progress: 0
 - completed: 90
 - blocked: 0
