@@ -298,7 +298,7 @@ class MorphologySettings(_ProfileModel):
 
     version: Literal[1] = 1
     theme: Literal["muted", "monochrome"] = "muted"
-    appearance: Literal["light", "dark"] = "light"
+    appearance: Literal["light", "dark", "auto"] = "light"
     comparison: Literal["static", "disclosure"] = "static"
     terminology: TerminologySettings = Field(default_factory=TerminologySettings)
 
@@ -320,7 +320,7 @@ class MorphologySettings(_ProfileModel):
 class MorphologyOverrides(_ProfileModel):
     version: Literal[1] | None = None
     theme: Literal["muted", "monochrome"] | None = None
-    appearance: Literal["light", "dark"] | None = None
+    appearance: Literal["light", "dark", "auto"] | None = None
     comparison: Literal["static", "disclosure"] | None = None
     terminology: TerminologyOverrides | None = None
 

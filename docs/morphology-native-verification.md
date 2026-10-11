@@ -205,3 +205,93 @@ it is not a waiver of all native evidence, new screenshots or a new native run.
 It establishes neither existing-scheduled-CSS proof nor broader client compatibility,
 migration safety or full release readiness. The static default/unverified-client fallback
 and requirement to repeat affected native checks after presentation changes remain intact.
+
+## Automatic appearance native checklist (T067)
+
+**Pending native acceptance.** The fixed-mode T062 results and T073 waiver above
+do not prove `auto`. Browser class simulation is supporting CSS evidence only,
+not AnkiMobile or Desktop acceptance. T067 must stay blocked until affected checks
+pass on both native clients with this implementation and reference styling v3.
+
+### Executed partial Desktop smoke — 2026-10-11
+
+An independent orb run used native Anki Desktop **26.09.3 (29bb700b)**, Qt 6.11.0,
+Python 3.14.2, Linux x86_64, xcb/Xwayland display :0. Source was accepted main
+[ab24297](https://github.com/fmueller/latinitas-cards/commit/ab24297b7574c635e32f83d353c746d86d268077)
+plus the T067 implementation, CSS v3 and morphology markup v1. A disposable
+`T067Disposable` profile and synthetic two-field note type installed the exact
+reference CSS through Anki's model API. This was not a scheduled-deck migration,
+CSV import-dialog or complete reference-template integration check.
+
+The actual reviewer displayed generated static answers for muted/monochrome ×
+auto/light/dark × light/night: **12 cases** at 13:18:38–13:18:58 UTC. The harness
+changed Anki's theme manager, redisplayed the same cards through question/reveal,
+and read computed colours in the native reviewer. Auto changed from light
+(`#222222` on `#f7f7f4`) to dark (`#eeeeee` on `#222526`); fixed controls stayed
+fixed and monochrome segments matched text. Four auto captures were independently
+inspected: readable and unclipped. Evidence is in the
+[T067 work thread](https://ampcode.com/threads/T-01a12b15-e49b-732c-afb0-b8709d2129a6).
+
+Commands used `amp orb desktop ensure`, installed the missing xcb runtime libraries,
+then ran a temporary harness as a supervised service:
+
+```bash
+uv run --with aqt==26.9.3 python -c \
+  'import anki.buildinfo; from aqt.qt import QT_VERSION_STR; print(anki.buildinfo.version, anki.buildinfo.buildhash, QT_VERSION_STR)'
+amp orb service start t067-native --command \
+  'DISPLAY=:0 QT_QPA_PLATFORM=xcb QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox" uv run --with aqt==26.9.3 python /tmp/t067-native.py'
+amp orb service logs t067-native
+amp orb service stop t067-native
+```
+
+Limits: not a Preferences-UI or iOS appearance toggle, no return-to-light native
+case, no default-profile/disclosure matrix, no full reference carrier or existing
+schedule proof. These remain pending below. AnkiMobile was not tested: no connected
+Amp runners, `ideviceinfo`, `idevice_id`, `xcrun`, `adb`, or USB device bus were
+available in this Linux orb. The earlier maintainer report is fixed-mode only;
+new precise auto evidence on AnkiMobile is required. This smoke is partial native
+Desktop evidence, **not T067 verification**.
+
+### Required remaining native checks
+
+Record the date/time, source commit, CSS version/digest, installation method,
+Anki Desktop version/build and OS, and AnkiMobile version, device and iOS/iPadOS
+version. Attach results/screenshots or a precise dated maintainer report for each
+row; distinguish independently observed results from maintainer-reported evidence.
+
+1. Use a disposable collection/profile or a backed-up, separately approved setup.
+   Install the complete v3 CSS from [reference-note-type.md](reference-note-type.md)
+   in Styling, or a reviewed carrier containing that exact CSS. CSV installs no
+   CSS; the earlier v2 carrier does not test auto. Preserve template names/order,
+   fields and scheduled bindings. Old CSS digests require reviewed manual setup
+   and fresh capture/reconciliation, never silent rebinding or approval-only repair.
+2. Import synthetic answers with each palette and default, fixed `light`, fixed
+   `dark`, and `auto`. Exercise actual front/reveal/answer, both static comparison
+   and expanded disclosure, on each client. Do not infer reviewer results from an
+   editor or browser preview. Check core answer, stem/marker/ending distinction,
+   role labels and prose for contrast, wrapping and readability.
+3. Toggle Anki Desktop appearance and AnkiMobile/iOS appearance light → night →
+   light on the same auto cards, without regeneration/reimport. Record whether
+   the client reloads/reveals the answer to apply the change. Both clients document
+   `.nightMode`; no class means readable light, not OS media-query inference.
+4. Confirm fixed light/default remain light and fixed dark remains dark in both
+   client modes. Monochrome segments must follow text colour, not muted accents.
+5. If applying changed markup to an existing deck, require renewed payload
+   approval and approved **update** reimport after manual reconciliation resolves
+   unsupported slot effects. Confirm stable IDs, card count/slots, schedules and
+   Personal Notes; do not treat this checklist as an application bypass.
+
+| Palette / setting | Desktop light → night → light | AnkiMobile light → night → light |
+|---|---|---|
+| muted / default (light) | pending: stays light, readable | pending: stays light, readable |
+| muted / fixed light | pending: stays light, readable | pending: stays light, readable |
+| muted / fixed dark | pending: stays dark, readable | pending: stays dark, readable |
+| muted / auto | pending: light → dark → light, readable | pending: light → dark → light, readable |
+| monochrome / default (light) | pending: stays light, readable | pending: stays light, readable |
+| monochrome / fixed light | pending: stays light, readable | pending: stays light, readable |
+| monochrome / fixed dark | pending: stays dark, readable | pending: stays dark, readable |
+| monochrome / auto | pending: light → dark → light, readable | pending: light → dark → light, readable |
+
+No result may be filled using the previous fixed-mode proof. Missing native
+access/evidence is a blocker, not a waiver; do not run verify-pass or complete
+until both native clients' required results are recorded.

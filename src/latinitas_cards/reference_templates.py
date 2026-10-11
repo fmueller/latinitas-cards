@@ -50,10 +50,10 @@ REFERENCE_CARD_TEMPLATES: tuple[ReferenceCardTemplate, ...] = tuple(
     ReferenceCardTemplate(slot=slot, front=_front(slot), back=_back(slot)) for slot in TEMPLATE_REGISTRY
 )
 
-REFERENCE_STYLE_VERSION = 2
+REFERENCE_STYLE_VERSION = 3
 
 REFERENCE_CARD_CSS = """\
-/* Latinitas reference styling v2; morphology markup v1. Manual setup only. */
+/* Latinitas reference styling v3; morphology markup v1. Manual setup only. */
 .card {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
@@ -100,7 +100,10 @@ REFERENCE_CARD_CSS = """\
   border-radius: 0.3em;
   overflow-wrap: anywhere;
 }
-.morphology-v1.morphology-dark {
+/* Both Desktop and AnkiMobile use .nightMode; fixed modes do not follow it.
+   :where keeps specificity equal to monochrome's later variable override. */
+.morphology-v1.morphology-dark,
+.nightMode .morphology-v1:where(:not(.morphology-light):not(.morphology-dark)) {
   --stem: #9bc9b9;
   --marker: #e1bf85;
   --ending: #c4b5e1;

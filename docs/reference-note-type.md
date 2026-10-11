@@ -18,7 +18,7 @@ is v0.9.0 roadmap work (see `specs/v0.1.0.md`).
 ## Morphology presentation contract
 
 Profile schema **2** owns `morphology`: `version: 1`, `theme: "muted"` or
-`"monochrome"`, `appearance: "light"` or `"dark"`, and `comparison: "static"`
+`"monochrome"`, `appearance: "light"`, `"dark"` or `"auto"`, and `comparison: "static"`
 or `"disclosure"`. Defaults are muted/light/static. Effective profile overrides
 merge individual settings; setup's JSON report and principal-part preview report
 the effective values. Unknown versions, names and modes fail validation. Choose a
@@ -39,9 +39,9 @@ further explanation, either as a readable static section or native details/summa
 There is no script dependency. **Static is the unverified-client default.**
 
 CSV installs neither CSS nor templates. Paste the versioned reference CSS below
-only as a separately reviewed manual setup step. It supports both themes and
-light/dark classes on the managed answer, without changing field order, recipe
-keys, slots or scheduled template bindings. Existing destination CSS/template
+only as a separately reviewed manual setup step. Styling v3 supports both themes and
+fixed light/dark or automatic client night mode on the managed answer, without
+changing field order, recipe keys, slots or scheduled template bindings. Existing destination CSS/template
 digest mismatches block acquisition pending manual setup/review; no scheduled
 template rebinding, provisioning or migration is performed. Presentation changes
 alter generated fields and therefore require renewed destination payload approval,
@@ -53,6 +53,28 @@ explicit backed-up fresh-start path. No application capability is added here.
 Linguistic claim review ignores only
 `morphology`; all evidence and linguistic configuration remain bound.
 Personal Notes are neither sanitized nor written by generation/CSV.
+
+Set `morphology.appearance` to `auto` in a versioned profile (or run override) to
+omit fixed appearance classes. Both muted and monochrome use the light palette
+without a client night-mode class and the dark palette under `.nightMode`, as
+documented by [Desktop](https://docs.ankiweb.net/templates/styling.html#night-mode)
+and [AnkiMobile](https://docs.ankimobile.net/night-mode.html). No JavaScript or OS
+media-query inference is used; fixed `light` and `dark` remain unchanged and the
+default is still `light`. Preview reports the effective setting and required CSS
+version. Switching client appearance then recolours auto markup without reimport.
+
+Install the complete v3 CSS below manually in Styling, or use a separately reviewed
+carrier with that exact CSS in a disposable/fresh note type. CSV does not install
+it. A v2 carrier is not an auto acceptance kit. Back up scheduled collections first;
+an old CSS digest requires reviewed manual setup and fresh capture/reconciliation,
+not payload approval alone. Do not silently rebind scheduled templates or bypass
+the unsupported-slot-effect boundary above. Moving existing fixed markup to auto
+changes managed answers and requires renewed payload approval and an approved
+update reimport once that boundary is resolved; it must not add notes or reset slots.
+
+Auto native acceptance is **pending**, not inherited from the fixed-mode checks
+below. Use the [auto native checklist](morphology-native-verification.md#automatic-appearance-native-checklist-t067)
+before calling it verified on Desktop and AnkiMobile.
 
 Browser renders are **not native Anki proof**. The maintainer reported native acceptance
 passed on 2026-10-06 for Anki Desktop 26.09.2 and AnkiMobile 25.09 with the synthetic
@@ -100,7 +122,7 @@ a test; it changes only when that contract changes.
 Reference setup for note schema `3` and template registry `v1` (digest `card-registry-sha256:b1e7709e3db8ac17645c0254d9cecfa2d558a105b9b40e87bfcc329ef0adb96d`).
 This block is generated from the authoritative contract; a test fails if this
 published copy drifts from it. Do not hand-edit inside the markers.
-Reference styling `v2` supports morphology markup `v1`.
+Reference styling `v3` supports morphology markup `v1`.
 CSV carries managed markup, never installs CSS or provisions/rebinds templates.
 Existing destinations with a different CSS/template digest are blocked for
 separately reviewed manual setup; do not rewrite scheduled templates.
@@ -350,7 +372,7 @@ Back:
 ### Shared styling (paste once into the note type's Styling)
 
 ```css
-/* Latinitas reference styling v2; morphology markup v1. Manual setup only. */
+/* Latinitas reference styling v3; morphology markup v1. Manual setup only. */
 .card {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
@@ -397,7 +419,10 @@ Back:
   border-radius: 0.3em;
   overflow-wrap: anywhere;
 }
-.morphology-v1.morphology-dark {
+/* Both Desktop and AnkiMobile use .nightMode; fixed modes do not follow it.
+   :where keeps specificity equal to monochrome's later variable override. */
+.morphology-v1.morphology-dark,
+.nightMode .morphology-v1:where(:not(.morphology-light):not(.morphology-dark)) {
   --stem: #9bc9b9;
   --marker: #e1bf85;
   --ending: #c4b5e1;

@@ -272,8 +272,9 @@ def _render_comparison(
         if settings.comparison == "disclosure"
         else '<section class="morphology-static"><h3>Stammformen vergleichen</h3>' + body + "</section>"
     )
+    appearance_class = "" if settings.appearance == "auto" else f" morphology-{settings.appearance}"
     return (
-        f'<section class="morphology-v1 morphology-{settings.theme} morphology-{settings.appearance}">'
+        f'<section class="morphology-v1 morphology-{settings.theme}{appearance_class}">'
         + f'<div>Lemma: <span class="morphology-lemma">{_escape_text(lemma)}</span></div>'
         + f'<div class="tested-form-explanation">{focused}</div>'
         + '<div class="related-stems">'

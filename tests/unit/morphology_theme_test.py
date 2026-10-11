@@ -71,7 +71,9 @@ def test_absent_morphology_defaults_and_versioned_partial_settings_roundtrip() -
     assert DeckProfile.from_json(loaded.to_json()) == loaded
 
 
-@pytest.mark.parametrize("override", [{"version": 99}, {"theme": "neon"}, {"appearance": "auto"}, {"comparison": "js"}])
+@pytest.mark.parametrize(
+    "override", [{"version": 99}, {"theme": "neon"}, {"appearance": "system"}, {"comparison": "js"}]
+)
 def test_unknown_presentation_rejected(override: dict[str, object]) -> None:
     with pytest.raises(ProfileValidationError):
         profile().apply_overrides({"morphology": override})
@@ -123,7 +125,7 @@ def test_terminology_roles_change_only_answers() -> None:
 
 
 @pytest.mark.parametrize("theme", ["muted", "monochrome"])
-@pytest.mark.parametrize("appearance", ["light", "dark"])
+@pytest.mark.parametrize("appearance", ["light", "dark", "auto"])
 @pytest.mark.parametrize("mode", ["static", "disclosure"])
 def test_safe_comparison_and_stable_slots(theme: str, appearance: str, mode: str) -> None:
     hostile = '<img src=x onerror="alert(1)"> &lt;b&gt;\n"quoted"'
@@ -145,7 +147,11 @@ def test_safe_comparison_and_stable_slots(theme: str, appearance: str, mode: str
         (c.slot, c.eligible, c.guard, c.prompt) for c in base
     ]
     answer = next(c.answer for c in cards if c.eligible)
-    assert f"morphology-{theme} morphology-{appearance}" in answer
+    if appearance == "auto":
+        assert f'class="morphology-v1 morphology-{theme}"' in answer
+        assert "morphology-light" not in answer and "morphology-dark" not in answer
+    else:
+        assert f"morphology-{theme} morphology-{appearance}" in answer
     assert ("<details>" in answer) == (mode == "disclosure")
     assert "Stammformen vergleichen" in answer
     assert "Nicht vorhanden" in answer and "Zurückgehalten" in answer
@@ -165,7 +171,7 @@ def test_safe_comparison_and_stable_slots(theme: str, appearance: str, mode: str
 
 
 @pytest.mark.parametrize("theme", ["muted", "monochrome"])
-@pytest.mark.parametrize("appearance", ["light", "dark"])
+@pytest.mark.parametrize("appearance", ["light", "dark", "auto"])
 @pytest.mark.parametrize("mode", ["static", "disclosure"])
 def test_presentation_never_changes_reviewed_claims_or_generation_identity(
     theme: str, appearance: str, mode: str, capsys: pytest.CaptureFixture[str]
@@ -186,6 +192,7 @@ def test_presentation_never_changes_reviewed_claims_or_generation_identity(
             }
         }
     )
+    assert DeckProfile.from_json(effective.to_json()) == effective
     evidence = SourceExtraction("amāvī", ("perfect_1s",), "supported", (("amāvī",),))
     parsed = ParsedPrincipalParts(
         "amō", "amo", (PrincipalPartValue("perfect_1s", "amāvī", "amavi"),), source_identity="x", evidence=evidence

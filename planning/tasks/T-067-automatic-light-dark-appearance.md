@@ -1,12 +1,12 @@
 ---
 id: T-067-automatic-light-dark-appearance
 title: Follow client night mode with automatic appearance
-status: todo
+status: blocked
 priority: medium
 spec_ref: specs/v0.2.1.md#automatic-lightdark-appearance
 dependencies:
     - T-068-publish-v0-2-0
-updated_at: "2026-10-06T19:58:13Z"
+updated_at: "2026-10-11T13:26:02Z"
 ---
 
 # T-067-automatic-light-dark-appearance Follow client night mode with automatic appearance
@@ -46,3 +46,4 @@ T-062 native acceptance.
   both palettes, default/fixed/auto states and readability. T-088 owns layout/style
   rebinding guidance; old CSS digests require reviewed manual setup/reconciliation,
   not payload approval alone. Never silently rebind scheduled templates.
+- 2026-10-11T13:26:02Z: Implementation/reviews/checks pass (ruff, mypy, 1006 pytest; 2026-10-11T13:24:30Z). Native acceptance blocked: no AnkiMobile runner/device or precise new auto evidence; Desktop 26.09.3 reviewer smoke covers 12 static synthetic light/night cases only, not Preferences toggle, return-to-light/default/disclosure/full reference installation matrix. Require dated Desktop and AnkiMobile versions/devices, v3 CSS install/digest, both palettes auto light-night-light readability and default/fixed controls. Browser evidence and prior fixed-mode proof are not substitutes. No verify-pass/complete; T089 remains outside ownership.
