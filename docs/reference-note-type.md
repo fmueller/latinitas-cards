@@ -74,7 +74,10 @@ update reimport once that boundary is resolved; it must not add notes or reset s
 
 Auto native acceptance is **pending**, not inherited from the fixed-mode checks
 below. Use the [auto native checklist](morphology-native-verification.md#automatic-appearance-native-checklist-t067)
-before calling it verified on Desktop and AnkiMobile.
+before calling it verified on Desktop and AnkiMobile. The maintainer's
+[2026-10-11 deferral](morphology-native-verification.md#maintainer-deferral-of-the-implementation-loop-gate--2026-10-11)
+permits implementation-loop completion only, not native acceptance or broader
+safety claims; the native checklist remains pending for maintainer follow-through.
 
 Browser renders are **not native Anki proof**. The maintainer reported native acceptance
 passed on 2026-10-06 for Anki Desktop 26.09.2 and AnkiMobile 25.09 with the synthetic

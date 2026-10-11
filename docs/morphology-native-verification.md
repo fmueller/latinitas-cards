@@ -210,8 +210,30 @@ and requirement to repeat affected native checks after presentation changes rema
 
 **Pending native acceptance.** The fixed-mode T062 results and T073 waiver above
 do not prove `auto`. Browser class simulation is supporting CSS evidence only,
-not AnkiMobile or Desktop acceptance. T067 must stay blocked until affected checks
-pass on both native clients with this implementation and reference styling v3.
+not AnkiMobile or Desktop acceptance. Native verification requires affected checks
+on both clients with this implementation and reference styling v3. The dated
+maintainer decision below defers that gate for implementation-loop completion only.
+
+### Maintainer deferral of the implementation-loop gate — 2026-10-11
+
+On **2026-10-11 (Europe/Berlin)**, the supervising thread relayed the maintainer's
+explicit decision: “No I can’t, can you proceed the loop without it and I’ll do it
+later? The native testing I mean”. See the
+[decision relay](https://ampcode.com/threads/T-01a12a7a-87ff-729a-b72b-b8a98e688203).
+
+This narrowly defers native Desktop/AnkiMobile testing as a blocking condition for
+the T067 **implementation-only** cycle. It permits Taskrail implementation
+verification/completion after the non-native checks and review gates; it is **not
+native acceptance**, executed proof or permission to broaden compatibility,
+readability, installation, migration or scheduled-deck safety claims. Auto remains
+native-unverified beyond the exact partial Desktop smoke below; AnkiMobile auto
+has not been tested. The maintainer will follow through on the outstanding native
+checklist in this document; no replacement native-only implementation task is added.
+
+T089 integration/docs readiness and later adversarial reviews must preserve this
+same scoped deferral and evidence boundary. Unexecuted native lanes must stay
+pending, not be marked clean, passed or covered. The old fixed-mode acceptance and
+browser results do not fill any native auto checklist row.
 
 ### Executed partial Desktop smoke — 2026-10-11
 
@@ -292,6 +314,7 @@ row; distinguish independently observed results from maintainer-reported evidenc
 | monochrome / fixed dark | pending: stays dark, readable | pending: stays dark, readable |
 | monochrome / auto | pending: light → dark → light, readable | pending: light → dark → light, readable |
 
-No result may be filled using the previous fixed-mode proof. Missing native
-access/evidence is a blocker, not a waiver; do not run verify-pass or complete
-until both native clients' required results are recorded.
+No native result may be filled using the previous fixed-mode proof or the
+implementation-only Taskrail pass. Both clients' required results remain pending
+for native acceptance. The 2026-10-11 maintainer deferral permits implementation
+completion only; it does not make missing native evidence a pass or a safety waiver.
