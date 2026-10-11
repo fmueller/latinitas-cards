@@ -70,13 +70,14 @@ def record(
     reason: str | None = None,
     value: str | None = None,
     evidence: Path | None = None,
+    selected_sense: str | None = None,
     phrase_input: bool = False,
     machine: JsonOption = False,
 ) -> None:
     """Record one fingerprint or an explicit JSON array; no approve-all path."""
     try:
         if batch is not None:
-            if any(v is not None for v in (fingerprint, status, reviewer, reason, value, evidence)):
+            if any(v is not None for v in (fingerprint, status, reviewer, reason, value, evidence, selected_sense)):
                 raise ValueError("batch and single-decision options cannot be combined")
             items = json.loads(batch.read_text(encoding="utf-8"))
             if not isinstance(items, list) or not items:
@@ -87,6 +88,8 @@ def record(
                 item["value"] = value
             if evidence is not None:
                 item["evidence"] = json.loads(evidence.read_text(encoding="utf-8"))
+            if selected_sense is not None:
+                item["selected_sense"] = selected_sense
             items = [item]
         state = _state(source, profile, phrase_input)
         diagnostics = record_batch(sidecar_path(source), state.bases, items)

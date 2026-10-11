@@ -254,6 +254,7 @@ def _render_comparison(
         analysis = " · ".join(
             text
             for text in (
+                _escape_text(role.translation) if available and role.translation else "",
                 _render_segmentation(role.segmentation) if available and role.segmentation else "",
                 _escape_text(role.explanation) if available and role.explanation else "",
             )

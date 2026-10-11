@@ -73,6 +73,52 @@ excluded. Note identities and frozen slot ordinals do not change with decisions.
 Withheld/missing linguistic values never become asserted card content. Existing
 source-role and export/checkpoint gates remain in force.
 
+## Principal-part translations
+
+`claims list source.csv --profile profile.json --json` includes an open
+`translation` claim for each present form/role. There is no automatic translation
+or acceptance. Supply a German form-appropriate value, its evidence, and an
+explicit selected sense using the same individual review route:
+
+```sh
+uv run latinitas-cards claims record source.csv --profile profile.json \
+  --fingerprint '<translation fingerprint>' --status accepted \
+  --value 'ich habe geliebt' --selected-sense 'love' \
+  --evidence evidence.json --reviewer 'Latin reviewer' \
+  --reason 'Checked amāvī, perfect first singular, selected love sense'
+```
+
+Batch items use `"selected_sense": "love"` alongside `value` and `evidence`.
+Use a stable, explicit sense name and describe the selected meaning in the
+evidence, especially for a multi-sense meaning field. Each role is reviewed
+separately; a lemma gloss is not a translation of every form. Deponents need
+active-meaning translations (e.g. `locūtus sum` → `ich habe gesprochen`), not a
+passive translation inferred from spelling. Defective/irregular forms receive no
+automatic support. Ambiguous source alternatives cannot be resolved by authoring
+a translation. Missing roles stay absent. An accepted fourth-form translation
+does not confirm PPP versus supine: its canonical role label still needs review.
+
+Accepted translations appear for the tested form and in the four-role comparison
+on answers in both principal-part recipes. They are never added to fronts.
+The existing optional source meaning/gloss on prompts is unchanged. Withheld or
+open translations show no value. Latin/German grammatical terminology does not
+translate this content: it follows the profile's user language (German only now;
+other user languages reject authored form translations).
+
+Form, role/profile, source meaning, selected sense, translation and evidence bind
+review. Source meaning edits invalidate translation decisions, not independent
+label/split/explanation decisions. Correcting a translation or sense requires a
+new individual decision against its current fingerprint; editing sidecar content
+without renewing review fails check. Inspection exposes selected sense, language,
+evidence and review status. Exported answers retain that provenance.
+
+Identities and slots do not change. Changed answers require new managed payload
+review, independently of linguistic acceptance. **Retained-slot answer writes are
+currently unsupported**: managed planning reports the change, but approval does
+not enable emission. T-088 owns that extension. Keep the current destination
+unchanged and retain the proposed CSV/plan for later supported application; do not
+claim a browser preview proves native Anki import or scheduling behavior.
+
 ## Inspect and fail-closed check
 
 ```sh

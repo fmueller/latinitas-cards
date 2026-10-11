@@ -33,6 +33,7 @@ class DecisionItem(BaseModel):
     reason: str
     value: str | None = None
     evidence: tuple[Evidence, ...] | None = None
+    selected_sense: str | None = None
 
 
 class StoredDecision(BaseModel):
@@ -42,6 +43,7 @@ class StoredDecision(BaseModel):
     decision: ReviewDecision
     value: str | None = None
     evidence: tuple[Evidence, ...] | None = None
+    selected_sense: str | None = None
 
 
 class Sidecar(BaseModel):
@@ -66,14 +68,25 @@ def load_sidecar(path: Path) -> Sidecar:
     return Sidecar.model_validate_json(path.read_text(encoding="utf-8")) if path.exists() else Sidecar()
 
 
-def authored_claim(base: Claim, value: str | None, evidence: tuple[Evidence, ...] | None) -> Claim:
+def authored_claim(
+    base: Claim, value: str | None, evidence: tuple[Evidence, ...] | None, selected_sense: str | None = None
+) -> Claim:
     if value is None:
-        if evidence is not None:
+        if evidence is not None or selected_sense is not None:
             raise ValueError("authored evidence requires a value")
         return base
     if not evidence:
         raise ValueError("authored values require their own evidence")
-    return replace(base, value=value, evidence=evidence, analyzer="reviewer-authored/v1", supported=True)
+    if base.kind == "translation" and base.profile.language_tag.lower().split("-")[0] != "de":
+        raise ValueError("Reviewed form translations currently support German user language only")
+    return replace(
+        base,
+        value=value,
+        evidence=evidence,
+        analyzer="reviewer-authored/v1",
+        supported=True,
+        selected_sense=selected_sense if selected_sense is not None else base.selected_sense,
+    )
 
 
 def resolve_claims(
@@ -93,7 +106,7 @@ def resolve_claims(
             stored.pop(entry.base_fingerprint, None)
             continue
         seen.add(entry.base_fingerprint)
-        claim = authored_claim(base.claim, entry.value, entry.evidence)
+        claim = authored_claim(base.claim, entry.value, entry.evidence, entry.selected_sense)
         if entry.decision.claim_fingerprint != claim.fingerprint or (
             entry.decision.status == "accepted" and not claim.supported
         ):
@@ -107,7 +120,11 @@ def resolve_claims(
             result.append(base)
         else:
             result.append(
-                replace(base, claim=authored_claim(base.claim, saved.value, saved.evidence), decision=saved.decision)
+                replace(
+                    base,
+                    claim=authored_claim(base.claim, saved.value, saved.evidence, saved.selected_sense),
+                    decision=saved.decision,
+                )
             )
     return tuple(result), tuple(diagnostics)
 
@@ -123,6 +140,8 @@ def claim_report(bound: BoundClaim) -> dict[str, object]:
         "candidate_id": bound.claim.candidate_id,
         "feature": bound.feature,
         "kind": bound.claim.kind,
+        "selected_sense": bound.claim.selected_sense,
+        "language": bound.claim.profile.language_tag if bound.claim.kind == "translation" else None,
         "form": bound.claim.candidate_text,
         "value": bound.claim.value if bound.claim.supported else None,
         "alternatives": list(bound.claim.alternatives),
@@ -158,7 +177,7 @@ def record_batch(path: Path, claims: Sequence[BoundClaim], items: Sequence[objec
                 base, bound = binding
                 if item.value is not None and not base.authorable:
                     raise ValueError("unresolved source forms require separate source correction")
-                claim = authored_claim(bound.claim, item.value, item.evidence)
+                claim = authored_claim(bound.claim, item.value, item.evidence, item.selected_sense)
                 # Role labels are canonical slots, never free-text identity changes.
                 if (
                     base.claim.profile_version == "principal-parts/v1"
@@ -173,6 +192,7 @@ def record_batch(path: Path, claims: Sequence[BoundClaim], items: Sequence[objec
                     decision=decision,
                     value=item.value if item.value is not None else (previous.value if previous else None),
                     evidence=item.evidence if item.value is not None else (previous.evidence if previous else None),
+                    selected_sense=claim.selected_sense,
                 )
                 if (
                     previous is not None

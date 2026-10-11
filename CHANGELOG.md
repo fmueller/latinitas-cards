@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- Principal-part answers show individually reviewed German form translations for
+  both recipes, with explicit sense/provenance and no added front-side hints.
 - Generated principal-part and form-parsing answers offer Latin (default) or German
   grammatical terminology, with preview overrides and explicit legacy profile upgrades.
 - `phrases` inspects and saves reviewed deck vocabulary, sense, form and bounded

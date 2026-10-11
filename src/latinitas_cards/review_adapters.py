@@ -88,7 +88,7 @@ def principal_review(result: PrincipalPartExportResult) -> ReviewState:
         for part in parsed.value.parts:
             if part.is_omitted or part.display is None:
                 continue
-            for kind in ("label", "segmentation", "explanation"):
+            for kind in ("label", "segmentation", "explanation", "translation"):
                 claim_kind: ClaimKind = kind
                 claim = Claim(
                     candidate_id=f"{note.latinitas_id}:{part.role}",
@@ -103,6 +103,18 @@ def principal_review(result: PrincipalPartExportResult) -> ReviewState:
                             "1",
                             record.fields[profile.fields.principal_parts_field],
                         ),
+                    )
+                    + (
+                        (
+                            Evidence(
+                                "source-meaning",
+                                record.provenance.location,
+                                "1",
+                                record.fields.get(profile.fields.meaning_field or "", "") or "No source meaning",
+                            ),
+                        )
+                        if kind == "translation"
+                        else ()
                     ),
                     profile=profile,
                     profile_version="principal-parts/v1",

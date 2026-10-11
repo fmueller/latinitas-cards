@@ -16,7 +16,7 @@ from typing import Literal
 from .profile import DeckProfile
 from .source_extraction import SourceExtraction
 
-type ClaimKind = Literal["label", "segmentation", "explanation"]
+type ClaimKind = Literal["label", "segmentation", "explanation", "translation"]
 type ReviewStatus = Literal["accepted", "withheld"]
 
 
@@ -45,12 +45,17 @@ class Claim:
     alternatives: tuple[str, ...] = ()
     supported: bool = True
     extraction: SourceExtraction | None = None
+    selected_sense: str | None = None
 
     def __post_init__(self) -> None:
         if not all(value.strip() for value in (self.candidate_id, self.value, self.analyzer, self.profile_version)):
             raise ValueError("claim requires candidate, value, analyzer and profile version")
-        if self.kind not in {"label", "segmentation", "explanation"} or not self.evidence:
+        if self.kind not in {"label", "segmentation", "explanation", "translation"} or not self.evidence:
             raise ValueError("claim requires a known kind and provenance")
+        if self.kind == "translation" and self.supported and not (self.selected_sense or "").strip():
+            raise ValueError("translation requires an explicit selected sense")
+        if self.selected_sense is not None and self.kind != "translation":
+            raise ValueError("selected sense is only supported for translation claims")
 
     @property
     def fingerprint(self) -> str:
@@ -71,6 +76,8 @@ class Claim:
             "supported": self.supported,
             "extraction": asdict(self.extraction) if self.extraction is not None else None,
         }
+        if self.kind == "translation":
+            data["selected_sense"] = self.selected_sense
         return hashlib.sha256(json.dumps(data, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 

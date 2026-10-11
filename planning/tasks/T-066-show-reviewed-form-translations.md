@@ -1,14 +1,14 @@
 ---
 id: T-066-show-reviewed-form-translations
 title: Show reviewed translations of principal-part forms
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#reviewed-form-translations
 dependencies:
     - T-068-publish-v0-2-0
     - T-064-record-reviewed-claim-decisions-from-the-cli-for
     - T-065-configure-grammatical-terminology-language
-updated_at: "2026-10-06T19:55:00Z"
+updated_at: "2026-10-11T13:02:08Z"
 ---
 
 # T-066-show-reviewed-form-translations Show reviewed translations of principal-part forms
@@ -45,3 +45,5 @@ during T-062 native acceptance. Decisions should flow through the T-064 CLI revi
 
 - T-088 owns safe retained-slot managed payload application. Until that extension
   lands, report unsupported operations rather than implying approval enables emission.
+- 2026-10-11T13:01:56Z: verification pass
+- 2026-10-11T13:02:08Z: Verified pass at 2026-10-11T13:01:56Z after workflow-v3 RED/GREEN, dedicated simplifier, parallel General/Python/Security reviews, fresh candidate/disposition checks and final ruff/mypy/pytest (998 passed). Manual CLI and inspected Chromium states cover accepted/withheld translations, both recipes and Latin/German terminology. Source form/role, selected sense/value and meaning binding fail closed; ambiguous forms and unsupported English reject authoring. Managed retained-answer approval remains unsupported pending T-088. Browser evidence is not native Anki proof. T-089 remains separate and untouched.

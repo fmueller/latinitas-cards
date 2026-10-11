@@ -10,6 +10,200 @@ from latinitas_cards.cli import app
 runner = CliRunner()
 
 
+@pytest.mark.parametrize("terminology", ["latin", "user"])
+@pytest.mark.parametrize(
+    ("lemma", "forms", "meaning", "fourth", "translations", "sense"),
+    [
+        (
+            "amō",
+            "amō, amāre, amāvī, amātum",
+            "lieben",
+            "supine",
+            ["ich liebe", "lieben", "ich habe geliebt", "um zu lieben"],
+            "love",
+        ),
+        (
+            "loquor",
+            "loquor, loquī, locūtus sum, locūtus",
+            "sprechen",
+            "perfect_passive_participle",
+            ["ich spreche", "sprechen", "ich habe gesprochen", "gesprochen"],
+            "speak",
+        ),
+        (
+            "petō",
+            "petō, petere, petīvī, petītum",
+            "suchen; verlangen",
+            "supine",
+            ["ich verlange", "verlangen", "ich habe verlangt", "um zu verlangen"],
+            "request",
+        ),
+        (
+            "amō",
+            "amō, amāre, amāvī, amātus",
+            "lieben",
+            "perfect_passive_participle",
+            ["ich liebe", "lieben", "ich habe geliebt", "geliebt"],
+            "love",
+        ),
+        ("sum", "sum, esse, fuī, ", "sein", "supine", ["ich bin", "sein", "ich bin gewesen"], "be"),
+    ],
+)
+def test_reviewed_form_translations(
+    tmp_path: Path,
+    terminology: str,
+    lemma: str,
+    forms: str,
+    meaning: str,
+    fourth: str,
+    translations: list[str],
+    sense: str,
+) -> None:
+    from latinitas_cards.preview_export import prepare_principal_part_export, write_principal_part_csv
+    from latinitas_cards.profile import DeckProfile, MorphologySettings, SourceIdentityConfig
+
+    source = tmp_path / "source.csv"
+    source.write_text(f'ID,Lemma,Forms,Meaning\nentry-1,{lemma},"{forms}",{meaning}\n')
+    profile = DeckProfile.default(
+        note_type="Latin",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        meaning_field="Meaning",
+        source_identity=SourceIdentityConfig(strategy="source_id_field", field="ID"),
+        principal_part_roles=("present_1s", "present_infinitive", "perfect_1s", fourth),
+        separators=(",",),
+        selected_recipes=("principal_part_completion", "principal_part_recognition"),
+    ).model_copy(
+        update={
+            "morphology": MorphologySettings.model_validate({"terminology": {"version": 1, "language": terminology}})
+        }
+    )
+    profile_path = tmp_path / "profile.json"
+    profile.save(profile_path)
+    write_principal_part_csv(
+        prepare_principal_part_export(source, profile, approve_new_scope=True), tmp_path / "base.csv"
+    )
+    initial = invoke("inspect", str(source), "--profile", str(profile_path))
+    claims = invoke("list", str(source), "--profile", str(profile_path))["claims"]
+    candidates = [c for c in claims if c["kind"] == "translation"]
+    assert len(candidates) == len(translations)
+    assert all(c["status"] == "withheld" for c in candidates)
+    batch = tmp_path / "decisions.json"
+    evidence = [
+        {
+            "source": "Latin reviewer",
+            "reference": sense,
+            "version": "1",
+            "text": "Checked form, role and active meaning",
+        }
+    ]
+    # Accepting an unsupported placeholder or omitting the selected sense must fail closed.
+    for item in [decision(candidates[0]), decision(candidates[0]) | {"value": translations[0], "evidence": evidence}]:
+        batch.write_text(json.dumps([item]))
+        assert (
+            runner.invoke(
+                app, ["claims", "record", str(source), "--profile", str(profile_path), "--batch", str(batch)]
+            ).exit_code
+            != 0
+        )
+    batch.write_text(
+        json.dumps(
+            [
+                decision(c) | {"value": value, "evidence": evidence, "selected_sense": sense}
+                for c, value in zip(candidates, translations, strict=True)
+            ]
+        )
+    )
+    invoke("record", str(source), "--profile", str(profile_path), "--batch", str(batch))
+    # Even an accepted translation cannot adjudicate the fourth role.
+    unconfirmed = invoke("inspect", str(source), "--profile", str(profile_path))
+    assert [c["prompt"] for c in unconfirmed["cards"]] == [c["prompt"] for c in initial["cards"]]
+    if len(translations) == 4:
+        assert all(not c["eligible"] for c in unconfirmed["cards"] if c["semantic_key"].endswith(f":{fourth}"))
+        batch.write_text(
+            json.dumps([decision(next(c for c in claims if c["feature"] == fourth and c["kind"] == "label"))])
+        )
+        invoke("record", str(source), "--profile", str(profile_path), "--batch", str(batch))
+    reviewed = invoke("inspect", str(source), "--profile", str(profile_path), "--check")
+    assert [(c["identity"], c["slot"]) for c in initial["cards"]] == [
+        (c["identity"], c["slot"]) for c in reviewed["cards"]
+    ]
+    for card in reviewed["cards"]:
+        assert all(value not in card["prompt"] for value in translations if value not in meaning)
+        if card["eligible"]:
+            assert all(value in card["answer"] for value in translations)
+    reported = invoke("list", str(source), "--profile", str(profile_path))["claims"]
+    assert all(c["selected_sense"] == sense and c["language"] == "de" for c in reported if c["kind"] == "translation")
+    output = tmp_path / "reviewed.csv"
+    write_principal_part_csv(prepare_principal_part_export(source, profile), output)
+    assert (
+        invoke("inspect", str(source), "--profile", str(profile_path), "--artifact", str(output), "--check")[
+            "diagnostics"
+        ]
+        == []
+    )
+    # Editing either the selected sense or translation without renewed review invalidates it.
+    sidecar = Path(f"{source}.claims.json")
+    saved = sidecar.read_text()
+    for field, value in [("selected_sense", "different-sense"), ("value", "Ungeprüfte Übersetzung")]:
+        data = json.loads(saved)
+        entry = next(e for e in data["decisions"] if e.get("selected_sense") == sense)
+        entry[field] = value
+        sidecar.write_text(json.dumps(data))
+        tampered = invoke("inspect", str(source), "--profile", str(profile_path))
+        assert tampered["diagnostics"]
+        assert all(
+            line != translations[0] and not line.endswith(f" · {translations[0]}")
+            for c in tampered["cards"]
+            for line in c["answer"].splitlines()
+        )
+        assert all(value not in c["answer"] for c in tampered["cards"])
+    sidecar.write_text(saved)
+    current = next(c for c in reported if c["kind"] == "translation")
+    batch.write_text(
+        json.dumps(
+            [
+                decision(current)
+                | {
+                    "status": "withheld",
+                    "value": "Nicht behaupten",
+                    "evidence": evidence,
+                    "selected_sense": sense,
+                }
+            ]
+        )
+    )
+    invoke("record", str(source), "--profile", str(profile_path), "--batch", str(batch))
+    withheld = invoke("inspect", str(source), "--profile", str(profile_path), "--check")
+    assert all("Nicht behaupten" not in c["answer"] for c in withheld["cards"])
+    assert all(
+        line != translations[0] and not line.endswith(f" · {translations[0]}")
+        for c in withheld["cards"]
+        for line in c["answer"].splitlines()
+    )
+    drift = runner.invoke(
+        app,
+        [
+            "claims",
+            "inspect",
+            str(source),
+            "--profile",
+            str(profile_path),
+            "--artifact",
+            str(output),
+            "--check",
+            "--json",
+        ],
+    )
+    assert drift.exit_code != 0 and "drift" in drift.stdout
+    sidecar.write_text(saved)
+    # Meaning edits must not reuse a selected-sense decision, or alter note identities.
+    source.write_text(source.read_text().replace(meaning, "anderer Sinn"))
+    stale = invoke("inspect", str(source), "--profile", str(profile_path))
+    assert stale["diagnostics"]
+    assert all(translations[0] not in c["answer"] for c in stale["cards"])
+
+
 def parsing_source(tmp_path: Path) -> Path:
     data = json.loads(Path("docs/examples/form-parsing-cases.json").read_text())
     for proposal in data["cases"][0]["proposals"]:

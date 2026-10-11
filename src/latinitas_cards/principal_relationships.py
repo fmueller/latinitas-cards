@@ -28,6 +28,7 @@ class RoleComparison:
     segmentation: str | None = None
     explanation: str | None = None
     claims: tuple[ClaimAssessment, ...] = ()
+    translation: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +94,7 @@ def compare_principal_parts(
             reason = "Quellform im bestätigten Rollenprofil; Analyse benötigt gesonderte Prüfung."
         segmentation = accepted.get("segmentation", set())
         explanation = accepted.get("explanation", set())
+        translation = accepted.get("translation", set())
         withheld_kinds = {item.claim.kind for item in bound if item.status == "withheld"}
         result.append(
             RoleComparison(
@@ -107,6 +109,9 @@ def compare_principal_parts(
                 if len(explanation) == 1 and not blocked and "explanation" not in withheld_kinds
                 else None,
                 bound,
+                next(iter(translation))
+                if len(translation) == 1 and not blocked and "translation" not in withheld_kinds
+                else None,
             )
         )
     return PrincipalPartComparison(tuple(result))
