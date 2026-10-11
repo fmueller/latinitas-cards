@@ -298,6 +298,24 @@ def test_resolution_and_presentation_require_new_approval() -> None:
         verify_approval(changed, approval, snapshot, state)
     changed = compose_plan(snapshot, state, [proposal], {"theme": "monochrome"})
     assert changed["plan_id"] != plan["plan_id"]
+    from latinitas_cards.cards import render_cards
+    from latinitas_cards.principal_parts import ParsedPrincipalParts, PrincipalPartValue
+    from latinitas_cards.profile import MorphologySettings, TerminologySettings
+
+    cards = render_cards(
+        ParsedPrincipalParts("amo", "amo", (PrincipalPartValue("perfect_1s", "amavi", "amavi"),)),
+        selected_recipes=("principal_part_recognition",),
+        morphology=MorphologySettings(terminology=TerminologySettings(language="user")),
+    )
+    card = next(c for c in cards if c.eligible)
+    proposal["fields"][card.slot.answer_field] = card.answer
+    changed = compose_plan(snapshot, state, [proposal], {"terminology": {"version": 1, "language": "user"}})
+    with pytest.raises(ReconciliationRequired, match="changed"):
+        verify_approval(changed, approval, snapshot, state)
+    operation = next(op for op in changed["notes"][0]["operations"] if op.get("field") == card.slot.answer_field)
+    assert operation["supported"] is False
+    with pytest.raises(ReconciliationRequired, match="unsupported"):
+        approve_plan(changed, [operation["id"]], "presentation review, not linguistic review")
 
 
 def test_personal_and_kept_fields_never_become_approved_writes() -> None:

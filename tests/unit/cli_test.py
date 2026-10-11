@@ -337,6 +337,10 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     assert set(phrases.commands) == {"inspect", "select", "generate"}
     commands.remove(phrases)
     commands.extend(phrases.commands.values())
+    terminology = cast(click.Group, click_app.commands["terminology"])
+    assert set(terminology.commands) == {"upgrade"}
+    commands.remove(terminology)
+    commands.extend(terminology.commands.values())
     assert all(command.callback is not None for command in commands)
     command_modules = {command.name: command.callback.__module__ for command in commands}
 

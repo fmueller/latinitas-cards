@@ -73,7 +73,7 @@ def test_confirmed_profiles_render_deponent_and_middle_omission_end_to_end(
     assert len(note.card_keys) == (3 if lemma == "sequor" else 2)
     for card in note.cards:
         if card.eligible:
-            absent_label = "fourth_role" if lemma == "sequor" else "Perfekt, 1. Person Singular"
+            absent_label = "fourth_role" if lemma == "sequor" else "Perfectum, persona prima singularis"
             assert f"<strong>{absent_label}:</strong> — (Nicht vorhanden)" in card.answer
             assert "secūtus sum" in card.answer if lemma == "sequor" else "dīcere" in card.answer
             assert "Partizip Perfekt Passiv (PPP)" not in card.answer

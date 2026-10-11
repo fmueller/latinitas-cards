@@ -1,13 +1,13 @@
 ---
 id: T-065-configure-grammatical-terminology-language
 title: Configure grammatical terminology language on generated cards
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#configurable-grammatical-terminology
 dependencies:
     - T-068-publish-v0-2-0
     - T-064-record-reviewed-claim-decisions-from-the-cli-for
-updated_at: "2026-10-06T18:22:04Z"
+updated_at: "2026-10-11T12:24:48Z"
 ---
 
 # T-065-configure-grammatical-terminology-language Configure grammatical terminology language on generated cards
@@ -45,3 +45,5 @@ hard-coded Latin (`form_parsing.py` `_LABELS`) and principal-part role labels Ge
   mapping plus principal-part/form-parsing adapters; T-086 consumes it for phrases.
 - T-088 owns safe retained-slot managed payload application. Until that extension
   lands, report unsupported operations rather than implying approval enables emission.
+- 2026-10-11T12:24:40Z: verification pass
+- 2026-10-11T12:24:48Z: Verified 2026-10-11T12:24:40Z: Latin/German versioned terminology, explicit legacy upgrade, canonical review and identity invariants, CLI and rendered cards, managed approval boundary. Workflow-v3 simplification plus General/Python/Security/Database reviews completed; T065-1 fixed and independently verified in cycle two; final ruff/mypy/pytest chain passed (988 tests).

@@ -7,33 +7,42 @@ import typer
 
 from ..form_parsing import ParsingInput, generate_parsing, parsing_csv
 from ..review_adapters import parsing_review
+from ..terminology import terminology_report
 
 app = typer.Typer(help="Preview reviewed contextual parsing; separate manual note type, no managed apply.")
 
 
-def _load(source: Path) -> ParsingInput:
+def _load(source: Path, terminology: str | None = None) -> ParsingInput:
     try:
         data, state = parsing_review(source)
         for diagnostic in state.diagnostics:
             typer.echo(diagnostic.message, err=True)
+        if terminology is not None:
+            profile = data.profile.apply_overrides({"morphology": {"terminology": {"language": terminology}}})
+            data = data.model_copy(update={"profile": profile})
+        typer.echo(terminology_report(data.profile.morphology.terminology, terminology), err=True)
         return data
     except (OSError, ValueError) as error:
         raise typer.BadParameter(str(error)) from error
 
 
 @app.command()
-def preview(source: Path) -> None:
+def preview(
+    source: Path,
+    terminology: Annotated[str | None, typer.Option(help="Terminology override: latin or user (German)")] = None,
+) -> None:
     """Emit claim fingerprints, accepted claims, alternatives and eligibility skips."""
     import json
 
     # ASCII JSON escapes terminal bidi/control characters without losing data.
-    typer.echo(json.dumps(generate_parsing(_load(source)), indent=2))
+    typer.echo(json.dumps(generate_parsing(_load(source, terminology)), indent=2))
 
 
 @app.command(name="export")
 def export_csv(
     source: Path,
     output: Path,
+    terminology: Annotated[str | None, typer.Option(help="Terminology override: latin or user (German)")] = None,
     approve_fresh_import: Annotated[
         bool,
         typer.Option(
@@ -46,7 +55,7 @@ def export_csv(
     ] = False,
 ) -> None:
     """Write eligible cards only; requires separate manual reference setup and new scheduling."""
-    data = _load(source)
+    data = _load(source, terminology)
     if not approve_fresh_import:
         raise typer.BadParameter(
             "Requires --approve-fresh-import: separate manual setup, no scheduling migration/apply."

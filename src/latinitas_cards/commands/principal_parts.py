@@ -17,6 +17,7 @@ from ..preview_export import (
 from ..profile import DeckProfile, load_profile, resolve_profile
 from ..profile_setup import safe_source_value
 from ..reference_templates import REFERENCE_STYLE_VERSION
+from ..terminology import terminology_report
 
 _MAX_DIAGNOSTIC_ROWS = 50
 
@@ -35,6 +36,7 @@ def run_principal_part_preview(
     approved_removals: Iterable[str],
     legacy_note_types: Sequence[str] = (),
     limit: int,
+    terminology: str | None = None,
 ) -> None:
     """Prepare and render a profile-driven preview without writing output."""
 
@@ -52,8 +54,9 @@ def run_principal_part_preview(
         approved_allocations=approved_allocations,
         approved_removals=approved_removals,
         legacy_note_types=legacy_note_types,
+        terminology=terminology,
     )
-    render_principal_part_preview(result, limit=limit)
+    render_principal_part_preview(result, limit=limit, terminology_override=terminology)
 
 
 def run_principal_part_export(
@@ -73,6 +76,7 @@ def run_principal_part_export(
     approve_fresh_import: bool,
     legacy_note_types: Sequence[str] = (),
     limit: int,
+    terminology: str | None = None,
 ) -> None:
     """Render a preview and then write the deterministic CSV output."""
 
@@ -92,13 +96,16 @@ def run_principal_part_export(
         approve_new_scope=approve_new_scope,
         approve_fresh_import=approve_fresh_import,
         legacy_note_types=legacy_note_types,
+        terminology=terminology,
     )
-    render_principal_part_preview(result, limit=limit)
+    render_principal_part_preview(result, limit=limit, terminology_override=terminology)
     write_principal_part_csv(result, output_path, profile_path=profile_path)
     typer.echo(f"Output: {safe_source_value(str(output_path), 'output path')}")
 
 
-def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: int) -> None:
+def render_principal_part_preview(
+    result: PrincipalPartExportResult, *, limit: int, terminology_override: str | None = None
+) -> None:
     """Render bounded, terminal-safe representative notes and structured reasons."""
 
     typer.echo("Principal-part preview")
@@ -106,6 +113,11 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
         typer.echo(safe_source_value(diagnostic, "claim review"))
     morphology = result.profile.morphology
     typer.echo(f"Morphology v{morphology.version}: {morphology.theme}/{morphology.appearance}/{morphology.comparison}")
+    typer.echo(terminology_report(morphology.terminology, terminology_override))
+    typer.echo(
+        "Changed answers require renewed payload approval, not linguistic review; "
+        "retained-slot payload application unsupported."
+    )
     typer.echo(
         "Effective profile presentation (including overrides); "
         f"manual reference CSS v{REFERENCE_STYLE_VERSION} required."
@@ -228,6 +240,7 @@ def _prepare(
     approve_new_scope: bool = False,
     approve_fresh_import: bool = False,
     legacy_note_types: Sequence[str] = (),
+    terminology: str | None = None,
 ) -> PrincipalPartExportResult:
     profile = _effective_profile(
         profile_path,
@@ -235,6 +248,7 @@ def _prepare(
         generated_note_type=generated_note_type,
         tags=tags,
         recipes=recipes,
+        terminology=terminology,
     )
     return prepare_principal_part_export(
         source_path,
@@ -257,6 +271,7 @@ def _effective_profile(
     generated_note_type: str | None,
     tags: Sequence[str] | None,
     recipes: Sequence[str] | None,
+    terminology: str | None = None,
 ) -> DeckProfile:
     profile = load_profile(profile_path)
     overrides: dict[str, object] = {}
@@ -268,6 +283,8 @@ def _effective_profile(
         overrides["tags"] = tuple(tags)
     if recipes is not None:
         overrides["selected_recipes"] = tuple(recipes)
+    if terminology is not None:
+        overrides["morphology"] = {"terminology": {"language": terminology}}
     return resolve_profile(profile, overrides or None)
 
 

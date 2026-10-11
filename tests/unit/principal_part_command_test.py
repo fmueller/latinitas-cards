@@ -55,6 +55,21 @@ def _commit_scope_state(source: Path, profile: DeckProfile) -> None:
     write_principal_part_csv(prepared, source.parent / "bootstrap.csv")
 
 
+def test_principal_preview_reports_terminology_override(tmp_path: Path) -> None:
+    source = tmp_path / "source.csv"
+    profile_path = tmp_path / "profile.json"
+    _write_source(source)
+    _profile().save(profile_path)
+    _commit_scope_state(source, _profile())
+    result = CliRunner().invoke(
+        _command(), ["preview", "--input", str(source), "--profile", str(profile_path), "--terminology", "user"]
+    )
+    assert result.exit_code == 0, result.output
+    assert "Effective terminology v1: user (de); override: user" in result.output
+    assert "Präsens, 1. Person Singular" in result.output
+    assert "renewed payload approval" in result.output
+
+
 def test_profile_preview_requests_csv_scope_confirmation_without_minted_output(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     profile_path = tmp_path / "profile.json"

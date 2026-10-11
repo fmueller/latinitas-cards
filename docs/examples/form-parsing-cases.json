@@ -16,7 +16,10 @@
     "target_deck": "Latin::Latinitas",
     "tags": ["latinitas"],
     "selected_recipes": ["principal_part_completion", "principal_part_recognition"],
-    "morphology": {"version": 1, "theme": "muted", "appearance": "light", "comparison": "static"}
+    "morphology": {
+      "version": 1, "theme": "muted", "appearance": "light", "comparison": "static",
+      "terminology": {"version": 1, "language": "latin"}
+    }
   },
   "cases": [{
     "source_identity": "sample-sentence-1",

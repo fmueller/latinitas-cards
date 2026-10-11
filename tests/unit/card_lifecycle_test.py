@@ -131,7 +131,7 @@ def test_sibling_retirement_retains_safe_content_and_binding() -> None:
     assert effect["card_id"] == "card-love-7"
     assert effect["ordinal"] == 7
     assert effect["pre_suspended"] is False
-    assert effect["retention"]["fields"]["RecognitionPerfectAnswer"] == "Perfekt, 1. Person Singular"
+    assert effect["retention"]["fields"]["RecognitionPerfectAnswer"] == "Perfectum, persona prima singularis"
     assert effect["retention"]["fields"]["Meaning"] == "old"
     assert effect["retention"]["newly_approved"] is False
     assert effect["retention"]["stale"] is True

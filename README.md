@@ -212,16 +212,45 @@ Set the look of principal-part answers in the saved profile's `morphology` secti
 `setup` has no flags for it.
 
 ```json
-"morphology": {"version": 1, "theme": "muted", "appearance": "light", "comparison": "static"}
+"morphology": {
+  "version": 1, "theme": "muted", "appearance": "light", "comparison": "static",
+  "terminology": {"version": 1, "language": "latin"}
+}
 ```
 
 `theme` is `muted` or `monochrome`; `appearance` is `light` or `dark` (fixed, not
 following device night mode); `comparison` is `static` (default) or `disclosure`.
 `setup --reconfigure` preserves these saved settings while proposing source mappings
-again. An explicit `morphology` object must include `"version": 1`; omitting the whole
-section uses muted/light/static defaults, including when upgrading a schema-1 profile.
+again. An explicit `morphology` object must include `"version": 1` and versioned
+terminology. Explicitly upgrading a legacy profile uses muted/light/static defaults
+when the whole section was absent.
 Paste the reference CSS into your note type by hand; see
 [reference note type](docs/reference-note-type.md#morphology-presentation-contract).
+
+### Grammatical terminology
+
+Principal-part answers and contextual form-parsing answers default to Latin terminology.
+To use German, add `"terminology": {"version": 1, "language": "user"}` inside
+`morphology`; `"language": "latin"` selects Latin. `user` uses the profile's
+`language_tag` and currently supports only German (`de`, including regional tags).
+Unknown settings, unsupported versions and unsupported user languages fail validation.
+
+Legacy profiles without terminology are rejected on ordinary load. Explicitly upgrade
+to Latin defaults with `latinitas-cards terminology upgrade old-profile.json new-profile.json`;
+the old file is untouched and existing output files are never overwritten.
+An explicitly supplied `terminology` object must include `"version": 1`.
+Both `preview`/`generate --profile` and `form-parsing preview`/`export` accept
+`--terminology latin|user` and report the effective setting and override.
+Form-parsing reports go to stderr so stdout remains JSON.
+
+Controlled feature values (such as `nominativus` and `pluralis`) remain canonical
+in reviewed claims and display as `Kasus: Nominativ`, `Numerus: Plural` in German.
+Values outside the vocabulary still need explicit individual review and display
+verbatim, never machine-translated. Prompts and German explanatory prose are unchanged.
+Changing terminology preserves claim fingerprints, linguistic reviews, identities and
+frozen card slots. Changed answer payloads require renewed managed approval, not renewed
+linguistic review. Retained-slot answer updates are still reported as unsupported;
+approval does not enable their emission. Fresh/manual CSV export remains available.
 
 ## Experimental and planned capabilities
 

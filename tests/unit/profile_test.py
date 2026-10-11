@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -44,6 +45,40 @@ def test_profile_round_trips_through_human_and_machine_readable_json() -> None:
     assert machine["fields"]["lexical_entry_field"] == "Lemma"
     assert '"schema_version": 2' in human
     assert DeckProfile.from_human_readable(human) == profile
+
+
+def test_explicit_legacy_terminology_upgrade_cli(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from latinitas_cards.cli import app
+
+    legacy = _profile().to_machine_readable()
+    legacy["morphology"].pop("terminology")
+    source = tmp_path / "legacy.json"
+    target = tmp_path / "upgraded.json"
+    source.write_text(json.dumps(legacy))
+    with pytest.raises(ProfileValidationError, match="explicit terminology upgrade"):
+        DeckProfile.from_mapping(legacy)
+    result = CliRunner().invoke(app, ["terminology", "upgrade", str(source), str(target)])
+    assert result.exit_code == 0, result.output
+    upgraded = json.loads(target.read_text())
+    assert upgraded["morphology"]["terminology"] == {"version": 1, "language": "latin"}
+    assert DeckProfile.from_mapping(upgraded).morphology.terminology.language == "latin"
+    assert json.loads(source.read_text()) == legacy
+    assert CliRunner().invoke(app, ["terminology", "upgrade", str(source), str(target)]).exit_code == 2
+
+
+@pytest.mark.parametrize("setting", [{"version": 2}, {"version": True}, {"version": 1, "language": "english"}, {}])
+def test_terminology_unknown_or_unversioned_settings_fail(setting: dict[str, object]) -> None:
+    data = _profile().to_machine_readable()
+    data["morphology"]["terminology"] = setting
+    with pytest.raises(ProfileValidationError):
+        DeckProfile.from_mapping(data)
+
+
+def test_terminology_user_language_fails_closed() -> None:
+    with pytest.raises(ProfileValidationError, match="Unsupported terminology user language"):
+        _profile().apply_overrides({"language_tag": "en", "morphology": {"terminology": {"language": "user"}}})
 
 
 def test_profile_defaults_are_explicit_and_language_tags_are_not_implicit() -> None:

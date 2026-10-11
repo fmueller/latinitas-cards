@@ -866,6 +866,7 @@ def test_reconfigure_preserves_morphology_and_applies_explicit_corrections(tmp_p
             "theme": "monochrome",
             "appearance": "dark",
             "comparison": "disclosure",
+            "terminology": {"version": 1, "language": "latin"},
         }
         assert loaded.target_deck == "Reviewed Latin"
         assert loaded.fields == original.fields

@@ -30,13 +30,16 @@ def test_versioned_theme_roundtrip_overrides_and_legacy() -> None:
         "theme": "monochrome",
         "appearance": "dark",
         "comparison": "static",
+        "terminology": {"version": 1, "language": "latin"},
     }
     assert DeckProfile.from_json(effective.to_human_readable()) == effective
     assert original.morphology.theme == "muted"
     legacy = original.to_machine_readable()
     legacy["schema_version"] = 1
     legacy.pop("morphology")
-    assert DeckProfile.from_mapping(legacy).morphology.comparison == "static"
+    with pytest.raises(ProfileValidationError, match="explicit terminology upgrade"):
+        DeckProfile.from_mapping(legacy)
+    assert DeckProfile.upgrade_terminology(legacy).morphology.comparison == "static"
     legacy["morphology"] = {"theme": "monochrome"}
     with pytest.raises(ProfileValidationError, match="legacy"):
         DeckProfile.from_mapping(legacy)
@@ -53,14 +56,17 @@ def test_explicit_profile_morphology_requires_version(morphology: dict[str, obje
 def test_absent_morphology_defaults_and_versioned_partial_settings_roundtrip() -> None:
     data = profile().to_machine_readable()
     data.pop("morphology")
-    assert DeckProfile.from_mapping(data).morphology == profile().morphology
+    with pytest.raises(ProfileValidationError, match="explicit terminology upgrade"):
+        DeckProfile.from_mapping(data)
+    assert DeckProfile.upgrade_terminology(data).morphology == profile().morphology
     data["morphology"] = {"version": 1, "theme": "monochrome"}
-    loaded = DeckProfile.from_mapping(data)
+    loaded = DeckProfile.upgrade_terminology(data)
     assert loaded.to_machine_readable()["morphology"] == {
         "version": 1,
         "theme": "monochrome",
         "appearance": "light",
         "comparison": "static",
+        "terminology": {"version": 1, "language": "latin"},
     }
     assert DeckProfile.from_json(loaded.to_json()) == loaded
 
@@ -85,6 +91,35 @@ def test_hostile_role_labels_and_segmentation_are_literal_not_markup() -> None:
     assert '<span class="morphology-lemma">&amp;lt;lemma&amp;gt;</span>' in answer
     assert "<svg" not in answer and "<i>" not in answer
     assert 'class="morphology-marker"' not in answer
+
+
+def test_terminology_roles_change_only_answers() -> None:
+    roles = (
+        ("present_1s", "Praesens, persona prima singularis", "Präsens, 1. Person Singular"),
+        ("present_infinitive", "Infinitivus praesentis", "Infinitiv"),
+        ("perfect_1s", "Perfectum, persona prima singularis", "Perfekt, 1. Person Singular"),
+        ("perfect_passive_participle", "Participium perfecti passivi (PPP)", "Partizip Perfekt Passiv (PPP)"),
+        ("supine", "Supinum", "Supinum"),
+    )
+    parsed = ParsedPrincipalParts("amō", "amo", tuple(PrincipalPartValue(r, "forma", "forma") for r, _, _ in roles))
+    comparison = PrincipalPartComparison(
+        tuple(RoleComparison(r, "forma", "present", "Geprüfter Text") for r, _, _ in roles)
+    )
+    latin = render_cards(parsed, selected_recipes=profile().selected_recipes, comparison=comparison)
+    effective = profile().apply_overrides({"morphology": {"terminology": {"language": "user"}}})
+    german = render_cards(
+        parsed, selected_recipes=effective.selected_recipes, comparison=comparison, morphology=effective.morphology
+    )
+    assert [(c.slot, c.eligible, c.guard, c.prompt) for c in latin] == [
+        (c.slot, c.eligible, c.guard, c.prompt) for c in german
+    ]
+    for role, latin_label, german_label in roles:
+        latin_card = next(c for c in latin if c.slot.role == role and c.slot.recipe.endswith("recognition"))
+        german_card = next(c for c in german if c.slot == latin_card.slot)
+        assert latin_card.answer.startswith(latin_label) and german_card.answer.startswith(german_label)
+        assert f"<strong>{latin_label}:</strong>" in latin_card.answer
+        assert f"<strong>{german_label}:</strong>" in german_card.answer
+        assert "Geprüfter Text" in latin_card.answer and "Geprüfter Text" in german_card.answer
 
 
 @pytest.mark.parametrize("theme", ["muted", "monochrome"])
@@ -141,7 +176,16 @@ def test_presentation_never_changes_reviewed_claims_or_generation_identity(
             "principal_parts": {"separators": [","]},
         }
     )
-    effective = original.apply_overrides({"morphology": {"theme": theme, "appearance": appearance, "comparison": mode}})
+    effective = original.apply_overrides(
+        {
+            "morphology": {
+                "theme": theme,
+                "appearance": appearance,
+                "comparison": mode,
+                "terminology": {"language": "user"},
+            }
+        }
+    )
     evidence = SourceExtraction("amāvī", ("perfect_1s",), "supported", (("amāvī",),))
     parsed = ParsedPrincipalParts(
         "amō", "amo", (PrincipalPartValue("perfect_1s", "amāvī", "amavi"),), source_identity="x", evidence=evidence

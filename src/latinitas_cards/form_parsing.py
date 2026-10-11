@@ -19,6 +19,7 @@ from .identity import derive_latinitas_id
 from .preview_export import serialize_anki_csv
 from .profile import DeckProfile
 from .profile_setup import encode_unsafe_controls
+from .terminology import FEATURE_VALUES, feature_name, feature_value
 
 type ParsingFeature = Literal["lemma", "person", "number", "tense", "mood", "voice", "case", "gender"]
 
@@ -47,16 +48,6 @@ PARSING_BACK = (
     "{{#ParsingEnabled}}{{FrontSide}}<hr id=answer>{{ParsingAnswer}}"
     "{{#Personal Notes}}<div>{{Personal Notes}}</div>{{/Personal Notes}}{{/ParsingEnabled}}"
 )
-_LABELS: dict[ParsingFeature, str] = {
-    "lemma": "Lemma",
-    "person": "Persona",
-    "number": "Numerus",
-    "tense": "Tempus",
-    "mood": "Modus",
-    "voice": "Vox",
-    "case": "Casus",
-    "gender": "Genus",
-}
 
 
 class ParsingProposal(BaseModel):
@@ -189,6 +180,9 @@ def generate_parsing(data: ParsingInput) -> tuple[ParsingResult, ...]:
         for proposal in case.proposals:
             claim = proposal.to_claim(case, data.profile)
             assessment = assess_claim(claim, proposal.decision)
+            reason = assessment.reason
+            if proposal.feature != "lemma" and proposal.value not in FEATURE_VALUES[proposal.feature]:
+                reason += "; Outside controlled vocabulary: explicit review required; display remains verbatim"
             if assessment.status == "accepted":
                 accepted.setdefault(proposal.feature, set()).add(proposal.value)
             claims.append(
@@ -197,7 +191,7 @@ def generate_parsing(data: ParsingInput) -> tuple[ParsingResult, ...]:
                     "value": proposal.value,
                     "fingerprint": claim.fingerprint,
                     "status": assessment.status,
-                    "reason": assessment.reason,
+                    "reason": reason,
                     "alternatives": list(proposal.alternatives),
                     "evidence": [
                         {"source": e.source, "reference": e.reference, "version": e.version, "text": e.text}
@@ -218,7 +212,8 @@ def generate_parsing(data: ParsingInput) -> tuple[ParsingResult, ...]:
             else (
                 f'<section class="morphology-v1 morphology-{settings.theme} morphology-{settings.appearance}">'
                 + "<br>".join(
-                    f"{_LABELS[feature]}: {_escape(next(iter(accepted[feature])))}"
+                    f"{feature_name(feature, settings.terminology)}: "
+                    f"{_escape(feature_value(feature, next(iter(accepted[feature])), settings.terminology))}"
                     for feature in case.applicable_features
                     if feature in accepted
                 )

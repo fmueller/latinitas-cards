@@ -1611,6 +1611,9 @@ def generate_impl(
     target_deck: Annotated[str | None, typer.Option(help="Explicit target deck/subdeck override")] = None,
     generated_note_type: Annotated[str | None, typer.Option(help="Explicit generated note type override")] = None,
     tag: Annotated[list[str] | None, typer.Option("--tag", help="Explicit generated tag override; repeatable")] = None,
+    terminology: Annotated[
+        str | None, typer.Option(help="Profile terminology override: latin or user (German)")
+    ] = None,
     recipe: Annotated[
         list[str] | None,
         typer.Option("--recipe", help="Explicit confirmed recipe override; repeatable"),
@@ -1685,6 +1688,7 @@ def generate_impl(
                 approve_fresh_import=approve_fresh_import,
                 legacy_note_types=legacy_note_type or (),
                 limit=preview_limit,
+                terminology=terminology,
             )
         except (OSError, ValueError) as error:
             typer.echo(f"Error: {safe_source_value(str(error), 'error')}", err=True)
@@ -1699,6 +1703,7 @@ def generate_impl(
             generated_note_type,
             tag,
             recipe,
+            terminology,
             approve_reuse,
             approve_allocation,
             approve_removal,
@@ -1794,6 +1799,9 @@ def preview_impl(
     target_deck: Annotated[str | None, typer.Option(help="Explicit target deck/subdeck override")] = None,
     generated_note_type: Annotated[str | None, typer.Option(help="Explicit generated note type override")] = None,
     tag: Annotated[list[str] | None, typer.Option("--tag", help="Explicit generated tag override; repeatable")] = None,
+    terminology: Annotated[
+        str | None, typer.Option(help="Profile terminology override: latin or user (German)")
+    ] = None,
     recipe: Annotated[
         list[str] | None,
         typer.Option("--recipe", help="Explicit confirmed recipe override; repeatable"),
@@ -1866,6 +1874,7 @@ def preview_impl(
                 approved_removals=approve_removal or (),
                 legacy_note_types=legacy_note_type or (),
                 limit=limit,
+                terminology=terminology,
             )
         except (OSError, ValueError) as error:
             typer.echo(f"Error: {safe_source_value(str(error), 'error')}", err=True)
@@ -1880,6 +1889,7 @@ def preview_impl(
             generated_note_type,
             tag,
             recipe,
+            terminology,
             approve_reuse,
             approve_allocation,
             approve_removal,
@@ -2449,6 +2459,7 @@ def _register_commands() -> None:
     from .commands.preview import preview
     from .commands.setup import setup
     from .commands.split import split
+    from .commands.terminology import app as terminology_app
     from .commands.validate import validate
 
     app.command()(generate)
@@ -2464,6 +2475,7 @@ def _register_commands() -> None:
     app.add_typer(form_parsing_app, name="form-parsing")
     app.add_typer(claims_app, name="claims")
     app.add_typer(phrases_app, name="phrases")
+    app.add_typer(terminology_app, name="terminology")
 
 
 _register_commands()

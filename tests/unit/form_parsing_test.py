@@ -121,6 +121,106 @@ def approve(data: ParsingInput, features: tuple[str, ...]) -> ParsingInput:
     return data.model_copy(update={"cases": (case.model_copy(update={"proposals": proposals}),)})
 
 
+def test_terminology_override_preserves_review_and_identity(tmp_path: Path) -> None:
+    data = approve(example(), ("lemma", "case", "number"))
+    latin = generate_parsing(data)[0]
+    german_profile = data.profile.apply_overrides({"morphology": {"terminology": {"language": "user"}}})
+    german = generate_parsing(data.model_copy(update={"profile": german_profile}))[0]
+    assert "Kasus: Nominativ" in german["answer"] and "Numerus: Plural" in german["answer"]
+    assert "Casus: nominativus" in latin["answer"]
+    assert {k: v for k, v in latin.items() if k != "answer"} == {k: v for k, v in german.items() if k != "answer"}
+    source = tmp_path / "cases.json"
+    source.write_text(data.model_dump_json())
+    result = CliRunner().invoke(app, ["form-parsing", "preview", str(source), "--terminology", "user"])
+    assert result.exit_code == 0, result.output
+    assert "Effective terminology v1: user (de); override: user" in result.stderr
+    assert json.loads(result.stdout)[0]["answer"] == german["answer"]
+
+
+def test_controlled_terminology_all_features_and_reviewed_free_text() -> None:
+    # Expectations are authored independently of the production mapping.
+    vocabulary = (
+        (
+            "case",
+            "Casus",
+            "Kasus",
+            (
+                ("nominativus", "Nominativ"),
+                ("genetivus", "Genitiv"),
+                ("dativus", "Dativ"),
+                ("accusativus", "Akkusativ"),
+                ("ablativus", "Ablativ"),
+                ("vocativus", "Vokativ"),
+                ("locativus", "Lokativ"),
+            ),
+        ),
+        ("number", "Numerus", "Numerus", (("singularis", "Singular"), ("pluralis", "Plural"))),
+        ("person", "Persona", "Person", (("prima", "1. Person"), ("secunda", "2. Person"), ("tertia", "3. Person"))),
+        (
+            "tense",
+            "Tempus",
+            "Tempus",
+            (
+                ("praesens", "Präsens"),
+                ("imperfectum", "Imperfekt"),
+                ("futurum", "Futur I"),
+                ("perfectum", "Perfekt"),
+                ("plusquamperfectum", "Plusquamperfekt"),
+                ("futurum exactum", "Futur II"),
+            ),
+        ),
+        (
+            "mood",
+            "Modus",
+            "Modus",
+            (
+                ("indicativus", "Indikativ"),
+                ("coniunctivus", "Konjunktiv"),
+                ("imperativus", "Imperativ"),
+                ("infinitivus", "Infinitiv"),
+                ("participium", "Partizip"),
+            ),
+        ),
+        ("voice", "Vox", "Genus verbi", (("activa", "Aktiv"), ("passiva", "Passiv"))),
+        (
+            "gender",
+            "Genus",
+            "Genus",
+            (("masculinum", "Maskulinum"), ("femininum", "Femininum"), ("neutrum", "Neutrum")),
+        ),
+    )
+    base = example()
+    for feature, latin_name, german_name, values in vocabulary:
+        for canonical, german_value in (*values, ("<i>individual review</i>", "&lt;i&gt;individual review&lt;/i&gt;")):
+            proposal = base.cases[0].proposals[1].model_copy(update={"feature": feature, "value": canonical})
+            case = base.cases[0].model_copy(
+                update={
+                    "applicable_features": ("lemma", feature),
+                    "required_features": ("lemma", feature),
+                    "proposals": (base.cases[0].proposals[0], proposal),
+                }
+            )
+            unreviewed = base.model_copy(update={"cases": (case,)})
+            assert not generate_parsing(unreviewed)[0]["eligible"]
+            reviewed = approve(unreviewed, ("lemma", feature))
+            latin = generate_parsing(reviewed)[0]
+            german = generate_parsing(
+                reviewed.model_copy(
+                    update={
+                        "profile": reviewed.profile.apply_overrides(
+                            {"morphology": {"terminology": {"language": "user"}}}
+                        )
+                    }
+                )
+            )[0]
+            expected_latin = canonical if not canonical.startswith("<") else german_value
+            assert f"{latin_name}: {expected_latin}" in latin["answer"]
+            assert f"{german_name}: {german_value}" in german["answer"]
+            assert latin["claims"] == german["claims"]
+            if canonical.startswith("<"):
+                assert "Outside controlled vocabulary" in german["claims"][1]["reason"]
+
+
 def test_precision_first_withheld_preview_exposes_alternatives_and_no_card() -> None:
     result = generate_parsing(example())
     assert result[0]["eligible"] is False

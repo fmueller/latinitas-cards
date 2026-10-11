@@ -267,6 +267,32 @@ def _canonicalise_recipes(value: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(recipes)
 
 
+class TerminologySettings(_ProfileModel):
+    """Presentation vocabulary; never part of linguistic claim binding."""
+
+    version: Literal[1] = 1
+    language: Literal["latin", "user"] = "latin"
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def _integer_version(cls, value: object) -> object:
+        if type(value) is not int:
+            raise ValueError("terminology version must be an integer")
+        return value
+
+
+class TerminologyOverrides(_ProfileModel):
+    version: Literal[1] | None = None
+    language: Literal["latin", "user"] | None = None
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def _integer_version(cls, value: object) -> object:
+        if value is not None and type(value) is not int:
+            raise ValueError("terminology version must be an integer")
+        return value
+
+
 class MorphologySettings(_ProfileModel):
     """Versioned presentation only; static remains the unverified-client default."""
 
@@ -274,6 +300,14 @@ class MorphologySettings(_ProfileModel):
     theme: Literal["muted", "monochrome"] = "muted"
     appearance: Literal["light", "dark"] = "light"
     comparison: Literal["static", "disclosure"] = "static"
+    terminology: TerminologySettings = Field(default_factory=TerminologySettings)
+
+    @field_validator("terminology", mode="before")
+    @classmethod
+    def _explicit_terminology_version(cls, value: Any) -> Any:
+        if isinstance(value, Mapping) and "version" not in value:
+            raise ValueError("terminology.version is required; upgrade legacy profiles explicitly")
+        return value
 
     @field_validator("version", mode="before")
     @classmethod
@@ -288,6 +322,7 @@ class MorphologyOverrides(_ProfileModel):
     theme: Literal["muted", "monochrome"] | None = None
     appearance: Literal["light", "dark"] | None = None
     comparison: Literal["static", "disclosure"] | None = None
+    terminology: TerminologyOverrides | None = None
 
     @field_validator("version", mode="before")
     @classmethod
@@ -396,6 +431,12 @@ class DeckProfile(_ProfileModel):
 
     @model_validator(mode="after")
     def _validate_source_identity_field(self) -> DeckProfile:
+        if "morphology" not in self.model_fields_set or "terminology" not in self.morphology.model_fields_set:
+            raise ValueError(
+                "Legacy profile requires explicit terminology upgrade; run terminology upgrade SOURCE OUTPUT"
+            )
+        if self.morphology.terminology.language == "user" and self.language_tag.lower().split("-")[0] != "de":
+            raise ValueError("Unsupported terminology user language; German (de) is required")
         if self.source_identity.strategy == "source_id_field":
             mapped_fields = {
                 self.fields.lexical_entry_field,
@@ -444,8 +485,23 @@ class DeckProfile(_ProfileModel):
                 "target_deck": target_deck,
                 "tags": tuple(tags),
                 "selected_recipes": tuple(selected_recipes),
+                "morphology": MorphologySettings().model_dump(),
             }
         )
+
+    @classmethod
+    def upgrade_terminology(cls, data: Mapping[str, Any]) -> DeckProfile:
+        """Explicitly migrate legacy schema-1/2 presentation to versioned Latin defaults."""
+        values = dict(data)
+        if type(values.get("schema_version")) is int and values["schema_version"] == 1 and "morphology" not in values:
+            values["schema_version"] = CURRENT_PROFILE_SCHEMA_VERSION
+        morphology = values.get("morphology", MorphologySettings().model_dump())
+        if isinstance(morphology, Mapping):
+            values["morphology"] = {
+                "terminology": TerminologySettings().model_dump(),
+                **morphology,
+            }
+        return cls.from_mapping(values)
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, Any]) -> DeckProfile:
@@ -536,6 +592,8 @@ class DeckProfile(_ProfileModel):
                         )
                         if strategy_changed and source_identity.strategy != "source_id_field":
                             nested_changes["field"] = None
+                if nested == "morphology" and "terminology" in nested_changes:
+                    values[nested]["terminology"].update(nested_changes.pop("terminology"))
                 values[nested].update(nested_changes)
         values.update(changes)
         return DeckProfile.from_mapping(cast(Mapping[str, Any], values))

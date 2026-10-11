@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-11T11:51:19Z"
+updated_at: "2026-10-11T12:24:49Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-065-configure-grammatical-terminology-language: Configure grammatical terminology language on generated cards'
-last_verification_result: pass for T-085-generate-bounded-meaningful-deck-phrases-from at 2026-10-11T11:51:19Z
+next_action: 'Start task T-066-show-reviewed-form-translations: Show reviewed translations of principal-part forms'
+last_verification_result: pass for T-065-configure-grammatical-terminology-language at 2026-10-11T12:24:40Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-085-generate-bounded-meaningful-deck-phrases-from at 2026-10-11T11:51:19Z
+- pass for T-065-configure-grammatical-terminology-language at 2026-10-11T12:24:40Z
 
 ## Next Action
 
-- Start task T-065-configure-grammatical-terminology-language: Configure grammatical terminology language on generated cards
+- Start task T-066-show-reviewed-form-translations: Show reviewed translations of principal-part forms
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 8
+- todo: 7
 - in_progress: 0
-- completed: 81
+- completed: 82
 - blocked: 0
 - cancelled: 0

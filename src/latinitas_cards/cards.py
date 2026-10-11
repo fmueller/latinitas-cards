@@ -21,8 +21,9 @@ from dataclasses import dataclass
 from .identity import derive_card_semantic_key
 from .principal_parts import ParsedPrincipalParts, PrincipalPartValue
 from .principal_relationships import PrincipalPartComparison
-from .profile import MorphologySettings
+from .profile import MorphologySettings, TerminologySettings
 from .profile_setup import encode_unsafe_controls
+from .terminology import role_label
 
 TEMPLATE_REGISTRY_VERSION = 1
 
@@ -52,14 +53,6 @@ _ROLE_LABELS = {
     "perfect_passive_participle": "PPP",
     "supine": "Supine",
 }
-_ROLE_DISPLAY_LABELS = {
-    "present_infinitive": "Infinitiv",
-    "present_1s": "Präsens, 1. Person Singular",
-    "perfect_1s": "Perfekt, 1. Person Singular",
-    "perfect_passive_participle": "Partizip Perfekt Passiv (PPP)",
-    "supine": "Supinum",
-}
-
 GUARD_VALUE = "1"
 _BLANK_MARKER = "____"
 
@@ -140,9 +133,9 @@ def slot_for_recipe_role(recipe: str, role: str) -> CardSlot | None:
 
 
 def role_display_label(role: str) -> str:
-    """Return the human-readable semantic label of a confirmed role."""
+    """Keep established front labels independent of answer terminology."""
 
-    return _ROLE_DISPLAY_LABELS.get(role, role)
+    return role_label(role, TerminologySettings(language="user"))
 
 
 @dataclass(frozen=True, slots=True)
@@ -225,7 +218,7 @@ def render_cards(
             answer = target
         else:
             prompt = _recognition_prompt(parsed, part, gloss)
-            answer = _escape_text(role_display_label(slot.role))
+            answer = _escape_text(role_label(slot.role, settings.terminology))
         if comparison is not None:
             answer += _render_comparison(comparison, slot.role, settings, parsed.lexical_entry)
         cards.append(RenderedCard(slot=slot, eligible=True, guard=GUARD_VALUE, prompt=prompt, answer=answer))
@@ -252,6 +245,7 @@ def _render_comparison(
     focused = "Analyse zurückgehalten; einzelne Belege prüfen."
     for role in comparison.roles:
         available = role.status == "present"
+        label = _escape_text(role_label(role.role, settings.terminology))
         value = (
             _escape_text(role.form or "")
             if available
@@ -268,12 +262,9 @@ def _render_comparison(
         if role.role == tested_role:
             focused = analysis or "Analyse zurückgehalten; einzelne Belege prüfen."
         elif available and role.segmentation:
-            related.append(f"{_escape_text(role_display_label(role.role))}: {_render_segmentation(role.segmentation)}")
-        lines.append(
-            f'<div class="morphology-role"><strong>{_escape_text(role_display_label(role.role))}:</strong> {value}'
-            + (f" · {analysis}" if analysis else f" · {_escape_text(role.reason)}")
-            + "</div>"
-        )
+            related.append(f"{label}: {_render_segmentation(role.segmentation)}")
+        detail = f" · {analysis}" if analysis else f" · {_escape_text(role.reason)}"
+        lines.append(f'<div class="morphology-role"><strong>{label}:</strong> {value}{detail}</div>')
     body = "".join(lines)
     further = (
         "<details><summary>Stammformen vergleichen</summary>" + body + "</details>"
