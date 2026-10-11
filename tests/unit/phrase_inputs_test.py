@@ -452,3 +452,30 @@ def test_selection_cannot_replace_shared_review_lock(tmp_path: Path, alias: str)
     assert lock.read_bytes() == b"preserve shared lock inode"
     assert lock.stat().st_ino == before_inode
     assert output.samefile(lock)
+
+
+def test_explicit_recipe_plan_cli_preview_and_reproducibility(tmp_path: Path) -> None:
+    from phrase_recipes_test import exercise
+
+    source, selections = saved_example(tmp_path)
+    proposed = call("phrases", "generate", str(source), str(selections))["candidates"][0]
+    chosen = exercise().model_copy(update={"candidate_key": proposed["candidate_key"]})
+    request, plan = tmp_path / "recipes-request.json", tmp_path / "recipes.json"
+    request.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [chosen.model_dump(mode="json")]}))
+    call("phrases", "recipes", str(source), str(selections), str(request), str(plan))
+    first_bytes = plan.read_bytes()
+    call("phrases", "recipes", str(source), str(selections), str(request), str(plan))
+    assert plan.read_bytes() == first_bytes
+    report = call("phrases", "preview", str(source), str(selections), str(plan))
+    assert len(report["exercises"]) == 1
+    rendered = report["exercises"][0]
+    assert rendered["recipe"] == "phrase_recognition"
+    assert rendered["review_state"] == "proposed" and rendered["enabled"] == ""
+    assert "cum amico" in rendered["prompt"] and "mit dem Freund" in rendered["answer"]
+    assert call("phrases", "preview", str(source), str(selections), str(plan)) == report
+    result = runner.invoke(app, ["phrases", "preview", str(source), str(selections), str(plan)])
+    assert result.exit_code == 0 and "not asserted" in result.output
+    bad = chosen.model_copy(update={"target": "missing"})
+    request.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [bad.model_dump(mode="json")]}))
+    call("phrases", "recipes", str(source), str(selections), str(request), str(plan), success=False)
+    assert plan.read_bytes() == first_bytes

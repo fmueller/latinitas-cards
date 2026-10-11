@@ -334,7 +334,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     commands.remove(claims)
     commands.extend(claims.commands.values())
     phrases = cast(click.Group, click_app.commands["phrases"])
-    assert set(phrases.commands) == {"inspect", "select", "generate"}
+    assert set(phrases.commands) == {"inspect", "select", "generate", "recipes", "preview"}
     commands.remove(phrases)
     commands.extend(phrases.commands.values())
     terminology = cast(click.Group, click_app.commands["terminology"])

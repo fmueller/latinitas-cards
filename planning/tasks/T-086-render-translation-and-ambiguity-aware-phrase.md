@@ -1,13 +1,13 @@
 ---
 id: T-086-render-translation-and-ambiguity-aware-phrase
 title: Render translation and ambiguity-aware phrase recognition recipes
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#translation-and-form-recognition-recipes
 dependencies:
     - T-085-generate-bounded-meaningful-deck-phrases-from
     - T-065-configure-grammatical-terminology-language
-updated_at: "2026-10-09T20:05:15Z"
+updated_at: "2026-10-11T14:26:57Z"
 ---
 
 # T-086-render-translation-and-ambiguity-aware-phrase Render translation and ambiguity-aware phrase recognition recipes
@@ -52,3 +52,5 @@ Export integration belongs to T-088.
   Append any new slots without renumbering or repurposing existing ordinals, fields
   or templates; version the layout and test old-slot compatibility. T-087 persists
   reviewed objects/approvals; T-088 owns destination setup/binding and application.
+- 2026-10-11T14:26:46Z: verification pass
+- 2026-10-11T14:26:57Z: Implementation-only completion after verification at 2026-10-11T14:26:46Z: final ruff/mypy/pytest chain passes (1014 tests); dedicated simplification, General/Python/Security review, fresh candidate and disposition verification completed with no concrete findings. Manual real CLI and inspected Chromium recipes/terminology/ambiguity/withheld states pass. Native Desktop/AnkiMobile acceptance not run or passed; implementation-loop deferral unchanged. T087 review/object persistence and T088 setup/export/application remain outside scope.

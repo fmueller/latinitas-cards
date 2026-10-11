@@ -13,8 +13,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - Generated principal-part and form-parsing answers offer Latin (default) or German
   grammatical terminology, with preview overrides and explicit legacy profile upgrades.
 - `phrases` inspects and saves reviewed deck vocabulary, sense, form and bounded
-  pattern selections, then previews bounded phrase proposals with evidence and skipped reasons;
-  recipes and phrase export are not yet available.
+  pattern selections, then previews explicit translation/self-assessment or form-recognition
+  recipes with contextual alternatives and withholding reasons; phrase export is not yet available.
 
 ## [0.2.0] - 2026-10-08
 

@@ -1,10 +1,77 @@
 # Reviewed lexical inputs and bounded patterns (version 1)
 
 `phrases` imports a JSON file, inspects its proposals, and saves explicit reviewed
-selections. `phrases generate` previews bounded phrase proposals. It does **not**
-render recipes, approve generated answers, or export cards. No corpus, network, LLM, CLTK or source-note edits are
+selections. `phrases generate` previews bounded phrase proposals; `phrases recipes`
+saves explicit recipe choices and `phrases preview` renders their reference proposals.
+These commands do **not** approve generated answers or export cards. No corpus, network, LLM, CLTK or source-note edits are
 needed. Use the existing confirmed deck profile and source identities, then supply
 missing lexical knowledge in a separate file rather than altering the deck.
+
+## Explicit recipe plan (version 1)
+
+After `phrases generate`, copy the desired `candidate_key` into a recipe request.
+Choose `phrase_translation` (target `null`, distinction `meaning`) or
+`phrase_recognition` (explicit constituent role target, distinction `analysis`
+or one of `case`, `number`, `gender`, `person`, `tense`, `mood`, `voice`). There is
+no `both`/`all` shortcut. Each plan requires `version: 1`, `max_exercises` (1–1000)
+and an `exercises` list no longer than that limit. Each exercise has an authored
+German `reference` with `readings` and `evidence`; nothing guesses a translation.
+
+For a `cum amico` candidate whose sole constituent is `object`, an exercise is:
+
+```json
+{
+  "candidate_key": "COPY-THE-CURRENT-CANDIDATE-KEY",
+  "recipe": "phrase_recognition",
+  "target": "object",
+  "distinction": "case",
+  "reference": {
+    "language": "de",
+    "readings": [{
+      "translations": ["mit einem Freund", "mit dem Freund"],
+      "features": {"object": {"case": "ablative", "number": "singular", "gender": "masculine"}},
+      "contributions": {"object": "Begleitung; cum regiert den Ablativ."},
+      "explanation": "Die Präposition cum bestimmt hier den Kasus."
+    }],
+    "evidence": [{"source": "your reference", "reference": "page/section", "version": "1", "text": "contextual evidence"}]
+  }
+}
+```
+
+```bash
+uv run latinitas-cards phrases recipes inputs.json selected.json recipe-request.json recipes.json --json
+uv run latinitas-cards phrases preview inputs.json selected.json recipes.json --json
+uv run latinitas-cards phrases preview inputs.json selected.json recipes.json
+```
+
+Every reading describes exactly the candidate's constituent roles, with applicable
+canonical features and a German contribution/explanation. Alternative translations
+and contextual readings stay visible. Isolated `amico` permits dative/ablative;
+`cum amico` supplies ablative government. Isolated `amici` nominative plural does
+**not** establish that reading in `liber amici`: a noun `liber` is singular.
+An authored vocative-head reading (addressing the book) may accompany the
+nominative-head reading, both with genitive singular `amici`. For `dona bona`,
+neuter plural nominative/accusative/vocative remain possible without more context.
+A single-case exercise is withheld when the supplied readings differ in case;
+`analysis` may teach explicitly reviewed alternatives rather than invent context.
+
+Preview labels unreviewed content **Proposed reference — not asserted** and shows
+withholding reasons. Reference review uses the shared fingerprint/decision contract
+in the renderer; CLI persistence of generated reviews and object approval belongs
+to T087, so this CLI preview currently asserts no reviewed generated answers.
+Latin (default) or German terminology comes from the profile; German prose and
+translations do not change. Translation is Latin-first self-assessment, never
+exact-string grading or German-to-Latin production. Targets and tested distinctions
+are persisted and hashed into semantic exercise identity; reference wording and
+terminology are not. Reference/content changes invalidate an existing review.
+
+`phrase-v1` / layout v1 extends the old reference contract append-only: the ten
+existing templates and all fields stay unchanged; phrase Translation/Recognition
+use ordinals 10/11 and append their Enabled/Prompt/Answer field triples. This is
+a **future setup contract**, not an installation or change to current principal-part
+exports. Destination setup, binding and CSV application belong to T088; source
+notes, scheduled templates and Personal Notes are untouched. Browser previews are
+not native Desktop/AnkiMobile acceptance.
 
 ## Import and review
 

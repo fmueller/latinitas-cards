@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-11T13:58:11Z"
+updated_at: "2026-10-11T14:26:57Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
-last_verification_result: pass for T-067-automatic-light-dark-appearance at 2026-10-11T13:58:00Z
+next_action: 'Start task T-087-persist-phrase-exercise-identity-and-explicit: Persist phrase exercise identity and explicit linguistic approvals'
+last_verification_result: pass for T-086-render-translation-and-ambiguity-aware-phrase at 2026-10-11T14:26:46Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-067-automatic-light-dark-appearance at 2026-10-11T13:58:00Z
+- pass for T-086-render-translation-and-ambiguity-aware-phrase at 2026-10-11T14:26:46Z
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-087-persist-phrase-exercise-identity-and-explicit: Persist phrase exercise identity and explicit linguistic approvals
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 5
+- todo: 4
 - in_progress: 0
-- completed: 84
+- completed: 85
 - blocked: 0
 - cancelled: 0
