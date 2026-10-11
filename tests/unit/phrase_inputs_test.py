@@ -502,6 +502,70 @@ def test_explicit_recipe_plan_cli_preview_and_reproducibility(tmp_path: Path) ->
     assert plan.read_bytes() == first_bytes
 
 
+@pytest.mark.parametrize("recipe", ["phrase_translation", "phrase_recognition"])
+@pytest.mark.parametrize("control", ["\x00", "\x01", "\x0b", "\x0c", "\x1f", "\x7f", "\x80", "\x9f", None])
+def test_phrase_authored_export_control_boundary(tmp_path: Path, recipe: str, control: str | None) -> None:
+    from phrase_recipes_test import exercise
+
+    source, selections = saved_example(tmp_path)
+    candidate = call("phrases", "generate", str(source), str(selections))["candidates"][0]
+    chosen = exercise(recipe).model_copy(update={"candidate_key": candidate["candidate_key"]})
+    plan = tmp_path / "recipes.json"
+    plan.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [chosen.model_dump(mode="json")]}))
+    args = [str(source), "--selections", str(selections), "--recipes", str(plan)]
+    claims = call("claims", "list", *args)["claims"]
+    reference = json.loads(next(c["value"] for c in claims if c["feature"] == "answer"))
+    explanation = 'Grüße ā, "links" <b>kein HTML</b>\tEnde\r\nzweite Zeile'
+    if control is not None:
+        explanation = "unsafe" + control + "control"
+    reference["readings"][0]["explanation"] = explanation
+    batch = tmp_path / "batch.json"
+    batch.write_text(
+        json.dumps(
+            [
+                {
+                    "fingerprint": c["fingerprint"],
+                    "status": "accepted",
+                    "reviewer": "teacher",
+                    "reason": "Individually checked",
+                    **(
+                        {"value": json.dumps(reference), "evidence": reference["evidence"]}
+                        if c["feature"] == "answer"
+                        else {}
+                    ),
+                }
+                for c in claims
+            ]
+        )
+    )
+    call("claims", "record", *args, "--batch", str(batch))
+    protected = {p: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
+    output = tmp_path / "new.csv"
+    inspected = call("claims", "inspect", *args, "--check", success=control is None)
+    exported = call("phrases", "export", str(source), str(selections), str(plan), str(output), success=control is None)
+    if control is not None:
+        field = "PhraseTranslationAnswer" if recipe == "phrase_translation" else "PhraseRecognitionAnswer"
+        for report in (inspected, exported):
+            assert f"U+{ord(control):04X}" in json.dumps(report)
+            assert field in json.dumps(report)
+        assert not output.exists()
+    else:
+        first = output.read_bytes()
+        second = tmp_path / "second.csv"
+        call("phrases", "export", str(source), str(selections), str(plan), str(second))
+        assert second.read_bytes() == first
+        rows = list(csv.reader(output.read_text(encoding="utf-8").splitlines(keepends=True)))
+        answer = next(value for row in rows for value in row if "Grüße" in value)
+        assert "Grüße ā, &quot;links&quot; &lt;b&gt;kein HTML&lt;/b&gt;\tEnde" in answer
+        assert "zweite Zeile" in answer
+        assert not call("claims", "inspect", *args, "--artifact", str(output), "--check")["diagnostics"]
+    existing = tmp_path / "existing.csv"
+    existing.write_bytes(b"keep\x00existing\r\nbytes")
+    call("phrases", "export", str(source), str(selections), str(plan), str(existing), success=False)
+    assert existing.read_bytes() == b"keep\x00existing\r\nbytes"
+    assert all(p.read_bytes() == before for p, before in protected.items())
+
+
 def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Path) -> None:
     from phrase_recipes_test import exercise
 

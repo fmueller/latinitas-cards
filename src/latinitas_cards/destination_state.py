@@ -158,6 +158,14 @@ def _binding(data: dict[str, Any]) -> dict[str, Any]:
     ).payload()
 
 
+def validate_managed_controls(fields: Mapping[str, str]) -> None:
+    """Reject transport-unsafe C0/C1/DEL without changing valid field text."""
+    for name, text in fields.items():
+        for char in text:
+            if unicodedata.category(char) == "Cc" and char not in "\t\r\n":
+                raise ReconciliationRequired(f"unsafe control U+{ord(char):04X} in managed field {name}")
+
+
 def _fields(value: object, identity: str) -> dict[str, str]:
     fields = _object(value)
     try:
@@ -168,10 +176,7 @@ def _fields(value: object, identity: str) -> dict[str, str]:
         raise ReconciliationRequired("incomplete managed fields or user-owned field")
     if fields["LatinitasID"] != identity or ("Note Schema" in fields and fields["Note Schema"] != layout.version):
         raise ReconciliationRequired("inconsistent portable identity/schema. " + INCOMPATIBLE_LAYOUT_CHOICES)
-    for name, text in fields.items():
-        for char in text:
-            if unicodedata.category(char) == "Cc" and char not in "\t\r\n":
-                raise ReconciliationRequired(f"unsafe control U+{ord(char):04X} in managed field {name}")
+    validate_managed_controls(fields)
     return {name: fields[name] for name in layout.managed_fields}
 
 

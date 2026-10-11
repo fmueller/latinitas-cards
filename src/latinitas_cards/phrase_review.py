@@ -12,6 +12,7 @@ from typing import Any, cast
 
 from .claim_review import assess_claim
 from .claim_sidecar import BoundClaim, Diagnostic, claim_report
+from .destination_state import validate_managed_controls
 from .identity import derive_latinitas_id
 from .phrase_generation import load_saved_selections
 from .phrase_inputs import canonical, load_inputs
@@ -139,6 +140,10 @@ def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dic
                 slot.answer_field: result["answer_html"],
             }
         )
+        try:
+            validate_managed_controls(fields[-1])
+        except ValueError as error:
+            diagnostics.append(Diagnostic("unsafe-control", f"{identity}: {error}"))
         cards.append(
             {
                 "identity": identity,

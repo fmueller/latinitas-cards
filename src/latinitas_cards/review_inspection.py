@@ -110,7 +110,8 @@ def workspace(source: Path, profile: Path | None) -> ReviewWorkspace:
 def read_export_csv(
     path: Path, *, note_type: str | None = None, deck: str | None = None
 ) -> tuple[Mapping[str, str], ...]:
-    text = path.read_text(encoding="utf-8-sig")
+    with path.open(encoding="utf-8-sig", newline="") as stream:
+        text = stream.read()
     lines = text.splitlines(keepends=True)
     directives: dict[str, str] = {}
     index = 0

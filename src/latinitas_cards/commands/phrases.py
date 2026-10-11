@@ -7,7 +7,7 @@ from typing import Any
 import typer
 
 from ..claim_sidecar import sidecar_path
-from ..destination_state import DestinationSnapshot, load_state
+from ..destination_state import DestinationSnapshot, load_state, validate_managed_controls
 from ..managed_layouts import layout_version
 from ..managed_plans import compose_plan
 from ..phrase_generation import generate_proposals, load_saved_selections
@@ -70,6 +70,8 @@ def export_csv(source: Path, selections: Path, recipes: Path, output: Path, mach
             )
         _, reviewed = phrase_workspace(source, selections, recipes)
         layout = layout_version("phrase-v1")
+        for fields in reviewed.fields:
+            validate_managed_controls(fields)
         rows = tuple(
             tuple(" ".join(reviewed.profile.tags) if name == "Tags" else fields[name] for name in layout.columns)
             for fields in reviewed.fields
