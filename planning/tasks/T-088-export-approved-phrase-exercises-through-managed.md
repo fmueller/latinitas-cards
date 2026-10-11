@@ -1,12 +1,12 @@
 ---
 id: T-088-export-approved-phrase-exercises-through-managed
 title: Export approved phrase exercises through managed CSV updates
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#review-identity-and-export
 dependencies:
     - T-087-persist-phrase-exercise-identity-and-explicit
-updated_at: "2026-10-09T20:05:15Z"
+updated_at: "2026-10-11T16:03:40Z"
 ---
 
 # T-088-export-approved-phrase-exercises-through-managed Export approved phrase exercises through managed CSV updates
@@ -55,3 +55,5 @@ lifecycle contracts; keep export safety distinct from linguistic review.
   marks creation/non-retain effects unsupported. This task must prove the retained-slot
   extension with before/after and negative controls, not assume the existing transport
   already supports all generated answer updates.
+- 2026-10-11T16:03:18Z: verification pass
+- 2026-10-11T16:03:40Z: IMPLEMENTATION-ONLY completion after verification run 2026-10-11T16:03:18Z and full workflow-v3 gates: strict RED/GREEN, dedicated simplifier, independent General/Security/Database lanes, empty validated finding/disposition sets and fresh verification; final exact ruff/mypy/pytest chain passed 1022 tests. Synthetic actual CLI CSV/import-observation protocols and four browser-export states checked. Native auto acceptance remains pending under maintainer 2026-10-11 deferral; exact native checklist/safety limits unchanged and browser is not a substitute. No structural managed creation/retirement or direct Anki writes added. T089 remains later outer integration/docs work.

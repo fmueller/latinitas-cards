@@ -7,7 +7,8 @@ conflicts before submitting a target to the existing observation journal.
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .destination_state import MANAGED_FIELDS, DestinationSnapshot, ReconciliationRequired, _binding, _ownership, _state
+from .destination_state import DestinationSnapshot, ReconciliationRequired, _binding, _ownership, _state
+from .managed_layouts import known_layouts
 
 ORIGINS = ("source_tags", "configured_tags", "lifecycle_tags")
 
@@ -49,8 +50,9 @@ def reconcile_values(
 
     fields: dict[str, str] = {}
     writes: dict[str, str] = {}
+    managed_fields = {name for layout in known_layouts() for name in layout.managed_fields}
     for name in sorted(set(baseline) | set(destination) | set(proposal)):
-        if name not in MANAGED_FIELDS:
+        if name not in managed_fields:
             continue
         if name not in baseline or name not in destination or name not in proposal:
             raise ReconciliationRequired("missing managed field baseline/destination/proposal")

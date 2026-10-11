@@ -108,6 +108,47 @@ def capture(backup: tuple[Path, Path, str], *extra: str) -> Any:
     return CliRunner().invoke(app, ["managed", "capture", str(path), "--selection", str(request), *extra])
 
 
+@pytest.mark.parametrize("version", ["phrase-v1", "parsing-v1"])
+def test_capture_known_appended_and_parsing_layouts(backup: tuple[Path, Path, str], version: str) -> None:
+    from latinitas_cards.managed_layouts import layout_version
+
+    path, _, _ = backup
+    layout = layout_version(version)
+    with sqlite3.connect(path) as db:
+        previous = dict(
+            zip(
+                REFERENCE_NOTE_TYPE_FIELDS,
+                db.execute("SELECT flds FROM notes").fetchone()[0].split("\x1f"),
+                strict=True,
+            )
+        )
+        fields = {name: previous.get(name, "") for name in layout.fields}
+        if "Note Schema" in fields:
+            fields["Note Schema"] = version
+        db.execute("DELETE FROM fields")
+        db.executemany(
+            "INSERT INTO fields VALUES (10,?,?,?)", [(i, name, b"{}") for i, name in enumerate(layout.fields)]
+        )
+        db.execute("DELETE FROM templates")
+        db.executemany(
+            "INSERT INTO templates (ntid,ord,name,config) VALUES (10,?,?,?)",
+            [
+                (s.ordinal, s.template_name, json.dumps({"q_format": front, "a_format": back}).encode())
+                for s, (front, back) in zip(layout.slots, layout.templates, strict=True)
+            ],
+        )
+        db.execute("UPDATE notes SET flds=?", ("\x1f".join(fields[n] for n in layout.fields),))
+        if version == "parsing-v1":
+            db.execute("UPDATE cards SET ord=0")
+            db.execute("DELETE FROM cards WHERE id != (SELECT MIN(id) FROM cards)")
+    result = capture(backup, "--closed-backup", "--interval-confirmed")
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)
+    assert data["schema"] == schema_contract("10", version)
+    assert data["notes"][0]["guid"] == "native-guid"
+    assert set(data["notes"][0]["fields"]) == set(layout.managed_fields)
+
+
 def test_capture_requires_closed_fresh_attestations(backup: tuple[Path, Path, str]) -> None:
     result = capture(backup)
     assert result.exit_code == 1

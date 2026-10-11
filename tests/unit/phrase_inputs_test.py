@@ -579,6 +579,68 @@ def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Pat
     assert approved["object_key"] == candidate["object_key"]
     assert call("claims", "inspect", *args, "--check")["cards"][0]["eligible"]
     assert call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0] == approved
+    csv = tmp_path / "phrases.csv"
+    second = tmp_path / "rerun.csv"
+    call("phrases", "export", str(source), str(selections), str(plan), str(csv))
+    call("phrases", "export", str(source), str(selections), str(plan), str(second))
+    assert csv.read_bytes() == second.read_bytes()
+    assert "in Begleitung eines Freundes" in csv.read_text()
+    call("claims", "inspect", *args, "--artifact", str(csv), "--check")
+    import sqlite3
+    import zipfile
+
+    from latinitas_cards.notes import CSV_EXPORT_FIELD_NAMES
+    from latinitas_cards.phrase_recipes import PHRASE_LAYOUT, PHRASE_LAYOUT_FIELDS
+    from latinitas_cards.phrase_review import phrase_workspace
+    from latinitas_cards.preview_export import serialize_anki_csv
+    from latinitas_cards.reference_templates import REFERENCE_CARD_CSS
+
+    _, reviewed = phrase_workspace(source, selections, plan)
+    wrong_layout = tmp_path / "old-layout.csv"
+    wrong_layout.write_bytes(
+        serialize_anki_csv(
+            reviewed.profile.generated_note_type,
+            reviewed.profile.target_deck,
+            CSV_EXPORT_FIELD_NAMES,
+            [tuple(reviewed.fields[0].get(name, "") for name in CSV_EXPORT_FIELD_NAMES)],
+        )
+    )
+    call("claims", "inspect", *args, "--artifact", str(wrong_layout), "--check", success=False)
+    database = tmp_path / "collection.anki2"
+    model = {
+        "name": reviewed.profile.generated_note_type,
+        "css": REFERENCE_CARD_CSS,
+        "flds": [{"name": name} for name in PHRASE_LAYOUT_FIELDS],
+        "tmpls": [
+            {"ord": t.slot.ordinal, "name": t.slot.template_name, "qfmt": t.front, "afmt": t.back}
+            for t in PHRASE_LAYOUT
+        ],
+    }
+    with sqlite3.connect(database) as db:
+        db.executescript(
+            "CREATE TABLE col(id INTEGER,models TEXT); "
+            "CREATE TABLE notes(id INTEGER,mid INTEGER,flds TEXT,guid TEXT,tags TEXT); "
+            "CREATE TABLE cards(nid INTEGER,ord INTEGER);"
+        )
+        db.execute("INSERT INTO col VALUES(1,?)", (json.dumps({"1": model}),))
+        db.execute(
+            "INSERT INTO notes VALUES(1,1,?,'guid','')",
+            ("\x1f".join(reviewed.fields[0].get(name, "") for name in PHRASE_LAYOUT_FIELDS),),
+        )
+        db.execute("INSERT INTO cards VALUES(1,11)")
+    package = tmp_path / "phrase.apkg"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.write(database, "collection.anki2")
+    before = package.read_bytes()
+    call("claims", "inspect", *args, "--artifact", str(package), "--check")
+    assert package.read_bytes() == before
+    with sqlite3.connect(database) as db:
+        db.execute("UPDATE cards SET ord=10")
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.write(database, "collection.anki2")
+    call("claims", "inspect", *args, "--artifact", str(package), "--check", success=False)
+    csv.write_text(csv.read_text().replace("in Begleitung eines Freundes", "unreviewed answer"))
+    call("claims", "inspect", *args, "--artifact", str(csv), "--check", success=False)
     changed = chosen.model_dump(mode="json")
     changed["reference"]["readings"][0]["translations"] = ["mit einem anderen Freund"]
     plan.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [changed]}))
@@ -587,7 +649,79 @@ def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Pat
     assert stale["exercises"][0]["latinitas_id"] == initial["latinitas_id"]
     assert any(d["code"] == "stale" for d in stale["diagnostics"])
     call("claims", "inspect", *args, "--check", success=False)
+    call("claims", "inspect", *args, "--artifact", str(second), "--check", success=False)
+    empty = tmp_path / "unreviewed.csv"
+    call("phrases", "export", str(source), str(selections), str(plan), str(empty))
+    assert initial["latinitas_id"] not in empty.read_text()
     assert (tmp_path / "deck.csv").read_bytes() == source_bytes
+
+
+def test_phrase_managed_plan_marks_deselection_as_blocked_retirement(tmp_path: Path) -> None:
+    from card_lifecycle_test import fixture, generated
+    from phrase_recipes_test import exercise
+
+    from latinitas_cards.destination_state import DestinationSnapshot, adopt, save_state, schema_contract
+    from latinitas_cards.phrase_review import phrase_workspace
+
+    source, selections = saved_example(tmp_path)
+    candidate = call("phrases", "generate", str(source), str(selections))["candidates"][0]
+    chosen = exercise().model_copy(update={"candidate_key": candidate["candidate_key"]})
+    recipes = tmp_path / "recipes.json"
+    recipes.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [chosen.model_dump(mode="json")]}))
+    args = [str(source), "--selections", str(selections), "--recipes", str(recipes)]
+    for claim in call("claims", "list", *args)["claims"]:
+        call(
+            "claims",
+            "record",
+            *args,
+            "--fingerprint",
+            claim["fingerprint"],
+            "--status",
+            "accepted",
+            "--reviewer",
+            "teacher",
+            "--reason",
+            "Checked independently",
+        )
+    _, work = phrase_workspace(source, selections, recipes)
+    fields = dict(work.fields[0])
+    old, _ = fixture(generated())
+    data = old.payload
+    data["schema"] = schema_contract("model", "phrase-v1")
+    identity = fields["LatinitasID"]
+    member = [identity, fields["Source Scope"], fields["Source ID"], chosen.semantic_key]
+    data["managed_set"] = {"scope": member[1], "members": [member]}
+    note = data["notes"][0]
+    note.update(identity=identity, source=member[1:], fields=fields, tags=list(work.profile.tags))
+    slot = next(s for s in work.slots if s.recipe == chosen.recipe)
+    note["cards"]["rows"] = [
+        {
+            "id": "phrase-card",
+            "semantic_key": slot.semantic_key,
+            "ordinal": slot.ordinal,
+            "template_name": slot.template_name,
+            "suspended": False,
+            "due": 137,
+        }
+    ]
+    snapshot = DestinationSnapshot(json.dumps(data))
+    state = adopt(
+        snapshot,
+        {identity: {"source_tags": [], "configured_tags": list(work.profile.tags), "keep_tags": [], "keep_fields": []}},
+        "Explicit manual import and baseline adoption",
+    )
+    state_path = tmp_path / "state.json"
+    save_state(state_path, state)
+    before = state_path.read_bytes()
+    snapshot_path = tmp_path / "snapshot.json"
+    snapshot_path.write_text(snapshot.encoded)
+    result = call("phrases", "plan", str(source), str(selections), str(recipes), str(snapshot_path), str(state_path))
+    assert result["notes"][0]["classification"] == "unchanged"
+    recipes.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": []}))
+    withdrawn = call("phrases", "plan", str(source), str(selections), str(recipes), str(snapshot_path), str(state_path))
+    assert any(op["kind"] == "retire" and not op["supported"] for op in withdrawn["notes"][0]["operations"])
+    assert not any(op["supported"] for op in withdrawn["notes"][0]["operations"])
+    assert state_path.read_bytes() == before
 
 
 def test_phrase_questions_keep_identity_and_review_across_presentation_changes(tmp_path: Path) -> None:

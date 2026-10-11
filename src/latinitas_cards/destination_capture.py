@@ -17,9 +17,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .cards import TEMPLATE_REGISTRY
 from .destination_state import (
-    MANAGED_FIELDS,
     BoundDestination,
     DestinationSnapshot,
     ReconciliationRequired,
@@ -28,7 +26,7 @@ from .destination_state import (
     read_snapshot,
     schema_contract,
 )
-from .reference_templates import REFERENCE_NOTE_TYPE_FIELDS
+from .managed_layouts import known_layouts, layout_version
 
 # Schema-18 storage columns, checked even for empty tables. Do not call missing
 # schedule/history/config columns a complete collection capture.
@@ -77,19 +75,27 @@ def _schema(rows: dict[str, list[dict[str, Any]]], note_type_id: str) -> dict[st
     if model.kind != 0:
         raise ReconciliationRequired("unsupported cloze note type")
     fields = sorted((row for row in rows["fields"] if str(row["ntid"]) == note_type_id), key=lambda row: row["ord"])
-    if [(row["ord"], row["name"]) for row in fields] != list(enumerate(REFERENCE_NOTE_TYPE_FIELDS)):
+    layout = next(
+        (
+            layout
+            for layout in known_layouts()
+            if [(row["ord"], row["name"]) for row in fields] == list(enumerate(layout.fields))
+        ),
+        None,
+    )
+    if layout is None:
         raise ReconciliationRequired("unknown field layout; separately reviewed manual setup required")
     for field in fields:
         _decode("notetypes", "Notetype.Field.Config", field["config"])
-    schema = schema_contract(note_type_id)
+    schema = schema_contract(note_type_id, layout.version)
     schema["css_digest"] = hashlib.sha256(model.css.encode()).hexdigest()
     templates = sorted(
         (row for row in rows["templates"] if str(row["ntid"]) == note_type_id), key=lambda row: row["ord"]
     )
-    if [row["ord"] for row in templates] != [slot.ordinal for slot in TEMPLATE_REGISTRY]:
+    if [row["ord"] for row in templates] != [slot.ordinal for slot in layout.slots]:
         raise ReconciliationRequired("incomplete or ambiguous template ordinals")
     schema["templates"] = []
-    for row, slot in zip(templates, TEMPLATE_REGISTRY, strict=True):
+    for row, slot in zip(templates, layout.slots, strict=True):
         config = _decode("notetypes", "Notetype.Template.Config", row["config"])
         schema["templates"].append(
             {
@@ -154,6 +160,7 @@ def capture_backup(
         selection["destination"], selection["profile"], _schema(rows, note_type_id), selection["managed_set"]
     )
     checked = binding.payload()
+    layout = layout_version(checked["schema"]["version"])
     members = {member[0]: member[1:] for member in checked["managed_set"]["members"]}
     configs = {row["id"] for row in rows["deck_config"]}
     for row in rows["deck_config"]:
@@ -180,13 +187,13 @@ def capture_backup(
                 raise ReconciliationRequired("selected identity belongs to a different note type")
             continue
         values = row["flds"].split("\x1f")
-        if len(values) != len(REFERENCE_NOTE_TYPE_FIELDS):
+        if len(values) != len(layout.fields):
             raise ReconciliationRequired("incomplete native field values")
-        fields = dict(zip(REFERENCE_NOTE_TYPE_FIELDS, values, strict=True))
+        fields = dict(zip(layout.fields, values, strict=True))
         identity = fields["LatinitasID"]
         if not identity or identity not in members:
             raise ReconciliationRequired("missing or unknown portable identity; whole dedicated managed set required")
-        if [fields["Source Scope"], fields["Source ID"]] != members[identity][:2]:
+        if "Source ID" in fields and [fields["Source Scope"], fields["Source ID"]] != members[identity][:2]:
             raise ReconciliationRequired("stored source provenance differs from immutable membership")
         if identity in seen:
             raise ReconciliationRequired("duplicate portable identity")
@@ -198,9 +205,9 @@ def capture_backup(
             if card["nid"] != row["id"]:
                 continue
             ordinal = card["ord"]
-            if type(ordinal) is not int or not 0 <= ordinal < len(TEMPLATE_REGISTRY):
+            if type(ordinal) is not int or not 0 <= ordinal < len(layout.slots):
                 raise ReconciliationRequired("unknown card template ordinal")
-            slot = TEMPLATE_REGISTRY[ordinal]
+            slot = layout.slots[ordinal]
             cards.append(
                 {
                     **card,
@@ -218,7 +225,7 @@ def capture_backup(
             "note_type_id": note_type_id,
             "guid": row["guid"],
             "local_id": str(row["id"]),
-            "fields": {name: fields[name] for name in MANAGED_FIELDS},
+            "fields": {name: fields[name] for name in layout.managed_fields},
             "tags": sorted(row["tags"].split()),
             "personal_digest": hashlib.sha256(fields["Personal Notes"].encode()).hexdigest(),
             "cards": {"complete": True, "rows": cards},

@@ -15,7 +15,9 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - `phrases` inspects and saves reviewed deck vocabulary, sense, form and bounded
   pattern selections, then previews explicit translation/self-assessment or form-recognition
   recipes with stable exercise identities, separate combination/answer approvals and offline
-  claim inspection; phrase CSV export and destination application are not yet available.
+  claim inspection, deterministic approved CSV export and managed retained-slot updates.
+- `managed` supports separately approved answer/presentation updates on retained
+  principal-part, parsing and phrase cards; creation and retirement still require manual resolution.
 
 ## [0.2.0] - 2026-10-08
 

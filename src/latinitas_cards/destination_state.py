@@ -19,11 +19,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from .cards import TEMPLATE_REGISTRY, TEMPLATE_REGISTRY_DIGEST, TEMPLATE_REGISTRY_VERSION, slot_for_key
 from .identity import derive_latinitas_id
 from .legacy_transition import INCOMPATIBLE_LAYOUT_CHOICES, incompatible_managed_identity
+from .managed_layouts import known_layouts, layout_fields, layout_version
 from .notes import AUTHORITATIVE_NOTE_FIELDS, NOTE_SCHEMA_VERSION
-from .reference_templates import REFERENCE_CARD_CSS, REFERENCE_CARD_TEMPLATES
 
 MANAGED_FIELDS = tuple(field.name for field in AUTHORITATIVE_NOTE_FIELDS if field.ownership == "managed")
 
@@ -63,28 +62,27 @@ def _strings(value: object) -> list[str]:
     return sorted(value)
 
 
-def schema_contract(note_type_id: str) -> dict[str, Any]:
+def schema_contract(note_type_id: str, version: str = NOTE_SCHEMA_VERSION) -> dict[str, Any]:
     """Expected reference layout; acquisition must supply actual matching digests."""
     _text(note_type_id)
+    layout = layout_version(version)
     return {
         "note_type_id": note_type_id,
-        "version": NOTE_SCHEMA_VERSION,
-        "fields": [
-            [field.name, field.ownership] for field in AUTHORITATIVE_NOTE_FIELDS if field.ownership != "transport"
-        ],
-        "registry_version": TEMPLATE_REGISTRY_VERSION,
-        "registry_digest": TEMPLATE_REGISTRY_DIGEST,
+        "version": version,
+        "fields": [[name, "personal" if name == "Personal Notes" else "managed"] for name in layout.fields],
+        "registry_version": layout.registry_version,
+        "registry_digest": layout.registry_digest,
         "templates": [
             {
-                "name": template.slot.template_name,
-                "ordinal": template.slot.ordinal,
-                "semantic_key": template.slot.semantic_key,
-                "front_digest": hashlib.sha256(template.front.encode()).hexdigest(),
-                "back_digest": hashlib.sha256(template.back.encode()).hexdigest(),
+                "name": slot.template_name,
+                "ordinal": slot.ordinal,
+                "semantic_key": slot.semantic_key,
+                "front_digest": hashlib.sha256(front.encode()).hexdigest(),
+                "back_digest": hashlib.sha256(back.encode()).hexdigest(),
             }
-            for template in REFERENCE_CARD_TEMPLATES
+            for slot, (front, back) in zip(layout.slots, layout.templates, strict=True)
         ],
-        "css_digest": hashlib.sha256(REFERENCE_CARD_CSS.encode()).hexdigest(),
+        "css_digest": hashlib.sha256(layout.css.encode()).hexdigest(),
     }
 
 
@@ -128,7 +126,11 @@ class BoundDestination:
 
     def payload(self) -> dict[str, Any]:
         schema = _object(self.schema)
-        if schema != schema_contract(_text(schema.get("note_type_id"))):
+        try:
+            expected = schema_contract(_text(schema.get("note_type_id")), _text(schema.get("version")))
+        except ValueError:
+            expected = None
+        if schema != expected:
             raise ReconciliationRequired(
                 "unknown schema/template/style layout; separately reviewed manual setup required; "
                 "do not rebind scheduled templates. " + INCOMPATIBLE_LAYOUT_CHOICES
@@ -158,15 +160,19 @@ def _binding(data: dict[str, Any]) -> dict[str, Any]:
 
 def _fields(value: object, identity: str) -> dict[str, str]:
     fields = _object(value)
-    if set(fields) != set(MANAGED_FIELDS) or any(not isinstance(value, str) for value in fields.values()):
+    try:
+        layout = layout_fields(fields)
+    except ValueError as exc:
+        raise ReconciliationRequired(str(exc)) from exc
+    if any(not isinstance(value, str) for value in fields.values()):
         raise ReconciliationRequired("incomplete managed fields or user-owned field")
-    if fields["LatinitasID"] != identity or fields["Note Schema"] != NOTE_SCHEMA_VERSION:
+    if fields["LatinitasID"] != identity or ("Note Schema" in fields and fields["Note Schema"] != layout.version):
         raise ReconciliationRequired("inconsistent portable identity/schema. " + INCOMPATIBLE_LAYOUT_CHOICES)
     for name, text in fields.items():
         for char in text:
             if unicodedata.category(char) == "Cc" and char not in "\t\r\n":
                 raise ReconciliationRequired(f"unsafe control U+{ord(char):04X} in managed field {name}")
-    return {name: fields[name] for name in MANAGED_FIELDS}
+    return {name: fields[name] for name in layout.managed_fields}
 
 
 def _rows(value: object) -> dict[str, Any] | None:
@@ -193,13 +199,16 @@ def _note(value: object, binding: dict[str, Any]) -> dict[str, Any]:
     for name in ("guid", "local_id", "personal_digest"):
         if note.get(name) is not None:
             _text(note[name])
+    fields = _fields(note.get("fields"), identity)
+    if layout_fields(fields).version != binding["schema"]["version"]:
+        raise ReconciliationRequired("note fields differ from bound schema layout")
     return {
         "identity": identity,
         "source": membership[identity],
         "note_type_id": note["note_type_id"],
         "guid": note.get("guid"),
         "local_id": note.get("local_id"),
-        "fields": _fields(note.get("fields"), identity),
+        "fields": fields,
         "tags": _strings(note.get("tags")),
         "personal_digest": note.get("personal_digest"),
         "cards": _rows(note.get("cards")),
@@ -223,9 +232,10 @@ def bound_card_rows(note: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     evidence = note.get("cards")
     if not isinstance(evidence, dict) or evidence.get("complete") is not True:
         raise ReconciliationRequired("missing complete card set evidence")
+    layout = layout_fields(note["fields"])
     result: dict[str, dict[str, Any]] = {}
     for row in evidence["rows"]:
-        slot = slot_for_key(row.get("semantic_key", ""))
+        slot = next((s for s in layout.slots if s.semantic_key == row.get("semantic_key")), None)
         if slot is None or row.get("ordinal") != slot.ordinal or row.get("template_name") != slot.template_name:
             raise ReconciliationRequired("unknown card set template binding. " + INCOMPATIBLE_LAYOUT_CHOICES)
         if slot.semantic_key in result:
@@ -237,7 +247,10 @@ def bound_card_rows(note: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
 def require_content_only_card_set(note: Mapping[str, Any], fields: Mapping[str, str]) -> None:
     """CSV cannot add via a guard, clear a front, or substitute eligibility for existence."""
     rows = bound_card_rows(note)
-    for slot in TEMPLATE_REGISTRY:
+    layout = layout_fields(note["fields"])
+    if layout_fields(dict(fields)) != layout:
+        raise ReconciliationRequired("unsupported content-only layout change")
+    for slot in layout.slots:
         enabled = bool(fields[slot.enabled_field].strip())
         if enabled != (slot.semantic_key in rows):
             raise ReconciliationRequired("unsupported content-only card set change")
@@ -351,7 +364,8 @@ def _ownership(value: object, tags: list[str]) -> dict[str, Any]:
     for name in ("lifecycle_tags", "suppressed_tags"):
         if name in ownership:
             result[name] = _strings(ownership[name])
-    if not set(result["keep_fields"]) <= set(MANAGED_FIELDS) - {"LatinitasID", "Note Schema"}:
+    managed = {name for layout in known_layouts() for name in layout.managed_fields}
+    if not set(result["keep_fields"]) <= managed - {"LatinitasID", "Note Schema"}:
         raise ReconciliationRequired("invalid user keep override")
     managed = set(result["source_tags"]) | set(result["configured_tags"]) | set(result.get("lifecycle_tags", []))
     suppressed = set(result.get("suppressed_tags", []))
@@ -539,10 +553,20 @@ def begin_observation(
         require_content_only_card_set(notes[identity], fields)
         if ("latinitas::retired" in tags) != ("latinitas::retired" in notes[identity]["tags"]):
             raise ReconciliationRequired("unsupported lifecycle tag effect; tags cannot approximate suspension")
-        # Identity/provenance and slot fields cannot be repurposed as structural transport.
-        for name in MANAGED_FIELDS:
+        # Guards, identity and provenance remain immutable. Payload writes can
+        # only touch observed retained cards, never create or retire siblings.
+        layout = layout_fields(fields)
+        payload_fields = {
+            name
+            for slot in layout.slots
+            if reviewed_changes
+            and fields[slot.enabled_field] == notes[identity]["fields"][slot.enabled_field]
+            and fields[slot.enabled_field].strip()
+            for name in (slot.prompt_field, slot.answer_field)
+        }
+        for name in fields:
             if (
-                name not in ("Lemma", "Principal Parts", "Meaning", "Generator", "Profile")
+                name not in {"Lemma", "Principal Parts", "Meaning", "Generator", "Profile"} | payload_fields
                 and fields[name] != notes[identity]["fields"][name]
             ):
                 raise ReconciliationRequired("unsupported identity/schema/slot effect")

@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from .destination_state import (
-    MANAGED_FIELDS,
     DestinationSnapshot,
     ReconciliationRequired,
     _text,
@@ -132,7 +131,7 @@ def emit_updates(
                 and f"field:{name}" not in note["decisions"]
             )
             else anchor["fields"][name]
-            for name in MANAGED_FIELDS
+            for name in target["fields"]
         }
         targets[identity] = {
             **target,

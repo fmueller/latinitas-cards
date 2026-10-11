@@ -15,6 +15,94 @@ from latinitas_cards.destination_state import DestinationSnapshot, Reconciliatio
 from latinitas_cards.managed_plans import approve_plan, compose_plan, verify_approval
 
 
+@pytest.mark.parametrize(
+    "version,answer",
+    [("3", "RecognitionPerfectAnswer"), ("phrase-v1", "PhraseTranslationAnswer"), ("parsing-v1", "ParsingAnswer")],
+)
+def test_retained_payloads_use_bound_layout_and_reject_structural_changes(
+    tmp_path: Path, version: str, answer: str
+) -> None:
+    from latinitas_cards.destination_state import load_state, reconcile, save_state, schema_contract
+    from latinitas_cards.managed_application import emit_updates, observe_updates
+    from latinitas_cards.managed_layouts import layout_version
+
+    original, _ = fixture(generated())
+    data = original.payload
+    layout = layout_version(version)
+    data["schema"] = schema_contract("model", version)
+    note = data["notes"][0]
+    slot = next(s for s in layout.slots if s.answer_field == answer)
+    note["fields"] = {name: note["fields"].get(name, "") for name in layout.managed_fields}
+    if "Note Schema" in note["fields"]:
+        note["fields"]["Note Schema"] = version
+    for sibling in layout.slots:
+        note["fields"][sibling.enabled_field] = ""
+    note["fields"].update({slot.enabled_field: "1", slot.prompt_field: "Latin prompt", answer: "old answer"})
+    note["cards"]["rows"] = [
+        {
+            "id": "retained",
+            "semantic_key": slot.semantic_key,
+            "ordinal": slot.ordinal,
+            "template_name": slot.template_name,
+            "suspended": False,
+            "due": 73,
+        }
+    ]
+    snapshot = capture(data)
+    state = adopt(
+        snapshot,
+        {
+            note["identity"]: {
+                "source_tags": [],
+                "configured_tags": [],
+                "keep_tags": [],
+                "keep_fields": [],
+            }
+        },
+        "explicit adoption",
+    )
+    proposal = {"identity": note["identity"], "fields": dict(note["fields"], **{answer: "new answer"})}
+    profile = {"generated_note_type": "Latinitas", "target_deck": "Latin"}
+    plan = compose_plan(snapshot, state, [proposal], profile)
+    operation = next(op for op in plan["notes"][0]["operations"] if op.get("field") == answer)
+    assert operation["supported"] is True
+    approved = approve_plan(plan, [operation["id"]], "separate write review")
+    assert approved["targets"][note["identity"]]["fields"][answer] == "new answer"
+    assert "Personal Notes" not in approved["import_columns"]
+    verify_approval(plan, approved, snapshot, state)
+    journal = tmp_path / "state.json"
+    save_state(journal, state)
+    backup = tmp_path / "backup.bin"
+    backup.write_bytes(b"operator-attested synthetic backup; not native proof")
+    output = tmp_path / "updates.csv"
+    emitted = emit_updates(plan, approved, snapshot, journal, backup, "restore fixture", output, "Latinitas", "Latin")
+    assert emitted["observed"] == []
+    assert load_state(journal)["anchors"][note["identity"]]["fields"][answer] == "old answer"
+    after = deepcopy(data)
+    after.update(snapshot_id="after", artifact_sha256="b" * 64)
+    after["notes"][0]["fields"][answer] = "new answer"
+    observed = capture(after)
+    result = observe_updates(journal, plan["plan_id"], observed, "manual synthetic import", interval_confirmed=True)
+    assert result["observed"] == [operation["id"]]
+    updated = load_state(journal)
+    assert updated["anchors"][note["identity"]]["fields"][answer] == "new answer"
+    assert updated["anchors"][note["identity"]]["cards"] == note["cards"]
+    assert updated["anchors"][note["identity"]]["history"] == note["history"]
+    assert reconcile(observed, updated) == ()
+    proposal["fields"][answer] = "third answer"
+    with pytest.raises(ReconciliationRequired, match="changed"):
+        verify_approval(compose_plan(snapshot, state, [proposal], {}), approved, snapshot, state)
+    proposal["fields"][slot.enabled_field] = ""
+    withdrawn = compose_plan(snapshot, state, [proposal], {})
+    assert any(op["kind"] == "retire" and not op["supported"] for op in withdrawn["notes"][0]["operations"])
+    with pytest.raises(ReconciliationRequired, match="unsupported"):
+        approve_plan(withdrawn, [op["id"] for op in withdrawn["notes"][0]["operations"]], "review")
+    stale = deepcopy(data)
+    stale["schema"]["css_digest"] = "0" * 64
+    with pytest.raises(ReconciliationRequired, match="layout"):
+        capture(stale)
+
+
 def request(snapshot: DestinationSnapshot, *, meaning: str = "new", lemma: str = "new lemma") -> dict[str, Any]:
     fields = snapshot.payload["notes"][0]["fields"].copy()
     fields.update(Meaning=meaning, Lemma=lemma)
@@ -313,9 +401,10 @@ def test_resolution_and_presentation_require_new_approval() -> None:
     with pytest.raises(ReconciliationRequired, match="changed"):
         verify_approval(changed, approval, snapshot, state)
     operation = next(op for op in changed["notes"][0]["operations"] if op.get("field") == card.slot.answer_field)
-    assert operation["supported"] is False
-    with pytest.raises(ReconciliationRequired, match="unsupported"):
-        approve_plan(changed, [operation["id"]], "presentation review, not linguistic review")
+    assert operation["supported"] is True
+    renewed = approve_plan(changed, [operation["id"]], "presentation review, not linguistic review")
+    assert renewed["targets"][proposal["identity"]]["fields"][card.slot.answer_field] == card.answer
+    verify_approval(changed, renewed, snapshot, state)
 
 
 def test_personal_and_kept_fields_never_become_approved_writes() -> None:
@@ -351,6 +440,10 @@ def test_card_loss_subset_retains_actual_card_payload_and_blocks_slot_writes() -
     proposal["fields"][slot.enabled_field] = "1"
     proposal["fields"][slot.prompt_field] = snapshot.payload["notes"][0]["fields"][slot.prompt_field]
     proposal["fields"][slot.answer_field] = "changed answer presentation"
+    plan = compose_plan(snapshot, state, [proposal], {})
+    answer = next(op for op in plan["notes"][0]["operations"] if op.get("field") == slot.answer_field)
+    assert answer["supported"] is True
+    proposal["fields"][slot.enabled_field] = " 1"
     plan = compose_plan(snapshot, state, [proposal], {})
     answer = next(op for op in plan["notes"][0]["operations"] if op.get("field") == slot.answer_field)
     assert answer["supported"] is False

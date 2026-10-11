@@ -136,7 +136,7 @@ class Exercise(Model):
 class RecipePlan(Model):
     version: Literal[1]
     max_exercises: Annotated[int, Field(strict=True, ge=1, le=1000)]
-    exercises: tuple[Exercise, ...] = Field(min_length=1, max_length=1000)
+    exercises: tuple[Exercise, ...] = Field(max_length=1000)
 
     @model_validator(mode="after")
     def explicit_budget(self) -> RecipePlan:

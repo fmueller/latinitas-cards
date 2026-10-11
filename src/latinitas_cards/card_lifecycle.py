@@ -8,10 +8,9 @@ neither prior-export checkpoints nor visible lemmas establish destination existe
 from collections.abc import Mapping
 from typing import Any
 
-from .cards import TEMPLATE_REGISTRY
+from .cards import RenderedCard
 from .destination_reconciliation import reconcile_note
 from .destination_state import (
-    MANAGED_FIELDS,
     DestinationSnapshot,
     ReconciliationRequired,
     _binding,
@@ -21,6 +20,7 @@ from .destination_state import (
     bound_card_rows,
     require_content_only_card_set,
 )
+from .managed_layouts import layout_fields
 from .notes import GeneratedNote
 
 
@@ -28,7 +28,7 @@ def plan_card_lifecycle(
     snapshot: DestinationSnapshot,
     state: object,
     identity: str,
-    proposal: GeneratedNote | None,
+    proposal: GeneratedNote | Mapping[str, str] | None,
     *,
     proposal_status: str = "approved",
     approvals: Mapping[str, str] | None = None,
@@ -65,28 +65,53 @@ def plan_card_lifecycle(
         _text(retire_object)
     if proposal_status not in ("approved", "missing", "ambiguous", "withheld", "inapplicable", "parser_failure"):
         raise ReconciliationRequired("unknown proposal status")
+    layout = layout_fields(destination["fields"])
+    fields: dict[str, str] | None = None
     if proposal is not None:
-        source = [proposal.provenance.source_scope, proposal.provenance.source_identity]
-        if len(destination["source"]) == 3:
-            source.append(proposal.object_key)
-        if proposal.latinitas_id != identity or source != destination["source"]:
-            raise ReconciliationRequired("proposal identity/object requires confirmation")
-        if tuple(card.slot for card in proposal.cards) != TEMPLATE_REGISTRY:
+        if isinstance(proposal, GeneratedNote):
+            source = [proposal.provenance.source_scope, proposal.provenance.source_identity]
+            if len(destination["source"]) == 3:
+                source.append(proposal.object_key)
+            if proposal.latinitas_id != identity or source != destination["source"]:
+                raise ReconciliationRequired("proposal identity/object requires confirmation")
+            cards = proposal.cards
+            fields = {name: value for name, value in proposal.to_anki_fields() if name in layout.managed_fields}
+        else:
+            fields = dict(proposal)
+            if layout_fields(fields) != layout or fields["LatinitasID"] != identity:
+                raise ReconciliationRequired("proposal requires complete frozen template bindings")
+            if "Source ID" in fields and [fields["Source Scope"], fields["Source ID"]] != destination["source"][:2]:
+                raise ReconciliationRequired("proposal identity/object requires confirmation")
+            cards = tuple(
+                RenderedCard(
+                    s,
+                    bool(fields[s.enabled_field].strip()),
+                    fields[s.enabled_field],
+                    fields[s.prompt_field],
+                    fields[s.answer_field],
+                )
+                for s in layout.slots
+            )
+        if tuple(card.slot for card in cards) != layout.slots:
             raise ReconciliationRequired("proposal requires complete frozen template bindings")
-        for card in proposal.cards:
+        for card in cards:
             if card.eligible != bool(card.guard.strip()) or (
                 card.eligible and not (card.prompt.strip() and card.answer.strip())
             ):
                 raise ReconciliationRequired("invalid eligible card content")
 
     uncertain = proposal is None or proposal_status != "approved"
-    eligible = set(proposal.card_keys) if proposal is not None and not uncertain and retire_object is None else set()
+    eligible = (
+        {c.slot.semantic_key for c in cards if c.eligible}
+        if proposal is not None and not uncertain and retire_object is None
+        else set()
+    )
     blocked: list[str] = []
     if uncertain and retire_object is None:
         blocked.append("uncertain object/data requires confirmation; no implicit retirement")
     effects: list[dict[str, Any]] = []
     unsupported: list[str] = []
-    for slot in TEMPLATE_REGISTRY:
+    for slot in layout.slots:
         key = slot.semantic_key
         row = rows.get(key)
         approval = choices.pop(key, None)
@@ -168,8 +193,7 @@ def plan_card_lifecycle(
         "object_retirement": retire_object,
         "lifecycle_tags": ["latinitas::retired"] if retire_object else [],
     }
-    if not blocked and not unsupported and retire_object is None and proposal is not None:
-        fields = {name: value for name, value in proposal.to_anki_fields() if name in MANAGED_FIELDS}
+    if not blocked and not unsupported and retire_object is None and fields is not None:
         reconciliation = reconcile_note(
             snapshot,
             baseline,

@@ -16,7 +16,8 @@ from pydantic import BaseModel
 from .cards import TEMPLATE_REGISTRY, CardSlot
 from .claim_sidecar import Diagnostic
 from .form_parsing import PARSING_BACK, PARSING_FIELDS, PARSING_FRONT, PARSING_NOTE_TYPE, PARSING_SLOT
-from .reference_templates import REFERENCE_CARD_TEMPLATES, REFERENCE_NOTE_TYPE_FIELDS
+from .phrase_recipes import PHRASE_LAYOUT, PHRASE_LAYOUT_FIELDS
+from .reference_templates import REFERENCE_CARD_CSS, REFERENCE_CARD_TEMPLATES, REFERENCE_NOTE_TYPE_FIELDS
 from .sources import _pick_collection_database_name, _read_zip_member, read_source_records
 
 
@@ -36,6 +37,7 @@ class PackageModel(BaseModel):
     type: Literal[0] = 0
     flds: tuple[PackageField, ...]
     tmpls: tuple[PackageTemplate, ...]
+    css: str | None = None
 
 
 @dataclass(frozen=True)
@@ -43,12 +45,14 @@ class PackageInspection:
     fields: tuple[dict[str, str], ...]
     slots: tuple[CardSlot, ...]
     diagnostics: tuple[Diagnostic, ...]
+    note_types: tuple[str, ...] = ()
 
 
 def read_review_package(path: Path) -> PackageInspection:
     records = read_source_records(path)
     diagnostics: list[Diagnostic] = []
     fields: list[dict[str, str]] = []
+    note_types: set[str] = set()
     all_slots: tuple[CardSlot, ...] = ()
     with zipfile.ZipFile(path) as archive, tempfile.TemporaryDirectory() as directory:
         name, compressed = _pick_collection_database_name(archive.namelist(), path)
@@ -79,6 +83,7 @@ def read_review_package(path: Path) -> PackageInspection:
                     model = models.get(mids[nid])
                     if model is None:
                         raise ValueError("package model unavailable")
+                    note_types.add(model.name)
                     names = tuple(f.name for f in model.flds)
                     slots: tuple[CardSlot, ...]
                     templates: tuple[tuple[int, str, str, str], ...]
@@ -90,6 +95,13 @@ def read_review_package(path: Path) -> PackageInspection:
                         templates = tuple(
                             (t.slot.ordinal, t.slot.template_name, t.front, t.back) for t in REFERENCE_CARD_TEMPLATES
                         )
+                    elif names == PHRASE_LAYOUT_FIELDS:
+                        slots = tuple(t.slot for t in PHRASE_LAYOUT)
+                        templates = tuple(
+                            (t.slot.ordinal, t.slot.template_name, t.front, t.back) for t in PHRASE_LAYOUT
+                        )
+                        if model.css != REFERENCE_CARD_CSS:
+                            diagnostics.append(Diagnostic("unsupported", "Phrase package style differs from CSS v3"))
                     else:
                         diagnostics.append(Diagnostic("unsupported", "Unsupported package fields/layout"))
                         continue
@@ -111,4 +123,4 @@ def read_review_package(path: Path) -> PackageInspection:
                     fields.append(dict(record.fields))
         except (sqlite3.DatabaseError, ValueError, TypeError) as error:
             diagnostics.append(Diagnostic("unsupported", f"Unsupported package layout: {error}"))
-    return PackageInspection(tuple(fields), all_slots, tuple(diagnostics))
+    return PackageInspection(tuple(fields), all_slots, tuple(diagnostics), tuple(sorted(note_types)))

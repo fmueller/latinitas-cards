@@ -4,6 +4,7 @@ The recipe plan owns the exercise sidecar; lexical input decisions remain beside
 the input file. Neither attestation authorizes an export or managed update.
 """
 
+import hashlib
 from dataclasses import asdict, replace
 from html import escape
 from pathlib import Path
@@ -13,8 +14,17 @@ from .claim_review import assess_claim
 from .claim_sidecar import BoundClaim, Diagnostic, claim_report
 from .identity import derive_latinitas_id
 from .phrase_generation import load_saved_selections
-from .phrase_inputs import load_inputs
-from .phrase_recipes import PHRASE_LAYOUT, Reference, contextual_claim, load_recipe_plan, preview_plan, render_exercise
+from .phrase_inputs import canonical, load_inputs
+from .phrase_recipes import (
+    PHRASE_LAYOUT,
+    PHRASE_LAYOUT_FIELDS,
+    PHRASE_SCHEMA_VERSION,
+    Reference,
+    contextual_claim,
+    load_recipe_plan,
+    preview_plan,
+    render_exercise,
+)
 from .profile import load_profile
 from .review_adapters import ReviewState, review_state
 from .review_inspection import ReviewWorkspace
@@ -112,7 +122,17 @@ def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dic
         rendered.append(result)
         fields.append(
             {
+                **{name: "" for name in PHRASE_LAYOUT_FIELDS if name != "Personal Notes"},
                 "LatinitasID": identity,
+                "Lemma": escape(str(candidate["text"])),
+                "Source ID": str(candidate["source_identity"]),
+                "Source Scope": str(candidate["source_scope"]),
+                "Source Kind": "phrase",
+                "Source Location": exercise.semantic_key,
+                "Source Path": str(source),
+                "Note Schema": PHRASE_SCHEMA_VERSION,
+                "Generator": "phrase-v1",
+                "Profile": hashlib.sha256(canonical(profile.model_dump(mode="json")).encode()).hexdigest(),
                 slot.enabled_field: result["enabled"],
                 slot.prompt_field: result["prompt_html"],
                 slot.answer_field: result["answer_html"],
@@ -139,7 +159,15 @@ def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dic
         exercises=rendered,
         diagnostics=[asdict(d) for d in diagnostics],
         supported_subset="Explicit reviewed phrase exercises. Claim attestation is not export or managed-plan "
-        "approval. CSV/destination application belongs to T088; native Desktop/Mobile acceptance remains pending.",
+        "approval. Initial CSV import is manual; retained-slot updates require separate managed-plan approval. "
+        "Native Desktop/Mobile acceptance remains pending.",
     )
     state = ReviewState(state.bases, state.claims, tuple(diagnostics))
-    return report, ReviewWorkspace(state, tuple(fields), tuple(t.slot for t in PHRASE_LAYOUT), tuple(cards), profile)
+    return report, ReviewWorkspace(
+        state,
+        tuple(fields),
+        tuple(t.slot for t in PHRASE_LAYOUT),
+        tuple(cards),
+        profile,
+        note_type=profile.generated_note_type,
+    )

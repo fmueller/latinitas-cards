@@ -3,7 +3,9 @@
 `phrases` imports a JSON file, inspects its proposals, and saves explicit reviewed
 selections. `phrases generate` previews bounded phrase proposals; `phrases recipes`
 saves explicit recipe choices and `phrases preview` renders their reference proposals.
-These commands do **not** approve generated answers or export cards. No corpus, network, LLM, CLTK or source-note edits are
+These commands do **not** approve generated answers. `phrases export` exports only
+individually approved exercises; `phrases plan` connects them to managed review.
+No corpus, network, LLM, CLTK or source-note edits are
 needed. Use the existing confirmed deck profile and source identities, then supply
 missing lexical knowledge in a separate file rather than altering the deck.
 
@@ -68,8 +70,8 @@ terminology are not. Reference/content changes invalidate an existing review.
 `phrase-v1` / layout v1 extends the old reference contract append-only: the ten
 existing templates and all fields stay unchanged; phrase Translation/Recognition
 use ordinals 10/11 and append their Enabled/Prompt/Answer field triples. This is
-a **future setup contract**, not an installation or change to current principal-part
-exports. Destination setup, binding and CSV application belong to T088; source
+a **reviewed manual setup contract**, not an installation or change to current principal-part
+exports. Capture binds exact fields, templates and CSS v3; source
 notes, scheduled templates and Personal Notes are untouched. Browser previews are
 not native Desktop/AnkiMobile acceptance.
 
@@ -249,7 +251,7 @@ available form or pattern. This subset supports nominative noun subjects and rev
 third-person finite forms only, not exhaustive conjugation or general syntax analysis.
 
 Selection/generation is not approval of a generated phrase or rendered answer.
-CSV export and destination application remain later work (T088).
+Initial CSV import and destination setup are manual; managed creation remains unsupported.
 
 ## Review generated exercises and inspect eligibility
 
@@ -284,5 +286,110 @@ approval; unchanged reruns and terminology/appearance changes preserve it.
 Read-only inspection shows identities, exercise keys, slots, contributing constituents,
 claims/fingerprints, evidence, alternatives and withholding reasons without Anki. `--check`
 fails on open/withheld/stale/unmatched or unavailable exercises. Phrase CSV/package
-application and artifact layout support remain T088 work. Native automatic appearance
+checking supports the documented phrase-v1 layout (supplied packages only; no package
+generation). Tampered answers, stale reviews, wrong identities/slots, missing payload
+columns and incompatible template/style layouts fail nonzero. Native automatic appearance
 acceptance on Desktop/Mobile remains pending; browser rendering does not substitute.
+
+## Initial CSV, manual setup and explicit adoption
+
+After the individual decisions above, use new output paths:
+
+```bash
+uv run latinitas-cards phrases preview inputs.json selected.json recipes.json --json
+uv run latinitas-cards phrases export inputs.json selected.json recipes.json initial.csv --json
+uv run latinitas-cards phrases export inputs.json selected.json recipes.json rerun.csv --json
+cmp initial.csv rerun.csv
+uv run latinitas-cards claims inspect inputs.json --selections selected.json --recipes recipes.json \
+  --artifact initial.csv --check --json
+```
+
+Export omits unapproved exercises and reports diagnostics. This is **initial creation
+only**, not a withdrawal/update strategy. It refuses existing output/source/review paths.
+The same source, profile, selections and sidecars produce byte-identical CSV; no lexical
+note, source manifest or review decision is written. Read-only package checking uses
+the same command with `--artifact supplied.apkg` or `supplied.colpkg`.
+
+Obtain the exact manual setup contract without opening Anki:
+
+```bash
+uv run python -c 'import json; from dataclasses import asdict; from latinitas_cards.managed_layouts import layout_version; print(json.dumps(asdict(layout_version("phrase-v1")), ensure_ascii=False, indent=2))' > phrase-layout.json
+```
+
+Review all fields, ordered templates and CSS before applying them in a disposable
+test collection. Prefer a **separate dedicated note type/destination** for new phrase
+notes, named exactly as the profile's `generated_note_type`; preserve `LatinitasID`
+as the first field and do not map Personal Notes. The original fields/templates are
+unchanged, with phrase fields appended after them and slots 10/11. Install the exact
+CSS v3 text manually; CSV installs neither CSS nor templates. Never renumber or
+repurpose scheduled templates. Old CSS/template digests fail closed: do not edit a
+snapshot/journal to match or silently rebind it. Review manual setup, acquire a fresh
+closed backup, and perform explicit ownership adoption in a new journal. Existing
+scheduled collections need reviewed manual resolution, not an automatic migration.
+
+Preview import mapping carefully, import **initial.csv manually** into the dedicated
+note type, then export a closed complete backup. Follow the acquisition, immutable
+membership and ownership instructions in
+[destination snapshots and file transport](destination-snapshots-and-file-transport.md).
+Phrase membership is `[LatinitasID, Source Scope, Source ID, exercise_key]`; use the
+semantic `exercise_key` from `claims inspect`, not the shared phrase object key.
+Capture validates actual fields/templates/CSS; linguistic decisions are never write
+approval or proof of a successful import.
+
+```bash
+uv run --with anki==26.9.3 latinitas-cards managed capture closed.anki2 \
+  --selection membership.json --closed-backup --interval-confirmed > snapshot.json
+uv run latinitas-cards managed adopt snapshot.json --ownership ownership.json \
+  --review "Manually inspected initial import and every ownership origin" --state state.json
+```
+
+## Approved retained-slot changes and blocked withdrawal
+
+Correct an answer through individual shared decisions, or change presentation in the
+profile. Linguistic/content changes invalidate review; presentation retains claims but
+changes the payload and requires **new managed write approval**. Use fresh observed
+evidence and inspect the exact changed field operations:
+
+```bash
+uv run latinitas-cards phrases plan inputs.json selected.json recipes.json snapshot.json state.json \
+  --json > plan.json
+jq '.notes[] | {identity, classification, card_effects, blocked, operations}' plan.json
+uv run latinitas-cards managed approve plan.json --operation 'EXACT-ID/field/PhraseRecognitionAnswer' \
+  --review "Reviewed this exact retained answer and full import footprint" > approval.json
+```
+
+For principal-part and parsing payloads, the existing `managed plan request.json`
+interface uses the same retained-slot guard. Parsing has its own `parsing-v1` binding,
+not phrase slots. Only prompt/answer fields of observed retained cards can change;
+identity, source provenance, eligibility guards, slot ordinals, personal fields and
+unselected destination fields/tags remain unchanged. Creation, retirement/reactivation,
+blank eligible payloads, stale receipts, conflicts and changed card/history evidence
+remain blocked. Inspect both selected operations and full-column rows before import.
+
+Build the existing handoff JSON from the fresh snapshot, binding, plan and receipt;
+set `backup`, reviewed `recovery`, `note_type` and `deck` exactly as approved. Then:
+
+```bash
+uv run latinitas-cards managed emit handoff.json --state state.json --output updates.csv
+# Manual Anki import: update existing within this note type; never map Personal Notes.
+# Acquire a fresh closed result and prepare observation.json using its actual snapshot.
+uv run latinitas-cards managed observe observation.json --state state.json --interval-confirmed
+# If interrupted/partial or destination drifted: review ownership against fresh evidence.
+uv run latinitas-cards managed reconcile reconciliation.json --state state.json
+```
+
+Emission is pending, not success. Anchors advance only after observed fields, tags,
+native note/card identity, scheduling/history and Personal Notes digest match. Do not
+review/edit/sync on any device between capture, import and observation; recoverability
+and this interval are operator attestations, not a lock, age limit or restore proof.
+Unknown outcomes require fresh observation/reconciliation, never blind replay.
+
+Removing an exercise from the explicit recipe plan (including an empty `exercises`
+list) makes `phrases plan` produce an explicit **unsupported retirement** for its
+adopted phrase note. Withheld/unavailable references produce blocked uncertain plans.
+CSV omission does not remove a note, and no tag alone retires a card. Review a manual
+withdrawal/suspension resolution and acquire fresh evidence, then reconcile ownership;
+the blocked plan itself does not perform or certify retirement. A later update needs
+a new plan and receipt. Native auto acceptance remains pending under the scoped
+2026-10-11 implementation-loop deferral; preserve the exact checklist and limits in
+[morphology native verification](morphology-native-verification.md#automatic-appearance-native-checklist-t067).

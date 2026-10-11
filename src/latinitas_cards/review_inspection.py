@@ -13,9 +13,9 @@ from pathlib import Path
 
 from .cards import TEMPLATE_REGISTRY, CardSlot
 from .claim_sidecar import Diagnostic, claim_report
-from .form_parsing import PARSING_FIELDS, PARSING_SLOT, _escape, generate_parsing, parsing_export_answer
+from .form_parsing import PARSING_SLOT, _escape, generate_parsing, parsing_export_answer
 from .html_text import source_html_to_text
-from .notes import CSV_EXPORT_FIELD_NAMES
+from .managed_layouts import known_layouts
 from .preview_export import PrincipalPartExportResult, prepare_principal_part_export
 from .profile import DeckProfile, load_profile
 from .review_adapters import ReviewState, parsing_review, principal_review
@@ -30,6 +30,7 @@ class ReviewWorkspace:
     cards: tuple[dict[str, object], ...]
     profile: DeckProfile
     principal: PrincipalPartExportResult | None = None
+    note_type: str | None = None
 
 
 def card_report(
@@ -125,7 +126,7 @@ def read_export_csv(
         raise ValueError("CSV deck differs from current profile")
     columns = tuple(directives.get("#columns", "").split(","))
     if (
-        columns not in {CSV_EXPORT_FIELD_NAMES, (*PARSING_FIELDS[:-1], "Tags")}
+        columns not in {layout.columns for layout in known_layouts()}
         or directives.get("#separator") != "Comma"
         or directives.get("#html") != "true"
     ):
@@ -152,12 +153,13 @@ def inspect_workspace(work: ReviewWorkspace, artifact: Path | None) -> dict[str,
             diagnostics.extend(package.diagnostics)
             if package.slots != work.slots:
                 diagnostics.append(Diagnostic("slot", "Artifact recipe slots differ from current source"))
+            if work.note_type and package.note_types != (work.note_type,):
+                diagnostics.append(Diagnostic("identity", "Package note-type differs from current phrase profile"))
         else:
             actual = read_export_csv(
                 artifact,
-                note_type=work.profile.generated_note_type
-                if work.principal
-                else "Latinitas Contextual Form Parsing v1",
+                note_type=work.note_type
+                or (work.profile.generated_note_type if work.principal else "Latinitas Contextual Form Parsing v1"),
                 deck=work.profile.target_deck,
             )
         expected = {
@@ -177,7 +179,8 @@ def inspect_workspace(work: ReviewWorkspace, artifact: Path | None) -> dict[str,
                 diagnostics.append(Diagnostic("identity", f"Duplicate or unmatched identity: {identity}"))
             seen.add(identity)
             if current is not None:
-                for field, value in fields.items():
+                for field in set(fields) | set(current):
+                    value = fields.get(field, "")
                     if field not in {"Tags", "Personal Notes"} and current.get(field, "") != value:
                         diagnostics.append(Diagnostic("drift", f"Drifted field {field} for {identity}"))
                         if any(field in {s.prompt_field, s.answer_field} for s in work.slots) and value:

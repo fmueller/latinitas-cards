@@ -355,9 +355,11 @@ Notes is absent from both targets and import mapping. Empty/no-op selections hav
 targets or rows and do not advance a baseline.
 
 The conservative CSV scope allows only reconciled Lemma, Principal Parts, Meaning,
-Generator, Profile, and a reconciled full tag set. Slot prompt/answer/guard changes
-(including changed rendered presentation), creation, retirement, reactivation and
-migration remain inspectable but unsupported. Compatible content-only subsets retain
+Generator, Profile, a reconciled full tag set, and separately approved prompt/answer
+changes on observed retained principal-part, parsing and phrase slots. Exact eligibility
+guards, identity/provenance, template ordinals and layout binding cannot change.
+Creation, retirement, reactivation and migration remain inspectable but unsupported.
+Compatible content-only subsets retain
 actual destination slot content; unrepresentable or uncertain retention blocks them.
 `verify_approval(plan, receipt, fresh_snapshot, baseline)` checks exact snapshot and
 baseline binding, recomputes derived operations, rejects changed receipts/payloads,

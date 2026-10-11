@@ -1,8 +1,8 @@
 """Deterministic offline review and operation-bound approval, never application.
 
 Full-width import targets start from destination values, not regenerated ones.
-The selected CSV capability intentionally matches the conservative journal:
-answer/prompt/guard changes remain unsupported pending separate native gates.
+Retained-slot payload writes require unchanged eligibility and complete observed
+card bindings. Structural changes remain unsupported; native checks are pending.
 """
 
 import json
@@ -10,10 +10,8 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .card_lifecycle import plan_card_lifecycle
-from .cards import TEMPLATE_REGISTRY, RenderedCard
 from .destination_reconciliation import ORIGINS, reconcile_note
 from .destination_state import (
-    MANAGED_FIELDS,
     DestinationSnapshot,
     ReconciliationRequired,
     _binding,
@@ -26,40 +24,10 @@ from .destination_state import (
     _text,
     require_content_only_card_set,
 )
-from .notes import (
-    CSV_EXPORT_FIELD_NAMES,
-    GeneratedNote,
-    GeneratedNoteProvenance,
-    GenerationMetadata,
-    ManagedNoteContent,
-)
+from .managed_layouts import layout_fields, layout_version
 from .profile import tag_character_violation
 
 CONTENT_FIELDS = frozenset(("Lemma", "Principal Parts", "Meaning", "Generator", "Profile"))
-
-
-def _generated(fields: dict[str, str], member: list[str]) -> GeneratedNote:
-    if len(member) != 4:
-        raise ReconciliationRequired("coherent-object membership required")
-    return GeneratedNote(
-        fields["LatinitasID"],
-        member[3],
-        ManagedNoteContent(fields["Lemma"], fields["Principal Parts"], fields["Meaning"]),
-        GeneratedNoteProvenance(
-            fields["Source Kind"], fields["Source Location"], fields["Source Path"] or None, member[2], member[1]
-        ),
-        GenerationMetadata(fields["Profile"], fields["Note Schema"], fields["Generator"]),
-        tuple(
-            RenderedCard(
-                slot,
-                bool(fields[slot.enabled_field].strip()),
-                fields[slot.enabled_field],
-                fields[slot.prompt_field],
-                fields[slot.answer_field],
-            )
-            for slot in TEMPLATE_REGISTRY
-        ),
-    )
 
 
 def compose_plan(
@@ -77,6 +45,7 @@ def compose_plan(
     presentation settings and is independently bound into the plan identity.
     """
     data = snapshot.payload
+    layout = layout_version(data["schema"]["version"])
     baseline = _state(state) if state is not None else None
     if baseline is not None and (
         baseline["binding"] != _binding(data) or baseline["deck_options"] != data["deck_options"]
@@ -101,7 +70,9 @@ def compose_plan(
             raise ReconciliationRequired("duplicate or unbound proposal identity")
         selected.add(identity)
         fields = _fields(proposal.get("fields"), identity)
-        generated = _generated(fields, members[identity])
+        if layout_fields(fields) != layout or len(members[identity]) != 4:
+            raise ReconciliationRequired("coherent-object membership and bound layout required")
+        card_keys = {slot.semantic_key for slot in layout.slots if fields[slot.enabled_field].strip()}
         contributions = _object(proposal.get("contributions", {}))
         if set(contributions) - set(ORIGINS):
             raise ReconciliationRequired("unknown tag origin")
@@ -142,7 +113,7 @@ def compose_plan(
                     "reason": "structural creation unsupported by selected transport",
                 }
             ]
-            entry["card_effects"] = [{"semantic_key": key, "effect": "add"} for key in generated.card_keys]
+            entry["card_effects"] = [{"semantic_key": key, "effect": "add"} for key in sorted(card_keys)]
             continue
         if baseline is None or identity not in baseline["anchors"]:
             entry.update(classification="conflict", reasons=["missing applied baseline; explicit adoption required"])
@@ -155,12 +126,12 @@ def compose_plan(
                 snapshot,
                 baseline,
                 identity,
-                generated,
+                fields,
                 proposal_status=proposal.get("status", "approved"),
                 approvals={
                     slot.semantic_key: "inspection-only"
-                    for slot in TEMPLATE_REGISTRY
-                    if slot.semantic_key in generated.card_keys
+                    for slot in layout.slots
+                    if slot.semantic_key in card_keys
                     or any(
                         row.get("semantic_key") == slot.semantic_key
                         for row in (destination.get("cards") or {}).get("rows", [])
@@ -190,12 +161,23 @@ def compose_plan(
         entry["decisions"] = reconciliation["decisions"]
         conflicts = reconciliation["conflicts"]
         retention_unsafe = any("retention" in reason or "uncertain" in reason for reason in entry["blocked"])
-        for name in MANAGED_FIELDS:
+        for name in layout.managed_fields:
             d, p, value = destination["fields"][name], fields[name], reconciliation["fields"][name]
             conflict = f"field:{name}" in conflicts
             if d == value and not conflict and f"field:{name}" not in reconciliation["decisions"]:
                 continue
             supported = name in CONTENT_FIELDS and not conflict and not retention_unsafe and not retire
+            if name in layout.payload_fields:
+                slot = next(slot for slot in layout.slots if name in (slot.prompt_field, slot.answer_field))
+                supported = (
+                    not conflict
+                    and not retire
+                    and not entry["blocked"]
+                    and all(effect["effect"] == "retain" for effect in entry["card_effects"])
+                    and bool(destination["fields"][slot.enabled_field].strip())
+                    and fields[slot.enabled_field] == destination["fields"][slot.enabled_field]
+                    and bool(value.strip())
+                )
             entry["operations"].append(
                 {
                     "id": f"{identity}/field/{name}",
@@ -283,7 +265,7 @@ def compose_plan(
             "application_mode": "offline CSV emission; manual native import; observed-result reconciliation",
             "automated_collection_apply": False,
             "native_preservation_proven": False,
-            "slot_payload_changes": False,
+            "slot_payload_changes": True,
         },
         "notes": sorted(entries, key=lambda entry: entry["identity"]),
     }
@@ -307,6 +289,7 @@ def approve_plan(plan: object, selected_operations: Sequence[str], review: str) 
     generation/profile/claim confirmation is consulted. No writes are performed.
     """
     data = _checked_plan(plan)
+    layout = layout_version(data["binding"]["schema"]["version"])
     _text(review)
     selected = _strings(list(selected_operations))
     remaining = set(selected)
@@ -322,7 +305,7 @@ def approve_plan(plan: object, selected_operations: Sequence[str], review: str) 
                 raise ReconciliationRequired("unsupported or unresolved selected operation")
             if operation["kind"] == "field":
                 name = operation["field"]
-                if name not in CONTENT_FIELDS:
+                if name not in CONTENT_FIELDS | layout.payload_fields:
                     raise ReconciliationRequired("unsupported or personal field")
                 target["fields"][name] = operation["value"]
             elif operation["kind"] == "tags":
@@ -341,9 +324,9 @@ def approve_plan(plan: object, selected_operations: Sequence[str], review: str) 
         "review": review,
         "targets": targets,
         "write_footprint_digest": _digest(targets),
-        "import_columns": list(CSV_EXPORT_FIELD_NAMES),
+        "import_columns": list(layout.columns),
         "import_rows": [
-            [" ".join(target["tags"]) if name == "Tags" else target["fields"][name] for name in CSV_EXPORT_FIELD_NAMES]
+            [" ".join(target["tags"]) if name == "Tags" else target["fields"][name] for name in layout.columns]
             for _, target in sorted(targets.items())
         ],
     }
