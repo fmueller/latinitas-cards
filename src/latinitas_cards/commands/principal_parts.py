@@ -102,6 +102,8 @@ def render_principal_part_preview(result: PrincipalPartExportResult, *, limit: i
     """Render bounded, terminal-safe representative notes and structured reasons."""
 
     typer.echo("Principal-part preview")
+    for diagnostic in result.claim_review_diagnostics:
+        typer.echo(safe_source_value(diagnostic, "claim review"))
     morphology = result.profile.morphology
     typer.echo(f"Morphology v{morphology.version}: {morphology.theme}/{morphology.appearance}/{morphology.comparison}")
     typer.echo(

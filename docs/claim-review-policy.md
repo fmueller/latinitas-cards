@@ -42,8 +42,8 @@ Latin. Other changes invalidate both acceptance and withholding decisions.
 Rendered payload changes still require renewed destination authorization.
 Versions identify the caller's evidence/configuration snapshots;
 callers must supply the actual current profile/evidence, not retained stale copies.
-This is an in-process domain contract, not authenticated reviewer identity or a
-persistent review UI. No network call is made; future optional LLM acquisition
+This domain contract and its [offline CLI sidecar](reviewed-claim-cli.md) record
+attestations, not authenticated reviewer identity. No network call is made; future optional LLM acquisition
 must be explicitly enabled as network use. No review decision contains destination
 write approval. Setup's proposed fourth-role label is not explicit PPP/supine
 adjudication. Existing recipe keys and source-extraction expectations are unchanged;
@@ -81,9 +81,9 @@ four-role comparison; absent/withheld slots have actionable reasons. Escaped
 hidden `principal-part-review` JSON retains the comparison, claim provenance,
 profiles, and decisions alongside the existing extraction JSON. Terminal preview
 labels this separately as review data, not asserted knowledge. Future presentation
-work may style these fields but must not infer claims from styling. CLI commands
-currently provide no persistent claim-review editor/import option; the offline
-Python handoff is the explicit review path. Existing destination/checkpoint gates
+work may style these fields but must not infer claims from styling. The `claims`
+CLI records persistent individual decisions, including reviewer-authored values;
+the Python handoff remains available. Existing destination/checkpoint gates
 still apply: accepting a claim is not write approval, and previously exported
 cards that lose eligibility require the existing recovery/review process.
 

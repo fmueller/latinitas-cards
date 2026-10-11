@@ -58,6 +58,7 @@ class PrincipalPartExportResult:
     source_path: Path
     profile: DeckProfile
     generation: LearningObjectGenerationResult
+    claim_review_diagnostics: tuple[str, ...] = ()
     profile_path: Path | None = None
     manifest_path: Path | None = None
     manifest_reviews: tuple[ManifestReviewItem, ...] = ()
@@ -146,8 +147,38 @@ def prepare_principal_part_export(
     approve_fresh_import: bool = False,
     legacy_note_types: Iterable[str] = (),
     claim_assessments: Sequence[ClaimAssessment] = (),
+    read_review_sidecar: bool = True,
 ) -> PrincipalPartExportResult:
     """Read immutable input and build a typed generation result without writing files."""
+
+    if read_review_sidecar:
+        from .claim_sidecar import sidecar_path
+        from .review_adapters import principal_assessments, principal_review
+
+        if sidecar_path(Path(source_path)).exists():
+
+            def prepare(assessments: Sequence[ClaimAssessment]) -> PrincipalPartExportResult:
+                return prepare_principal_part_export(
+                    source_path,
+                    profile,
+                    profile_path=profile_path,
+                    manifest_path=manifest_path,
+                    approve_new_scope=approve_new_scope,
+                    approved_reuse=approved_reuse,
+                    approved_allocations=approved_allocations,
+                    approved_removals=approved_removals,
+                    checkpoint_path=checkpoint_path,
+                    approve_fresh_import=approve_fresh_import,
+                    legacy_note_types=legacy_note_types,
+                    claim_assessments=assessments,
+                    read_review_sidecar=False,
+                )
+
+            state = principal_review(prepare(()))
+            return replace(
+                prepare((*claim_assessments, *principal_assessments(state))),
+                claim_review_diagnostics=tuple(d.message for d in state.diagnostics),
+            )
 
     plan_legacy_transition(profile, (), legacy_note_types=legacy_note_types)
     source = Path(source_path)

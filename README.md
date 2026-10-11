@@ -276,6 +276,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 - [Managed CSV native verification](docs/managed-csv-native-verification.md)
 - [Managed CSV Desktop dialog verification](docs/managed-csv-desktop-verification.md)
 - [Claim review policy](docs/claim-review-policy.md)
+- [Reviewed claim CLI and offline checks](docs/reviewed-claim-cli.md)
 - [Contextual form parsing](docs/contextual-form-parsing.md)
 - [Morphology native verification](docs/morphology-native-verification.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)

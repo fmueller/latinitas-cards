@@ -6,13 +6,17 @@ from typing import Annotated
 import typer
 
 from ..form_parsing import ParsingInput, generate_parsing, parsing_csv
+from ..review_adapters import parsing_review
 
 app = typer.Typer(help="Preview reviewed contextual parsing; separate manual note type, no managed apply.")
 
 
 def _load(source: Path) -> ParsingInput:
     try:
-        return ParsingInput.model_validate_json(source.read_text(encoding="utf-8"))
+        data, state = parsing_review(source)
+        for diagnostic in state.diagnostics:
+            typer.echo(diagnostic.message, err=True)
+        return data
     except (OSError, ValueError) as error:
         raise typer.BadParameter(str(error)) from error
 

@@ -245,6 +245,22 @@ def generate_parsing(data: ParsingInput) -> tuple[ParsingResult, ...]:
     return tuple(results)
 
 
+def parsing_export_answer(result: ParsingResult) -> str:
+    """Keep reviewed backing evidence offline-inspectable without asserting withheld values."""
+    if not result["eligible"]:
+        return ""
+    metadata = {
+        "version": 1,
+        "claims": [c for c in result["claims"] if c["status"] == "accepted"],
+        "withheld": [
+            {key: c[key] for key in ("feature", "fingerprint", "status", "reason")}
+            for c in result["claims"]
+            if c["status"] != "accepted"
+        ],
+    }
+    return result["answer"] + '<span hidden class="parsing-review">' + html.escape(json.dumps(metadata)) + "</span>"
+
+
 def parsing_csv(data: ParsingInput) -> bytes:
     """Fresh manual setup only; no managed plan, destination writes or provisioning."""
     return serialize_anki_csv(
@@ -258,7 +274,7 @@ def parsing_csv(data: ParsingInput) -> bytes:
                 _escape(r["context"]),
                 "1",
                 r["prompt"],
-                r["answer"],
+                parsing_export_answer(r),
                 " ".join(data.profile.tags),
             )
             for r in generate_parsing(data)

@@ -1,12 +1,12 @@
 ---
 id: T-064-record-reviewed-claim-decisions-from-the-cli-for
 title: Record reviewed claim decisions from the CLI for all generated cards
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#reviewed-claim-decisions-for-all-generated-cards
 dependencies:
     - T-068-publish-v0-2-0
-updated_at: "2026-10-06T18:13:52Z"
+updated_at: "2026-10-11T11:03:44Z"
 ---
 
 # T-064-record-reviewed-claim-decisions-from-the-cli-for Record reviewed claim decisions from the CLI for all generated cards
@@ -67,3 +67,4 @@ so agents can verify generated cards in a loop without starting Anki.
   require this release to generate packages or run Anki.
 - Implement in reviewable milestones: shared decision persistence, existing-recipe
   adapters, then inspection/check. Keep one shared contract for later phrase adapters.
+- 2026-10-11T11:03:34Z: verification pass
