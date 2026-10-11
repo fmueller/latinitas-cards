@@ -566,6 +566,79 @@ def test_phrase_authored_export_control_boundary(tmp_path: Path, recipe: str, co
     assert all(p.read_bytes() == before for p, before in protected.items())
 
 
+@pytest.mark.parametrize("batch_mode", [True, False])
+def test_phrase_invalid_authored_reference_preserves_review_and_export(tmp_path: Path, batch_mode: bool) -> None:
+    from phrase_recipes_test import exercise
+
+    source, selections = saved_example(tmp_path)
+    candidate = call("phrases", "generate", str(source), str(selections))["candidates"][0]
+    chosen = exercise().model_copy(update={"candidate_key": candidate["candidate_key"]})
+    plan = tmp_path / "recipes.json"
+    plan.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [chosen.model_dump(mode="json")]}))
+    args = [str(source), "--selections", str(selections), "--recipes", str(plan)]
+    claims = call("claims", "list", *args)["claims"]
+    decisions = [
+        {"fingerprint": c["fingerprint"], "status": "accepted", "reviewer": "teacher", "reason": "Checked"}
+        for c in claims
+    ]
+    batch = tmp_path / "batch.json"
+    batch.write_text(json.dumps(decisions))
+    call("claims", "record", *args, "--batch", str(batch))
+    answer_index = next(i for i, c in enumerate(claims) if c["feature"] == "answer")
+    reference = json.loads(claims[answer_index]["value"])
+    # A substantive valid correction, with inapplicable person/tense omitted, remains supported.
+    reference["readings"][0]["translations"] = ["in Begleitung eines Freundes"]
+    decisions[answer_index].update(value=json.dumps(reference), evidence=reference["evidence"])
+    batch.write_text(json.dumps(decisions))
+    call("claims", "record", *args, "--batch", str(batch))
+    sidecar = Path(f"{plan}.claims.json")
+    before = sidecar.read_bytes()
+    output = tmp_path / "before.csv"
+    call("phrases", "export", str(source), str(selections), str(plan), str(output))
+    exported = output.read_bytes()
+    assert b"in Begleitung eines Freundes" in exported
+    claims = call("claims", "list", *args)["claims"]
+    decisions[answer_index]["fingerprint"] = claims[answer_index]["fingerprint"]
+    reference["readings"][0]["features"] = {}
+    if batch_mode:
+        decisions[answer_index]["value"] = json.dumps(reference)
+        batch.write_text(json.dumps(decisions))
+        result = call("claims", "record", *args, "--batch", str(batch), success=False)
+        expected_index = answer_index
+    else:
+        evidence = tmp_path / "evidence.json"
+        evidence.write_text(json.dumps(reference["evidence"]))
+        result = call(
+            "claims",
+            "record",
+            *args,
+            "--fingerprint",
+            claims[answer_index]["fingerprint"],
+            "--status",
+            "accepted",
+            "--reviewer",
+            "teacher",
+            "--reason",
+            "Checked",
+            "--value",
+            json.dumps(reference),
+            "--evidence",
+            str(evidence),
+            success=False,
+        )
+        expected_index = 0
+    assert result["recorded"] == 0
+    assert any(
+        d["code"] == "invalid" and d["item"] == expected_index and "readings.0.features" in d["message"]
+        for d in result["diagnostics"]
+    )
+    assert sidecar.read_bytes() == before
+    assert call("claims", "inspect", *args, "--check")["cards"][0]["eligible"]
+    after = tmp_path / "after.csv"
+    call("phrases", "export", str(source), str(selections), str(plan), str(after))
+    assert after.read_bytes() == exported
+
+
 def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Path) -> None:
     from phrase_recipes_test import exercise
 

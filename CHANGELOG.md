@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `claims record` rejects structurally invalid authored phrase references before
+  saving any batch decisions, preserving previous reviewed answers.
 - `phrases export` and `claims inspect --check` reject unsafe generated field controls
   while preserving tab/CR/LF and valid literal text; CSV checks retain embedded CR bytes.
 - `phrases` applies the configured palette and light/dark/auto appearance to both

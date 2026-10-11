@@ -61,7 +61,7 @@ def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dic
         # One combination decision is shared by questions about the same phrase.
         if not any(b.claim.fingerprint == combination_claim.fingerprint for b in bases):
             bases.append(BoundClaim(exercise.candidate_key, "combination", combination_claim, authorable=False))
-        bases.append(BoundClaim(exercise.semantic_key, "answer", answer_claim))
+        bases.append(BoundClaim(exercise.semantic_key, "answer", answer_claim, value_model=Reference))
     state = review_state(tuple(bases), recipes)
     claims_by_identity = {(bound.identity, bound.feature): bound for bound in state.claims}
     diagnostics = [*work.state.diagnostics, *state.diagnostics]

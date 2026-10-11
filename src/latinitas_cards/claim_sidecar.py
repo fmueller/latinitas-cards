@@ -22,6 +22,7 @@ class BoundClaim:
     claim: Claim
     decision: ReviewDecision | None = None
     authorable: bool = True
+    value_model: type[BaseModel] | None = None
 
 
 class DecisionItem(BaseModel):
@@ -177,6 +178,8 @@ def record_batch(path: Path, claims: Sequence[BoundClaim], items: Sequence[objec
                 base, bound = binding
                 if item.value is not None and not base.authorable:
                     raise ValueError("unresolved source forms require separate source correction")
+                if item.value is not None and base.value_model is not None:
+                    base.value_model.model_validate_json(item.value)
                 claim = authored_claim(bound.claim, item.value, item.evidence, item.selected_sense)
                 # Role labels are canonical slots, never free-text identity changes.
                 if (
