@@ -1,11 +1,11 @@
 ---
 id: T-095-correct-remaining-retained-payload-transport
 title: Correct remaining retained-payload transport limitation
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#review-identity-and-export
 dependencies: []
-updated_at: "2026-10-11T20:57:08Z"
+updated_at: "2026-10-11T21:12:50Z"
 ---
 
 # T-095-correct-remaining-retained-payload-transport Correct remaining retained-payload transport limitation
@@ -56,3 +56,67 @@ reopen or edit completed tasks or widen this into general documentation review.
   commit/push. Tester made no product fix or manual lifecycle/state edit.
 
 ## Implementation Notes
+
+- Base and fetched origin/main matched cd1e8e963f93d9d760d4f6a04caec61c8af17cb3;
+  initial worktree was clean. Spec SHA256 matched the pin above. Before lifecycle
+  writes, `mise exec -- taskrail validate` returned `state valid` and
+  `mise exec -- taskrail next --json` selected only T095, `off_spec: false`.
+  Started through Taskrail at 2026-10-11T21:04:44Z; no hand-edited statuses/state.
+- Reproduced the contradiction using the two Description `sed` commands.
+  Changed only the final transport limitation: separately approved prompt/answer
+  updates on observed retained principal-part, parsing and phrase slots are
+  supported by the offline CSV handoff, not native import certification.
+  Unchanged exact guards/layout and all structural/schema/APKG/manual/native
+  limits remain explicit. No runtime change, capability expansion or broad rewrite.
+- TDD applicability: documentation-only correction; no artificial production
+  red/green test. Before/after prose inspection demonstrated the contradiction
+  and corrected boundary. Existing runtime contract tests ran unchanged.
+- Manual checks: public `uv run latinitas-cards managed --help`,
+  `managed approve --help`, and `managed emit --help` confirm operation-bound
+  explicit review, offline handoff and operator attestations, not native proof.
+  Cross-checked `managed_plans.py` retained payload guards and transport flags
+  against spec Review Identity And Export and the previously recorded 68-operation
+  protocol evidence. Did not rerun those five protocols or claim new native proof.
+- Dedicated Task simplifier loaded personal `code-simplifier`; accepted its
+  narrow prose tightening. Re-read actual diff and reran focused checks.
+- Independent parallel Tasks loaded personal `code-reviewer`: General routed
+  to `ecc/agents/code-reviewer.md` (no companions); Python routed to
+  `ecc/agents/python-reviewer.md` plus `ecc/skills/python-patterns/REFERENCE.md`.
+  Python selected for retained-control contract alignment. Security/database/UI
+  lanes omitted: no changes to their implementation or invariants. No budget excess.
+  Both exact conclusions: "No concrete task-relevant findings."
+- Fresh candidate-validation Task loaded `code-reviewer`, inspected the diff
+  and accepted the empty candidate set: "No concrete task-relevant findings."
+- First fresh disposition verifier raised this candidate verbatim:
+
+  > FINDING T-095-DOC-1 — domain
+  > Severity: low
+  > Evidence: `docs/destination-snapshots-and-file-transport.md:448–449` newly says retained prompt/answer payload updates “are supported.” `docs/managed-csv-native-verification.md:131` still says “Slot prompt/answer/guard changes remain unsupported,” while its surrounding limitations scope native evidence to specific API settings and state that other import paths need separate checks.
+  > Finding: The new transport-contract wording can be read as claiming native support for retained prompt/answer updates, but the native verification document still explicitly lists those updates as unsupported.
+  > Failure/impact: A reader could treat the managed workflow’s offline plan/approval/emit support as evidence that the native import operation is supported, despite the stated limitation on native evidence.
+  > Recommended direction: Clarify in this transport document that the supported scope is the managed review/CSV handoff contract and does not itself establish native application support; retain the existing native verification and matching/tag-only conditions.
+
+- A separate fresh candidate-validation Task loaded `code-reviewer` and
+  rejected T-095-DOC-1 as a concrete contradiction: the section already says
+  "not native import certification" and the native document records narrower
+  historical evidence. Disposition: not reproducible as a concrete support claim;
+  nevertheless reinforced task-local wording with "offline CSV handoff" and
+  "This is not native import certification." Historical native doc untouched.
+  No deferred findings or production TDD fix; re-read the corrected boundary.
+- Second fresh disposition-verification Task loaded `code-reviewer` and
+  confirmed: "T095’s documentation acceptance is met. No concrete task-relevant
+  findings." It resolved the wording risk and preserved the rejected original
+  contradiction disposition; six focused files passed (156 tests). One narrow
+  clarification/recheck cycle, no unresolved findings.
+- Implementer focused command, before/after simplification and clarification:
+  `uv run pytest tests/unit/managed_plans_test.py tests/unit/managed_application_test.py -q`:
+  67 passed on each run. `git diff --check` clean throughout.
+- Final exact repository chain after fresh verification:
+  `uv run ruff check` — All checks passed!
+  `uv run mypy` — Success: no issues found in 107 source files.
+  `uv run pytest -v` — 1045 passed in 40.81s.
+- Native appearance remains 2026-10-11 maintainer-deferred/pending, not passed.
+  ROUND3/5 remains NOT CLEAN; parent owns ROUND4 after acceptance. No second
+  task, spec-priority-dependency-gate change, tags, releases or deployment.
+- 2026-10-11T21:12:43Z: verification pass
+- 2026-10-11T21:12:50Z: Documentation boundary corrected and independently reviewed; verification pass at 2026-10-11T21:12:43Z after exact repository chain. Native appearance remains pending.

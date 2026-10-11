@@ -444,7 +444,10 @@ backup and before/after evidence local. No command opens a running collection.
    restored evidence before retry. Recorded success inconsistent with restoration
    is rejected, never silently replayed.
 
-Content/tag output remains conditional on native matching/tag-only checks. Card
-addition/retirement/reactivation, schema migration, slot prompt/answer/guard edits,
-and APKG application remain unsupported. Incompatible CSS requires separate manual
-setup and new evidence, not automatic migration.
+Content/tag output remains conditional on native matching/tag-only checks. Separately
+approved prompt/answer payload updates are supported by the offline CSV handoff for observed
+retained principal-part, parsing and phrase slots only when exact eligibility guards and
+layout binding remain unchanged. This is not native import certification. Slot guard/eligibility
+edits, card addition/retirement/reactivation, schema migration and APKG application remain
+unsupported. Incompatible CSS requires separate manual setup and new evidence, not automatic
+migration.
