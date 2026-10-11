@@ -8,6 +8,7 @@ import typer
 from ..phrase_generation import generate_proposals, load_saved_selections
 from ..phrase_inputs import SelectionRequest, bind_selections, inspect_inputs, load_inputs, save_selections
 from ..phrase_recipes import load_recipe_plan, preview_plan
+from ..phrase_review import phrase_workspace
 from ..profile import load_profile
 from .claims import JsonOption, _emit, _error
 
@@ -47,16 +48,7 @@ def recipes(source: Path, selections: Path, request: Path, output: Path, machine
 def preview(source: Path, selections: Path, recipes: Path, machine: JsonOption = False) -> None:
     """Show complete proposed prompts/answers, alternatives and withholding reasons."""
     try:
-        work = load_inputs(source)
-        _emit(
-            preview_plan(
-                work,
-                load_saved_selections(selections),
-                load_recipe_plan(recipes),
-                load_profile(source.parent / work.data.profile),
-            ),
-            machine,
-        )
+        _emit(phrase_workspace(source, selections, recipes)[0], machine)
     except (OSError, ValueError) as error:
         _error(error, machine)
 

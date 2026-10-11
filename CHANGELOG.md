@@ -14,7 +14,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   grammatical terminology, with preview overrides and explicit legacy profile upgrades.
 - `phrases` inspects and saves reviewed deck vocabulary, sense, form and bounded
   pattern selections, then previews explicit translation/self-assessment or form-recognition
-  recipes with contextual alternatives and withholding reasons; phrase export is not yet available.
+  recipes with stable exercise identities, separate combination/answer approvals and offline
+  claim inspection; phrase CSV export and destination application are not yet available.
 
 ## [0.2.0] - 2026-10-08
 

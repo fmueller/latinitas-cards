@@ -56,9 +56,9 @@ A single-case exercise is withheld when the supplied readings differ in case;
 `analysis` may teach explicitly reviewed alternatives rather than invent context.
 
 Preview labels unreviewed content **Proposed reference — not asserted** and shows
-withholding reasons. Reference review uses the shared fingerprint/decision contract
-in the renderer; CLI persistence of generated reviews and object approval belongs
-to T087, so this CLI preview currently asserts no reviewed generated answers.
+withholding reasons. Preview automatically consumes the recipe plan's shared review
+sidecar. Eligibility requires reviewed lexical/pattern inputs, explicit combination
+correctness/naturalness approval, and a separately approved rendered reference.
 Latin (default) or German terminology comes from the profile; German prose and
 translations do not change. Translation is Latin-first self-assessment, never
 exact-string grading or German-to-Latin production. Targets and tested distinctions
@@ -249,4 +249,40 @@ available form or pattern. This subset supports nominative noun subjects and rev
 third-person finite forms only, not exhaustive conjugation or general syntax analysis.
 
 Selection/generation is not approval of a generated phrase or rendered answer.
-Recipes, explicit combination/answer review and CSV export remain later work.
+CSV export and destination application remain later work (T088).
+
+## Review generated exercises and inspect eligibility
+
+Use the shared commands with both saved selections and recipes:
+
+```bash
+uv run latinitas-cards claims list inputs.json --selections selected.json --recipes recipes.json --json
+uv run latinitas-cards claims record inputs.json --selections selected.json --recipes recipes.json \
+  --fingerprint <fingerprint> --status accepted --reviewer teacher --reason "Individually checked"
+uv run latinitas-cards claims record inputs.json --selections selected.json --recipes recipes.json \
+  --batch decisions.json --json
+uv run latinitas-cards claims inspect inputs.json --selections selected.json --recipes recipes.json --check --json
+```
+
+`recipes.json.claims.json` uses the same T064 locking, atomic batches, stale/unmatched
+diagnostics and conflicting-decision rejection as other recipes. Combination claims
+attest correctness **and** naturalness, and cannot be rewritten as free text. Answer
+claims contain a complete JSON `Reference`; an authored correction supplies that JSON
+as `value` plus its own `evidence` in an individual or batch decision. Invalid references
+or unresolved tested distinctions remain ineligible. Withholding either gate disables
+the exercise. These linguistic attestations are not export or managed-plan approval.
+
+The saved role-labelled phrase object links every contributing source identity/sense,
+pattern and form. Each target/distinction question has a separate coherent note ID
+derived from the composite source and semantic exercise key, plus fixed recipe slot
+10 (translation) or 11 (recognition); no card is attached to one lexical word and source
+notes are never merged or changed. Gloss/reference wording and presentation edits keep
+object/note/card IDs and slots; new sense/form keys or questions distinguish exercises.
+Changed linguistic context, evidence, analysis or translation invalidates the relevant
+approval; unchanged reruns and terminology/appearance changes preserve it.
+
+Read-only inspection shows identities, exercise keys, slots, contributing constituents,
+claims/fingerprints, evidence, alternatives and withholding reasons without Anki. `--check`
+fails on open/withheld/stale/unmatched or unavailable exercises. Phrase CSV/package
+application and artifact layout support remain T088 work. Native automatic appearance
+acceptance on Desktop/Mobile remains pending; browser rendering does not substitute.

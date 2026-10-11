@@ -150,15 +150,22 @@ class RecipePlan(Model):
 
 def contextual_claim(candidate: dict[str, object], exercise: Exercise, profile: DeckProfile) -> Claim:
     """Bind the reference to current phrase/input evidence, not display settings."""
+    context = {k: v for k, v in candidate.items() if k not in {"input_claims", "review_state"}}
+    context["input_fingerprints"] = sorted(
+        str(c["fingerprint"]) for c in cast(list[dict[str, object]], candidate.get("input_claims", []))
+    )
     return Claim(
         candidate_id=exercise.semantic_key,
-        candidate_text=canonical(candidate),
+        candidate_text=canonical(context),
         kind="explanation",
         value=canonical(exercise.reference.model_dump(mode="json")),
         analyzer="phrase-reference/v1",
         evidence=exercise.reference.evidence,
         profile=profile,
         profile_version="phrase-v1",
+        alternatives=tuple(canonical(r.model_dump(mode="json")) for r in exercise.reference.readings)
+        if len(exercise.reference.readings) > 1
+        else (),
     )
 
 
@@ -167,6 +174,8 @@ def render_exercise(
     exercise: Exercise,
     profile: DeckProfile,
     decision: ReviewDecision | None = None,
+    *,
+    reference_claim: Claim | None = None,
 ) -> dict[str, Any]:
     """Complete inspection, including proposed/withheld text; no export authorization."""
     if candidate["candidate_key"] != exercise.candidate_key:
@@ -192,7 +201,7 @@ def render_exercise(
         assert exercise.target is not None
         distinction = "Analyse" if exercise.distinction == "analysis" else feature_name(exercise.distinction, settings)
         prompt += f"\nBestimme {roles[exercise.target]} [{exercise.target}]: {distinction}."
-    claim = contextual_claim(candidate, exercise, profile)
+    claim = reference_claim or contextual_claim(candidate, exercise, profile)
     assessment = assess_claim(claim, decision)
     state = "reviewed" if assessment.status == "accepted" else "proposed" if decision is None else "withheld"
     reason = assessment.reason

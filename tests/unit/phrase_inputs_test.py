@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
+from latinitas_cards.claim_review import Evidence
 from latinitas_cards.cli import app
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 
@@ -202,6 +203,23 @@ def test_generation_equal_gloss_senses_and_explicit_variant_limit(tmp_path: Path
     assert len(report["skipped"]) == 1 and report["skipped"][0]["diagnostics"][0]["code"] == "variant_limit"
     friends = [c for c in report["candidates"] if c["text"] == "cum amico"]
     assert len({c["candidate_key"] for c in friends}) == 2
+    from phrase_recipes_test import exercise
+
+    plan = tmp_path / "recipes.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "max_exercises": 2,
+                "exercises": [
+                    exercise().model_copy(update={"candidate_key": c["candidate_key"]}).model_dump(mode="json")
+                    for c in friends
+                ],
+            }
+        )
+    )
+    notes = call("phrases", "preview", str(path), str(saved), str(plan))["exercises"]
+    assert len({n["latinitas_id"] for n in notes}) == 2
     keys = {c["candidate_key"] for c in report["candidates"]}
     friend["senses"][0]["meaning"] = "Freund (korrigiert)"
     path.write_text(json.dumps(inputs))
@@ -209,6 +227,8 @@ def test_generation_equal_gloss_senses_and_explicit_variant_limit(tmp_path: Path
     Path(f"{path}.claims.json").unlink()
     accept(path)
     assert {c["candidate_key"] for c in call("phrases", "generate", str(path), str(saved))["candidates"]} == keys
+    corrected = call("phrases", "preview", str(path), str(saved), str(plan))["exercises"]
+    assert {(n["latinitas_id"], n["slot"]) for n in corrected} == {(n["latinitas_id"], n["slot"]) for n in notes}
 
 
 def saved_example(tmp_path: Path) -> tuple[Path, Path]:
@@ -479,3 +499,197 @@ def test_explicit_recipe_plan_cli_preview_and_reproducibility(tmp_path: Path) ->
     request.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [bad.model_dump(mode="json")]}))
     call("phrases", "recipes", str(source), str(selections), str(request), str(plan), success=False)
     assert plan.read_bytes() == first_bytes
+
+
+def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Path) -> None:
+    from phrase_recipes_test import exercise
+
+    source, selections = saved_example(tmp_path)
+    source_bytes = (tmp_path / "deck.csv").read_bytes()
+    candidate = call("phrases", "generate", str(source), str(selections))["candidates"][0]
+    chosen = exercise().model_copy(update={"candidate_key": candidate["candidate_key"]})
+    plan = tmp_path / "recipes.json"
+    plan.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [chosen.model_dump(mode="json")]}))
+    args = [str(source), "--selections", str(selections), "--recipes", str(plan)]
+    claims = call("claims", "list", *args)["claims"]
+    assert {c["feature"] for c in claims} == {"combination", "answer"}
+    by_feature = {c["feature"]: c for c in claims}
+    initial = call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0]
+    assert not initial["eligible"]
+    # Answer attestation alone is not combination approval.
+    call(
+        "claims",
+        "record",
+        *args,
+        "--fingerprint",
+        by_feature["answer"]["fingerprint"],
+        "--status",
+        "accepted",
+        "--reviewer",
+        "teacher",
+        "--reason",
+        "Reference checked",
+    )
+    answer_only = call("claims", "inspect", *args)["cards"][0]
+    assert not answer_only["eligible"] and any("combination" in r for r in answer_only["reasons"])
+    answer_preview = call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0]
+    assert answer_preview["review_state"] == "withheld"
+    assert "combination" in answer_preview["reason"]
+    sidecar = Path(f"{plan}.claims.json")
+    sidecar.unlink()
+    # Combination approval alone is not answer attestation.
+    call(
+        "claims",
+        "record",
+        *args,
+        "--fingerprint",
+        by_feature["combination"]["fingerprint"],
+        "--status",
+        "accepted",
+        "--reviewer",
+        "teacher",
+        "--reason",
+        "Correct and natural",
+    )
+    combination_only = call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0]
+    assert not combination_only["eligible"] and any("answer" in r for r in combination_only["reasons"])
+    corrected = chosen.reference.model_dump(mode="json")
+    corrected["readings"][0]["translations"] = ["in Begleitung eines Freundes"]
+    batch = tmp_path / "batch.json"
+    batch.write_text(
+        json.dumps(
+            [
+                {
+                    "fingerprint": by_feature["answer"]["fingerprint"],
+                    "status": "accepted",
+                    "reviewer": "teacher",
+                    "reason": "Authored correction checked",
+                    "value": json.dumps(corrected),
+                    "evidence": corrected["evidence"],
+                }
+            ]
+        )
+    )
+    call("claims", "record", *args, "--batch", str(batch))
+    approved = call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0]
+    assert approved["eligible"] and approved["enabled"] == "1"
+    assert "in Begleitung eines Freundes" in approved["answer"]
+    assert approved["latinitas_id"] == initial["latinitas_id"]
+    assert approved["slot"] == initial["slot"] == 11
+    assert approved["object_key"] == candidate["object_key"]
+    assert call("claims", "inspect", *args, "--check")["cards"][0]["eligible"]
+    assert call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0] == approved
+    changed = chosen.model_dump(mode="json")
+    changed["reference"]["readings"][0]["translations"] = ["mit einem anderen Freund"]
+    plan.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [changed]}))
+    stale = call("phrases", "preview", str(source), str(selections), str(plan))
+    assert not stale["exercises"][0]["eligible"]
+    assert stale["exercises"][0]["latinitas_id"] == initial["latinitas_id"]
+    assert any(d["code"] == "stale" for d in stale["diagnostics"])
+    call("claims", "inspect", *args, "--check", success=False)
+    assert (tmp_path / "deck.csv").read_bytes() == source_bytes
+
+
+def test_phrase_questions_keep_identity_and_review_across_presentation_changes(tmp_path: Path) -> None:
+    from phrase_recipes_test import exercise
+
+    source, selections = saved_example(tmp_path)
+    candidate = call("phrases", "generate", str(source), str(selections))["candidates"][0]
+    recognition = exercise().model_copy(update={"candidate_key": candidate["candidate_key"]})
+    translation = exercise("phrase_translation").model_copy(update={"candidate_key": candidate["candidate_key"]})
+    number = recognition.model_copy(update={"distinction": "number"})
+    number = number.model_copy(
+        update={
+            "reference": number.reference.model_copy(
+                update={
+                    "evidence": (Evidence("fixture", "number-question", "1", "Separately checked number reference"),)
+                }
+            )
+        }
+    )
+    plan = tmp_path / "recipes.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "max_exercises": 3,
+                "exercises": [e.model_dump(mode="json") for e in (recognition, translation, number)],
+            }
+        )
+    )
+    args = [str(source), "--selections", str(selections), "--recipes", str(plan)]
+    claims = call("claims", "list", *args)["claims"]
+    assert len([c for c in claims if c["feature"] == "combination"]) == 1
+    assert len([c for c in claims if c["feature"] == "answer"]) == 3
+    batch = tmp_path / "batch.json"
+    batch.write_text(
+        json.dumps(
+            [
+                {
+                    "fingerprint": c["fingerprint"],
+                    "status": "accepted",
+                    "reviewer": "teacher",
+                    "reason": "Individually checked",
+                }
+                for c in claims
+            ]
+        )
+    )
+    call("claims", "record", *args, "--batch", str(batch))
+    first = call("phrases", "preview", str(source), str(selections), str(plan))
+    assert all(e["eligible"] for e in first["exercises"])
+    assert len({e["latinitas_id"] for e in first["exercises"]}) == 3
+    assert len({e["object_key"] for e in first["exercises"]}) == 1
+    assert {e["slot"] for e in first["exercises"]} == {10, 11}
+    profile_path = tmp_path / "profile.json"
+    profile = json.loads(profile_path.read_text())
+    profile["morphology"]["terminology"]["language"] = "user"
+    profile["morphology"]["appearance"] = "dark"
+    profile_path.write_text(json.dumps(profile))
+    saved = json.loads(selections.read_text())
+    saved["selections"].reverse()
+    for selection in saved["selections"]:
+        selection["bindings"].reverse()
+    selections.write_text(json.dumps(saved))
+    localized = call("phrases", "preview", str(source), str(selections), str(plan))
+    assert not localized["diagnostics"]
+    for before, after in zip(first["exercises"], localized["exercises"], strict=True):
+        assert after["eligible"]
+        assert (after["latinitas_id"], after["slot"], after["claim_fingerprint"]) == (
+            before["latinitas_id"],
+            before["slot"],
+            before["claim_fingerprint"],
+        )
+    assert any("Kasus" in e["answer"] for e in localized["exercises"])
+    answer = next(c for c in claims if c["feature"] == "answer")
+    # T064 deliberately refuses conflicting decisions rather than overwriting.
+    sidecar = Path(f"{plan}.claims.json")
+    before_conflict = sidecar.read_bytes()
+    call(
+        "claims",
+        "record",
+        *args,
+        "--fingerprint",
+        answer["fingerprint"],
+        "--status",
+        "withheld",
+        "--reviewer",
+        "teacher",
+        "--reason",
+        "Needs another reading",
+        success=False,
+    )
+    assert sidecar.read_bytes() == before_conflict
+    sidecar.unlink()
+    decisions = json.loads(batch.read_text())
+    for decision in decisions:
+        if decision["fingerprint"] == answer["fingerprint"]:
+            decision.update(status="withheld", reason="Needs another reading")
+    batch.write_text(json.dumps(decisions))
+    call("claims", "record", *args, "--batch", str(batch))
+    withheld = call("claims", "inspect", *args)
+    assert sum(c["eligible"] for c in withheld["cards"]) == 2
+    assert any("Needs another reading" in r for c in withheld["cards"] for r in c["reasons"])
+    withheld_answer = next(c["answer"] for c in withheld["cards"] if not c["eligible"])
+    assert withheld_answer.count("Withheld:") == 1
+    assert withheld_answer.count("Needs another reading") == 1

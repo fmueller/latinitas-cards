@@ -11,6 +11,7 @@ import typer
 
 from ..claim_sidecar import claim_report, record_batch, sidecar_path
 from ..phrase_inputs import load_inputs
+from ..phrase_review import phrase_workspace
 from ..review_adapters import ReviewState
 from ..review_inspection import inspect_artifact, inspect_workspace, workspace
 
@@ -33,7 +34,13 @@ def _error(error: Exception, machine: bool) -> None:
     raise typer.Exit(1)
 
 
-def _state(source: Path, profile: Path | None, phrase_input: bool) -> ReviewState:
+def _state(
+    source: Path, profile: Path | None, phrase_input: bool, selections: Path | None, recipes: Path | None
+) -> ReviewState:
+    if selections is not None or recipes is not None:
+        if selections is None or recipes is None or profile is not None or phrase_input:
+            raise ValueError("phrase exercises require --selections and --recipes, without --profile/--phrase-input")
+        return phrase_workspace(source, selections, recipes)[1].state
     if phrase_input:
         if profile is not None:
             raise ValueError("phrase inputs name their confirmed profile; do not combine --phrase-input and --profile")
@@ -43,11 +50,16 @@ def _state(source: Path, profile: Path | None, phrase_input: bool) -> ReviewStat
 
 @app.command(name="list")
 def list_claims(
-    source: Path, profile: Path | None = None, phrase_input: bool = False, machine: JsonOption = False
+    source: Path,
+    profile: Path | None = None,
+    phrase_input: bool = False,
+    selections: Path | None = None,
+    recipes: Path | None = None,
+    machine: JsonOption = False,
 ) -> None:
     """List principal-part, contextual, or --phrase-input file claims."""
     try:
-        state = _state(source, profile, phrase_input)
+        state = _state(source, profile, phrase_input, selections, recipes)
         _emit(
             {
                 "claims": [claim_report(b) for b in state.claims],
@@ -72,6 +84,8 @@ def record(
     evidence: Path | None = None,
     selected_sense: str | None = None,
     phrase_input: bool = False,
+    selections: Path | None = None,
+    recipes: Path | None = None,
     machine: JsonOption = False,
 ) -> None:
     """Record one fingerprint or an explicit JSON array; no approve-all path."""
@@ -91,8 +105,8 @@ def record(
             if selected_sense is not None:
                 item["selected_sense"] = selected_sense
             items = [item]
-        state = _state(source, profile, phrase_input)
-        diagnostics = record_batch(sidecar_path(source), state.bases, items)
+        state = _state(source, profile, phrase_input, selections, recipes)
+        diagnostics = record_batch(sidecar_path(recipes if recipes is not None else source), state.bases, items)
         _emit(
             {"diagnostics": [asdict(d) for d in diagnostics], "recorded": len(items) if not diagnostics else 0}, machine
         )
@@ -107,12 +121,18 @@ def inspect_cards(
     source: Path,
     profile: Path | None = None,
     artifact: Path | None = None,
+    selections: Path | None = None,
+    recipes: Path | None = None,
     check: bool = False,
     machine: JsonOption = False,
 ) -> None:
     """Inspect rendered fields and backing claims; --check fails closed on drift."""
     try:
-        if profile is None and artifact is None and source.suffix.lower() in {".csv", ".apkg", ".colpkg"}:
+        if selections is not None or recipes is not None:
+            if selections is None or recipes is None or profile is not None:
+                raise ValueError("phrase inspection requires --selections and --recipes, without --profile")
+            report = inspect_workspace(phrase_workspace(source, selections, recipes)[1], artifact)
+        elif profile is None and artifact is None and source.suffix.lower() in {".csv", ".apkg", ".colpkg"}:
             report = inspect_artifact(source)
         else:
             report = inspect_workspace(workspace(source, profile), artifact)

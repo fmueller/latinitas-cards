@@ -109,6 +109,8 @@ def test_ambiguous_readings_retained_single_case_withheld() -> None:
     assert withheld["enabled"] == ""
     alternatives = selected.model_copy(update={"distinction": "analysis"})
     claim = contextual_claim(phrase, alternatives, PROFILE)
+    assert len(claim.alternatives) == 3
+    assert '"case":"vocative"' in claim.alternatives[2]
     decision = review_claim(claim, status="accepted", reviewer="Teacher", reason="All contextual alternatives checked")
     assert render_exercise(phrase, alternatives, PROFILE, decision)["review_state"] == "reviewed"
 

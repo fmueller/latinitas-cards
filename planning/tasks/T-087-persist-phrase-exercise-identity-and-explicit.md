@@ -1,12 +1,12 @@
 ---
 id: T-087-persist-phrase-exercise-identity-and-explicit
 title: Persist phrase exercise identity and explicit linguistic approvals
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.2.1.md#review-identity-and-export
 dependencies:
     - T-086-render-translation-and-ambiguity-aware-phrase
-updated_at: "2026-10-09T20:05:15Z"
+updated_at: "2026-10-11T15:04:12Z"
 ---
 
 # T-087-persist-phrase-exercise-identity-and-explicit Persist phrase exercise identity and explicit linguistic approvals
@@ -48,3 +48,33 @@ shared sidecars and existing recipes; this task owns phrase adapters.
 - Record verification timestamps and results; do not commit gitignored artifact paths.
 
 ## Implementation Notes
+
+- Reused canonical role/source/sense/form/pattern bindings and target/distinction
+  keys. Each question derives a separate coherent note identity from the composite
+  phrase source; shared phrase object provenance and slots 10/11 remain explicit.
+- Recipe-plan T064 sidecars independently attest combination correctness/naturalness
+  and typed rendered references, including individual, batch and authored correction
+  decisions. Preview and shared read-only inspection/check consume them automatically.
+  Linguistic context changes invalidate relevant approvals; presentation and reruns
+  preserve them. Source notes remain unchanged; attestation is not payload approval.
+- Strict RED/GREEN covered absent CLI adapters, independent withholding state,
+  explicit alternative provenance and duplicate withholding banners. A deliberately
+  regressed combination-evidence binding failed the strengthened multi-question test;
+  restoring scoped constituent/pattern evidence passed it.
+- Dedicated code-simplifier indexed claim lookup. Independent General, Python,
+  Security and Pydantic/FastAPI code-reviewer lanes ran, followed by fresh candidate
+  validation and disposition verification. The sole candidate was rejected because
+  combination evidence was already scoped independently of question references;
+  strengthened tests and real CLI acceptance corroborated the rejection. No validated
+  findings or unresolved task-local issues remained.
+- Real subprocess CLI acceptance exercised individual/batch/corrected/withheld
+  decisions, both independent missing gates, stale translation/analysis/evidence,
+  inspection/check, reruns and conflict atomicity. Six generated-field Chromium
+  render states were captured at 2x and inspected; duplicated withholding was fixed.
+- CSV/destination application remains T088. Native automatic appearance acceptance
+  on Desktop/Mobile is pending, not passed or covered; maintainer deferral dated
+  2026-10-11 removes only its implementation-loop blocker. Existing native checklist
+  and limitations remain intact; browser rendering is not a substitute. T089 is
+  outside this task's ownership. No additional task was implemented.
+- 2026-10-11T15:03:59Z: verification pass
+- 2026-10-11T15:04:12Z: Implementation verified pass at 2026-10-11T15:03:59Z after final ruff/mypy/pytest (1016 passed), simplifier, independent lanes, fresh candidate/disposition verification, real CLI acceptance and inspected Chromium renders. Native Desktop/Mobile automatic appearance acceptance remains pending; maintainer 2026-10-11 deferral applies only to implementation-loop blocking. T088 application and T089 remain outside this task.

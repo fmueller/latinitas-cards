@@ -27,7 +27,8 @@ Also available: [`managed` updates](#updating-imported-notes-managed) for notes 
 already imported, [explanations and themes](#explanations-and-themes) on principal-part
 answers, reviewed `form-parsing` exercises, and
 [reviewed lexical/pattern selections and bounded phrase proposals](docs/reviewed-phrase-inputs.md)
-via `phrases` (not yet recipes or phrase export).
+via `phrases`, with separately reviewed translation/recognition exercises and offline
+eligibility checks (not yet phrase CSV export or destination application).
 
 Profiles select recipes explicitly; the approved representative profile uses
 `principal_part_completion` and `principal_part_recognition`. It uses the semantic role

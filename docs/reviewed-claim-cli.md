@@ -5,7 +5,10 @@ source identity, export approval, scheduling migration, or managed destination
 approval. No command accepts every open claim automatically. The shared contract
 covers principal-part recipes, contextual form parsing, and versioned
 [phrase lexical/pattern inputs](reviewed-phrase-inputs.md) via `--phrase-input` on
-`claims list` and `claims record`; it does not yet inspect generated phrase cards.
+`claims list` and `claims record`. Generated phrase exercises use `--selections`
+and `--recipes` on `list`, `record` and read-only `inspect --check`; their combination
+and rendered-answer attestations live beside the recipe plan, not the lexical input.
+Actual phrase CSV/destination application remains separate work.
 
 ## List and record
 
