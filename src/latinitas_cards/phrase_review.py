@@ -24,6 +24,7 @@ from .phrase_recipes import (
     load_recipe_plan,
     preview_plan,
     render_exercise,
+    render_phrase_text,
 )
 from .profile import load_profile
 from .review_adapters import ReviewState, review_state
@@ -99,7 +100,7 @@ def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dic
             if result["answer"].startswith("Withheld: "):
                 result["answer"] = result["answer"].split("\n", 1)[1]
             result["answer"] = "Withheld: " + result["reason"] + "\n" + result["answer"]
-            result["answer_html"] = "<div>" + escape(result["answer"]).replace("\n", "<br>") + "</div>"
+            result["answer_html"] = render_phrase_text(result["answer"], profile)
         slot = next(t.slot for t in PHRASE_LAYOUT if t.slot.recipe == exercise.recipe)
         # Each target/distinction is a coherent exercise note; the canonical phrase
         # object remains explicit provenance, never a word-owned or merged note.

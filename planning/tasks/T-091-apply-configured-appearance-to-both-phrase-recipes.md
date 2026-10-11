@@ -1,11 +1,11 @@
 ---
 id: T-091-apply-configured-appearance-to-both-phrase-recipes
 title: Apply configured appearance to both phrase recipes
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#automatic-lightdark-appearance
 dependencies: []
-updated_at: "2026-10-11T17:55:31Z"
+updated_at: "2026-10-11T18:41:19Z"
 ---
 
 # T-091-apply-configured-appearance-to-both-phrase-recipes Apply configured appearance to both phrase recipes
@@ -102,3 +102,5 @@ scope; native verification deferral does not defer browser-verifiable markup.
 - `phrase_recipes.render_exercise` uses terminology but emits bare divs;
   `reference_templates.py` scopes theme/appearance rules to morphology markup.
   Keep implementation choices with the repair worker. ROUND1 makes no fixes.
+- 2026-10-11T18:41:11Z: verification pass
+- 2026-10-11T18:41:19Z: Implementation-only completion after verification 2026-10-11T18:41:11Z: both phrase recipes use shared configured appearance; General/Python/Security review findings fixed and fresh disposition verification clean; final ruff/mypy/1025 pytest passed. Native Desktop/AnkiMobile auto acceptance remains PENDING under the scoped 2026-10-11 maintainer deferral; docs checklist unchanged.

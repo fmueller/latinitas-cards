@@ -1,3 +1,4 @@
+import csv
 import json
 from pathlib import Path
 from typing import Any
@@ -535,6 +536,7 @@ def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Pat
     answer_preview = call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0]
     assert answer_preview["review_state"] == "withheld"
     assert "combination" in answer_preview["reason"]
+    assert 'class="morphology-v1 morphology-muted morphology-light"' in answer_preview["answer_html"]
     sidecar = Path(f"{plan}.claims.json")
     sidecar.unlink()
     # Combination approval alone is not answer attestation.
@@ -717,6 +719,28 @@ def test_phrase_managed_plan_marks_deselection_as_blocked_retirement(tmp_path: P
     snapshot_path.write_text(snapshot.encoded)
     result = call("phrases", "plan", str(source), str(selections), str(recipes), str(snapshot_path), str(state_path))
     assert result["notes"][0]["classification"] == "unchanged"
+    from latinitas_cards.destination_state import ReconciliationRequired
+    from latinitas_cards.managed_plans import approve_plan, verify_approval
+
+    profile_path = tmp_path / "profile.json"
+    profile = json.loads(profile_path.read_text())
+    profile["morphology"]["appearance"] = "dark"
+    profile_path.write_text(json.dumps(profile))
+    dark = call("phrases", "plan", str(source), str(selections), str(recipes), str(snapshot_path), str(state_path))
+    operations = dark["notes"][0]["operations"]
+    assert dark["notes"][0]["classification"] == "update"
+    assert {op["field"] for op in operations} == {slot.prompt_field, slot.answer_field, "Profile"}
+    assert all(op["supported"] for op in operations)
+    approved = approve_plan(dark, [op["id"] for op in operations], "Exact dark payload checked")
+    verify_approval(dark, approved, snapshot, state)
+    profile["morphology"]["appearance"] = "auto"
+    profile_path.write_text(json.dumps(profile))
+    auto = call("phrases", "plan", str(source), str(selections), str(recipes), str(snapshot_path), str(state_path))
+    with pytest.raises(ReconciliationRequired, match="changed"):
+        verify_approval(auto, approved, snapshot, state)
+    renewed = approve_plan(auto, [op["id"] for op in auto["notes"][0]["operations"]], "Exact auto payload checked")
+    verify_approval(auto, renewed, snapshot, state)
+    assert all("morphology-dark" not in value for value in renewed["targets"][identity]["fields"].values())
     recipes.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": []}))
     withdrawn = call("phrases", "plan", str(source), str(selections), str(recipes), str(snapshot_path), str(state_path))
     assert any(op["kind"] == "retire" and not op["supported"] for op in withdrawn["notes"][0]["operations"])
@@ -777,6 +801,33 @@ def test_phrase_questions_keep_identity_and_review_across_presentation_changes(t
     assert {e["slot"] for e in first["exercises"]} == {10, 11}
     profile_path = tmp_path / "profile.json"
     profile = json.loads(profile_path.read_text())
+    original_claims = call("claims", "list", *args)["claims"]
+    for theme in ("muted", "monochrome"):
+        for appearance in ("light", "dark", "auto"):
+            profile["morphology"]["theme"] = theme
+            profile["morphology"]["appearance"] = appearance
+            profile_path.write_text(json.dumps(profile))
+            presented = call("phrases", "preview", str(source), str(selections), str(plan))
+            assert call("claims", "list", *args)["claims"] == original_claims
+            csv_path = tmp_path / f"{theme}-{appearance}.csv"
+            call("phrases", "export", str(source), str(selections), str(plan), str(csv_path))
+            call("claims", "inspect", *args, "--artifact", str(csv_path), "--check")
+            lines = csv_path.read_text().splitlines()
+            columns = next(line.removeprefix("#columns:").split(",") for line in lines if line.startswith("#columns:"))
+            exported = list(csv.DictReader((line for line in lines if not line.startswith("#")), fieldnames=columns))
+            for before, after in zip(first["exercises"], presented["exercises"], strict=True):
+                for key in ("latinitas_id", "object_key", "semantic_key", "slot", "eligible", "claim_fingerprint"):
+                    assert after[key] == before[key]
+                for field in ("prompt_html", "answer_html"):
+                    assert f"morphology-v1 morphology-{theme}" in after[field]
+                    if appearance == "auto":
+                        assert "morphology-light" not in after[field] and "morphology-dark" not in after[field]
+                    else:
+                        assert f"morphology-{appearance}" in after[field]
+                    row = next(row for row in exported if row["LatinitasID"] == after["latinitas_id"])
+                    prefix = "PhraseTranslation" if after["recipe"] == "phrase_translation" else "PhraseRecognition"
+                    assert row[prefix + ("Prompt" if field == "prompt_html" else "Answer")] == after[field]
+                assert "Freund" not in after["prompt_html"]
     profile["morphology"]["terminology"]["language"] = "user"
     profile["morphology"]["appearance"] = "dark"
     profile_path.write_text(json.dumps(profile))

@@ -169,6 +169,13 @@ def contextual_claim(candidate: dict[str, object], exercise: Exercise, profile: 
     )
 
 
+def render_phrase_text(text: str, profile: DeckProfile) -> str:
+    """Apply the shared reference styling without interpreting literal prose."""
+    appearance_class = "" if profile.morphology.appearance == "auto" else f" morphology-{profile.morphology.appearance}"
+    panel = f'<div class="morphology-v1 morphology-{profile.morphology.theme}{appearance_class}">'
+    return panel + escape(text).replace("\n", "<br>") + "</div>"
+
+
 def render_exercise(
     candidate: dict[str, object],
     exercise: Exercise,
@@ -240,8 +247,8 @@ def render_exercise(
         "enabled": "1" if state == "reviewed" else "",
         "prompt": prompt,
         "answer": answer,
-        "prompt_html": "<div>" + escape(prompt).replace("\n", "<br>") + "</div>",
-        "answer_html": "<div>" + escape(answer).replace("\n", "<br>") + "</div>",
+        "prompt_html": render_phrase_text(prompt, profile),
+        "answer_html": render_phrase_text(answer, profile),
         "readings": [r.model_dump(mode="json") for r in exercise.reference.readings],
         "claim_fingerprint": claim.fingerprint,
         "grading": "self-assessment" if exercise.recipe == "phrase_translation" else "recognition",

@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `phrases` applies the configured palette and light/dark/auto appearance to both
+  translation and recognition cards using the manually installed reference CSS v3.
 - `claims inspect` preserves escaped literal angle-bracket prose and following
   context in generated-card text for workspace, CSV and supported package inspection.
 
