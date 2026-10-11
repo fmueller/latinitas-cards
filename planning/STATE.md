@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-11T20:19:15Z"
+updated_at: "2026-10-11T21:01:23Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: No active-spec task is ready
+next_action: 'Start task T-095-correct-remaining-retained-payload-transport: Correct remaining retained-payload transport limitation'
 last_verification_result: pass for T-094-align-review-and-retained-update-guidance-with at 2026-10-11T20:19:15Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,7 +38,7 @@ continuation_notes:
 
 ## Next Action
 
-- No active-spec task is ready
+- Start task T-095-correct-remaining-retained-payload-transport: Correct remaining retained-payload transport limitation
 
 ## Relevant Artifacts
 
@@ -50,7 +50,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 2
 - in_progress: 0
 - completed: 93
 - blocked: 0
