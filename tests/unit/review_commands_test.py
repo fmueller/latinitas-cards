@@ -1,3 +1,4 @@
+import html
 import json
 from pathlib import Path
 from typing import Any, cast
@@ -289,7 +290,8 @@ def test_authored_claim_and_stale_context(tmp_path: Path) -> None:
     assert "nominativus pluralis" not in stale["cards"][0]["answer"]
 
 
-def test_principal_recipes_authored_values_and_profile_binding(tmp_path: Path) -> None:
+@pytest.mark.parametrize("explanation_text", ["BEFORE <script> AFTER", "BEFORE <datum> AFTER", "BEFORE AFTER"])
+def test_principal_recipes_authored_values_and_profile_binding(tmp_path: Path, explanation_text: str) -> None:
     from latinitas_cards.preview_export import prepare_principal_part_export, write_principal_part_csv
     from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 
@@ -321,7 +323,7 @@ def test_principal_recipes_authored_values_and_profile_binding(tmp_path: Path) -
             [
                 decision(label),
                 decision(segmentation) | {"value": "dict-um", "evidence": evidence},
-                decision(explanation) | {"value": "Supinum auf -um", "evidence": evidence},
+                decision(explanation) | {"value": explanation_text, "evidence": evidence},
             ]
         )
     )
@@ -329,7 +331,8 @@ def test_principal_recipes_authored_values_and_profile_binding(tmp_path: Path) -
     reviewed = invoke("inspect", str(source), "--profile", str(profile_path))
     cards = [c for c in reviewed["cards"] if c["semantic_key"].endswith(":supine")]
     assert len(cards) == 2 and all(c["eligible"] for c in cards)
-    assert all("dict-um" in c["answer"] and "Supinum auf -um" in c["answer"] for c in cards)
+    assert all("dict-um" in c["answer"] and explanation_text in c["answer"] for c in cards)
+    assert all("dīcere" in c["answer"] for c in cards)
     assert [(c["identity"], c["slot"]) for c in initial["cards"]] == [
         (c["identity"], c["slot"]) for c in reviewed["cards"]
     ]
@@ -338,12 +341,14 @@ def test_principal_recipes_authored_values_and_profile_binding(tmp_path: Path) -
     write_principal_part_csv(prepare_principal_part_export(source, profile), output)
     write_principal_part_csv(prepare_principal_part_export(source, profile), rerun)
     assert output.read_bytes() == rerun.read_bytes()
-    assert (
-        invoke("inspect", str(source), "--profile", str(profile_path), "--artifact", str(output), "--check")[
-            "diagnostics"
-        ]
-        == []
-    )
+    assert html.escape(explanation_text) in output.read_text()
+    checked = invoke("inspect", str(source), "--profile", str(profile_path), "--artifact", str(output), "--check")
+    assert checked["diagnostics"] == []
+    assert all(explanation_text in c["answer"] for c in checked["cards"] if c["semantic_key"].endswith(":supine"))
+    standalone = invoke("inspect", str(output))
+    assert all(explanation_text in c["answer"] for c in standalone["cards"] if c["semantic_key"].endswith(":supine"))
+    text = runner.invoke(app, ["claims", "inspect", str(source), "--profile", str(profile_path)])
+    assert text.exit_code == 0 and explanation_text in text.stdout
     changed = profile.model_copy(update={"morphology": profile.morphology.model_copy(update={"appearance": "dark"})})
     changed.save(profile_path)
     assert invoke("list", str(source), "--profile", str(profile_path))["diagnostics"] == []
@@ -375,7 +380,11 @@ def test_offline_package_contract(tmp_path: Path, layout: str) -> None:
     rows = list(
         csv.reader(io.StringIO("\n".join(line for line in output.read_text().splitlines() if not line.startswith("#"))))
     )
-    values = [*rows[0][:-1], "Personal annotation"]
+    values = [
+        *rows[0][:-1],
+        "Personal annotation &lt;script&gt; AFTER &lt;datum&gt; END"
+        "<script>ACTIVE_SCRIPT</script><style>ACTIVE_STYLE</style><!-- ACTIVE_COMMENT -->",
+    ]
     model: dict[str, Any] = {
         "name": "Latinitas Contextual Form Parsing v1",
         "flds": [{"name": f} for f in PARSING_FIELDS],
@@ -403,7 +412,8 @@ def test_offline_package_contract(tmp_path: Path, layout: str) -> None:
     if layout == "supported":
         assert result.exit_code == 0, result.stdout
         assert "Puellae rosas portant." in report["cards"][0]["prompt"]
-        assert "Personal annotation" in report["cards"][0]["answer"]
+        assert "Personal annotation <script> AFTER <datum> END" in report["cards"][0]["answer"]
+        assert "ACTIVE_" not in report["cards"][0]["answer"]
     else:
         assert result.exit_code != 0
         assert report["diagnostics"]

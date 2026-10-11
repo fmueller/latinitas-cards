@@ -108,6 +108,18 @@ class _SourceTextExtractor(HTMLParser):
         return "\n".join(line for line in lines if line).strip()
 
 
+def generated_html_to_text(value: str) -> str:
+    """Flatten generated HTML, decoding escaped prose without reparsing it.
+
+    Actual script/style elements and comments are still suppressed. Escaped
+    angle brackets are displayed text, not a second layer of source markup.
+    """
+    decoded = _SourceTextExtractor(decode_entities=True)
+    decoded.feed(value)
+    decoded.close()
+    return decoded.text()
+
+
 def source_html_to_text(value: str) -> str:
     """Convert untrusted source HTML to readable plain text without active markup.
 
@@ -129,4 +141,4 @@ def source_html_to_text(value: str) -> str:
     return resolved.text()
 
 
-__all__ = ["source_html_to_text"]
+__all__ = ["generated_html_to_text", "source_html_to_text"]

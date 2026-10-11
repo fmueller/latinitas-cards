@@ -14,7 +14,7 @@ from pathlib import Path
 from .cards import TEMPLATE_REGISTRY, CardSlot
 from .claim_sidecar import Diagnostic, claim_report
 from .form_parsing import PARSING_SLOT, _escape, generate_parsing, parsing_export_answer
-from .html_text import source_html_to_text
+from .html_text import generated_html_to_text
 from .managed_layouts import known_layouts
 from .preview_export import PrincipalPartExportResult, prepare_principal_part_export
 from .profile import DeckProfile, load_profile
@@ -60,8 +60,8 @@ def card_report(
         "slot": slot.ordinal,
         "semantic_key": slot.semantic_key,
         "eligible": eligible,
-        "prompt": source_html_to_text(prompt),
-        "answer": source_html_to_text(answer),
+        "prompt": generated_html_to_text(prompt),
+        "answer": generated_html_to_text(answer),
         "claims": list(claims),
         "reasons": list(reasons),
     }

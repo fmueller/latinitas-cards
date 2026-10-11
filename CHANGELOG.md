@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- `claims inspect` preserves escaped literal angle-bracket prose and following
+  context in generated-card text for workspace, CSV and supported package inspection.
+
 ### Added
 
 - Morphology profiles accept `appearance: auto` with manually installed reference
