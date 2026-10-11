@@ -7,7 +7,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 ### Added
 
 - `phrases` inspects and saves reviewed deck vocabulary, sense, form and bounded
-  construction-pattern selections; phrase generation and export are not yet available.
+  pattern selections, then previews bounded phrase proposals with evidence and skipped reasons;
+  recipes and phrase export are not yet available.
 
 ## [0.2.0] - 2026-10-08
 

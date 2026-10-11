@@ -1,12 +1,12 @@
 ---
 id: T-085-generate-bounded-meaningful-deck-phrases-from
 title: Generate bounded meaningful deck phrases from reviewed patterns
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.2.1.md#deck-based-phrase-and-grammar-practice
 dependencies:
     - T-084-define-reviewed-deck-lexical-inputs-and
-updated_at: "2026-10-09T20:05:15Z"
+updated_at: "2026-10-11T11:51:19Z"
 ---
 
 # T-085-generate-bounded-meaningful-deck-phrases-from Generate bounded meaningful deck phrases from reviewed patterns
@@ -42,3 +42,6 @@ preserving evidence and alternatives for subsequent recipe and export tasks.
 - Record verification timestamps and results; do not commit gitignored artifact paths.
 
 ## Implementation Notes
+
+- 2026-10-11T11:51:19Z: verification pass
+- 2026-10-11T11:51:19Z: Implemented generation-only bounded proposals; workflow-v3 simplifier, parallel General/Python/Security review, fresh candidate validation and disposition verification complete. SEC-001 fixed with red/green evidence. Final ruff/mypy/pytest passed 978 tests; CLI positive/negative/bounded/deterministic checks passed. No followups created; recipes/reviews/export remain later tasks.

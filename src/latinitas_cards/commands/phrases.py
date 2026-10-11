@@ -1,14 +1,15 @@
-"""Inspect and persist reviewed inputs; recipes and phrase export are later work."""
+"""Inspect/select reviewed inputs and generate proposals; no recipes or export."""
 
 from dataclasses import asdict
 from pathlib import Path
 
 import typer
 
+from ..phrase_generation import generate_proposals, load_saved_selections
 from ..phrase_inputs import SelectionRequest, bind_selections, inspect_inputs, load_inputs, save_selections
 from .claims import JsonOption, _emit, _error
 
-app = typer.Typer(help="Inspect/select bounded reviewed lexical inputs; does not generate or export cards.")
+app = typer.Typer(help="Inspect/select reviewed lexical inputs and generate bounded phrase proposals; no card export.")
 
 
 @app.command(name="inspect")
@@ -34,5 +35,16 @@ def select(source: Path, request: Path, output: Path, machine: JsonOption = Fals
             raise typer.Exit(1)
         save_selections(output, payload, (*work.protected, request))
         _emit({"diagnostics": [], "saved": True, "selection": payload}, machine)
+    except (OSError, ValueError) as error:
+        _error(error, machine)
+
+
+@app.command()
+def generate(source: Path, selections: Path, machine: JsonOption = False) -> None:
+    """Preview proposals from saved explicit choices, rechecking current evidence."""
+    try:
+        saved = load_saved_selections(selections)
+        work = load_inputs(source)
+        _emit(generate_proposals(work, saved), machine)
     except (OSError, ValueError) as error:
         _error(error, machine)

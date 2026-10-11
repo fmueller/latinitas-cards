@@ -1,8 +1,8 @@
 # Reviewed lexical inputs and bounded patterns (version 1)
 
 `phrases` imports a JSON file, inspects its proposals, and saves explicit reviewed
-selections. It does **not** generate phrases, render recipes, approve generated
-answers, or export cards. No corpus, network, LLM, CLTK or source-note edits are
+selections. `phrases generate` previews bounded phrase proposals. It does **not**
+render recipes, approve generated answers, or export cards. No corpus, network, LLM, CLTK or source-note edits are
 needed. Use the existing confirmed deck profile and source identities, then supply
 missing lexical knowledge in a separate file rather than altering the deck.
 
@@ -26,6 +26,7 @@ uv run latinitas-cards claims record inputs.json --phrase-input \
   --reviewer 'Latin reviewer' --reason 'Checked this form/sense/pattern and evidence'
 uv run latinitas-cards phrases inspect inputs.json --check
 uv run latinitas-cards phrases select inputs.json request.json selected.json --json
+uv run latinitas-cards phrases generate inputs.json selected.json --json
 ```
 
 `claims record --batch decisions.json` accepts the same explicit per-fingerprint
@@ -119,7 +120,7 @@ Extract `example_selection` from the inspection JSON or author this structure:
 No random or implicit vocabulary selection is saved. Select validates all named
 entries, senses, forms, roles, reviewed compatibility and current individual
 decisions before atomically replacing output. `max_exercises` is an integer 1–1000;
-`variants_per_binding` is an integer 1–32, reserved for the later generator. The
+`variants_per_binding` is an integer 1–32. The
 number of unique explicit selections must fit `max_exercises`. Neither limit
 truncates silently. Requests are retained for reruns; saved output is a separate
 version-1 bound-selection contract (not an input request).
@@ -136,6 +137,49 @@ pattern uses this composite namespace. Swapping subject/object changes it.
 distinct tested forms stay distinct while wording/gloss/evidence does not feed
 identity. Recipes and their semantic card keys remain separate later work.
 
-This selection is not approval of a generated phrase or rendered answer. Later
-generation must reload current lexical/pattern evidence and require explicit
-combination/answer approval before any recipe or CSV export.
+## Proposal generation (bounded subset)
+
+`generate` consumes the saved contract, not the input request. It reloads current
+lexical/pattern claims and checks government, agreement, selected-sense allowlists
+and valency again. Saved source scopes and composite keys must match the current
+bindings. Missing forms, stale/unreviewed inputs and incompatible combinations
+appear in `skipped` with named diagnostics and repair actions, never guessed data.
+Malformed contracts exit nonzero; a valid report with skipped proposals exits zero.
+Saved files are limited to 4 MiB before parsing. Persisted entry/source identities
+and scopes are limited to 2048 characters, and role/sense/form/pattern/composite keys
+to 256 characters, so a rejected selection cannot echo arbitrarily large strings.
+
+Only explicitly saved form choices are visited. No lexical, sense or form Cartesian
+product is constructed, and unselected variants are never auto-selected. Canonical
+binding order makes reruns deterministic. `max_exercises` caps **attempts**, including
+rejections and duplicates, as well as output; `visited`, `unvisited` and `limit_reason`
+expose truncation. Sorting/parsing is bounded by the saved contract's 1000 selections.
+`variants_per_binding` caps distinct emitted form combinations for the same pattern
+and role-labelled sources/senses. Lower limits can be saved for a later rerun; narrow
+selections rather than relying on a particular variant winning canonical order.
+
+Preview includes `candidate_key` (the persisted object key), source identities/scopes,
+sense keys/meanings, pattern key/version (version-1 contract), complete chosen forms,
+explicit function words, evidence and contributing claim assessments. All generated
+combinations have `review_state: proposal`, even when all inputs are reviewed.
+Function words precede content; content order is object for prepositions, head then
+dependent/modifier for nominal patterns, and subject–object–verb for clauses.
+Patterns must be reviewed for this rendering order. No translations or answers are
+inferred, and no naturalness/combination approval is carried over from input review.
+
+The synthetic fixture's independently specified expected finite-verb analyses are:
+
+| Explicit choices | Expected analysis | Control |
+|---|---|---|
+| `puella amicum videt` | `videt`: third-person singular present active indicative | `puella … vident` is rejected for number disagreement |
+| `puellae amicum vident` | `vident`: third-person plural present active indicative | No isolated-form ambiguity is erased; no recognition recipe is rendered |
+
+To request the plural clause, explicitly select subject `girl/person/nom-pl`, object
+`friend/person/acc-sg`, verb `see/perceive/present-pl` with pattern `sees`. For `ad amicum`,
+select `friend/person/acc-sg` with `towards`; `with` requires `abl-sg` (`cum amico`).
+The example request deliberately selects only four choices; it does not select every
+available form or pattern. This subset supports nominative noun subjects and reviewed
+third-person finite forms only, not exhaustive conjugation or general syntax analysis.
+
+Selection/generation is not approval of a generated phrase or rendered answer.
+Recipes, explicit combination/answer review and CSV export remain later work.

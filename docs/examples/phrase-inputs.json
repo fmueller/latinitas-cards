@@ -16,10 +16,11 @@
     },
     {
       "identity": "girl", "pos": "noun", "gender": "feminine",
-      "evidence": [{"source": "Synthetic teaching fixture", "reference": "puella", "version": "1", "text": "feminine noun; checked bounded forms"}],
+      "evidence": [{"source": "Synthetic teaching fixture", "reference": "puella/puellae", "version": "1", "text": "feminine noun; puella nominative singular, puellae nominative plural in the reviewed plural clause; puellam accusative singular"}],
       "senses": [{"key": "person", "meaning": "Mädchen", "valency": {}, "evidence": [{"source": "Synthetic teaching fixture", "reference": "girl-person", "version": "1", "text": "human participant"}]}],
       "forms": [
         {"key": "nom-sg", "text": "puella", "features": {"case": "nominative", "number": "singular", "gender": "feminine"}},
+        {"key": "nom-pl", "text": "puellae", "features": {"case": "nominative", "number": "plural", "gender": "feminine"}},
         {"key": "acc-sg", "text": "puellam", "features": {"case": "accusative", "number": "singular", "gender": "feminine"}}
       ]
     },
@@ -31,7 +32,10 @@
     },
     {
       "identity": "see", "pos": "verb",
-      "evidence": [{"source": "Synthetic teaching fixture", "reference": "video", "version": "1", "text": "third-person present active indicative forms"}],
+      "evidence": [
+        {"source": "Synthetic teaching fixture", "reference": "videt analysis", "version": "1", "text": "videt: third person singular present active indicative; agrees with puella"},
+        {"source": "Synthetic teaching fixture", "reference": "vident analysis", "version": "1", "text": "vident: third person plural present active indicative; agrees with puellae, not puella"}
+      ],
       "senses": [{"key": "perceive", "meaning": "sehen", "valency": {"subject": "nominative", "object": "accusative"}, "evidence": [{"source": "Synthetic teaching fixture", "reference": "see-perceive", "version": "1", "text": "subject sees direct accusative object"}]}],
       "forms": [
         {"key": "present-sg", "text": "videt", "features": {"person": "3", "number": "singular", "tense": "present", "mood": "indicative", "voice": "active"}},
@@ -52,6 +56,9 @@
     {"key": "with", "family": "preposition-noun", "function_words": ["cum"],
      "roles": {"object": {"pos": "noun", "senses": ["friend/person"], "requires": {"case": "ablative"}}},
      "evidence": [{"source": "Synthetic teaching fixture", "reference": "cum amico", "version": "1", "text": "cum governs ablative; with a friend"}]},
+    {"key": "towards", "family": "preposition-noun", "function_words": ["ad"],
+     "roles": {"object": {"pos": "noun", "senses": ["friend/person"], "requires": {"case": "accusative"}}},
+     "evidence": [{"source": "Synthetic teaching fixture", "reference": "ad amicum", "version": "1", "text": "ad governs accusative; towards a friend"}]},
     {"key": "possessor", "family": "noun-genitive", "function_words": [],
      "roles": {"head": {"pos": "noun", "senses": ["book/volume"], "requires": {"case": "nominative"}}, "dependent": {"pos": "noun", "senses": ["friend/person"], "requires": {"case": "genitive"}}},
      "evidence": [{"source": "Synthetic teaching fixture", "reference": "liber amici", "version": "1", "text": "possessor dependent in genitive; the friend's book"}]},

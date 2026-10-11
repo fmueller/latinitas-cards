@@ -26,8 +26,8 @@ The supported workflow is **deck-first**:
 Also available: [`managed` updates](#updating-imported-notes-managed) for notes you
 already imported, [explanations and themes](#explanations-and-themes) on principal-part
 answers, reviewed `form-parsing` exercises, and
-[reviewed lexical/pattern input selections](docs/reviewed-phrase-inputs.md) via
-`phrases` (not yet phrase generation or export).
+[reviewed lexical/pattern selections and bounded phrase proposals](docs/reviewed-phrase-inputs.md)
+via `phrases` (not yet recipes or phrase export).
 
 Profiles select recipes explicitly; the approved representative profile uses
 `principal_part_completion` and `principal_part_recognition`. It uses the semantic role
