@@ -28,7 +28,9 @@ already imported, [explanations and themes](#explanations-and-themes) on princip
 answers, reviewed `form-parsing` exercises, and
 [reviewed lexical/pattern selections and bounded phrase proposals](docs/reviewed-phrase-inputs.md)
 via `phrases`, with separately reviewed translation/recognition exercises and offline
-eligibility checks (not yet phrase CSV export or destination application).
+eligibility checks, deterministic approved CSV export and managed retained-slot updates.
+Initial creation is manual CSV import plus explicit adoption; withdrawal remains a
+blocked plan requiring reviewed manual resolution, not CSV omission or automatic retirement.
 
 Profiles select recipes explicitly; the approved representative profile uses
 `principal_part_completion` and `principal_part_recognition`. It uses the semantic role
@@ -250,8 +252,9 @@ Values outside the vocabulary still need explicit individual review and display
 verbatim, never machine-translated. Prompts and German explanatory prose are unchanged.
 Changing terminology preserves claim fingerprints, linguistic reviews, identities and
 frozen card slots. Changed answer payloads require renewed managed approval, not renewed
-linguistic review. Retained-slot answer updates are still reported as unsupported;
-approval does not enable their emission. Fresh/manual CSV export remains available.
+linguistic review. Separately approved retained-slot updates are available for current
+principal-part, parsing and phrase layouts. CSV installs no templates or CSS; old layout
+digests fail closed and need reviewed manual setup, never silent scheduled-template rebinding.
 
 ## Experimental and planned capabilities
 
@@ -297,6 +300,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 - [v0.1.0 release readiness](docs/release-readiness.md)
 - [v0.1.1 release readiness and limitations](docs/release-v0.1.1.md)
 - [v0.2.0 release readiness and limitations](docs/release-v0.2.0.md)
+- [Unreleased v0.2.1 integration readiness and pending native acceptance](docs/release-v0.2.1.md)
 - [Authored note JSONL import format](docs/authored-note-import.md)
 - [Stable generated-note identity](docs/stable-generated-note-identity.md)
 - [Principal-part parser support matrix](docs/principal-part-parsing.md)

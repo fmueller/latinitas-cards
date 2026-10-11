@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-11T16:06:22Z"
+updated_at: "2026-10-11T16:47:57Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-089-validate-integrated-v0-2-1-workflows-and-release: Validate integrated v0.2.1 workflows and release readiness'
-last_verification_result: pass for T-088-export-approved-phrase-exercises-through-managed at 2026-10-11T16:03:18Z
+next_action: No active-spec task is ready
+last_verification_result: pass for T-089-validate-integrated-v0-2-1-workflows-and-release at 2026-10-11T16:47:47Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-088-export-approved-phrase-exercises-through-managed at 2026-10-11T16:03:18Z
+- pass for T-089-validate-integrated-v0-2-1-workflows-and-release at 2026-10-11T16:47:47Z
 
 ## Next Action
 
-- Start task T-089-validate-integrated-v0-2-1-workflows-and-release: Validate integrated v0.2.1 workflows and release readiness
+- No active-spec task is ready
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 1
 - in_progress: 0
-- completed: 87
+- completed: 88
 - blocked: 0
 - cancelled: 0

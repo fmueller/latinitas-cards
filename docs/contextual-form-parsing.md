@@ -152,7 +152,7 @@ And this back:
 ```
 
 Copy the published [shared reference CSS](reference-note-type.md#shared-styling-paste-once-into-the-note-types-styling)
-(reference style v2, morphology markup v1), but use the contextual fields and
+(reference style v3, morphology markup v1), but use the contextual fields and
 single template above, not the principal-part fields or templates. The
 parsing answer is static and Latin-first; no disclosure or custom script is added.
 Use a backed-up, explicitly separate new destination for this experimental manual
@@ -161,12 +161,15 @@ column as special tags, and Personal Notes **unmapped** (not present in the CSV)
 New cards have new scheduling, not inherited principal-part histories. Export
 refuses an existing output file. Plain CSV cannot preserve later destination tags.
 
-No provisioning or managed parsing update is implemented. The authoritative
-managed schema remains principal-part schema 3; contextual fields/templates are
-incompatible and rejected by its schema guard. Structural card additions, slot
-updates, retirement/reactivation and migrations are still unsupported. Export
-approval is not managed-plan approval. Do not relabel this CSV or fabricate schema
-evidence to pass the managed guard, or import it over scheduled principal-part notes.
+No automatic provisioning is implemented. The separate `parsing-v1` managed binding
+now permits individually approved prompt/answer updates on observed retained parsing
+cards through `managed plan request.json` and the
+[capture/adoption and retained-update handoff](reviewed-phrase-inputs.md#approved-retained-slot-changes-and-blocked-withdrawal).
+Fresh `form-parsing export` is still creation-only; its warning does not describe that
+separate managed path. Structural additions, slot rebinding, retirement/reactivation
+and migrations remain unsupported. Export/linguistic approval is not managed-plan
+approval. Never relabel parsing CSV/schema evidence or import it over scheduled
+principal-part notes. Old CSS/layout digests require reviewed manual setup and fail closed.
 
 ## Verification boundary
 

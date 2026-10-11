@@ -332,7 +332,18 @@ note type, then export a closed complete backup. Follow the acquisition, immutab
 membership and ownership instructions in
 [destination snapshots and file transport](destination-snapshots-and-file-transport.md).
 Phrase membership is `[LatinitasID, Source Scope, Source ID, exercise_key]`; use the
-semantic `exercise_key` from `claims inspect`, not the shared phrase object key.
+semantic `exercise_key` from workspace inspection **without `--artifact`**, not the
+shared phrase `object_key` or the template's `semantic_key`:
+
+```bash
+uv run latinitas-cards claims inspect inputs.json --selections selected.json --recipes recipes.json \
+  --check --json > workspace-inspection.json
+jq '.cards[] | {identity, exercise_key, recipe, slot, constituents}' workspace-inspection.json
+```
+
+The exported row supplies `Source Scope` and `Source ID`; the workspace card supplies
+the final membership key. Artifact inspection instead reports every layout slot and
+checks exported fields against the workspace. Do not infer membership from displayed text.
 Capture validates actual fields/templates/CSS; linguistic decisions are never write
 approval or proof of a successful import.
 

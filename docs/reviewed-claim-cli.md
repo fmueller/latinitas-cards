@@ -8,7 +8,8 @@ covers principal-part recipes, contextual form parsing, and versioned
 `claims list` and `claims record`. Generated phrase exercises use `--selections`
 and `--recipes` on `list`, `record` and read-only `inspect --check`; their combination
 and rendered-answer attestations live beside the recipe plan, not the lexical input.
-Actual phrase CSV/destination application remains separate work.
+Phrase CSV export and managed destination handoffs are documented separately;
+linguistic review does not approve destination writes.
 
 ## List and record
 
@@ -116,11 +117,13 @@ without renewing review fails check. Inspection exposes selected sense, language
 evidence and review status. Exported answers retain that provenance.
 
 Identities and slots do not change. Changed answers require new managed payload
-review, independently of linguistic acceptance. **Retained-slot answer writes are
-currently unsupported**: managed planning reports the change, but approval does
-not enable emission. T-088 owns that extension. Keep the current destination
-unchanged and retain the proposed CSV/plan for later supported application; do not
-claim a browser preview proves native Anki import or scheduling behavior.
+review, independently of linguistic acceptance. Current-schema retained principal-part,
+parsing and phrase prompt/answer changes can use separately approved managed CSV
+handoffs. Initial creation, retirement/reactivation and template/CSS installation
+remain manual; old layout digests fail closed. Follow the
+[retained-update workflow](reviewed-phrase-inputs.md#approved-retained-slot-changes-and-blocked-withdrawal),
+including closed capture, explicit adoption, fresh approval and observation/reconciliation.
+A browser preview proves neither native Anki import nor scheduling preservation.
 
 ## Inspect and fail-closed check
 

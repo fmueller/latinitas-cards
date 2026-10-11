@@ -19,6 +19,13 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - `managed` supports separately approved answer/presentation updates on retained
   principal-part, parsing and phrase cards; creation and retirement still require manual resolution.
 
+### Limitations
+
+- Phrase generation is bounded to reviewed preposition–noun, noun–genitive,
+  verb–noun and adjective–noun patterns; uncertain readings stay withheld.
+- CSV installs no templates/CSS and omission never withdraws cards. Initial import,
+  old-layout setup and blocked withdrawal need reviewed manual resolution; native auto acceptance is pending.
+
 ## [0.2.0] - 2026-10-08
 
 ### Added
