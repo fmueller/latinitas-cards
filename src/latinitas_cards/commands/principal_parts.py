@@ -115,8 +115,10 @@ def render_principal_part_preview(
     typer.echo(f"Morphology v{morphology.version}: {morphology.theme}/{morphology.appearance}/{morphology.comparison}")
     typer.echo(terminology_report(morphology.terminology, terminology_override))
     typer.echo(
-        "Changed answers require renewed payload approval, not linguistic review; "
-        "retained-slot payload application unsupported."
+        "Presentation changes require renewed payload approval, not linguistic review; "
+        "linguistic changes also require renewed claim review. Use individually approved retained-slot updates "
+        "through managed plan/approve/emit/observe/reconcile with fresh evidence and exact layout/CSS binding. "
+        "Structural creation/retirement and layout migration remain unsupported."
     )
     typer.echo(
         "Effective profile presentation (including overrides); "

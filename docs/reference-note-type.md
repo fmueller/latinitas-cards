@@ -45,11 +45,17 @@ changing field order, recipe keys, slots or scheduled template bindings. Existin
 digest mismatches block acquisition pending manual setup/review; no scheduled
 template rebinding, provisioning or migration is performed. Presentation changes
 alter generated fields and therefore require renewed destination payload approval,
-not reuse of an old observation plan. The current destination journal rejects
-changed per-card answer fields as unsupported slot effects, even after CSS setup;
-this is a migration/application block, not permission to import into a scheduled
-layout. Retain the collection and seek separately reviewed manual setup or the
-explicit backed-up fresh-start path. No application capability is added here.
+not reuse of an old observation plan. Current-schema prompt/answer changes on
+observed retained cards are supported through the
+[approved retained-update handoff](reviewed-phrase-inputs.md#approved-retained-slot-changes-and-blocked-withdrawal):
+`managed plan request.json`, individual `managed approve --operation` decisions,
+then `managed emit`, manual update-only import, fresh `managed observe`, and
+`managed reconcile` for interrupted/partial or drifted outcomes. Inspect the exact
+operations and full import footprint; emission is pending, not success. Initial
+creation still requires manual setup/import and explicit adoption. Structural
+creation/retirement and layout migration remain unsupported; ordinary overwrite
+CSV is not a safe scheduled-deck update. This documents the existing path, not a
+new transport or native safety claim.
 Linguistic claim review ignores only
 `morphology`; all evidence and linguistic configuration remain bound.
 Personal Notes are neither sanitized nor written by generation/CSV.
@@ -68,9 +74,11 @@ carrier with that exact CSS in a disposable/fresh note type. CSV does not instal
 it. A v2 carrier is not an auto acceptance kit. Back up scheduled collections first;
 an old CSS digest requires reviewed manual setup and fresh capture/reconciliation,
 not payload approval alone. Do not silently rebind scheduled templates or bypass
-the unsupported-slot-effect boundary above. Moving existing fixed markup to auto
+the exact layout/CSS binding above. Moving existing fixed markup to auto
 changes managed answers and requires renewed payload approval and an approved
-update reimport once that boundary is resolved; it must not add notes or reset slots.
+retained update reimport after manual CSS setup and fresh binding evidence; it must
+not add notes or reset slots. Linguistic changes also require renewed claim review;
+linguistic acceptance never substitutes for managed write approval.
 
 Auto native acceptance is **pending**, not inherited from the fixed-mode checks
 below. Use the [auto native checklist](morphology-native-verification.md#automatic-appearance-native-checklist-t067)

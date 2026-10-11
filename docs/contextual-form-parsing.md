@@ -94,16 +94,27 @@ feature. Missing optional features are omitted, not filled from a paradigm.
 Extraction candidates/hints may be cited as evidence, but extraction success and
 principal-part roles are never token-level proof. Unknown formats stay review work.
 
-After linguistic review of **that proposal in that context**, add a `decision`
-object to that proposal with `claim_fingerprint` from preview, `status` equal to
-`accepted` or `withheld`, nonempty `reviewer`, and an explanatory `reason`. A review
-is a user-authored attestation, not authentication or an export approval. There is
-currently no CLI command to author decisions: edit JSON manually after reviewing
-each claim. Copy that claim's `fingerprint` from the supported preview command
-into `decision.claim_fingerprint`; no hash reconstruction is needed. The complete
-sample shows the exact decision shape. Use your own reviewer identity and reason,
-then preview again to check whether the decision is current. Never mechanically
-approve all proposals.
+After linguistic review of **that proposal in that context**, use the shared
+[claim CLI](reviewed-claim-cli.md#list-and-record) to record one explicit decision:
+
+```sh
+uv run latinitas-cards claims list cases.json --json
+uv run latinitas-cards claims record cases.json \
+  --fingerprint '<one exact current fingerprint from list>' --status accepted \
+  --reviewer 'Latin reviewer' --reason 'Individually checked this feature in context'
+uv run latinitas-cards form-parsing preview cases.json
+```
+
+Use `withheld` to withhold a claim; `claims record --value` can author a corrected
+value with its own evidence-bound review. Parsing sources contain their profile,
+so omit `--profile`. The CLI writes a shared decision sidecar, read automatically
+by preview/export. Alternatively, manually add an explicit `decision` object to
+that proposal with `claim_fingerprint` copied from preview, `status` equal to
+`accepted` or `withheld`, nonempty `reviewer`, and an explanatory `reason`; no hash
+reconstruction is needed. The complete sample shows this embedded decision shape.
+Use your own reviewer identity and reason, then preview again to check currency.
+A review is a user-authored attestation, not authentication, export approval or
+managed write approval. Neither route permits mechanical approval of all proposals.
 
 Changing the form, context, category, evidence, alternatives, applicable/required
 features or linguistic profile invalidates the review. Presentation changes do

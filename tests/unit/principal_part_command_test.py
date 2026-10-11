@@ -68,6 +68,10 @@ def test_principal_preview_reports_terminology_override(tmp_path: Path) -> None:
     assert "Effective terminology v1: user (de); override: user" in result.output
     assert "Präsens, 1. Person Singular" in result.output
     assert "renewed payload approval" in result.output
+    assert "retained-slot payload application unsupported" not in result.output
+    assert "individually approved retained-slot updates" in result.output
+    assert "managed plan/approve/emit/observe/reconcile" in result.output
+    assert "Structural creation/retirement and layout migration remain unsupported" in result.output
 
 
 def test_profile_preview_requests_csv_scope_confirmation_without_minted_output(tmp_path: Path) -> None:
