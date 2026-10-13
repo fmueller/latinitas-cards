@@ -16,6 +16,7 @@ from ..phrase_recipes import load_recipe_plan, preview_plan
 from ..phrase_review import phrase_workspace
 from ..preview_export import commit_csv_artifacts, serialize_anki_csv
 from ..profile import load_profile
+from ..reference_templates import REFERENCE_STYLE_VERSION
 from .claims import JsonOption, _emit, _error
 
 app = typer.Typer(help="Select and review bounded phrase exercises; export approved selections for manual import.")
@@ -86,7 +87,8 @@ def export_csv(source: Path, selections: Path, recipes: Path, output: Path, mach
                 "exported": len(rows),
                 "output": str(output),
                 "diagnostics": [asdict(d) for d in reviewed.state.diagnostics],
-                "requires": "reviewed phrase-v1/CSS v3 manual setup, manual import and explicit baseline adoption; "
+                "requires": f"reviewed phrase-v1/CSS v{REFERENCE_STYLE_VERSION} manual setup, "
+                "manual import and explicit baseline adoption; "
                 "not managed creation or withdrawal",
             },
             machine,

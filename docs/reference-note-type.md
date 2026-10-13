@@ -39,7 +39,7 @@ further explanation, either as a readable static section or native details/summa
 There is no script dependency. **Static is the unverified-client default.**
 
 CSV installs neither CSS nor templates. Paste the versioned reference CSS below
-only as a separately reviewed manual setup step. Styling v3 supports both themes and
+only as a separately reviewed manual setup step. Styling v4 supports both themes and
 fixed light/dark or automatic client night mode on the managed answer, without
 changing field order, recipe keys, slots or scheduled template bindings. Existing destination CSS/template
 digest mismatches block acquisition pending manual setup/review; no scheduled
@@ -69,9 +69,14 @@ media-query inference is used; fixed `light` and `dark` remain unchanged and the
 default is still `light`. Preview reports the effective setting and required CSS
 version. Switching client appearance then recolours auto markup without reimport.
 
-Install the complete v3 CSS below manually in Styling, or use a separately reviewed
+Style v4 also follows client night mode for the shared principal-part context and
+plain Personal Notes outside the panel, even when the panel is fixed light or dark.
+It changes only their night foregrounds, not personal content or inline user styling.
+It is a separately reviewed manual style update, not a CSS installation or migration.
+
+Install the complete v4 CSS below manually in Styling, or use a separately reviewed
 carrier with that exact CSS in a disposable/fresh note type. CSV does not install
-it. A v2 carrier is not an auto acceptance kit. Back up scheduled collections first;
+it. Older carriers are not current-style acceptance kits. Back up scheduled collections first;
 an old CSS digest requires reviewed manual setup and fresh capture/reconciliation,
 not payload approval alone. Do not silently rebind scheduled templates or bypass
 the exact layout/CSS binding above. Moving existing fixed markup to auto
@@ -137,7 +142,7 @@ a test; it changes only when that contract changes.
 Reference setup for note schema `3` and template registry `v1` (digest `card-registry-sha256:b1e7709e3db8ac17645c0254d9cecfa2d558a105b9b40e87bfcc329ef0adb96d`).
 This block is generated from the authoritative contract; a test fails if this
 published copy drifts from it. Do not hand-edit inside the markers.
-Reference styling `v3` supports morphology markup `v1`.
+Reference styling `v4` supports morphology markup `v1`.
 CSV carries managed markup, never installs CSS or provisions/rebinds templates.
 Existing destinations with a different CSS/template digest are blocked for
 separately reviewed manual setup; do not rewrite scheduled templates.
@@ -387,7 +392,7 @@ Back:
 ### Shared styling (paste once into the note type's Styling)
 
 ```css
-/* Latinitas reference styling v3; morphology markup v1. Manual setup only. */
+/* Latinitas reference styling v4; morphology markup v1. Manual setup only. */
 .card {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
@@ -415,6 +420,14 @@ Back:
   font-style: italic;
   color: #666666;
   text-align: left;
+}
+
+/* Surrounding text follows the client, independently of fixed panel appearance. */
+.nightMode .latinitas-context {
+  color: #dddddd;
+}
+.nightMode .latinitas-personal-notes {
+  color: #bbbbbb;
 }
 
 .morphology-v1 {

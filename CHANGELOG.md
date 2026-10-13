@@ -6,19 +6,21 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- Principal-part answer context and plain Personal Notes remain readable in
+  Desktop night mode with manually installed reference CSS v4, independently of panel appearance.
 - `claims record` rejects structurally invalid authored phrase references before
   saving any batch decisions, preserving previous reviewed answers.
 - `phrases export` and `claims inspect --check` reject unsafe generated field controls
   while preserving tab/CR/LF and valid literal text; CSV checks retain embedded CR bytes.
 - `phrases` applies the configured palette and light/dark/auto appearance to both
-  translation and recognition cards using the manually installed reference CSS v3.
+  translation and recognition cards using the manually installed reference CSS v4.
 - `claims inspect` preserves escaped literal angle-bracket prose and following
   context in generated-card text for workspace, CSV and supported package inspection.
 
 ### Added
 
 - Morphology profiles accept `appearance: auto` with manually installed reference
-  CSS v3; full native Desktop/AnkiMobile toggle acceptance remains pending.
+  CSS v4; full native Desktop/AnkiMobile toggle acceptance remains pending.
 - Principal-part answers show individually reviewed German form translations for
   both recipes, with explicit sense/provenance and no added front-side hints.
 - Generated principal-part and form-parsing answers offer Latin (default) or German

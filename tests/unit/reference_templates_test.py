@@ -7,8 +7,13 @@ helpers, so schema, registry, or guidance drift cannot silently re-authorize
 itself.
 """
 
+import json
 import re
+import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from latinitas_cards.cards import TEMPLATE_REGISTRY, TEMPLATE_REGISTRY_DIGEST
 from latinitas_cards.generation import generate_learning_object_notes
@@ -198,12 +203,70 @@ def test_docs_publish_the_generated_reference_setup_verbatim() -> None:
     published = docs[begin:end].strip("\n")
     generated = reference_setup_markdown().strip("\n")
     assert published == generated
-    for version_evidence in ("3", "v1", TEMPLATE_REGISTRY_DIGEST):
+    for version_evidence in ("Reference styling `v4`", "v1", TEMPLATE_REGISTRY_DIGEST):
         assert version_evidence in generated
     for field_name in EXPECTED_NOTE_TYPE_FIELDS:
         assert f"\n{field_name}\n" in generated
     for front in EXPECTED_FRONTS.values():
         assert front in generated
+
+
+@pytest.mark.skipif(shutil.which("agent-browser") is None, reason="Chromium/agent-browser is optional")
+def test_reference_answer_context_and_personal_notes_remain_readable(tmp_path: Path) -> None:
+    def luminance(rgb: list[int]) -> float:
+        channels = [value / 255 for value in rgb]
+        linear = [value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4 for value in channels]
+        return sum(value * weight for value, weight in zip(linear, (0.2126, 0.7152, 0.0722), strict=True))
+
+    def browser(*arguments: str) -> str:
+        return subprocess.check_output(["agent-browser", "--session", "reference-context", *arguments], text=True)
+
+    try:
+        for template in (REFERENCE_CARD_TEMPLATES[0], REFERENCE_CARD_TEMPLATES[5]):
+            markup = re.sub(r"\{\{[#/][^}]+\}\}", "", template.back)
+            for field, value in {
+                template.slot.answer_field: "amō",
+                "Lemma": "amō",
+                "Principal Parts": "amō — amāre — amāvī — amātum",
+                "Meaning": "love",
+                "Personal Notes": "Remember the long vowel.",
+            }.items():
+                markup = markup.replace("{{" + field + "}}", value)
+            page = tmp_path / "card.html"
+            page.write_text(
+                '<!doctype html><meta charset="utf-8"><style>'
+                + REFERENCE_CARD_CSS
+                # Native Anki supplies its own night body colors; the reference text is transparent.
+                + ".card.nightMode { color: #ffffff; background-color: #2c2c2c; }"
+                + '</style><body class="card">'
+                + markup
+                + "</body>"
+            )
+            browser("open", page.as_uri())
+            browser("set", "viewport", "1280", "720", "2")
+            for night in (False, True, False):
+                actual = json.loads(
+                    browser(
+                        "eval",
+                        r"""(() => {
+                            document.body.className = CLASS;
+                            const rgb = value => value.match(/\d+/g).slice(0, 3).map(Number);
+                            return [...document.querySelectorAll('.latinitas-context,.latinitas-personal-notes')]
+                                .map(e => [e.innerText, rgb(getComputedStyle(e).color),
+                                    rgb(getComputedStyle(document.body).backgroundColor)]);
+                        })()""".replace("CLASS", json.dumps("card nightMode" if night else "card")),
+                    )
+                )
+                assert [item[0] for item in actual] == [
+                    "amō · amō — amāre — amāvī — amātum · love",
+                    "Remember the long vowel.",
+                ]
+                for text, foreground, background in actual:
+                    light, dark = sorted((luminance(foreground), luminance(background)), reverse=True)
+                    contrast = (light + 0.05) / (dark + 0.05)
+                    assert contrast >= 4.5, (template.slot.recipe, night, text, contrast)
+    finally:
+        browser("close")
 
 
 def _eligible_templates(lemma: str, forms: str, roles: tuple[str, ...]) -> tuple[str, ...]:

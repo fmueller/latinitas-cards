@@ -163,7 +163,7 @@ And this back:
 ```
 
 Copy the published [shared reference CSS](reference-note-type.md#shared-styling-paste-once-into-the-note-types-styling)
-(reference style v3, morphology markup v1), but use the contextual fields and
+(reference style v4, morphology markup v1), but use the contextual fields and
 single template above, not the principal-part fields or templates. The
 parsing answer is static and Latin-first; no disclosure or custom script is added.
 Use a backed-up, explicitly separate new destination for this experimental manual

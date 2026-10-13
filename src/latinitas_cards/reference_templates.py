@@ -50,10 +50,10 @@ REFERENCE_CARD_TEMPLATES: tuple[ReferenceCardTemplate, ...] = tuple(
     ReferenceCardTemplate(slot=slot, front=_front(slot), back=_back(slot)) for slot in TEMPLATE_REGISTRY
 )
 
-REFERENCE_STYLE_VERSION = 3
+REFERENCE_STYLE_VERSION = 4
 
 REFERENCE_CARD_CSS = """\
-/* Latinitas reference styling v3; morphology markup v1. Manual setup only. */
+/* Latinitas reference styling v4; morphology markup v1. Manual setup only. */
 .card {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
@@ -81,6 +81,14 @@ REFERENCE_CARD_CSS = """\
   font-style: italic;
   color: #666666;
   text-align: left;
+}
+
+/* Surrounding text follows the client, independently of fixed panel appearance. */
+.nightMode .latinitas-context {
+  color: #dddddd;
+}
+.nightMode .latinitas-personal-notes {
+  color: #bbbbbb;
 }
 
 .morphology-v1 {

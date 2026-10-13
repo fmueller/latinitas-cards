@@ -1,11 +1,11 @@
 ---
 id: T-097-keep-principal-part-context-readable-in-native
 title: Keep principal-part context readable in native Desktop night mode
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#automatic-lightdark-appearance
 dependencies: []
-updated_at: "2026-10-13T21:02:09Z"
+updated_at: "2026-10-13T22:50:18Z"
 ---
 
 # T-097-keep-principal-part-context-readable-in-native Keep principal-part context readable in native Desktop night mode
@@ -55,3 +55,28 @@ behavior as an auto recoloring failure.
 
 This is a native readability finding, not a failure of generated claim review,
 CSS installation, approved payload import, or Anki's scheduling behavior.
+
+- Implemented reference style v4 as a manual style update: only shared context
+  and plain Personal Notes gain client-night foregrounds. Panels, templates,
+  identities, slots, schemas, personal content and update APIs are unchanged.
+- Native Anki 26.9.3 / Python 3.14.2, isolated synthetic CSV imports: both
+  palettes, default/light/dark/auto and both recipes passed actual Preferences
+  light/night/light (48 states). Full context, notes and disclosures inspected.
+  Context night contrast improved 1.43 to 10.28; plain Personal Notes 2.43 to
+  7.27. Light contrasts remain 9.74 and 5.74. Native captures and pointer clip
+  were inspected; browser class simulation is supplemental only.
+- Real closed v3 collection capture refused with manual-setup/no-rebinding
+  guidance; fresh v4 capture passed. CSS SHA-256 is
+  `18cd5b7d2e5b50f90ac017db225d49f7ff11fa57a35058487300e4b56457945e`.
+  No automatic installation, migration or reconciliation bypass was added.
+- Workflow-v3: rendered RED at 1.4338 contrast, GREEN; dedicated simplifier
+  made no edits. Separate General/Python/Database lanes found no concrete
+  issues. Fresh candidate validation found DOC-1: "The unreleased changelog
+  points readers to CSS v3 for current features even though the current shared
+  styling is v4." Fixed both current-feature references after failing/passing
+  assertions; fresh disposition verification resolved DOC-1, no new findings.
+- Final Ruff, mypy (107 source files), pytest (1046 passed), format and diff
+  checks passed. Parent final high native acceptance after T097–T099 remains
+  pending; AnkiMobile remains unverified and excluded. No release performed.
+- 2026-10-13T22:50:12Z: verification pass
+- 2026-10-13T22:50:18Z: Verified 2026-10-13T22:50:12Z: v4 native readability all48states; reviewed and final gates passed. Parent high native repeat after T097-T099 remains pending; Mobile unverified.

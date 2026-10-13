@@ -71,7 +71,7 @@ terminology are not. Reference/content changes invalidate an existing review.
 existing templates and all fields stay unchanged; phrase Translation/Recognition
 use ordinals 10/11 and append their Enabled/Prompt/Answer field triples. This is
 a **reviewed manual setup contract**, not an installation or change to current principal-part
-exports. Capture binds exact fields, templates and CSS v3; source
+exports. Capture binds exact fields, templates and CSS v4; source
 notes, scheduled templates and Personal Notes are untouched. Browser previews are
 not native Desktop/AnkiMobile acceptance.
 
@@ -321,7 +321,7 @@ test collection. Prefer a **separate dedicated note type/destination** for new p
 notes, named exactly as the profile's `generated_note_type`; preserve `LatinitasID`
 as the first field and do not map Personal Notes. The original fields/templates are
 unchanged, with phrase fields appended after them and slots 10/11. Install the exact
-CSS v3 text manually; CSV installs neither CSS nor templates. Never renumber or
+CSS v4 text manually; CSV installs neither CSS nor templates. Never renumber or
 repurpose scheduled templates. Old CSS/template digests fail closed: do not edit a
 snapshot/journal to match or silently rebind it. Review manual setup, acquire a fresh
 closed backup, and perform explicit ownership adoption in a new journal. Existing

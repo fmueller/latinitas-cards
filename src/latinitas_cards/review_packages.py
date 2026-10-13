@@ -17,7 +17,12 @@ from .cards import TEMPLATE_REGISTRY, CardSlot
 from .claim_sidecar import Diagnostic
 from .form_parsing import PARSING_BACK, PARSING_FIELDS, PARSING_FRONT, PARSING_NOTE_TYPE, PARSING_SLOT
 from .phrase_recipes import PHRASE_LAYOUT, PHRASE_LAYOUT_FIELDS
-from .reference_templates import REFERENCE_CARD_CSS, REFERENCE_CARD_TEMPLATES, REFERENCE_NOTE_TYPE_FIELDS
+from .reference_templates import (
+    REFERENCE_CARD_CSS,
+    REFERENCE_CARD_TEMPLATES,
+    REFERENCE_NOTE_TYPE_FIELDS,
+    REFERENCE_STYLE_VERSION,
+)
 from .sources import _pick_collection_database_name, _read_zip_member, read_source_records
 
 
@@ -101,7 +106,11 @@ def read_review_package(path: Path) -> PackageInspection:
                             (t.slot.ordinal, t.slot.template_name, t.front, t.back) for t in PHRASE_LAYOUT
                         )
                         if model.css != REFERENCE_CARD_CSS:
-                            diagnostics.append(Diagnostic("unsupported", "Phrase package style differs from CSS v3"))
+                            diagnostics.append(
+                                Diagnostic(
+                                    "unsupported", f"Phrase package style differs from CSS v{REFERENCE_STYLE_VERSION}"
+                                )
+                            )
                     else:
                         diagnostics.append(Diagnostic("unsupported", "Unsupported package fields/layout"))
                         continue

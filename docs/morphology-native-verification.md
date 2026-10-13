@@ -290,9 +290,9 @@ version. Attach results/screenshots or a precise dated maintainer report for eac
 row; distinguish independently observed results from maintainer-reported evidence.
 
 1. Use a disposable collection/profile or a backed-up, separately approved setup.
-   Install the complete v3 CSS from [reference-note-type.md](reference-note-type.md)
+   Install the complete v4 CSS from [reference-note-type.md](reference-note-type.md)
    in Styling, or a reviewed carrier containing that exact CSS. CSV installs no
-   CSS; the earlier v2 carrier does not test auto. Preserve template names/order,
+   CSS; earlier carriers do not test the current style. Preserve template names/order,
    fields and scheduled bindings. Old CSS digests require reviewed manual setup
    and fresh capture/reconciliation, never silent rebinding or approval-only repair.
 2. Import synthetic answers with each palette and default, fixed `light`, fixed
