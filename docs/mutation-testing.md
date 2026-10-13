@@ -64,7 +64,10 @@ not execute mutants.
 `src/latinitas_cards/` is the mutation source. Pytest collection is constrained
 to `tests/` so the generated `mutants/` project cannot be collected recursively.
 Mutmut copies tests automatically; `tool.mutmut.also_copy` also includes the
-documentation, release metadata, and task notes read by repository-file tests.
+documentation, release metadata, the spec index, task notes, both mirrored
+extraction skill directories, and scripts used by repository-file tests
+(including the native managed-update harness). Copy directories for nested
+inputs, not individual files: mutmut's file-copy branch does not create parents.
 Keep that list and `tests/unit/mutation_config_test.py` in sync when adding such
 dependencies. Missing files abort the unmutated baseline before any mutants are
 tested; they are not evidence of surviving mutations or low test efficacy.

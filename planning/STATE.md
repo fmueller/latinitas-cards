@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-13T23:11:13Z"
+updated_at: "2026-10-13T23:31:33Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
-last_verification_result: pass for T-098-update-native-managed-harness-for-supported at 2026-10-13T23:11:13Z
+next_action: No active-spec task is ready
+last_verification_result: pass for T-099-copy-extraction-skill-files-into-the-mutation at 2026-10-13T23:31:33Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-098-update-native-managed-harness-for-supported at 2026-10-13T23:11:13Z
+- pass for T-099-copy-extraction-skill-files-into-the-mutation at 2026-10-13T23:31:33Z
 
 ## Next Action
 
-- Select the next eligible task
+- No active-spec task is ready
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 1
 - in_progress: 0
-- completed: 97
+- completed: 98
 - blocked: 0
 - cancelled: 0

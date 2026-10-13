@@ -25,6 +25,10 @@ ROOT = Path(__file__).parents[2]
         "docs/release-readiness.md",
         "docs/license-compatibility-audit.md",
         "planning/tasks/T-014-publish-v0-1-0.md",
+        ".agents/skills/extracting-authored-notes/SKILL.md",
+        ".claude/skills/extracting-authored-notes/SKILL.md",
+        "scripts/check-managed-anki.py",
+        "specs/README.md",
     ],
 )
 def test_mutation_sandbox_includes_repository_test_dependencies(required: str) -> None:

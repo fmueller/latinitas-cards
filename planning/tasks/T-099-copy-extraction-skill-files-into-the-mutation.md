@@ -1,11 +1,11 @@
 ---
 id: T-099-copy-extraction-skill-files-into-the-mutation
 title: Copy extraction skill files into the mutation baseline sandbox
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#goals
 dependencies: []
-updated_at: "2026-10-13T22:25:34Z"
+updated_at: "2026-10-13T23:31:33Z"
 ---
 
 # T-099-copy-extraction-skill-files-into-the-mutation Copy extraction skill files into the mutation baseline sandbox
@@ -55,3 +55,5 @@ priority, dependencies and authoritative selector ordering remain unchanged.
 
 Do not exclude the contract test or weaken completed-baseline validation to
 make the CI result appear green. No dependency alert remediation is included.
+- 2026-10-13T23:31:33Z: verification pass
+- 2026-10-13T23:31:33Z: Both extraction mirrors and current repository-test inputs copied. Unmutated generated sandbox: 1050 passed; scoped smoke: one mutant killed, not a full campaign. General/Python reviews and fresh validation/disposition verification found no concrete task-relevant findings. Final Ruff/mypy/pytest passed on 2026-10-13.
