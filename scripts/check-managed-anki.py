@@ -605,8 +605,33 @@ def main() -> None:
     # Native rows establish the actual card set used by the refusal boundary.
     shutil.copyfile(backup, path)
     actual_before = tables(path)
+    # Retained prompt/answer content is supported; import only the reviewed field.
+    for label, field in (
+        ("slot-prompt", TEMPLATE_REGISTRY[0].prompt_field),
+        ("slot-answer", TEMPLATE_REGISTRY[0].answer_field),
+    ):
+        save_state(state_path, state)
+        value = f"approved retained {label}"
+        proposal = propose(initial, Meaning="UNAPPROVED meaning", Lemma="UNAPPROVED lemma")
+        proposal["fields"][field] = value
+        p, receipt, csv_file, emission = handoff(
+            initial, [proposal], lambda op, field=field: op.get("field") == field, label
+        )
+        assert receipt["selected_operations"] == [f"{identity}/field/{field}"]
+        native = native_import(path, csv_file)
+        result = snapshot(path, notes, label + "-after", root)
+        observed = observe_updates(state_path, p["plan_id"], result, "retained native content", interval_confirmed=True)
+        assert observed["observed"] == receipt["selected_operations"]
+        assert not observed["pending"] and not observed["unresolved"]
+        reports["cases"][label] = {
+            "emission": emission,
+            "native": native,
+            "observation": observed,
+            "deltas": compare(actual_before, tables(path), {identity: {"fields": {field: value}}}),
+        }
+        shutil.copyfile(backup, path)
     reports["cases"]["unsupported"] = {}
-    for label in ("new-slot", "guard-clear", "front-clear", "slot-content", "retire", "consolidate"):
+    for label in ("new-slot", "guard-clear", "front-clear", "retire", "consolidate"):
         proposal = propose(initial, Meaning="content subset")
         fields = proposal["fields"]
         if label == "new-slot":
@@ -616,8 +641,6 @@ def main() -> None:
             fields[TEMPLATE_REGISTRY[0].enabled_field] = ""
         elif label == "front-clear":
             fields[TEMPLATE_REGISTRY[0].prompt_field] = ""
-        elif label == "slot-content":
-            fields[TEMPLATE_REGISTRY[0].answer_field] = "changed slot answer"
         elif label == "retire":
             proposal["retire"] = True
         else:
@@ -625,8 +648,12 @@ def main() -> None:
         unsafe = compose_plan(initial, state, [proposal], PROFILE)
         ops = [op["id"] for entry in unsafe["notes"] for op in entry["operations"] if not op["supported"]]
         if not ops:
-            assert label == "front-clear"
-            ops = [f"{identity}/field/{TEMPLATE_REGISTRY[0].prompt_field}"]
+            if label == "consolidate":
+                assert unsafe["notes"][0]["blocked"] == ["proposal identity/object requires confirmation"]
+                ops = [f"{identity}/field/Source ID"]
+            else:
+                assert label == "front-clear", label
+                ops = [f"{identity}/field/{TEMPLATE_REGISTRY[0].prompt_field}"]
         reports["cases"]["unsupported"][label] = reject(
             lambda unsafe=unsafe, ops=ops: approve_plan(unsafe, ops, "must refuse")
         )

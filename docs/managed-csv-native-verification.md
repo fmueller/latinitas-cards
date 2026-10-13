@@ -78,7 +78,8 @@ before the journal replacement. Native destination data is never mocked.
 | Mixed field/tag result | An intentionally unmapped Tags column applies Meaning but not the approved addition. The whole note's selected effects remain unresolved; neither baseline field nor tag ownership is falsely promoted. |
 | Changed handoff | A real closed destination tag edit after emission makes approval verification fail as stale. The emitted file is not imported. |
 | Backup restoration after recorded success | Full tables are restored. The old recorded-success observation is rejected as inconsistent; explicit reconciliation abandons the old plan, followed by new approval and successful native retry. |
-| Structural boundaries | New-slot eligibility, guard clearing, front clearing, changed slot content, retirement and identity consolidation cannot authorize structural/slot writes. Permitted content-only subsets retain actual slot fields and are imported natively with identical actual card sets. |
+| Retained slot content | Separately approved nonempty prompt and answer updates apply to an enabled retained slot. Unapproved content, Personal Notes and all card/history/binding rows remain identical; each effect is observed. |
+| Structural boundaries | New-slot eligibility, guard clearing, front clearing, retirement and identity consolidation cannot authorize structural/slot writes. Permitted content-only subsets retain actual slot fields and are imported natively with identical actual card sets. |
 | Enabled slot / missing actual card | A real card deletion is detected as card-evidence drift. Even after explicit adoption of that inventory, emission of a content subset fails its actual-set guard, leaves the journal byte-identical and publishes no CSV. No implicit native recreation is permitted. |
 | Reactivation refusal | The real user-suspended row plus explicitly synthetic historical user-owned retirement provenance yields an unsupported reactivation operation; approval refuses it and actual tables stay identical. No claim of native structural retirement/reactivation is made. |
 | Previously anchored missing note | Closed native inventory with one note/cards/logs removed yields a reconciliation conflict with no operations/card effects. Empty approval has no targets/import rows; all remaining destination tables stay identical. |
@@ -128,8 +129,9 @@ reruns: Anki allocates fresh local IDs and modification metadata each time.
   older Desktop-dialog evidence of tag-only skips. Do not generalize native API
   results to the GUI's settings; verify the chosen actual path, and keep any
   skipped effects pending/unresolved or mark them unsupported.
-- Slot prompt/answer/guard changes remain unsupported, even if a raw importer
-  could change them. Creation, retirement, reactivation, consolidation, APKG
+- Nonempty prompt/answer changes are supported only for eligible retained slots
+  with complete unchanged card bindings. Guard/eligibility changes remain
+  unsupported. Creation, retirement, reactivation, consolidation, APKG
   managed updates and CSS/template migration remain unsupported. Fresh import
   is a separately approved new destination with new scheduling, not migration.
 - The file transport cannot lock or observe an intervening GUI edit. Fresh

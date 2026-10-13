@@ -1,11 +1,11 @@
 ---
 id: T-098-update-native-managed-harness-for-supported
 title: Update native managed harness for supported retained slot content
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#review-identity-and-export
 dependencies: []
-updated_at: "2026-10-13T21:02:09Z"
+updated_at: "2026-10-13T23:11:13Z"
 ---
 
 # T-098-update-native-managed-harness-for-supported Update native managed harness for supported retained slot content
@@ -54,3 +54,5 @@ this slot-content assumption in the advertised native verifier.
 
 No product fix was made during acceptance. Keep the native proof boundary:
 backend fixture creation does not substitute for the tested GUI CSV import.
+- 2026-10-13T23:11:13Z: verification pass
+- 2026-10-13T23:11:13Z: Harness-only repair: retained prompt/answer positive backend probes and a real Qt Desktop retained-content case replace the obsolete rejection. Identity-consolidation refusal now checks the actual planning block. All structural/eligibility/creation/retirement controls remain; no production edits. Stock prepare and full backend pass on Python 3.14.2 with anki/aqt26.9.3, no setup-only bypass. Actual Qt import observes both approved fields with full 8-card/15-history/binding/Personal Notes/unapproved preservation. Dedicated simplification, parallel General/Python/Database reviews, fresh candidate/disposition verification report no concrete task-relevant findings. Final Ruff/mypy/pytest chain passes (1046 tests); verification run 2026-10-13.

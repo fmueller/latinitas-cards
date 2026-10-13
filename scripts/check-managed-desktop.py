@@ -24,7 +24,7 @@ from latinitas_cards.destination_state import load_state
 from latinitas_cards.managed_application import emit_updates, observe_updates
 from latinitas_cards.managed_plans import approve_plan, compose_plan
 
-CASES = ("content", "tag-add", "tag-remove", "tag-final-remove", "tag-unmapped", "noop")
+CASES = ("content", "retained-content", "tag-add", "tag-remove", "tag-final-remove", "tag-unmapped", "noop")
 REFERENCE = Path(__file__).with_name("check-managed-anki.py")
 
 
@@ -74,20 +74,30 @@ def prepare(root: Path, ref: dict[str, Any]) -> None:
         save_adoption(state_path, ref["adopt"](snap, ref["ownership"](snap), "review synthetic Desktop ownership"))
         a = ref["propose"](snap, Meaning="approved Desktop A", Lemma="UNAPPROVED lemma")
         a["contributions"] = {
-            "source_tags": ["source", "added"] if case in ("content", "tag-add", "tag-unmapped") else []
+            "source_tags": ["source", "added"]
+            if case in ("content", "retained-content", "tag-add", "tag-unmapped")
+            else []
         }
-        if case != "content":
+        retained_fields = {
+            ref["TEMPLATE_REGISTRY"][0].prompt_field: "approved Desktop retained prompt",
+            ref["TEMPLATE_REGISTRY"][0].answer_field: "approved Desktop retained answer",
+        }
+        if case == "retained-content":
+            a["fields"].update(retained_fields)
+        elif case != "content":
             a["fields"] = dict(snap.payload["notes"][0]["fields"])
         b = ref["propose"](snap, 1, Meaning="UNAPPROVED B")
         plan = compose_plan(snap, load_state(state_path), [a, b], ref["PROFILE"])
         identity = snap.payload["notes"][0]["identity"]
+        selected_fields = set(retained_fields) if case == "retained-content" else {"Meaning"}
         selected = [
             op["id"]
             for entry in plan["notes"]
             for op in entry["operations"]
-            if op["id"].startswith(identity + "/") and (op.get("field") == "Meaning" or op["kind"] == "tags")
+            if op["id"].startswith(identity + "/")
+            and (op.get("field") in selected_fields or (case != "retained-content" and op["kind"] == "tags"))
         ]
-        approval = approve_plan(plan, selected, "review only first note Meaning/tags; exclude lemma and second note")
+        approval = approve_plan(plan, selected, "review first note subset; exclude other content and second note")
         emitted = emit_updates(
             plan,
             approval,
@@ -117,7 +127,7 @@ def prepare(root: Path, ref: dict[str, Any]) -> None:
             },
         },
     )
-    print("Prepared six isolated profiles; backend setup is NOT Desktop update proof.")
+    print("Prepared seven isolated profiles; backend setup is NOT Desktop update proof.")
 
 
 def gui(folder: Path) -> None:
@@ -268,6 +278,7 @@ def finish(folder: Path, ref: dict[str, Any]) -> None:
     identity = snap.payload["notes"][0]["identity"]
     desired_tags = {
         "content": ["added", "manual", "source"],
+        "retained-content": ["manual", "source"],
         "tag-add": ["added", "manual", "source"],
         "tag-remove": ["manual"],
         "tag-final-remove": [],
@@ -282,7 +293,12 @@ def finish(folder: Path, ref: dict[str, Any]) -> None:
             expected = {identity: {"tags": desired_tags[folder.name]}}
             if folder.name == "content":
                 expected[identity]["fields"] = {"Meaning": "approved Desktop A"}
-        if folder.name == "content":
+            elif folder.name == "retained-content":
+                expected[identity]["fields"] = {
+                    ref["TEMPLATE_REGISTRY"][0].prompt_field: "approved Desktop retained prompt",
+                    ref["TEMPLATE_REGISTRY"][0].answer_field: "approved Desktop retained answer",
+                }
+        if folder.name in ("content", "retained-content"):
             assert applied, "required content/tag import did not apply"
         if folder.name == "tag-unmapped":
             assert not applied, "unmapped tag fault unexpectedly applied"

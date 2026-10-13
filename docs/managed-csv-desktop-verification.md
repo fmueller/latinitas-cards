@@ -51,6 +51,7 @@ or content edit forces tag-only imports.
 | Dialog scenario | Exact destination outcome | Managed observation |
 |---|---|---|
 | Content + tag subset | Only chosen Meaning → `approved Desktop A`; `manual source` → `added manual source` | Both effects observed; pending/unresolved empty |
+| Retained content subset | Only first note's enabled completion-present prompt/answer change; Meaning, lemma, tags, second note and Personal Notes remain unchanged | Both retained effects observed; pending/unresolved empty |
 | Tag-only addition | `manual source` → `added manual source`; every field unchanged | Tag effect observed |
 | Tag-only removal | `manual source` → `manual`; every field unchanged | Tag effect observed |
 | Final removal | `source` → empty; every field unchanged | Tag effect observed |
@@ -68,8 +69,8 @@ For every scenario the comparison checks **all columns of all eight card rows
 and fifteen revlog rows**, not a scheduling subset. Note/card identities, sibling
 bindings, suspension, due, interval, factor, reps/lapses, flags and data survive.
 All note-type, field, template, deck and deck-config rows are identical. Note
-comparison permits only approved Meaning/tags plus the affected note's native
-`mod`/`usn`; every other note column and both personal texts are checked. No-op
+comparison permits only approved Meaning/tags or retained prompt/answer plus the
+affected note's native `mod`/`usn`; every other note column and both personal texts are checked. No-op
 and skipped import permit no metadata churn. Broader collection config/`col`
 tables are captured too, but are not claimed byte-identical across GUI startup.
 
@@ -86,7 +87,7 @@ work=$(mktemp -d)
 python=$(command -v python) # Python in the environment containing aqt and this package
 "$python" scripts/check-managed-desktop.py --output-dir "$work/evidence" --prepare
 
-# Set case to each value in order: content, tag-add, tag-remove,
+# Set case to each value in order: content, retained-content, tag-add, tag-remove,
 # tag-final-remove, tag-unmapped, noop. Prepare only once.
 case=content
 amp orb service start "managed-desktop-$case" --command \
