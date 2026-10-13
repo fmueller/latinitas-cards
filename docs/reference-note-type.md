@@ -81,19 +81,23 @@ not add notes or reset slots. Linguistic changes also require renewed claim revi
 linguistic acceptance never substitutes for managed write approval.
 
 Auto native acceptance is **pending**, not inherited from the fixed-mode checks
-below. Use the [auto native checklist](morphology-native-verification.md#automatic-appearance-native-checklist-t067)
-before calling it verified on Desktop and AnkiMobile. The maintainer's
-[2026-10-11 deferral](morphology-native-verification.md#maintainer-deferral-of-the-implementation-loop-gate--2026-10-11)
-permits implementation-loop completion only, not native acceptance or broader
-safety claims; the native checklist remains pending for maintainer follow-through.
+below. The v0.2.1 release gate requires actual Linux Anki Desktop import-dialog
+and reviewer interaction using the [current native checklist](morphology-native-verification.md#current-required-native-desktop-checks).
+AnkiMobile remains unverified for this behavior and is outside this release gate;
+this is not a Mobile compatibility claim. The maintainer's
+[2026-10-13 release-gate decision](morphology-native-verification.md#maintainer-release-gate-decision--2026-10-13)
+is distinct from the earlier
+[2026-10-11 implementation-only deferral](morphology-native-verification.md#maintainer-deferral-of-the-implementation-loop-gate--2026-10-11).
 
 Browser renders are **not native Anki proof**. The maintainer reported native acceptance
 passed on 2026-10-06 for Anki Desktop 26.09.2 and AnkiMobile 25.09 with the synthetic
 four-verb kit on the listed devices
 (see [morphology-native-verification.md](morphology-native-verification.md));
 disclosure is verified only within that recorded scope and static remains the
-default/unverified-client fallback. The 2026-10-07 waiver of additional representative-deck
-acceptance is not broader compatibility or existing-scheduled-CSS proof.
+default/unverified-client fallback. This historical fixed-mode report does not
+establish the new auto acceptance. The 2026-10-07 waiver of additional
+representative-deck acceptance is not broader compatibility or
+existing-scheduled-CSS proof.
 
 ## How the note type is organized
 

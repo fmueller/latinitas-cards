@@ -1,11 +1,11 @@
 ---
 id: T-096-scope-v0-2-1-native-release-acceptance-to-linux
 title: Scope v0.2.1 native release acceptance to Linux Desktop
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#automatic-lightdark-appearance
 dependencies: []
-updated_at: "2026-10-13T20:19:12Z"
+updated_at: "2026-10-13T20:32:28Z"
 ---
 
 # T-096-scope-v0-2-1-native-release-acceptance-to-linux Scope v0.2.1 native release acceptance to Linux Desktop
@@ -45,3 +45,26 @@ the earlier implementation-only deferral without presenting either as new proof.
   unrelated scope, priorities, dependencies, acceptance gates or runtime behavior.
 
 ## Implementation Notes
+
+- Fetched origin/main and confirmed the clean accepted planning base
+  `e1a229f41aedb2394801c5dbbdc42964d885e89e`; validate, next and independent
+  status inspection confirmed T096 before start. No product transfer was needed.
+- Amended only the active spec and current native/reference/readiness guidance.
+  Preserved the dated historical evidence and the superseded two-client checklist;
+  recorded the 2026-10-13 decision separately from the implementation-only deferral.
+- Exactly one Task implementation worker handled the documentation amendment.
+  Docs-only validation used textual/diff inspection, not artificial runtime TDD.
+  Dedicated code-simplifier Task clarified comparison/disclosure wording only.
+- Separate read-only General and Security code-reviewer Tasks both returned
+  "No concrete task-relevant findings." Security covered collection safety and
+  evidence boundaries; language/framework/database lanes were omitted because
+  no runtime, CSS, schema, or data operations changed. Fresh candidate validation
+  confirmed the empty candidate set; no findings required fixes or deferral.
+- Initial and final exact Ruff, mypy, pytest chains passed. Final results:
+  Ruff all checks passed; mypy no issues in 107 source files; 1045 tests passed.
+  No native test was run or certified. Linux Desktop acceptance remains required
+  and pending; AnkiMobile auto remains unverified and outside this release gate.
+- New spec SHA256:
+  `aabfdf060b1d90074a672b8cd29875677857b3d2ccb1f4455e09ade0e9de5ca4`.
+  The overseer must intentionally repin before its native synthetic acceptance.
+- 2026-10-13T20:32:28Z: verification pass

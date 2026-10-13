@@ -107,14 +107,20 @@ Taskrail `validate` → state valid; `coverage` → 7/7 areas structurally linke
 Final reviewed gates and lifecycle timestamps belong to the T089 task verification
 notes and work thread; this initial run is not a substitute for those gates.
 
-Native Desktop and AnkiMobile `auto` acceptance remains **pending**, under the
-maintainer's 2026-10-11 implementation-loop deferral. The exact dated decision,
-partial Desktop smoke and remaining checklist in
+Native Linux Anki Desktop `auto` acceptance remains **required and pending**; the
+partial Desktop smoke is not sufficient. The maintainer's 2026-10-13 decision
+removes AnkiMobile from the v0.2.1 release gate; Mobile remains unverified, not
+passed or certified. This supersedes the earlier 2026-10-11 implementation-only
+deferral as the current release-gate scope without changing that historical
+decision or evidence. The exact dated decisions, partial Desktop smoke and current
+Desktop-only checklist in
 [morphology native verification](morphology-native-verification.md#automatic-appearance-native-checklist-t067)
-are authoritative. No pending lane is marked clean/passed/covered here. No browser
-was used as a substitute. Publication readiness remains conditional on separately
-authorized release work and outstanding native acceptance; T089 can finalize only
-implementation readiness under this deferral.
+are authoritative. Native acceptance has not been run or certified by this record;
+no pending result is marked clean/passed/covered here. Browser or backend evidence
+cannot substitute for actual native Desktop import/reviewer interaction.
+Publication readiness remains conditional on the required Desktop acceptance and
+separately authorized release work; this integration-readiness record does not
+authorize a tag, release, deployment or publication.
 
 Supported constructions are the four reviewed bounded families, with explicitly
 authored German references and finite selections, not general syntax inference,

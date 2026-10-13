@@ -208,11 +208,12 @@ and requirement to repeat affected native checks after presentation changes rema
 
 ## Automatic appearance native checklist (T067)
 
-**Pending native acceptance.** The fixed-mode T062 results and T073 waiver above
-do not prove `auto`. Browser class simulation is supporting CSS evidence only,
-not AnkiMobile or Desktop acceptance. Native verification requires affected checks
-on both clients with this implementation and reference styling v3. The dated
-maintainer decision below defers that gate for implementation-loop completion only.
+**Pending Linux Anki Desktop acceptance.** The fixed-mode T062 results and T073 waiver
+above do not prove `auto`. Browser class simulation is supporting CSS evidence only,
+not native acceptance. The 2026-10-13 maintainer decision below sets the current
+v0.2.1 release gate: actual Linux Anki Desktop import-dialog and reviewer interaction
+on isolated synthetic profiles. AnkiMobile remains unverified for this behavior and
+is not part of this release gate.
 
 ### Maintainer deferral of the implementation-loop gate — 2026-10-11
 
@@ -221,19 +222,21 @@ explicit decision: “No I can’t, can you proceed the loop without it and I’
 later? The native testing I mean”. See the
 [decision relay](https://ampcode.com/threads/T-01a12a7a-87ff-729a-b72b-b8a98e688203).
 
-This narrowly defers native Desktop/AnkiMobile testing as a blocking condition for
+This narrowly deferred native Desktop/AnkiMobile testing as a blocking condition for
 the T067 **implementation-only** cycle. It permits Taskrail implementation
 verification/completion after the non-native checks and review gates; it is **not
 native acceptance**, executed proof or permission to broaden compatibility,
 readability, installation, migration or scheduled-deck safety claims. Auto remains
 native-unverified beyond the exact partial Desktop smoke below; AnkiMobile auto
-has not been tested. The maintainer will follow through on the outstanding native
-checklist in this document; no replacement native-only implementation task is added.
+has not been tested. At the time, the maintainer intended to follow through on the
+then-outstanding native checklist; this dated decision was implementation-loop scope
+only and is distinct from the later release-gate decision below. No replacement
+native-only implementation task was added.
 
-T089 integration/docs readiness and later adversarial reviews must preserve this
-same scoped deferral and evidence boundary. Unexecuted native lanes must stay
-pending, not be marked clean, passed or covered. The old fixed-mode acceptance and
-browser results do not fill any native auto checklist row.
+T089 integration/docs readiness and later adversarial reviews were to preserve this
+same scoped deferral and evidence boundary. Unexecuted native lanes stayed pending,
+not clean, passed or covered. The old fixed-mode acceptance and browser results did
+not fill any native auto checklist row.
 
 ### Executed partial Desktop smoke — 2026-10-11
 
@@ -274,7 +277,12 @@ available in this Linux orb. The earlier maintainer report is fixed-mode only;
 new precise auto evidence on AnkiMobile is required. This smoke is partial native
 Desktop evidence, **not T067 verification**.
 
-### Required remaining native checks
+### Historical remaining native checks as recorded 2026-10-11 (superseded)
+
+The following checklist and its two-client matrix record the requirement in force
+after the 2026-10-11 implementation-only deferral. They are preserved as historical
+context, not the current v0.2.1 release gate; the 2026-10-13 decision and current
+Desktop-only checklist below supersede the AnkiMobile requirement.
 
 Record the date/time, source commit, CSS version/digest, installation method,
 Anki Desktop version/build and OS, and AnkiMobile version, device and iOS/iPadOS
@@ -314,7 +322,60 @@ row; distinguish independently observed results from maintainer-reported evidenc
 | monochrome / fixed dark | pending: stays dark, readable | pending: stays dark, readable |
 | monochrome / auto | pending: light → dark → light, readable | pending: light → dark → light, readable |
 
-No native result may be filled using the previous fixed-mode proof or the
-implementation-only Taskrail pass. Both clients' required results remain pending
-for native acceptance. The 2026-10-11 maintainer deferral permits implementation
-completion only; it does not make missing native evidence a pass or a safety waiver.
+No historical native result may be filled using the previous fixed-mode proof or the
+implementation-only Taskrail pass. At that time both clients' required results
+remained pending. The 2026-10-11 maintainer deferral permitted implementation
+completion only; it did not make missing native evidence a pass or a safety waiver.
+
+### Maintainer release-gate decision — 2026-10-13
+
+On **2026-10-13**, the maintainer explicitly authorized removing AnkiMobile testing
+from the v0.2.1 release gate and continuing through the v0.2.1 release. This later
+decision changes release-gate scope only: **actual Linux Anki Desktop acceptance
+remains required**; AnkiMobile auto remains **unverified**, not passed or certified.
+It does not retroactively change the 2026-10-11 implementation-only deferral or any
+dated historical evidence above. No native acceptance run or certification is claimed
+by recording this decision.
+
+### Current required native Desktop checks
+
+Record date/time, source commit, CSS version/digest and installation method, and Anki
+Desktop version/build and Linux OS. Use isolated synthetic profiles/collections only;
+do not use a live collection, account or sync. Apply/import through the actual native
+Anki Desktop dialog and inspect cards in its actual reviewer. A backend fixture,
+browser render, editor preview, or simulated Anki class is supporting evidence only
+and cannot satisfy this gate. Keep the no-CSS-in-CSV, template/field/slot binding and
+manual setup constraints above.
+
+1. Cover each affected phrase, principal-part and form-parsing recipe using synthetic
+   isolated profiles. Import and verify the relevant note type, fields and mappings
+   in the native import dialog; preserve template names/order and scheduled bindings.
+2. For each recipe, exercise both muted and monochrome palettes at default, fixed
+   `light`, fixed `dark` and `auto`. In the native reviewer inspect the actual front,
+   reveal and answer; inspect the static comparison and exercise the native disclosure
+   collapsed, opened and closed. Check answer, stem/marker/ending distinction, role
+   labels and prose for contrast, wrapping and readability.
+3. On the same `auto` cards, change native Desktop appearance light → night → light
+   without regeneration or reimport. Record any required reload/reveal and confirm
+   readable recoloring at each step.
+4. Confirm default/fixed light remain light and fixed dark remains dark under each
+   Desktop appearance; monochrome segments follow text color, not muted accents.
+5. No live collection, account, sync, existing-schedule update, or real-user content
+   is in scope. Do not infer safety or acceptance beyond the isolated synthetic run.
+
+| Palette / setting | Linux Anki Desktop light → night → light |
+|---|---|
+| muted / default (light) | pending: stays light, readable |
+| muted / fixed light | pending: stays light, readable |
+| muted / fixed dark | pending: stays dark, readable |
+| muted / auto | pending: light → dark → light, readable |
+| monochrome / default (light) | pending: stays light, readable |
+| monochrome / fixed light | pending: stays light, readable |
+| monochrome / fixed dark | pending: stays dark, readable |
+| monochrome / auto | pending: light → dark → light, readable |
+
+Native Linux Desktop results remain pending until this actual interaction matrix is
+executed and recorded. AnkiMobile remains unverified and outside the v0.2.1 release
+gate; neither its historical fixed-mode results nor the partial Desktop smoke above
+establish the new appearance acceptance. CSS, runtime and fallback behavior are
+unchanged by the gate decision.

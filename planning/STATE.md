@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-13T20:19:12Z"
+updated_at: "2026-10-13T20:32:28Z"
 active_spec_version: v0.2.1
 active_spec_path: specs/v0.2.1.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: No active-spec task is ready
-last_verification_result: pass for T-095-correct-remaining-retained-payload-transport at 2026-10-11T21:12:43Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-096-scope-v0-2-1-native-release-acceptance-to-linux at 2026-10-13T20:32:28Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-095-correct-remaining-retained-payload-transport at 2026-10-11T21:12:43Z
+- pass for T-096-scope-v0-2-1-native-release-acceptance-to-linux at 2026-10-13T20:32:28Z
 
 ## Next Action
 
-- No active-spec task is ready
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 1
 - in_progress: 0
-- completed: 94
+- completed: 95
 - blocked: 0
 - cancelled: 0
