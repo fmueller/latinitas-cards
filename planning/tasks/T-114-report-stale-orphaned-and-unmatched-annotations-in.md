@@ -53,7 +53,8 @@ on any command (T-125), decision staleness (T-115), dependency-aware plan routin
   records and all line 2 and 3 records stay `current`.
 - `annotations inspect --json` lists for every record its `annotation_id`, layer, state,
   flags, `passage_id`, the corpus header `source.sha256`, producer, `plan` and `created`,
-  in sidecar order; text output escapes controls.
+  plus `input_hash`, in sidecar order; text output escapes controls. This is the
+  provenance surface consumed by T-119; it requires no claim join.
 - `corpus show CORPUS --annotations SIDECAR --json` returns passages in corpus order
   (default `--limit 20`, `--limit 1000` accepted; `--limit` is a Click `IntRange(1, 1000)`,
   so `--limit 1001` and `--limit 0` exit 2; repeated `--passage ID` selects those IDs and an

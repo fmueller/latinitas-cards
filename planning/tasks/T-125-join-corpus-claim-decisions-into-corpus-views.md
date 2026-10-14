@@ -22,7 +22,7 @@ validate`, `corpus show` and `annotations inspect`. It builds on the anchor stat
 `annotations inspect`, `corpus show` and `corpus validate --annotations` of T-114 and on
 the version 2 claim sidecar and `corpus_claims` of T-115. It adds the `--claims SIDECAR`
 option to those three commands and a join helper; no other command or option is added. Not
-in this task: decision-aware plan routing (T-119) and any change to `claims
+in this task: decision-aware planning/apply safety (T-117, T-119) and any change to `claims
 list|record|inspect` (T-115).
 
 ## Acceptance
@@ -40,7 +40,9 @@ list|record|inspect` (T-115).
 - In `corpus show` and `annotations inspect`, an annotation with no decision is reported
   with `review_status` `open` (the `claims list` value set `open|accepted|withheld`); no
   decision is created or changed by any of the three commands.
-- `--claims` without `--annotations` exits 2 `usage_error` (decisions bind annotations).
+- On `corpus show`/`corpus validate`, `--claims` without `--annotations` exits 2
+  `usage_error` (decisions bind annotations). `annotations inspect` already takes its
+  annotation SIDECAR positionally; it must not require a nonexistent `--annotations` flag.
   A `--claims` file that is missing or unreadable exits 3 `unreadable`; a version 1 or
   higher-version document exits 3 `unsupported_version`, both with one `CliResult` envelope
   under `--json`. The three commands stay read-only: corpus, sidecar and claims file bytes

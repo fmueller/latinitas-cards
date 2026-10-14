@@ -7,6 +7,7 @@ spec_ref: specs/v0.3.0.md#agent-ready-cli-contract
 dependencies:
     - T-116-define-the-versioned-automation-policy-file-and
     - T-114-report-stale-orphaned-and-unmatched-annotations-in
+    - T-115-record-corpus-claim-decisions-through-claim
 updated_at: "2026-10-14T05:42:59Z"
 ---
 
@@ -22,8 +23,9 @@ Add the patch and plan halves of the annotation write flow in
 `-plan`, `-receipt`; **Identity and hashing**: `operation_id`, `plan_id`). Approval
 follows `managed approve` (`managed_plans.approve_plan`: explicit operation IDs, review
 text, no approve-all). It uses the router (T-116), dependents (T-114) and `write_artifact`
-(T-103). Not in this task: writing the sidecar (T-118) and decision-based destructiveness
-plus the cross-command actor matrix (T-119).
+(T-103). This task owns complete plan-time safety facts, including decisions from T-115.
+Writing the sidecar is T-118; apply-time policy revalidation and the cross-command
+adversarial matrix are implementation work owned by T-119.
 
 ## Acceptance
 
@@ -38,7 +40,7 @@ plus the cross-command actor matrix (T-119).
   test covers their `.v1.schema.json` files.
 - `annotations plan` writes `{format: "latinitas-annotation-plan", version: 1, plan_id,
   base: {corpus_header, sidecar, policy, patch}, receipt_actor, patch, operations:
-  [{operation_id, index, route, reasons, records}]}` where `base` holds `sha256:` digests
+  [{operation_id, index, route, reasons, safety, records}]}` where `base` holds `sha256:` digests
   (`sidecar` null when the file is absent, `policy` null without `--policy`), `patch` is
   the canonical patch embedded for apply's recheck, `records` are the annotation or
   retraction records apply would append minus `plan` (apply sets it, avoiding a digest
@@ -59,11 +61,25 @@ plus the cross-command actor matrix (T-119).
   code, plus the findings) or an unsupported/invalid sidecar (`unsupported_format`,
   `unsupported_version`, `invalid_sidecar`).
 - Routing calls `policy.route` with `destructive` true for a `supersede`/`retract` whose
-  target has dependents (`annotation_state.dependents`) and `conflicting` true for two
+  target has dependents (`annotation_state.dependents`) or an accepted/withheld v2
+  decision matching `binding.annotation_id`, even if stale, and `conflicting` true for two
   operations in the patch, or an operation and a current sidecar record, giving different
   values for one anchor and layer from the same producer (`kind`, `name`, `version`);
   identical values are not conflicting. An `add` already present in the sidecar is routed
   normally (apply skips it).
+- Persist per-operation `safety: {decision_status: accepted|withheld|null, dependents:
+  [sorted annotation IDs], conflicts: [sorted annotation IDs]}`; decision status is null
+  and dependents empty for add. Compute dependents/conflicts against the effective
+  sidecar and the entire embedded patch, deduplicated by annotation ID; a proposed
+  dependent/conflict must count before any append. Own already-present records do not
+  conflict with themselves. Test a patch-proposed dependent on a retract target and
+  same-ID proposals with differing `created`: sorted facts and routes must not change
+  when an expected proposal later appears in a same-plan suffix.
+- Read decisions only from `<CORPUS>.claims.json`, never a new option or claims digest
+  in `base`. Absence means no decisions; unreadable/malformed/v1 files exit 3
+  (`unreadable`/`invalid_sidecar`/`unsupported_version`), not an empty set. Tests cover
+  accepted, withheld and stale bindings, plus absence and each rejected file class.
+  These are contract-group exits, distinct from the legacy `claims` exit-1 failures.
 - Output rules: an identical existing PLAN or RECEIPT is a no-op (exit 0); different bytes
   exit 3 `exists`; an output aliasing PATCH, CORPUS, SIDECAR, the policy,
   `<CORPUS>.claims.json`, a manifest or any `.lock` (direct, symlink, hard link) exits 3
@@ -90,6 +106,10 @@ plus the cross-command actor matrix (T-119).
   callbacks in `commands/annotations.py`; reuse `annotation_sidecar.py` records and IDs,
   the corpus reader `corpus_io` (T-104), `policy.load_policy`/`route`/`policy_digest`, and
   `atomic_io.write_artifact`/`reject_aliases`. Plans store no paths.
+- Keep safety-fact evaluation reusable by T-119's apply revalidation, with a current
+  corpus, effective sidecar, whole patch and decision snapshot supplied by the caller.
+  Reuse T-115's v2 loader read-only; no claim-recording calls. Update the plan schema,
+  fixtures and docs with the required safety fields now, not as a later schema retrofit.
 - Fixtures under `tests/fixtures/annotations/`: `fixture-morph.patch.json` (auto adds),
   `mixed.patch.json` (one auto add, one supersede, one deny-matched add, one invalid op),
   `mixed-valid.patch.json` (the same without its invalid operation) and
@@ -101,4 +121,5 @@ plus the cross-command actor matrix (T-119).
   by the spec: accept an `auto` ID as a no-op selection. Document all three in
   `docs/agent-cli-contract.md`.
 - TDD order: patch model, IDs, classification, routing facts, output rules, approve. Size
-  guard: one module plus two callbacks.
+  guard: one module plus two callbacks, v2 loader reuse and required plan schema/fact
+  tests. Complete plan-time facts belong here; do not defer them because of size guards.

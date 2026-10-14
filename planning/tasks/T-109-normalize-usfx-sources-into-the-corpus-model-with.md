@@ -32,7 +32,10 @@ legacy commands keep ElementTree until T-112.
   `h` (-> `work.title`), `c@id|n`, `v@id|n` in milestone (`<v id="1"/>...<ve/>`) and
   container (`<v id="1">...</v>`, optional trailing `<ve/>`) form, and `ve`. `id` wins over
   `n`. `native_ref = <book>.<chapter>.<verse>` with each attribute string encoded by
-  `corpus_model.encode_ref_component` (`3a` stays `3a`; `1.2` becomes `1%2E2`); citation
+  `corpus_model.encode_ref_component` from NFC UTF-8 once (`3a` stays `3a`; `1.2`
+  becomes `1%2E2`, `%2E` becomes `%252E`, `é` becomes `%C3%A9`); encoded refs must pass
+  T-104's uppercase-escape grammar without decode/re-encode. Pin these values in synthetic
+  normalization/validation round trips, including distinct raw `.` and `%2E` IDs; citation
   scheme `usfx-bcv`, parts book/chapter/verse with raw strings, `display` `"GEN 1:3a"`.
 - Passages keep document order (no book sort), `order` 1-based; works in first-appearance
   order. Passage text = verse character data joined without inserted separators, then

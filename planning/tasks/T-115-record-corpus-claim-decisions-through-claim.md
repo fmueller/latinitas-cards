@@ -24,8 +24,8 @@ binds only `base_fingerprint`, `Claim` requires a `DeckProfile` and `ClaimKind` 
 fingerprints, the v1 schema and its serializer must not change; the characterization
 goldens (T-102) prove it. `claims` keeps its v0.2.1 JSON shape and codes; it gets no
 `CliResult` envelope. Not in this task: plan/approve/apply (T-117, T-118), decision-aware
-routing (T-119), and the `--claims` options of `corpus show`, `corpus validate` and
-`annotations inspect` (T-125).
+planning and apply revalidation (T-117, T-119), and the `--claims` options of
+`corpus show`, `corpus validate` and `annotations inspect` (T-125).
 
 ## Acceptance
 
@@ -61,6 +61,11 @@ routing (T-119), and the `--claims` options of `corpus show`, `corpus validate` 
   (Fixed Contracts); a batch item carrying `value`, `evidence` or `selected_sense` rejects
   the batch (exit 1, `invalid`). Combining `--annotations` with `--profile`,
   `--phrase-input`, `--selections`, `--recipes` or `--artifact` exits 1.
+- Explicit exception tests retain legacy claims JSON and diagnostics, not `CliResult`:
+  unreadable/malformed/v1 corpus decision files and invalid batch items fail with exit 1;
+  each of the three corpus-only forbidden options fails with exit 3 and unchanged files;
+  Click usage errors still exit 2. Do not generalize the contract groups' exit 3 input
+  rejection to `claims`, or change deck failures from exit 1.
 - Using `annotation_state` (T-114) and the committed staleness fixtures
   `tests/fixtures/corpus/wsl-three.corpus.jsonl` and `wsl-three-edited.corpus.jsonl` (line
   2 differs by one word, same `passage_id`s) and a sidecar with segmentation and
@@ -88,7 +93,8 @@ routing (T-119), and the `--claims` options of `corpus show`, `corpus validate` 
   `Claim`, `record_batch` and the principal-part checks untouched for deck mode and add a
   corpus recording path that reuses the same blocking `fcntl.LOCK_EX`,
   validate-all-then-replace protocol (factor the shared lock/replace into a helper only if
-  v1 bytes stay identical).
+  v1 bytes stay identical). Use `<CORPUS>.claims.json.lock`, the same persistent lock
+  apply will acquire nonblocking in T-118; never unlink it or introduce another lock path.
 - `load_sidecar` peeks at `version` before model validation so v2 yields
   `unsupported_version` rather than a Pydantic `invalid` message; the new code is a
   `claims`/deck diagnostic, not a contract-registry entry unless a contract command raises

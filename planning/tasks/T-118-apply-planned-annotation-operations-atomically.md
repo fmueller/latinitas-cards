@@ -22,8 +22,9 @@ only by this plan, append `auto` and receipted operations atomically, and make r
 `already_applied`. It implements Fixed Contracts **Exit codes** (`binding_drift`, `busy`,
 `denied`, precedence 3 > 4 > 5 > 1) and **Runtime rules** (`created`). It consumes plans
 and receipts (T-117), the writer (T-113, `atomic_io`) and must leave claim decisions
-untouched (T-115). Not in this task: decision-based destructive routing and the
-cross-command actor/invalid matrix (T-119).
+untouched (T-115). This task owns apply's locked snapshot/write transaction. T-119
+implements pending-operation policy/safety-fact revalidation inside that transaction,
+plus the cross-command actor/invalid matrix; it is not merely a test-only follow-up.
 
 ## Acceptance
 
@@ -63,16 +64,23 @@ cross-command actor/invalid matrix (T-119).
   plan; review record appended); apply again: `result.already_applied: true`, exit 0,
   sidecar byte-identical. Negative control: a plan from a changed patch does append.
   Replanning the identical patch against the advanced sidecar and applying adds no record.
-- While the test process holds `fcntl.flock` on `<SIDECAR>.lock`, apply exits 4 `busy`
-  with no byte change; a failure injected into `os.replace` keeps the previous sidecar and
-  leaves no temp file.
+- Hold `<CORPUS>.lock`, `<SIDECAR>.lock` and `<CORPUS>.claims.json.lock` exclusively,
+  nonblocking, in lexical resolved-path order, before reading current corpus, sidecar
+  or decisions through revalidation and replacement. Contention on any one exits 4
+  `busy`, with no data changes; release earlier locks on later-lock failure. Never unlink
+  locks. Corpus normalization shares the corpus lock; `claims record` keeps its blocking
+  lock on the same claims path. Test each held lock and a competing normalizer/claim
+  writer; no snapshot change can interleave before sidecar replacement. A failure
+  injected into `os.replace` keeps previous sidecar bytes and leaves no temp file.
 - Determinism: plan and apply run in two subprocesses with different working directories,
   `TZ`, `LC_ALL`, `PYTHONHASHSEED` and relative versus absolute paths, with one
   `--timestamp`, give byte-identical sidecars and plans free of absolute paths, hostnames and
   wall-clock values.
-- Scope: a directory snapshot test shows apply changes only SIDECAR and creates only
-  `<SIDECAR>.lock`; `<CORPUS>.claims.json`, CSV, managed state and package files are never
-  opened for writing, and no claim decision is recorded. Matrix row `annotations apply: 0,
+- Scope: a directory snapshot test shows apply changes only SIDECAR and may create the
+  corpus, sidecar and claims lock files above, including when claims are absent;
+  CORPUS, `<CORPUS>.claims.json`, CSV, managed state and package data are never opened
+  for writing, and no claim decision is recorded. Protect all inputs, manifests and locks
+  against direct/symlink/hard-link output aliases. Matrix row `annotations apply: 0,
   2, 3, 4, 5`.
 - Pass the mandatory ruff/mypy/pytest chain; `mise run check` passes.
 
@@ -86,10 +94,15 @@ cross-command actor/invalid matrix (T-119).
 - New `annotation_apply.py` (binding checks, prefix scan, append selection) and an `apply`
   callback in `commands/annotations.py`; reuse `annotation_sidecar.append_records`,
   `resolve_created`, `annotation_plans` loaders and `policy_digest`.
-- Take the writer lock before reading SIDECAR and hold it through the digest check and
-  `atomic_replace`, so the check and the write see the same bytes.
+- Use T-103's multi-lock primitive and a locked append/replace path; allow a narrow
+  `annotation_sidecar` integration edit to avoid reacquiring an already-held lock.
+  Leave a shared evaluation seam for T-119 to compare current pending-operation validity,
+  route and complete persisted `safety` facts before any append, under these same locks.
+  Do not introduce a claims digest or write decisions.
 - Report `already_applied` when no record would be appended and every selected operation's
   records are already present; report `pending` operation IDs and `denied` warnings in
   `result` and diagnostics.
 - A receipt plan mismatch is treated as exit 3 (rejected input), not drift; document it in
-  the matrix notes. Size guard: one module plus one callback.
+  the matrix notes. Size guard: one module plus one callback and necessary existing
+  sidecar/shared I/O integration for the multi-lock transaction. Lock correctness cannot
+  be deferred by the former single-module limit.

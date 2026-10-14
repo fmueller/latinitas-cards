@@ -28,7 +28,10 @@ text and passage sequences. Wrapping results into `segmentation` annotation reco
   tokens are maximal runs of `[\w\u0300-\u036F]+` (Python `re`, Unicode) or a single
   `[^\w\s]` code point, with `kind` `word` or `punct` and code-point offsets `[start, end)`
   into `text`; whitespace is never a token; enclitics (`Dixitque`, `virumque`) stay one token;
-  an apostrophe is its own `punct` token (literal regex reading; no special joining).
+  an apostrophe is its own `punct` token, both U+0027 and U+2019. Use the executable
+  Python pattern `r"[\w\u0300-\u036F]+|[^\w\s]"`; no special joining or extra escaping.
+  Literal regression vectors: `d'arma` -> `d`, `'`, `arma` with spans `[0,1)`, `[1,2)`,
+  `[2,6)`, and `d’arma` with the same code-point spans; neither is one word token.
 - `segment_passage(text, tokens)` ends a sentence after a `.`, `?` or `!` token plus any
   closer tokens (`"`, `'`, `)`, `»`, `”`) that start exactly at the previous token's end
   offset; `:` and `;` never end a sentence; there is no abbreviation list. Sentence spans run
@@ -70,6 +73,6 @@ text and passage sequences. Wrapping results into `segmentation` annotation reco
 - Return frozen dataclasses (`Token(start, end, kind)`, `Sentence(start, end, token_start,
   token_end, continues, continued)`); the serialized annotation `value` shape is defined by
   T-113, which must not change these rules.
-- If a rule reading seems wrong (for example apostrophe handling), do not amend the rules
-  or the spec: keep the literal reading and file a blocked follow-up for the maintainer.
+- Apostrophe handling is resolved by the prepared spec, not an open maintainer decision.
+  Keep its literal punctuation rule; implementation workers may not amend the spec.
 - Size guard: one module and its tests; no command. File a follow-up rather than widen.

@@ -29,6 +29,7 @@ dependencies:
     - T-123-document-pypi-installation-extras-and-the
     - T-124-validate-integrated-v0-3-0-workflows-offline-and
     - T-125-join-corpus-claim-decisions-into-corpus-views
+    - T-126-prepare-v0-3-0-orchestrated-loop
 updated_at: "2026-10-14T05:43:05Z"
 ---
 
@@ -98,6 +99,9 @@ cites no Anki or Mobile evidence.
   add any such follow-up as a dependency before unblocking. Follow-ups filed by T-124 do
   not depend on T-124; the maintainer adds each v0.3.0 task created after 2026-10-14 to
   this task's `dependencies` before unblocking. id and `spec_ref` unchanged.
+- T-126 is preparation, not release authorization; it must be completed along with all
+  implementation and integrated-validation work. Keep this task blocked until the
+  maintainer attends and explicitly unblocks it; no autonomous worker may release it.
 - v0.3.0 follow-up rule. (a) A defect in completed work that the current task builds on is
   fixed inside the current task, with a regression test, not filed as a follow-up: the
   selector would run the follow-up only after every remaining higher-priority or lower-id

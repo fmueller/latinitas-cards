@@ -19,7 +19,8 @@ JSONL corpora to `cloze`, per `specs/v0.3.0.md#usfx-normalization` (third paragr
 golden" Acceptance sentences). After T-108, `usfx_adapter.legacy_projection` still uses
 ElementTree; this task reimplements it on the expat event reader from T-109/T-110 in a
 lenient mode that reproduces the old DataFrame exactly, so rejecting a
-DTD/entity declaration is the only intended legacy change. `preview`/`generate`/`validate`
+DTD/entity declaration or size/depth-unsafe XML is the only intended legacy change.
+`preview`/`generate`/`validate`
 gain no corpus option and no deprecation notice. Corpus-first cards are v0.4.0.
 
 ## Acceptance
@@ -33,13 +34,16 @@ gain no corpus option and no deprecation notice. Corpus-first cards are v0.4.0.
 - The differential test from T-108 (`tests/unit/legacy_usfx_reference.py` oracle)
   passes on every golden and inline USFX fixture plus new lenient-edge fixtures (uppercase
   tags, `<b code>`, `<chapter n>`, a default-namespace document, text after `</v>` before
-  `<ve/>`); any intentional divergence other than DTD/entity rejection fails the task.
+  `<ve/>`); any intentional divergence other than XML safety rejection fails the task.
 - Every T-102 golden case passes byte-for-byte with no golden file modified, including the
   full-Vulgate `generate --usfx` digest; the existing USFX tests pass. The spy test still
   shows each legacy path calls `legacy_projection` exactly once.
 - A DOCTYPE or entity declaration given to `preview --usfx`, `generate --usfx`, `cloze`
   (USFX) or `validate --usfx` exits 3 with an `unsafe_xml` message on stderr and writes no
   output file; malformed XML keeps its current legacy behaviour (validate: FAIL row, exit 1).
+- The same legacy paths enforce T-110's 64 MiB and depth-64 limits: over-size/depth-65
+  XML exits 3 (`input_too_large`/`depth_exceeded`) without output; size/depth boundary
+  controls pass. These expected adapter errors never become a legacy validate FAIL/exit 1.
 - `cloze --corpus-format` accepts `jsonl`; `auto` maps `.jsonl` to `jsonl` (previously
   `txt`; `--corpus-format txt` restores it, tested). Each passage is one context with
   `ref = citation.display`, also when mixed with USFX/txt/CSV corpora in one run (the
@@ -80,7 +84,8 @@ gain no corpus option and no deprecation notice. Corpus-first cards are v0.4.0.
   line L, column C`, raised as a `ValueError` subclass caught where `ET.ParseError` was),
   because the `validate` golden prints it. Default-namespace tags must be compared as
   ElementTree saw them (`{uri}tag`), which the differential fixture pins.
-- The legacy exit 3 for unsafe XML is a typed adapter error caught in the four call
-  sites; do not add envelopes or JSON output to legacy commands (v0.8.0 scope).
+- The legacy exit 3 for unsafe, over-size or over-depth XML is a typed adapter error
+  caught in the four call sites; do not add envelopes or JSON output to legacy commands
+  (v0.8.0 scope).
 - Size guard: `usfx_adapter.py`, one cloze loader module and call-site edits in `cli.py`.
   File a follow-up rather than widen.

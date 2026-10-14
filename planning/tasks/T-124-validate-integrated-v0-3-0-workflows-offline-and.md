@@ -12,6 +12,7 @@ dependencies:
     - T-120-report-effective-configuration-and-guarantee-no
     - T-123-document-pypi-installation-extras-and-the
     - T-125-join-corpus-claim-decisions-into-corpus-views
+    - T-126-prepare-v0-3-0-orchestrated-loop
 updated_at: "2026-10-14T05:42:59Z"
 ---
 
@@ -37,6 +38,10 @@ activating v0.4.0 is out of scope for both this task and T-038.
   (`active_spec_drift.away`) are ignored. Otherwise: if every other open v0.3.0 task is
   `blocked`, `taskrail block` this task naming each one (a maintainer decision is needed).
   If any open v0.3.0 task is `todo`, requeue this task as described below.
+- T-126 preparation must be completed before this task starts; it is not an additional
+  exception to the all-other-work guard. Preserve T-038 as the only blocked maintainer
+  release gate. An unexpected other `in_progress` task is not readiness: stop and report
+  the lifecycle inconsistency without overriding the single-active-task constraint.
 - In a temp dir outside the checkout, a walkthrough of documented commands exits as
   documented: `corpus normalize <repo>/data/lat-clementine.usfx.xml --adapter usfx --corpus-id
   vulgata-clementina --descriptor data/lat-clementine.descriptor.json --output
@@ -56,6 +61,17 @@ activating v0.4.0 is out of scope for both this task and T-038.
   ref exits 3. A second fresh directory with different `TZ` and locale reproduces every
   normalize, segment, plan and apply output SHA-256, and the Vulgate output digest equals
   the committed full-corpus oracle digest.
+- Prepared-contract controls: normalize templated refs containing raw `%2E` and `é`,
+  validate the encoded `%252E`/`%C3%A9` spellings and raw citation values; segment both
+  `d'arma` and `d’arma` into word/punctuation/word tokens. Exercise legacy claims JSON
+  and exit exceptions (forbidden corpus options: 3; invalid batch: 1, no writes).
+  Plan/approve a retract, then record an accepted and separately withheld decision;
+  old-receipt apply exits 4 `binding_drift`, unchanged sidecar. An unrelated decision
+  change permits apply, and unchanged partial/re-receipted/no-op retries remain valid.
+  Cite T-107's interruption/recovery evidence (before/between/after replacements,
+  first creation, original approved rerun, no double allocation), and T-118/T-119's
+  lock/concurrent-claim and same-plan-dependent/conflict regression results. Do not
+  duplicate their fault-injection machinery or claim two-path atomic visibility.
 - Golden files committed by T-102 are unchanged since the commit that added them: `git
   diff $(git log --diff-filter=A --format=%H -1 --
   tests/fixtures/goldens/legacy-vulgate/cases.json) -- tests/fixtures/goldens/legacy-vulgate
@@ -113,8 +129,9 @@ activating v0.4.0 is out of scope for both this task and T-038.
   only T-123 pre-adds one, its PyPI bullet, which is folded in); per AGENTS.md no task IDs
   or evidence. The date is the candidate date; T-038 may correct only that date before
   tagging.
-- v0.3.0 follow-up rule. (a) A defect in completed work that the current task builds on is
-  fixed inside the current task, with a regression test, not filed as a follow-up: the
+- v0.3.0 follow-up rule for implementation tasks (not this validation-only task). (a) A
+  defect in completed work that the current implementation task builds on is fixed
+  inside that task, with a regression test, not filed as a follow-up: the
   selector would run the follow-up only after every remaining higher-priority or lower-id
   task. (b) Follow-ups are filed only for work that no remaining v0.3.0 task needs. They
   use `--priority medium` or `high`, never `low`, so they run before T-124. (c) A follow-up

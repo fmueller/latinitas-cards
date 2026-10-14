@@ -69,12 +69,19 @@ issue first, not necessarily a code regression.
 
 Planning and task state live in the repo, managed by the `taskrail` CLI.
 
-- `specs/` — versioned specs. `specs/v0.1.0.md` defines the first release and
-  `specs/v0.2.0.md` is active for managed updates, extraction, form parsing and
-  morphology themes. Activate later specs through Taskrail.
+- `specs/` — versioned specs. Releases through v0.2.1 are complete;
+  `specs/v0.3.0.md` is active for normalized corpora, annotation sidecars,
+  agent-ready CLI contracts, policy-gated writes, and PyPI publishing.
+  Activate later specs through Taskrail.
 - `planning/STATE.md` — current focus, blockers, next action.
 - `planning/tasks/` — one file per task, each linked to a spec heading via `spec_ref`.
 - `planning/artifacts/` — verification artifacts, gitignored.
+
+The v0.3.0 implementation loop follows the spec's Fixed Contracts and exclusions;
+it does not change Anki-facing output or reopen v0.2.x native acceptance gates.
+T-038 remains a blocked maintainer-only release gate, not autonomous loop work.
+Only the maintainer unblocks it after all other v0.3.0 tasks are complete and
+authorizes release publication.
 
 ```bash
 taskrail status                 # current snapshot (read-only)

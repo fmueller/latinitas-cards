@@ -41,6 +41,10 @@ by T-125; `corpus show` (T-114) and `corpus config` (T-120) belong to other task
   non-string citation value (`invalid_citation`), a float anywhere (`float_value`), and
   schema/order violations such as a missing `corpus` record or a gap in `order`
   (`invalid_record`). Each test asserts the exact code set, not just the exit code.
+- Encoded-ref fixtures accept uppercase `%HH` escapes and literal separator dots;
+  malformed escapes (`%`, `%2`, `%GG`, `%2e`) and raw non-ASCII refs are exit 1
+  `invalid_record` findings, not header-gate errors. Preserve encoded spelling verbatim;
+  `%252E` and `%2E` are distinct valid refs, not duplicate refs after decoding.
 - A file with several defects reports all of them in file order (no fail-fast after the
   header gate); a file with both a gate failure and findings exits 3 (precedence 3 > 1).
 - Text mode (default) prints one line per diagnostic (`<severity> <code> <ref>: <message>`)

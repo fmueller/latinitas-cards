@@ -11,11 +11,14 @@ This repository uses versioned specs under `specs/`.
   evidence-led extraction, calibrated form parsing, and morphology themes.
 - `specs/v0.2.1.md` defines the completed release spec for deck-based phrase
   and grammar practice, shared claim decisions, terminology, form translations and
-  automatic appearance. v0.2.1 is released, and v0.3.0 is being activated next.
-- `specs/v0.3.0.md` is the next release spec, not yet active; activation happens through
-  Taskrail. It adds a normalized JSONL corpus model with USFX and plain-text adapters,
+  automatic appearance. v0.2.1 is released.
+- `specs/v0.3.0.md` is the active implementation spec, activated through Taskrail;
+  it is not yet released. It adds a normalized JSONL corpus model with USFX and plain-text adapters,
   annotation sidecars, an agent-ready CLI contract, policy-gated sidecar writes and PyPI
-  publishing.
+  publishing. The loop follows its Fixed Contracts and exclusions without changing
+  Anki-facing output or reopening v0.2.x native acceptance gates. T-038 stays blocked
+  as the maintainer-only release gate; only the maintainer unblocks it after all other
+  v0.3.0 tasks are complete and authorizes release publication.
 - `specs/v0.4.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
   preserve the agreed progression through corpus-first generation, grammar/syntax study,
   optional direct Anki integration, reproducible projects, CLI/migration hardening,

@@ -361,7 +361,8 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v021() -> Non
     assert "`specs/v0.2.0.md` defines the completed release spec" in spec_index
     assert "`specs/v0.2.1.md` defines the completed release spec" in spec_index
     assert "v0.2.1 is released" in spec_index
-    assert "`specs/v0.3.0.md` is the next release spec" in spec_index
+    assert "`specs/v0.3.0.md` is the active implementation spec" in spec_index
+    assert "it is not yet released" in spec_index
     candidate = (ROOT / "docs" / "release-v0.2.1.md").read_text(encoding="utf-8")
     assert "Release: [v0.2.1]" in candidate
     assert "Publication remains pending" not in candidate

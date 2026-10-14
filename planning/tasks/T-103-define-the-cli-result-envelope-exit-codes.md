@@ -71,6 +71,14 @@ codes), `corpus config` and the no-prompt guarantee (T-120).
   test process gives `busy` with bytes unchanged; a monkeypatched failing `os.replace`
   keeps the old file and leaves no temp file; each alias form is rejected with nothing
   written.
+- Provide reusable multi-file locking in lexical resolved-path order, exclusive and
+  nonblocking, holding every acquired lock until the protected operation ends. Never
+  unlink lock files; release acquired locks on contention or failure. Tests acquire the
+  same paths in reversed caller order and contend on a later lock without leaking an
+  earlier lock. T-107 and T-118 use this primitive, not nested independent writer calls.
+  Stage/fsync and replacement primitives must permit T-107 to stage both outputs before
+  replacing either and fsync each parent directory after replacement. Expected filesystem
+  failures map to exit 3 `unreadable`, not `internal` (70).
 - `src/latinitas_cards/canonical.py`: `canonical_json(value) -> str` (`sort_keys=True,
   ensure_ascii=False, separators=(",", ":"), allow_nan=False`, raising `ValueError` on any
   `float`), `digest(value) -> "sha256:<hex>"` over its UTF-8 bytes and `digest_bytes(data)
@@ -114,6 +122,10 @@ codes), `corpus config` and the no-prompt guarantee (T-120).
 - `atomic_io.py` is the single writer primitive for T-104 (`corpus_io.write_corpus`),
   T-107, T-109, T-113, T-117 and T-118; do not migrate `claims record` (it keeps its
   blocking lock) or `save_selections` in this task.
+- Document the `claims` exception in the exit matrix: deck and corpus commands retain
+  v0.2.1 JSON/codes and failures exit 1, except corpus `--value`, `--evidence` and
+  `--selected-sense` rejection (exit 3); invalid batch items remain exit 1 and Click
+  usage errors exit 2. No envelope retrofit or claims implementation belongs here.
 - TDD order: registry/docs test, envelope model, exit precedence, `run_contract`,
   `atomic_io`, `canonical`/`json_schemas`, `--version`. Size guard: do not add any helper
   beyond `cli_contract.py`, `atomic_io.py`, `canonical.py`, `json_schemas.py`,

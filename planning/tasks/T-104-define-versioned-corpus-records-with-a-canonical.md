@@ -40,7 +40,12 @@ T-106.
   `citation.display`: `usfx-bcv` `"<book> <chapter>:<verse>"`; `ordinal` the ref; templates
   the raw label.
 - `corpus_id` regex `^[a-z0-9][a-z0-9-]{1,62}$`; `encode_ref_component()` percent-encodes
-  UTF-8 bytes outside `[A-Za-z0-9_-]` with uppercase hex (`.` -> `%2E`, `3a` unchanged);
+  NFC UTF-8 bytes once outside `[A-Za-z0-9_-]` with uppercase hex (`.` -> `%2E`,
+  `%` -> `%25`, `é` -> `%C3%A9`, `3a` unchanged); join components with literal `.`.
+  `native_ref` matches `^(?:[A-Za-z0-9._-]|%[0-9A-F]{2})+$`; validators check the
+  encoded spelling without decoding/re-encoding. Tests accept `GEN.1.1%2E2`, `%25` and
+  `%C3%A9`, reject bare `%`, `%2`, `%GG`, lowercase `%2e`, raw non-ASCII and empty refs,
+  and distinguish raw source `%2E` (encoded `%252E`) from raw source `.` (`%2E`).
   `passage_id = corpus_id + ":" + native_ref`, NFC, at most 256 UTF-8 bytes; tests cover
   each rejection.
 - `canonical_text()` = NFC, every Unicode whitespace run (incl. U+00A0, tab, newline) to one

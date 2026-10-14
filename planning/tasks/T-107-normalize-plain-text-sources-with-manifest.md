@@ -51,6 +51,37 @@ from T-103; validation reuses T-105.
   `result.review_items` lists `{kind: edited|inserted|duplicate|removed, ordinal: N|null,
   candidates: [ref...]}` in ordinal order, removed items last; `inserted` is this format's
   name for the CSV reconciler's `unmatched`.
+- Manifest-backed writes are recoverable two-file commits, not atomic visibility across
+  paths. Hold `<output>.lock` and `<manifest>.lock` from old-state reads through both
+  replacements, in lexical resolved-path order, nonblocking (exit 4 `busy`), never
+  unlinking locks. Validate reconciliation and stage/fsync both files before replacing
+  the manifest, then the corpus; fsync each parent directory after its replacement.
+- Required manifest `materialization` stores `request_digest`, `corpus_digest` and
+  `previous_corpus_digest` (null on first creation), retained after success as the last
+  committed transition receipt. Request digest covers source raw digest and basename,
+  corpus ID, adapter/rule versions, language, descriptor content and canonical approvals
+  (reuse pairs sorted by ordinal/ref, allocation ordinals/removal refs sorted); reject
+  duplicate/contradictory flags before committing. Never hash paths or timestamps.
+  Corpus digests cover file bytes; do not reconcile/advance until the corpus matches
+  the committed target digest. No third journal or new recovery command.
+- If the corpus is absent or matches `previous_corpus_digest`, an identical request
+  rebuilds using committed assignments, verifies `corpus_digest`, and replaces only the
+  corpus without reapplying approvals or advancing `next_ref`. A different request,
+  unexpected corpus bytes or irreproducible target digest exits 4 `binding_drift` with
+  both files unchanged. When corpus bytes already match the target, an identical request
+  (including original approval flags) is a byte-identical no-op; a new request reconciles.
+- Adversarial recovery tests inject failure before manifest replacement, between the
+  two replacements, and after corpus replacement. The identical approved rerun must
+  equal an uninterrupted run byte for byte, including duplicates, removed/retired refs
+  and `next_ref`; no double allocation or approval consumption. Cover first creation
+  with absent old corpus, same-target no-op and a subsequent distinct valid request.
+  Pending recovery rejects independently changed source, basename, descriptor, corpus ID,
+  language or approvals, unexpected corpus bytes and failed digest reproduction (4,
+  unchanged files). Reordered equivalent flags and relocated paths keep request identity.
+  Expected replacement failures exit 3 `unreadable`; after manifest commit instruct the
+  caller to rerun the identical request. Clean temps on handled errors; interrupted-run
+  orphan temps are never committed state. Read-only consumers need only the complete
+  old/new corpus, never the manifest.
 - `--approve-reuse` naming a retired ref exits 3 (`retired_ref`); an unknown ref, an N out
   of range, conflicting approvals, or approval flags on a run without an existing manifest
   exit 3 (`invalid_approval`); a retired ref is never
@@ -61,14 +92,18 @@ from T-103; validation reuses T-105.
   the raw component strings, a `work` unit creates `work` records in first-appearance
   order, without one the single work is `--corpus-id`; no manifest is read or written. A
   malformed template exits 2 (`usage_error`); a line without a tab or with a wrong
-  component count exits 3 (`invalid_line`); a duplicate label exits 3
+  component count or an empty component exits 3 (`invalid_line`); a duplicate label exits 3
   (`duplicate_source_ref`). `--manifest` or any approval flag with `--citation-template`
-  exits 2.
+  exits 2. Test raw `%`, `%2E` and non-ASCII label components: encode once from NFC
+  (`%25`, `%252E`, `%C3%A9`), preserve raw citation values and validate encoded refs.
 - `--descriptor FILE` is accepted and parsed with the T-104 descriptor model; header and
   `corpus` descriptor fields are null without it (T-109 tests the descriptor values).
   Header `source` is `{file_name: basename, sha256: "sha256:<hex of raw bytes>", bytes}`.
-  Outputs aliasing SOURCE, the manifest, the descriptor or a `.lock` (direct, symlink, hard
-  link) exit 3 (`alias`); a held `<output>.lock` exits 4 (`busy`). Matrix row `corpus
+  Reject direct, symlink and hard-link aliases among both outputs, SOURCE, descriptor
+  and both lock paths before writing, allowing intended replacement of each output
+  itself. Test each output against each protected class, including output/manifest
+  aliasing. A held corpus or manifest lock exits 4 `busy`; two output paths sharing a
+  manifest contend on the same manifest lock with no file changes. Matrix row `corpus
   normalize: 0, 1, 2, 3, 4` (2 = `usage_error` for `--manifest`/approval flags with
   `--citation-template` or `--adapter usfx`, a malformed template or `--language`).
 - Determinism: two subprocess runs (`sys.executable -m latinitas_cards corpus normalize ...`)
@@ -88,13 +123,18 @@ from T-103; validation reuses T-105.
 - Manifest v1 shape (Pydantic strict, registered in `json_schemas.SCHEMAS` as
   `docs/schemas/latinitas-corpus-manifest.v1.schema.json`): `format`,
   `version`, `corpus_id`, `next_ref` (int), `entries: [{ref, passage_hash, ordinal, active}]`,
-  `snapshot: [passage_hash...]` in order. No scope, no timestamps.
+  `snapshot: [passage_hash...]` in order, and required `materialization` as above.
+  Persist ordered assignments, retired refs and allocator state. No scope or timestamps.
 - Read SOURCE as UTF-8 (strip one leading BOM; undecodable bytes exit 3 `unreadable`);
   split lines on `\n`/`\r\n`; canonicalize with `corpus_model.canonical_text`.
-- Write the corpus through `corpus_io.write_corpus` and the manifest through
-  `atomic_io.atomic_replace` under the same lock (alias check, fsync, replace).
+- Reuse T-103's ordered multi-lock, alias and staged-replacement primitives. Extend
+  `corpus_io` only as needed to serialize/stage a corpus under already-held locks;
+  do not reacquire the corpus lock or independently commit it before staging the manifest.
+  Keep request digest, recovery and transition orchestration in `corpus_manifest.py`.
 - Register every new code in the T-103 registry and docs table.
 - Create `docs/normalized-corpus.md` (record shapes, refs, manifest flags,
   `--citation-template`); T-109 and T-110 add the USFX section.
-- Size guard: the two modules above plus `corpus normalize`. File a follow-up rather than
-  widen.
+- TDD order: manifest/reconciliation vectors, interrupted transition recovery, locks and
+  aliases, then command/template wiring. Size guard: the two modules above, necessary
+  `corpus_io`/shared I/O integration, schemas, fixtures/tests and `corpus normalize`.
+  These recovery contracts are required here, not deferred to a follow-up by size guards.
