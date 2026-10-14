@@ -9,9 +9,8 @@ CSV export into repeatable principal-part study cards. It inspects a source, sav
 confirmed profile, previews generated cards, and writes a deterministic UTF-8 Anki
 text-import CSV without modifying the source.
 
-> **Release candidate:** v0.2.1 — publication pending exact-commit CI and parent publication.
-> The latest published release is [v0.2.0](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.0).
-> PyPI publishing remains deferred; see [candidate readiness and limits](docs/release-v0.2.1.md).
+> **Current release:** [v0.2.1](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.1).
+> PyPI publishing remains deferred; see [release readiness and limits](docs/release-v0.2.1.md).
 
 ## Workflow
 
@@ -49,9 +48,6 @@ Anki setup details.
 ## Installation
 
 **Prerequisites:** Python 3.13 or 3.14 and [uv](https://docs.astral.sh/uv/).
-
-The v0.2.1 tag command below is for **after publication**; until then use `v0.2.0`
-for the latest published release, or a reviewed candidate checkout for testing.
 
 ```bash
 git clone --branch v0.2.1 --depth 1 https://github.com/fmueller/latinitas-cards.git
@@ -304,7 +300,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 - [v0.1.0 release readiness](docs/release-readiness.md)
 - [v0.1.1 release readiness and limitations](docs/release-v0.1.1.md)
 - [v0.2.0 release readiness and limitations](docs/release-v0.2.0.md)
-- [v0.2.1 candidate readiness, accepted Linux native evidence and publication limits](docs/release-v0.2.1.md)
+- [v0.2.1 release readiness, accepted Linux native evidence and limits](docs/release-v0.2.1.md)
 - [Authored note JSONL import format](docs/authored-note-import.md)
 - [Stable generated-note identity](docs/stable-generated-note-identity.md)
 - [Principal-part parser support matrix](docs/principal-part-parsing.md)

@@ -1,11 +1,11 @@
 ---
 id: T-101-publish-v0-2-1-annotated-tag-and-github-release
 title: Publish v0.2.1 annotated tag and GitHub release
-status: todo
+status: in_progress
 priority: medium
 spec_ref: specs/v0.2.1.md#goals
 dependencies: []
-updated_at: "2026-10-14T03:31:10Z"
+updated_at: "2026-10-14T03:35:18Z"
 ---
 
 # T-101-publish-v0-2-1-annotated-tag-and-github-release Publish v0.2.1 annotated tag and GitHub release
@@ -53,3 +53,44 @@ uploaded release assets, deployment or v0.3.0 activation is authorized.
   T100 changed metadata/docs/tests only, not native runtime or CSS.
 
 ## Implementation Notes
+
+- Step 1: Fetched origin/main at accepted planning base
+  [749e8c8](https://github.com/fmueller/latinitas-cards/commit/749e8c8611dae98f8169de6c7012fc7edd0a8153),
+  unshallowed before history reads, verified the pinned spec hash above.
+  Independent Taskrail validate/next selected only T101 on the active spec,
+  with no active task. T038 remains off-spec and untouched. Remote v0.2.1 tag
+  and GitHub release were absent. Read full T068 acceptance, publication
+  procedure and release commit history; hooks installed under maintainer identity.
+- Step 2: Existing metadata test RED failed on the current-release assertion;
+  minimal README, spec index and readiness updates made all three focused
+  tests GREEN. No artificial TDD for prose. Runtime/CSS, lock and active spec
+  contents are unchanged; no new native replay or advisory remediation claimed.
+- Step 3: Initial Ruff/mypy/pytest passed: 107 source files, 1,050 tests
+  (41.44s). Focused release-candidate tests: three passed (5.57s).
+- Step 4: Dedicated Task loaded code-simplifier and made no changes; metadata
+  has no accidental complexity needing an abstraction or wording change.
+- Step 5: Separate parallel General and Security Tasks loaded code-reviewer
+  and mapped ECC guidance; Security loaded security-review and common security
+  rules. Security selected for public safety/advisory claims. Python omitted:
+  assertions only, covered by General; database/framework omitted: no runtime,
+  schema, persistence or framework changes. Security returned "No concrete
+  task-relevant findings."
+- General candidate G-1 verbatim: "The metadata presents v0.2.1 as published
+  while the remote has no v0.2.1 tag or GitHub release and T101 remains
+  `in_progress`." Fresh candidate-validation Task rejected G-1, no duplicates
+  or validated findings. The observation is correct during preparation but
+  the explicitly requested T068-style sequence finalizes metadata before
+  exact-target CI/tagging so the immutable release contains final metadata.
+  Publication is not reported as delivered until remote verification succeeds.
+  Changing the tagged metadata afterward would contradict the required method.
+- Step 6: No validated findings or deferrals; no fix cycle required. The short
+  prepublication interval of release wording on main is an explicit staged
+  limitation, not proof that publication already occurred. T101 stays active
+  until successful publication/install verification and final checks.
+- Step 7: Final exact Ruff/mypy/pytest chain passed (107 source files,
+  1,050 tests, 34.33s); mise run check passed including formatting, 1,050 tests
+  and all policy/mutation guard suites. Fresh disposition-verification Task
+  loaded code-reviewer and verified G-1 rejection, unchanged safety boundaries
+  and no newly introduced task-relevant issues. No unresolved findings.
+  Taskrail validate and diff whitespace checks passed; pinned spec unchanged.
+  Publication gates and exact-tag-target CI remain to be executed before tagging.

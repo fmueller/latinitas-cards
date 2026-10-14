@@ -354,13 +354,16 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v021() -> Non
     assert "## [0.1.1] - 2026-10-04" in changelog
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "git clone --branch v0.2.1 --depth 1" in readme
-    assert "**Release candidate:** v0.2.1" in readme
-    assert "publication pending" in readme
+    assert "**Current release:** [v0.2.1]" in readme
+    assert "publication pending" not in readme
+    assert "after publication" not in readme
     spec_index = (ROOT / "specs" / "README.md").read_text(encoding="utf-8")
     assert "`specs/v0.2.0.md` defines the completed release spec" in spec_index
+    assert "`specs/v0.2.1.md` defines the completed release spec" in spec_index
     assert "remains active" in spec_index
     candidate = (ROOT / "docs" / "release-v0.2.1.md").read_text(encoding="utf-8")
-    assert "Publication remains pending" in candidate
+    assert "Release: [v0.2.1]" in candidate
+    assert "Publication remains pending" not in candidate
     readiness = (ROOT / "docs" / "release-v0.2.0.md").read_text(encoding="utf-8")
     assert "`0.2.0` and `v0.2.0`" in readiness
     assert "2026-10-07" in readiness and "maintainer-reported" in readiness

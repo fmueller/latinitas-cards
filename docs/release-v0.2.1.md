@@ -1,9 +1,11 @@
-# v0.2.1 release candidate readiness — 2026-10-14
+# v0.2.1 release readiness — 2026-10-14
 
-**Publication remains pending** exact-candidate CI inspection and separate parent
-publication. Package metadata is `0.2.1`; the prepared tag is `v0.2.1`, not yet
-published by this task. No tag, GitHub release, PyPI publication, deployment or new
-spec activation occurs in candidate preparation. The date is 2026-10-14 in Europe/Zagreb.
+Release: [v0.2.1](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.1).
+Package metadata is `0.2.1`; the annotated release tag is `v0.2.1`.
+Immutable target, exact-commit CI, publication timestamp and fresh-tag installation
+evidence are recorded separately in [T101](../planning/tasks/T-101-publish-v0-2-1-annotated-tag-and-github-release.md)
+after publication. PyPI, uploaded assets, deployments and v0.3.0 activation remain
+excluded. The date is 2026-10-14 in Europe/Zagreb.
 
 ## Current candidate and accepted native evidence
 
@@ -65,7 +67,7 @@ evidence or repurpose scheduled templates. Changed retained payloads need renewe
 individual approval. Structural/lifecycle changes, creation/retirement and automatic
 migration remain unsupported; no additional recovery or safety guarantee is made.
 
-## Candidate checks — 2026-10-14
+## Historical T100 candidate checks — 2026-10-14
 
 The existing release metadata test failed first on `0.2.0 != 0.2.1`, then all
 three release-candidate tests passed after the minimal metadata/document update.
@@ -78,8 +80,8 @@ Final `uv run ruff check` passed, `uv run mypy` passed (107 source files),
 with the locked default export reported version 0.2.1 and passed CLI `--help`,
 without urllib3/fsspec installed. This is candidate install evidence, not a
 fresh-tag installation or exact-commit remote CI result. Taskrail lifecycle and
-final disposition verification are recorded in T100; the parent still must inspect
-the pushed candidate's exact CI before separately publishing.
+final disposition verification are recorded in T100; T101 independently gates
+publication on the final tag target's exact CI and fresh-tag installation.
 
 ## Current optional annotation advisories — 2026-10-14
 
