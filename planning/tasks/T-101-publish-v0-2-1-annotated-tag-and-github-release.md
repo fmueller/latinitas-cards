@@ -1,11 +1,11 @@
 ---
 id: T-101-publish-v0-2-1-annotated-tag-and-github-release
 title: Publish v0.2.1 annotated tag and GitHub release
-status: in_progress
+status: completed
 priority: medium
 spec_ref: specs/v0.2.1.md#goals
 dependencies: []
-updated_at: "2026-10-14T03:35:18Z"
+updated_at: "2026-10-14T03:49:44Z"
 ---
 
 # T-101-publish-v0-2-1-annotated-tag-and-github-release Publish v0.2.1 annotated tag and GitHub release
@@ -94,3 +94,48 @@ uploaded release assets, deployment or v0.3.0 activation is authorized.
   and no newly introduced task-relevant issues. No unresolved findings.
   Taskrail validate and diff whitespace checks passed; pinned spec unchanged.
   Publication gates and exact-tag-target CI remain to be executed before tagging.
+
+## Publication evidence — 2026-10-14
+
+- Published at 2026-10-14T03:46:38Z (05:46:38 Europe/Zagreb):
+  [v0.2.1 GitHub release](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.1).
+  API confirms tagName v0.2.1, not draft, not prerelease, assets empty.
+  Exactly one annotated tag and one matching release were created; no assets,
+  PyPI, deployments, workflow dispatch, tag rewrite or spec activation.
+- Immutable target:
+  [5c3f35f](https://github.com/fmueller/latinitas-cards/commit/5c3f35fbb8c5cf55e41fd5046ac16eb7288c4ee5).
+  Remote tag object `9aa11f81d85062d7c42d3166860778ebc04594d4` and peeled
+  commit match local annotated tag and tested target. Tagger is Felix Müller,
+  the maintainer. Target contains accepted planning base and T100 candidate;
+  source/CSS, dependencies and pinned spec are unchanged from T100.
+  Publication evidence is a later main commit; the tag is never edited.
+- Exact-target [Build](https://github.com/fmueller/latinitas-cards/actions/runs/38507739355)
+  passed before tagging: Python 3.13/3.14 tests, lint/type/format and policy
+  guards. [CodeQL](https://github.com/fmueller/latinitas-cards/actions/runs/38507738872)
+  Python/actions analyses also passed. API confirms both run head SHAs and
+  all six checks successful; no additional external statuses. CI callback was
+  independently inspected, not treated as new authorization. Automatic exact-SHA
+  main event subscription enabled; no manual dispatch or deployment.
+- No dependency-graph run was triggered on this metadata-only target. Lock and
+  dependency inputs are unchanged from T100's successful
+  [dependency graph run](https://github.com/fmueller/latinitas-cards/actions/runs/38506460009).
+  Fresh API inspection still shows four open annotation alerts: #141/#142/#143
+  urllib3 and #144 fsspec, three high and one moderate; no remediation/dismissal.
+- Fresh remote-tag shallow clone passed README `uv sync --locked`, installed
+  distribution version 0.2.1 and `uv run latinitas-cards --help` (exit 0).
+  HEAD and annotated tag object match the remote target/object above; checkout
+  clean, pinned spec hash unchanged. No annotation extra; urllib3/fsspec absent.
+  This is fresh-tag installation evidence, distinct from T100 wheel smoke.
+- Release notes preserve CSS v4 MANUAL setup, separately bound old-layout
+  resolution, fresh closed capture/evidence, renewed individual approvals,
+  blocked withdrawal/manual creation-retirement limits. Native acceptance stays
+  bounded synthetic Linux; Mobile/macOS/Windows/sync/live collections unverified.
+  Original adversarial 4/5 remains separate; scoped mutation remains report-only.
+  No new native replay or universal safety/scheduling/expert-language claim.
+- Step 8: After successful publication and fresh-tag installation verification,
+  repeated exact Ruff/mypy/pytest passed (107 files, 1,050 tests, 35.65s),
+  then mise run check passed (1,050 tests, 35.17s, formatting and all guards).
+  Taskrail validate passed. CLI verify/complete now follows these final gates;
+  focused evidence/state delivery on main does not alter the immutable tag.
+- 2026-10-14T03:49:44Z: verification pass
+- 2026-10-14T03:49:44Z: Verified public v0.2.1 release and annotated immutable target; fresh-tag install and exact CI pass. No PyPI/assets/deployment/spec activation. Publication evidence delivered separately without tag edits.
