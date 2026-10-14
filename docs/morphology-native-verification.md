@@ -337,7 +337,7 @@ It does not retroactively change the 2026-10-11 implementation-only deferral or 
 dated historical evidence above. No native acceptance run or certification is claimed
 by recording this decision.
 
-### Current required native Desktop checks
+### Desktop checklist recorded 2026-10-13 (now superseded by replay 3)
 
 Record date/time, source commit, CSS version/digest and installation method, and Anki
 Desktop version/build and Linux OS. Use isolated synthetic profiles/collections only;
@@ -374,8 +374,67 @@ manual setup constraints above.
 | monochrome / fixed dark | pending: stays dark, readable |
 | monochrome / auto | pending: light → dark → light, readable |
 
-Native Linux Desktop results remain pending until this actual interaction matrix is
-executed and recorded. AnkiMobile remains unverified and outside the v0.2.1 release
+At the time of this checklist, native Linux Desktop results remained pending until
+the actual interaction matrix was executed and recorded. AnkiMobile remains unverified and outside the v0.2.1 release
 gate; neither its historical fixed-mode results nor the partial Desktop smoke above
 establish the new appearance acceptance. CSS, runtime and fallback behavior are
 unchanged by the gate decision.
+
+### Accepted fresh native replay 3 — 2026-10-14
+
+The [parent acceptance thread](https://ampcode.com/threads/T-01a12a7a-87ff-729a-b72b-b8a98e688203)
+accepted the [fresh replay 3](https://ampcode.com/threads/T-01a1380a-4911-752c-a579-20a15357769c)
+on [product cac2d7f](https://github.com/fmueller/latinitas-cards/commit/cac2d7ff99a533c39a8bd83a733b4b905c0851c8).
+Spec SHA-256 `aabfdf060b1d90074a672b8cd29875677857b3d2ccb1f4455e09ade0e9de5ca4`;
+manually installed reference CSS v4 SHA-256
+`18cd5b7d2e5b50f90ac017db225d49f7ff11fa57a35058487300e4b56457945e`.
+The runtime was real Linux Anki/aqt 26.9.3 build 29bb700b, Python 3.14.2,
+Qt runtime 6.11.2/xcb. No browser/backend substitute is counted as native acceptance.
+
+The 32 actual native CSV/reviewer lanes covered muted/monochrome ×
+default/light/dark/auto × principal/supine/parsing/phrase, with 112 notes and
+320 distinct rated cards. Two parsing notes share one linguistic example.
+Native Preferences interaction produced 104 same-card light → night → light
+cycles plus six plain-Notes supplements, without regeneration/reimport.
+Front captures were in Light; representative answers, static comparisons and
+opened/closed/lower disclosures covered all three client appearance states.
+
+| Palette / setting | Accepted Linux synthetic result in light → night → light |
+|---|---|
+| muted / default (light) | stays light, readable |
+| muted / fixed light | stays light, readable |
+| muted / fixed dark | stays dark, readable |
+| muted / auto | light → dark → light, readable |
+| monochrome / default (light) | stays light, readable |
+| monochrome / fixed light | stays light, readable |
+| monochrome / fixed dark | stays dark, readable |
+| monochrome / auto | light → dark → light, readable |
+
+Across 2,112 segment checks, minimum context contrast was 9.739769:1 and
+plain Personal Notes 5.741836:1. Parent inspection covered 120 media pages and
+a 120-second native pointer recording; these inspect appearance/interaction,
+**not table preservation**. Public-CLI retained update handoff, native CSV import
+and fresh closed capture/observe/reconcile observed 54 field/tag operations
+(not 54 notes), zero unresolved. Closed snapshot comparisons checked cards,
+history, schema, decks/configuration, Personal Notes and unapproved content/metadata.
+An isolated native `.colpkg` restore exactly matched three notes, 22 cards and
+44 history rows across eight tables. Stock backend 19 cases, stock preparation
+and seven GUI cases passed intended positive/negative controls; unmapped tags
+correctly left one unresolved, and repeated no-op observation was exact/unchanged.
+Fresh CSS v4 capture passed; old CSS v3 capture failed without changing collection bytes.
+
+All 54 checkpoint archive hashes and 4,937 manifest-listed member hashes were
+independently checked by the parent. Initial checkpoint 00 has no member manifest:
+only its archive hash is covered, not its individual members. Inventory/report/media
+hashes are recorded in [release provenance](release-v0.2.1.md#current-candidate-and-accepted-native-evidence).
+Original adversarial queue clean at 4/5 is separate: native run 1 (historical ROUND5)
+found repaired T097–T099 defects; run 2 runtime passed but orb/filesystem evidence
+finalization failed and was not accepted clean; replay 3 used fresh recoverable checkpoints.
+
+This closes only the isolated synthetic Linux Desktop gate. Mobile is still
+unverified, not waived into a pass; macOS/Windows, sync, live/user collections,
+general scheduler behavior and expert calibration are not established.
+CSS v4 remains manual setup, not CSV installation or automatic migration. Old
+bindings fail closed; fresh destination capture and renewed retained-payload
+approval remain required. Structural/lifecycle changes stay unsupported.
+Historical pending records above are preserved, not retroactively marked passed.

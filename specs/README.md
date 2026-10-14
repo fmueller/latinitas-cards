@@ -9,8 +9,9 @@ This repository uses versioned specs under `specs/`.
   form, and question/answer notes through the v0.1.0 identity and export contracts.
 - `specs/v0.2.0.md` defines the completed release spec for managed updates,
   evidence-led extraction, calibrated form parsing, and morphology themes.
-- `specs/v0.2.1.md` is the active, unreleased spec for deck-based phrase and grammar
-  practice, shared claim decisions, terminology, form translations and automatic appearance.
+- `specs/v0.2.1.md` defines the implemented release candidate for deck-based phrase
+  and grammar practice, shared claim decisions, terminology, form translations and
+  automatic appearance. It remains active; publication is pending and v0.3.0 is not activated.
 - `specs/v0.3.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
   preserve the agreed progression through normalized corpora and agent contracts,
   corpus-first generation, grammar/syntax study, optional direct Anki integration,

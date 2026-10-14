@@ -4,6 +4,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-14
+
 ### Fixed
 
 - Principal-part answer context and plain Personal Notes remain readable in
@@ -20,7 +22,7 @@ Notable user-facing changes to Latinitas Cards are documented here.
 ### Added
 
 - Morphology profiles accept `appearance: auto` with manually installed reference
-  CSS v4; full native Desktop/AnkiMobile toggle acceptance remains pending.
+  CSS v4; light/night toggles are verified in isolated Linux Anki Desktop collections.
 - Principal-part answers show individually reviewed German form translations for
   both recipes, with explicit sense/provenance and no added front-side hints.
 - Generated principal-part and form-parsing answers offer Latin (default) or German
@@ -37,7 +39,9 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - Phrase generation is bounded to reviewed preposition–noun, noun–genitive,
   verb–noun and adjective–noun patterns; uncertain readings stay withheld.
 - CSV installs no templates/CSS and omission never withdraws cards. Initial import,
-  old-layout setup and blocked withdrawal need reviewed manual resolution; native auto acceptance is pending.
+  old-layout setup and blocked withdrawal need reviewed manual resolution.
+- Native verification is synthetic Linux Desktop only; Mobile, macOS/Windows,
+  sync and live collections remain unverified. Optional annotation has unresolved dependency advisories.
 
 ## [0.2.0] - 2026-10-08
 
@@ -150,7 +154,8 @@ and export them for import into Anki, without modifying the source.
 - Legacy splitting/APKG mutation, annotation, Ollama analysis, and corpus cloze
   workflows remain experimental. This release is available on GitHub, not PyPI.
 
-[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/fmueller/latinitas-cards/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/fmueller/latinitas-cards/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/fmueller/latinitas-cards/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/fmueller/latinitas-cards/releases/tag/v0.1.0

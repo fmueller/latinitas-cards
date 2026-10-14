@@ -332,7 +332,7 @@ def test_release_candidate_managed_updates_preserve_user_owned_notes() -> None:
     assert changed.personal_notes == "Review this next week"
 
 
-def test_release_metadata_and_current_lock_audit_are_versioned_for_v020() -> None:
+def test_release_metadata_and_current_lock_audit_are_versioned_for_v021() -> None:
     with (ROOT / "pyproject.toml").open("rb") as project_file:
         project = tomllib.load(project_file)
     with (ROOT / "uv.lock").open("rb") as lock_file:
@@ -343,18 +343,24 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v020() -> Non
     audit = (ROOT / "docs" / "license-compatibility-audit.md").read_text(encoding="utf-8")
     notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
 
-    assert project["project"]["version"] == "0.2.0"
-    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.2.0"
+    assert project["project"]["version"] == "0.2.1"
+    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.2.1"
+    assert "## [0.2.1] - 2026-10-14" in changelog
     assert "## [0.2.0] - 2026-10-08" in changelog
-    assert "compare/v0.2.0...HEAD" in changelog
+    assert "compare/v0.2.1...HEAD" in changelog
+    assert "compare/v0.2.0...v0.2.1" in changelog
     assert "compare/v0.1.1...v0.2.0" in changelog
-    assert changelog.index("## [Unreleased]") < changelog.index("## [0.2.0]")
+    assert not changelog.split("## [Unreleased]", 1)[1].split("## [0.2.1]", 1)[0].strip()
     assert "## [0.1.1] - 2026-10-04" in changelog
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "git clone --branch v0.2.0 --depth 1" in readme
-    assert "**Release:** [v0.2.0]" in readme
+    assert "git clone --branch v0.2.1 --depth 1" in readme
+    assert "**Release candidate:** v0.2.1" in readme
+    assert "publication pending" in readme
     spec_index = (ROOT / "specs" / "README.md").read_text(encoding="utf-8")
     assert "`specs/v0.2.0.md` defines the completed release spec" in spec_index
+    assert "remains active" in spec_index
+    candidate = (ROOT / "docs" / "release-v0.2.1.md").read_text(encoding="utf-8")
+    assert "Publication remains pending" in candidate
     readiness = (ROOT / "docs" / "release-v0.2.0.md").read_text(encoding="utf-8")
     assert "`0.2.0` and `v0.2.0`" in readiness
     assert "2026-10-07" in readiness and "maintainer-reported" in readiness
