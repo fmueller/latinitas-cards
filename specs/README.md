@@ -11,15 +11,17 @@ This repository uses versioned specs under `specs/`.
   evidence-led extraction, calibrated form parsing, and morphology themes.
 - `specs/v0.2.1.md` defines the completed release spec for deck-based phrase
   and grammar practice, shared claim decisions, terminology, form translations and
-  automatic appearance. It remains active; v0.3.0 is not activated.
-- `specs/v0.3.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
-  preserve the agreed progression through normalized corpora and agent contracts,
-  corpus-first generation, grammar/syntax study, optional direct Anki integration,
-  reproducible projects, CLI/migration hardening, release validation, and the v1 stable
-  contract.
+  automatic appearance. v0.2.1 is released, and v0.3.0 is being activated next.
+- `specs/v0.3.0.md` is the next release spec, not yet active; activation happens through
+  Taskrail. It adds a normalized JSONL corpus model with USFX and plain-text adapters,
+  annotation sidecars, an agent-ready CLI contract, policy-gated sidecar writes and PyPI
+  publishing.
+- `specs/v0.4.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
+  preserve the agreed progression through corpus-first generation, grammar/syntax study,
+  optional direct Anki integration, reproducible projects, CLI/migration hardening,
+  release validation, and the v1 stable contract.
 - `specs/v0.2.1.md` adds short, reviewed combinations of existing deck vocabulary for
   translation and grammatical recognition, without waiting for corpus-first generation.
-- `specs/v0.3.0.md` also carries PyPI publishing, moved from v0.2.0.
 - The `v0.1.0`, `v0.1.1`, `v0.2.0`, and `v0.2.1` tags record the released deck-first,
   authored-note, managed-update, and reviewed-phrase workflows. Spec transitions are managed through
   Taskrail; v0.2.1 was activated separately after v0.2.0 publication.
