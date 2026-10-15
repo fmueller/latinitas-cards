@@ -37,6 +37,17 @@ class Code(StrEnum):
     USAGE_ERROR = "usage_error"
     UNKNOWN_ELEMENT = "unknown_element"
     ALREADY_APPLIED = "already_applied"
+    INVALID_CORPUS = "invalid_corpus"
+    INVALID_CORPUS_ID = "invalid_corpus_id"
+    DUPLICATE_NATIVE_REF = "duplicate_native_ref"
+    NON_NFC_TEXT = "non_nfc_text"
+    NON_CANONICAL_TEXT = "non_canonical_text"
+    HASH_MISMATCH = "hash_mismatch"
+    NORM_MISMATCH = "norm_mismatch"
+    PASSAGE_ID_MISMATCH = "passage_id_mismatch"
+    INVALID_CITATION = "invalid_citation"
+    FLOAT_VALUE = "float_value"
+    INVALID_RECORD = "invalid_record"
 
 
 @dataclass(frozen=True)
@@ -66,6 +77,17 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.USAGE_ERROR: DiagnosticCode(2, "Callback arguments are incompatible"),
     Code.UNKNOWN_ELEMENT: DiagnosticCode(3, "Source contains unknown elements"),
     Code.ALREADY_APPLIED: DiagnosticCode(0, "Operation was already applied"),
+    Code.INVALID_CORPUS: DiagnosticCode(3, "Consumer rejected an invalid corpus"),
+    Code.INVALID_CORPUS_ID: DiagnosticCode(1, "Corpus ID is malformed"),
+    Code.DUPLICATE_NATIVE_REF: DiagnosticCode(1, "Native reference is repeated"),
+    Code.NON_NFC_TEXT: DiagnosticCode(1, "Passage text is not NFC"),
+    Code.NON_CANONICAL_TEXT: DiagnosticCode(1, "Passage whitespace is not canonical"),
+    Code.HASH_MISMATCH: DiagnosticCode(1, "Passage hash differs from canonical text"),
+    Code.NORM_MISMATCH: DiagnosticCode(1, "Passage norm differs from latin-fold/1"),
+    Code.PASSAGE_ID_MISMATCH: DiagnosticCode(1, "Passage ID does not match corpus and native reference"),
+    Code.INVALID_CITATION: DiagnosticCode(1, "Citation is invalid"),
+    Code.FLOAT_VALUE: DiagnosticCode(1, "JSON floats are forbidden"),
+    Code.INVALID_RECORD: DiagnosticCode(1, "Corpus record schema or order is invalid"),
 }
 
 
@@ -125,6 +147,8 @@ def run_contract(
     command: str,
     json_output: bool,
     body: Callable[[], tuple[JsonValue, list[Diagnostic]]],
+    *,
+    render_text: Callable[[CliResult], None] | None = None,
 ) -> None:
     """Run a callback that returns result/diagnostics; only this boundary emits output."""
     try:
@@ -155,6 +179,8 @@ def run_contract(
         rendered = canonical_json(envelope.model_dump(mode="json"))
     if json_output:
         typer.echo(rendered)
+    elif render_text is not None:
+        render_text(envelope)
     else:
         if envelope.result is not None:
             typer.echo(encode_unsafe_controls(str(envelope.result), preserve_line_breaks=False))

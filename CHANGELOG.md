@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `corpus validate CORPUS [--json]` checks normalized corpus records, identities,
+  ordering and canonical text without modifying the input, reporting all findings.
+
 ## [0.2.1] - 2026-10-14
 
 ### Fixed

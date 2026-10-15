@@ -21,7 +21,18 @@
         "alias",
         "usage_error",
         "unknown_element",
-        "already_applied"
+        "already_applied",
+        "invalid_corpus",
+        "invalid_corpus_id",
+        "duplicate_native_ref",
+        "non_nfc_text",
+        "non_canonical_text",
+        "hash_mismatch",
+        "norm_mismatch",
+        "passage_id_mismatch",
+        "invalid_citation",
+        "float_value",
+        "invalid_record"
       ],
       "title": "Code",
       "type": "string"

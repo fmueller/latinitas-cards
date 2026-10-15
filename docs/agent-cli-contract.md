@@ -63,16 +63,48 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `usage_error` | 2 | Callback arguments are incompatible |
 | `unknown_element` | 3 | Source contains unknown elements |
 | `already_applied` | 0 | Operation was already applied |
+| `invalid_corpus` | 3 | Consumer rejected an invalid corpus |
+| `invalid_corpus_id` | 1 | Corpus ID is malformed |
+| `duplicate_native_ref` | 1 | Native reference is repeated |
+| `non_nfc_text` | 1 | Passage text is not NFC |
+| `non_canonical_text` | 1 | Passage whitespace is not canonical |
+| `hash_mismatch` | 1 | Passage hash differs from canonical text |
+| `norm_mismatch` | 1 | Passage norm differs from latin-fold/1 |
+| `passage_id_mismatch` | 1 | Passage ID does not match corpus and native reference |
+| `invalid_citation` | 1 | Citation is invalid |
+| `float_value` | 1 | JSON floats are forbidden |
+| `invalid_record` | 1 | Corpus record schema or order is invalid |
 
 ## Contract command matrix
 
 Only exits produced inside callbacks (with envelopes) belong in this matrix.
 Click errors and unexpected internal failures are tested once on the contract
-test app rather than repeated per command. No contract groups are registered yet;
-their implementation tasks add rows and executable cases together.
+test app rather than repeated per command. Implementation tasks add rows and
+executable cases together.
 
 | command | exit codes |
 | --- | --- |
+| corpus validate | 0, 1, 3 |
+
+`corpus validate CORPUS [--json]` streams the input without modifying it. Its
+result is `{"counts":{"header":1,"corpus":1,"work":N,"passage":M}}`;
+counts include recognized record types even when their contents have findings.
+Text mode writes `<n> errors, <m> warnings` to stdout and one
+`<severity> <code> <ref>: <message>` line per diagnostic to stderr (`-` for
+an absent ref). JSON mode writes only the envelope to stdout.
+
+The header/JSON gate reports `unreadable`, `invalid_json`, `missing_header`,
+`unsupported_format` or `unsupported_version` (3). After a valid header,
+schema/order/unknown-work errors are `invalid_record`; other findings are
+`invalid_corpus_id`, `duplicate_native_ref`, `non_nfc_text`,
+`non_canonical_text`, `hash_mismatch`, `norm_mismatch`,
+`passage_id_mismatch`, `invalid_citation` and `float_value` (1).
+Findings are retained in file order, including before a later JSON gate failure;
+exit 3 takes precedence over 1. Invalid prerequisites do not generate cascading
+derived-value findings. Diagnostics use the CORPUS argument as given for `path`,
+`passage_id` (or `native_ref` when the ID is unusable) for `ref`, and null `item`.
+Encoded references are compared verbatim, never decoded. Sidecar validation,
+`corpus show` and `corpus config` are not implemented by this command yet.
 
 ### Legacy exceptions (not envelope commands)
 

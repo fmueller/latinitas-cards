@@ -63,7 +63,12 @@ def test_text_output_escapes_controls() -> None:
 
 
 # Later contract tasks add executable cases indexed by (command, callback exit).
-CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {}
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures/corpus"
+CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    ("corpus validate", 0): lambda _: ["corpus", "validate", str(FIXTURES / "valid/ordinal.jsonl")],
+    ("corpus validate", 1): lambda _: ["corpus", "validate", str(FIXTURES / "invalid/hash.jsonl")],
+    ("corpus validate", 3): lambda tmp: ["corpus", "validate", str(tmp / "missing.jsonl")],
+}
 
 
 def documented_pairs() -> set[tuple[str, int]]:
