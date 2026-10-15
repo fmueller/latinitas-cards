@@ -1,0 +1,151 @@
+{
+  "$defs": {
+    "Code": {
+      "enum": [
+        "exists",
+        "binding_drift",
+        "busy",
+        "denied",
+        "actor_refused",
+        "prompt_required",
+        "timestamp_required",
+        "unsupported_version",
+        "stale",
+        "orphaned",
+        "unmatched",
+        "internal",
+        "unreadable",
+        "invalid_json",
+        "missing_header",
+        "unsupported_format",
+        "alias",
+        "usage_error",
+        "unknown_element",
+        "already_applied"
+      ],
+      "title": "Code",
+      "type": "string"
+    },
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/Code"
+        },
+        "item": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Item"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "severity": {
+          "default": "error",
+          "enum": [
+            "error",
+            "warning"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "ExitCode": {
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        70
+      ],
+      "type": "integer"
+    },
+    "JsonValue": {}
+  },
+  "additionalProperties": false,
+  "properties": {
+    "command": {
+      "title": "Command",
+      "type": "string"
+    },
+    "diagnostics": {
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "exit_code": {
+      "$ref": "#/$defs/ExitCode"
+    },
+    "format": {
+      "const": "latinitas-cli-result",
+      "default": "latinitas-cli-result",
+      "title": "Format",
+      "type": "string"
+    },
+    "ok": {
+      "title": "Ok",
+      "type": "boolean"
+    },
+    "result": {
+      "$ref": "#/$defs/JsonValue"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "command",
+    "ok",
+    "exit_code",
+    "diagnostics",
+    "result"
+  ],
+  "title": "CliResult",
+  "type": "object"
+}

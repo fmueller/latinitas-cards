@@ -2461,7 +2461,9 @@ def _register_commands() -> None:
     from .commands.split import split
     from .commands.terminology import app as terminology_app
     from .commands.validate import validate
+    from .commands.version import root
 
+    app.callback()(root)
     app.command()(generate)
     app.command()(preview)
     app.command()(inspect)

@@ -1,12 +1,12 @@
 ---
 id: T-103-define-the-cli-result-envelope-exit-codes
 title: Define the CLI result envelope, exit codes, diagnostic registry and --version
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#agent-ready-cli-contract
 dependencies:
     - T-102-capture-characterization-goldens-for-legacy
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-15T21:59:19Z"
 ---
 
 # T-103-define-the-cli-result-envelope-exit-codes Define the CLI result envelope, exit codes, diagnostic registry and --version
@@ -131,3 +131,90 @@ codes), `corpus config` and the no-prompt guarantee (T-120).
   beyond `cli_contract.py`, `atomic_io.py`, `canonical.py`, `json_schemas.py`,
   `commands/version.py` and `scripts/export-json-schemas.py`; file a follow-up rather than
   retrofit any legacy command.
+- 2026-10-15T21:59:12Z: verification pass
+- 2026-10-15T21:59:19Z: Implemented and independently reviewed the CLI contract/writer foundation; verification pass at 2026-10-15T21:59:12Z after strict TDD, two review/disposition cycles, ruff/mypy/pytest and mise check. No legacy retrofit or release actions.
+
+## Implementation evidence (2026-10-15)
+
+- Pinned spec v0.3.0 SHA256
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`;
+  fetched handoff base `645c3bfdd0435498236d91dda3c54c3eee8d3d91`.
+  Validation and selector confirmed this task before start, verify and complete.
+- Strict TDD order: registry/docs (missing module -> 2 passed), envelope
+  (missing CliResult -> 3 passed), precedence (5 missing-function failures),
+  runner (missing ContractError -> 18 passed, 1 empty-matrix skip), atomic IO
+  (missing module -> 9 passed), canonical/schema (2 missing modules -> 8 passed),
+  version (unknown option, 1 failed/1 passed -> 2 passed). Commands used
+  `uv run pytest -q tests/unit/<area>_test.py`, with the registry/envelope/
+  precedence in `cli_contract_test.py` and runner in `cli_contract_matrix_test.py`.
+  A further atomic resolution-failure regression failed with raw OSError,
+  then passed with unreadable mapping (`-k resolution_failure`).
+- Dedicated Task loaded `code-simplifier`: simplified matrix parsing and removed
+  one redundant test import; no production edits. Parent restored the required
+  set annotation found by mypy, then checked the focused suite.
+- Separate parallel read-only Tasks loaded `code-reviewer`: General (ECC common
+  review/testing/security/style/patterns), Security (security-reviewer,
+  security-review), Database (database-reviewer, postgres-patterns,
+  database-migrations, applied to filesystem locks/persistence), Python
+  (python-reviewer, python-patterns). Three specialists cover trust boundaries,
+  persistence/concurrency and the base language; no SQL/framework/UI/ML changes.
+  Fresh candidate-validation and disposition-verification Tasks followed each
+  of two review/fix cycles; no persistent internal threads were created.
+
+### Findings and dispositions
+
+- T103-G-001, validated: "The documented schema path is incorrect."
+  Fixed the docs-relative ambiguity by spelling out the repository-root-relative
+  `docs/schemas/latinitas-cli-result.v1.schema.json` path. Documentation-only fix;
+  actual file/exporter/drift check agree. Both disposition verifiers confirmed.
+- PY-001, validated: "The static regression guard misses qualified or aliased
+  contract constructors, so it does not reject every string-literal diagnostic
+  code as required." Added import/alias/qualified constructor tracking, including
+  the defining module while preserving legacy Diagnostic APIs. Command
+  `uv run pytest -q tests/unit/cli_contract_test.py -k negative_controls`:
+  4 failed/1 passed before, 5 passed after. Both disposition verifiers confirmed.
+- DB-001, rejected by fresh candidate validation: "Symlink-loop resolution
+  failures escape filesystem error mapping and become internal failures instead
+  of unreadable (exit 3)." Actual write_artifact loop probes on supported Python
+  3.13.15 and 3.14.2 returned unreadable/3; the original report used an
+  out-of-range interpreter. Final verifier independently confirmed 3.14.2.
+  No production change or follow-up warranted.
+- Security: "No concrete task-relevant findings."
+- NEW-PY-002, validated in cycle 2: "The current mypy gate fails at
+  tests/unit/atomic_io_test.py:74: acquired = [] needs a type annotation.
+  This is a new test-file issue and means the mandatory type-check gate is
+  not passing in the current checkout." The portability improvement used
+  fstat/samestat instead of Linux-only /proc but needed `list[str]`.
+  Reproduced with `uv run mypy`, annotated the list, and passed 121 files.
+- NEW-PY-003, validated in cycle 2: "The static literal-code guard does not
+  recognize star imports. I confirmed that from latinitas_cards.cli_contract
+  import * followed by Diagnostic(code="busy") returns no violation from
+  literal_contract_codes. This leaves a valid constructor-import form that
+  can evade the task’s “reject any string-literal diagnostic code” regression
+  guard. Extend the guard or reject star imports in this scan, and add a
+  negative control." Added constructor tracking for wildcard imports and its
+  negative control: same `-k negative_controls` command went from 1 failed/5
+  passed to 6 passed. Final fresh verifier confirmed both cycle-2 fixes and
+  reported "no unresolved findings and no new task-relevant issues."
+
+### Final validation and scope
+
+- Initial full run found schema drift after exit-type sharing and the frozen
+  v0.2.1 empty-Unreleased assertion. Regenerated schema explicitly; left the
+  changelog and release test unchanged and documented --version in the new guide.
+- Final `uv run ruff check && uv run mypy && uv run pytest -v`: all checks passed;
+  no issues in 121 files; 1104 passed, 1 skipped. `mise run check` also passed,
+  including format, the full suite and commit/push/author/mutation guard suites.
+- `uv run pytest -q -s tests/unit/cli_contract_matrix_test.py -k envelope_exit_classes`:
+  7 passed, with one schema-validated JSON envelope printed for each exit
+  0/1/2/3/4/5/70. Registry/docs equality, whole-source enum guard, command matrix,
+  schema drift and Click parse-error/no-envelope tests pass.
+- `uv run latinitas-cards --version`: `latinitas-cards 0.2.1`. Root help description
+  and every legacy command remain covered; no-argument exit remains 2. T-102
+  characterization and all existing legacy tests passed without golden changes.
+- Only the six permitted helper/script modules were added, plus tests/docs/schema;
+  cli.py has the callback attachment and its necessary import. No legacy writers,
+  APIs, spec, dependencies, priorities, acceptance gates or release metadata changed.
+- Taskrail verify passed at 2026-10-15T21:59:12Z; completed at
+  2026-10-15T21:59:19Z. No follow-ups. Observed next selector is T-104; it was
+  not started. T-038 remains blocked and no release action was performed.
