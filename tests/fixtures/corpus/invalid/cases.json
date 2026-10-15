@@ -1,0 +1,98 @@
+{
+  "citation.jsonl": {
+    "codes": [
+      "invalid_citation"
+    ],
+    "exit": 1
+  },
+  "corpus-id.jsonl": {
+    "codes": [
+      "invalid_corpus_id"
+    ],
+    "exit": 1
+  },
+  "duplicate.jsonl": {
+    "codes": [
+      "duplicate_native_ref"
+    ],
+    "exit": 1
+  },
+  "float.jsonl": {
+    "codes": [
+      "float_value"
+    ],
+    "exit": 1
+  },
+  "hash.jsonl": {
+    "codes": [
+      "hash_mismatch"
+    ],
+    "exit": 1
+  },
+  "identity.jsonl": {
+    "codes": [
+      "passage_id_mismatch"
+    ],
+    "exit": 1
+  },
+  "missing-corpus.jsonl": {
+    "codes": [
+      "invalid_record"
+    ],
+    "exit": 1
+  },
+  "non-nfc.jsonl": {
+    "codes": [
+      "non_nfc_text"
+    ],
+    "exit": 1
+  },
+  "norm.jsonl": {
+    "codes": [
+      "norm_mismatch"
+    ],
+    "exit": 1
+  },
+  "order.jsonl": {
+    "codes": [
+      "invalid_record"
+    ],
+    "exit": 1
+  },
+  "ref-0.jsonl": {
+    "codes": [
+      "invalid_record"
+    ],
+    "exit": 1
+  },
+  "ref-1.jsonl": {
+    "codes": [
+      "invalid_record"
+    ],
+    "exit": 1
+  },
+  "ref-2.jsonl": {
+    "codes": [
+      "invalid_record"
+    ],
+    "exit": 1
+  },
+  "ref-3.jsonl": {
+    "codes": [
+      "invalid_record"
+    ],
+    "exit": 1
+  },
+  "ref-4.jsonl": {
+    "codes": [
+      "invalid_record"
+    ],
+    "exit": 1
+  },
+  "whitespace.jsonl": {
+    "codes": [
+      "non_canonical_text"
+    ],
+    "exit": 1
+  }
+}
