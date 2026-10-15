@@ -64,10 +64,44 @@ def test_text_output_escapes_controls() -> None:
 
 # Later contract tasks add executable cases indexed by (command, callback exit).
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures/corpus"
+
+
+def normalize_case(tmp: Path, exit_code: int) -> list[str]:
+    source, output = tmp / "source.txt", tmp / "out.jsonl"
+    source.write_text("arma\n")
+    args = [
+        "corpus",
+        "normalize",
+        str(source),
+        "--adapter",
+        "text",
+        "--corpus-id",
+        "test-corpus",
+        "--output",
+        str(output),
+    ]
+    if exit_code in (1, 4):
+        assert CliRunner().invoke(real_app, args).exit_code == 0
+        if exit_code == 1:
+            source.write_text("edited\n")
+        else:
+            output.write_text("foreign corpus bytes")
+    if exit_code == 2:
+        args += ["--language", "bad_tag"]
+    elif exit_code == 3:
+        source.unlink()
+    return args
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
     ("corpus validate", 0): lambda _: ["corpus", "validate", str(FIXTURES / "valid/ordinal.jsonl")],
     ("corpus validate", 1): lambda _: ["corpus", "validate", str(FIXTURES / "invalid/hash.jsonl")],
     ("corpus validate", 3): lambda tmp: ["corpus", "validate", str(tmp / "missing.jsonl")],
+    ("corpus normalize", 0): lambda tmp: normalize_case(tmp, 0),
+    ("corpus normalize", 1): lambda tmp: normalize_case(tmp, 1),
+    ("corpus normalize", 2): lambda tmp: normalize_case(tmp, 2),
+    ("corpus normalize", 3): lambda tmp: normalize_case(tmp, 3),
+    ("corpus normalize", 4): lambda tmp: normalize_case(tmp, 4),
 }
 
 

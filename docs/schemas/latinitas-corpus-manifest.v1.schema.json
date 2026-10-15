@@ -1,0 +1,119 @@
+{
+  "$defs": {
+    "CorpusId": {
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
+      "type": "string"
+    },
+    "ManifestEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "passage_hash": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "ref": {
+          "pattern": "^p[0-9]{6,}$",
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "passage_hash",
+        "ordinal",
+        "active"
+      ],
+      "title": "ManifestEntry",
+      "type": "object"
+    },
+    "Materialization": {
+      "additionalProperties": false,
+      "properties": {
+        "corpus_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "previous_corpus_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "request_digest": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "request_digest",
+        "corpus_digest",
+        "previous_corpus_digest"
+      ],
+      "title": "Materialization",
+      "type": "object"
+    },
+    "Sha256": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "corpus_id": {
+      "$ref": "#/$defs/CorpusId"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ManifestEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "format": {
+      "const": "latinitas-corpus-manifest",
+      "title": "Format",
+      "type": "string"
+    },
+    "materialization": {
+      "$ref": "#/$defs/Materialization"
+    },
+    "next_ref": {
+      "minimum": 1,
+      "title": "Next Ref",
+      "type": "integer"
+    },
+    "snapshot": {
+      "items": {
+        "$ref": "#/$defs/Sha256"
+      },
+      "title": "Snapshot",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "format",
+    "corpus_id",
+    "next_ref",
+    "entries",
+    "snapshot",
+    "materialization"
+  ],
+  "title": "CorpusManifest",
+  "type": "object"
+}

@@ -1,15 +1,22 @@
-"""Normalized corpus inspection commands."""
+"""Normalized corpus inspection and normalization commands."""
 
+import re
+from pathlib import Path
 from typing import Annotated
 
 import typer
-from pydantic import JsonValue
+from pydantic import JsonValue, ValidationError
 
-from ..cli_contract import CliResult, Diagnostic, run_contract
+from .. import atomic_io
+from ..canonical import digest_bytes
+from ..cli_contract import CliResult, Code, ContractError, Diagnostic, run_contract
+from ..corpus_manifest import Approvals, materialize, read_optional
+from ..corpus_model import CorpusDescriptor, encode_ref_component, passage_hash
+from ..corpus_text import build_corpus, parse_template, read_lines
 from ..corpus_validation import validate_corpus
 from ..profile_setup import encode_unsafe_controls
 
-app = typer.Typer(help="Inspect normalized corpora without modifying them.")
+app = typer.Typer(help="Normalize and inspect versioned corpora.")
 
 
 def _render_text(result: CliResult) -> None:
@@ -38,3 +45,87 @@ def validate(
         return {"counts": dict(counts)}, diagnostics
 
     run_contract("corpus validate", json_output, body, render_text=_render_text)
+
+
+@app.command()
+def normalize(
+    source: Annotated[Path, typer.Argument(help="UTF-8 source file.")],
+    adapter: Annotated[str, typer.Option()],
+    corpus_id: Annotated[str, typer.Option("--corpus-id")],
+    output: Annotated[Path, typer.Option()],
+    language: Annotated[str, typer.Option()] = "la",
+    descriptor: Annotated[Path | None, typer.Option()] = None,
+    manifest: Annotated[Path | None, typer.Option()] = None,
+    citation_template: Annotated[str | None, typer.Option("--citation-template")] = None,
+    approve_reuse: Annotated[list[str] | None, typer.Option("--approve-reuse")] = None,
+    approve_allocation: Annotated[list[int] | None, typer.Option("--approve-allocation")] = None,
+    approve_removal: Annotated[list[str] | None, typer.Option("--approve-removal")] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Normalize text with stable reviewed ordinal refs, or explicit source labels."""
+
+    def body() -> tuple[JsonValue, list[Diagnostic]]:
+        if adapter != "text":
+            raise ContractError(Code.USAGE_ERROR, f"Adapter {adapter!r} is not yet supported")
+        if not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*", language):
+            raise ContractError(Code.USAGE_ERROR, "Malformed language tag")
+        template = parse_template(citation_template)
+        if template and (manifest is not None or approve_reuse or approve_allocation or approve_removal):
+            raise ContractError(Code.USAGE_ERROR, "Templates cannot use manifests or approvals")
+        approvals = Approvals.parse(approve_reuse or [], approve_allocation or [], approve_removal or [])
+        targets = [output] if template else [output, manifest or output.with_suffix(".manifest.json")]
+        inputs = [source, *([descriptor] if descriptor else [])]
+        locks = [Path(f"{spelling}.lock") for path in targets for spelling in (path.absolute(), path.resolve())]
+
+        def aliases() -> None:
+            for i, target in enumerate(targets):
+                atomic_io.reject_aliases(target, [*targets[:i], *targets[i + 1 :], *inputs, *locks])
+            for lock in locks:
+                atomic_io.reject_aliases(lock, inputs)
+
+        try:
+            aliases()
+            with atomic_io.writer_locks(targets):
+                aliases()
+                raw = source.read_bytes()
+                parsed_descriptor = None
+                if descriptor:
+                    try:
+                        parsed_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes())
+                    except ValidationError as error:
+                        raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
+                texts, labels = read_lines(raw, template)
+
+                def build(refs: list[str]) -> bytes:
+                    return build_corpus(
+                        source, raw, corpus_id, language, parsed_descriptor, texts, refs, template, labels
+                    )
+
+                if template:
+                    target_bytes = build([".".join(encode_ref_component(p) for p in parts) for parts in labels])
+                    if read_optional(output) != target_bytes:
+                        atomic_io.atomic_replace(output.resolve(), target_bytes)
+                    return {"review_items": []}, []
+                request: dict[str, JsonValue] = {
+                    "source": {"sha256": digest_bytes(raw), "file_name": source.name},
+                    "corpus_id": corpus_id,
+                    "adapter": "text/1",
+                    "text_canon": 1,
+                    "norm_rules": "latin-fold/1",
+                    "language": language,
+                    "descriptor": parsed_descriptor.model_dump(mode="json") if parsed_descriptor else None,
+                    "approvals": approvals.model_dump(mode="json"),
+                }
+                return materialize(
+                    output.resolve(),
+                    targets[1].resolve(),
+                    corpus_id,
+                    [passage_hash(t) for t in texts],
+                    request,
+                    approvals,
+                    build,
+                )
+        except OSError as error:
+            raise ContractError(Code.UNREADABLE, str(error)) from error
+
+    run_contract("corpus normalize", json_output, body, render_text=_render_text)

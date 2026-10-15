@@ -48,6 +48,12 @@ class Code(StrEnum):
     INVALID_CITATION = "invalid_citation"
     FLOAT_VALUE = "float_value"
     INVALID_RECORD = "invalid_record"
+    INVALID_MANIFEST = "invalid_manifest"
+    INVALID_APPROVAL = "invalid_approval"
+    RETIRED_REF = "retired_ref"
+    REVIEW_REQUIRED = "review_required"
+    INVALID_LINE = "invalid_line"
+    DUPLICATE_SOURCE_REF = "duplicate_source_ref"
 
 
 @dataclass(frozen=True)
@@ -88,6 +94,12 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.INVALID_CITATION: DiagnosticCode(1, "Citation is invalid"),
     Code.FLOAT_VALUE: DiagnosticCode(1, "JSON floats are forbidden"),
     Code.INVALID_RECORD: DiagnosticCode(1, "Corpus record schema or order is invalid"),
+    Code.INVALID_MANIFEST: DiagnosticCode(3, "Corpus manifest is invalid"),
+    Code.INVALID_APPROVAL: DiagnosticCode(3, "Approval is invalid or contradictory"),
+    Code.RETIRED_REF: DiagnosticCode(3, "Approval names a retired reference"),
+    Code.REVIEW_REQUIRED: DiagnosticCode(1, "Identity reconciliation requires review"),
+    Code.INVALID_LINE: DiagnosticCode(3, "Text line does not match citation template"),
+    Code.DUPLICATE_SOURCE_REF: DiagnosticCode(3, "Source label is repeated"),
 }
 
 

@@ -1,12 +1,12 @@
 ---
 id: T-107-normalize-plain-text-sources-with-manifest
 title: Normalize plain-text sources with manifest-assigned and templated refs
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#normalized-jsonl-corpus-model
 dependencies:
     - T-105-validate-normalized-corpora-with-corpus-validate
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-15T23:30:14Z"
 ---
 
 # T-107-normalize-plain-text-sources-with-manifest Normalize plain-text sources with manifest-assigned and templated refs
@@ -138,3 +138,72 @@ from T-103; validation reuses T-105.
   aliases, then command/template wiring. Size guard: the two modules above, necessary
   `corpus_io`/shared I/O integration, schemas, fixtures/tests and `corpus normalize`.
   These recovery contracts are required here, not deferred to a follow-up by size guards.
+
+## Workflow-v3 execution evidence (2026-10-15)
+
+- Base and ownership: clean `main` and fetched `origin/main` both at the accepted
+  `7e371d0523768ca0b4bd1d4ff090dbf65d29a58c`; pinned v0.3.0 spec SHA-256
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704` unchanged.
+  Read the full original task and Fixed Contracts, validated state, queried the
+  selector (T-107, on-spec), and then started only T-107 via Taskrail.
+- Strict TDD: `uv run pytest tests/unit/corpus_manifest_test.py -q` initially
+  failed all four cases (normalization absent), then passed all four after the
+  minimal implementation. Cases interrupt before manifest, between replacements
+  and after corpus replacement, comparing approved duplicate/edit/removal recovery
+  bytes with uninterrupted bytes, allocator state, retirement, no-op inode retention
+  and a subsequent distinct valid request. Expanded pending tests cover first
+  creation, source/basename/descriptor/ID/language/approval drift, foreign corpus
+  bytes, digest reproduction, relocated paths and reordered approvals.
+- Dangerous-path sensitivity: deliberately bypassing committed receipt recovery
+  produced `18 failed, 15 passed`; restoring it returned the suite to green.
+  The alias matrix exposed symlinks to lexical own-lock paths; checks now protect
+  both lexical and resolved lock spellings. The directory-fsync-after-rename
+  recovery instruction test failed before its fix and passes afterward. Failed
+  second staging fsync leaves both prior files intact; both locks cover reads.
+- Initial gates: `uv run ruff check`, `uv run mypy`, `uv run pytest -v` passed
+  (134 checked files, 1330 tests). One earlier run found the existing command-set
+  assertion needed `normalize` added; the full chain was rerun from the start.
+- Dedicated Task loaded `code-simplifier`: clarified same-request recovery versus
+  new-request drift branches without behavioral changes. Its full gate passed;
+  parent rechecked corpus/CLI/schema tests (102 passed) and inspected its diff.
+- Separate parallel read-only Tasks loaded `code-reviewer`: General used its
+  code-reviewer guidance; Database/persistence/concurrency loaded database-reviewer,
+  postgres-patterns and database-migrations; Security loaded security-reviewer and
+  security-review. Persistence and security were required by two-file state and
+  untrusted file/alias boundaries. No framework or domain-specific lane applies;
+  a separate Python lane was omitted because General plus the two required risk
+  lanes covered this focused Python change without a fourth overlapping review.
+  General and persistence conclusions: "No concrete task-relevant findings."
+- Fresh candidate-validation Task validated S-001, verbatim: "The normalizer
+  accepts persisted manifests that omit the required format and version fields,
+  so malformed or incomplete state is silently treated as a v1 manifest."
+  Disposition: fixed required envelope fields, explicit writer values and schema.
+  Public CLI tests for missing format/version were RED (exit 0 rather than 3),
+  then GREEN (invalid_manifest, unchanged files).
+- That validator surfaced a separate recovery candidate; another fresh Task in
+  candidate-validation mode validated R001, verbatim: "Same-request recovery must
+  validate the committed active assignments and snapshot against the current
+  request’s ordered source hashes and passage count before replay; on mismatch,
+  return exit 4 binding_drift without changing either file."
+  Disposition: fixed by checking snapshot and corpus ID against the request before
+  replay; the model already checks exact active ordinal/hash coverage. Shorter,
+  longer and changed-hash snapshots were RED (70/0/0 instead of 4), then GREEN.
+  Combined disposition regressions: `5 passed, 33 deselected`. No rejected,
+  deduplicated or deferred findings; one review/fix/recheck cycle.
+- Final exact mandatory chain: `uv run ruff check` passed; `uv run mypy` passed
+  (134 source files); `uv run pytest -v` passed (1335 tests, 60.92 seconds).
+  `mise run check` passed including formatting, typing, 1335 tests (62.23 seconds),
+  commit/push/author guard self-tests and mutation-result/configuration guards.
+  `git diff --check` passed. Manual real CLI: normalize 0, validate 0 (two passages),
+  edit review 1 with p000002, approved reuse 0, validate 0.
+- Fresh read-only disposition-verification Task loaded `code-reviewer`, inspected
+  both fixes and ran focused tests (102 passed): S001 RESOLVED; R001 RESOLVED;
+  "No concrete task-relevant findings." No unresolved or newly introduced issues.
+- Scope: text adapter, manifest, command, registry/schema, fixtures/tests and docs;
+  T103 atomic primitives and T104/T105 models/validation reused unchanged. No CSV
+  identity models, USFX implementation, legacy goldens, spec, release or deployment
+  changes. T-127 was created through `taskrail task new --follow-up` for a genuine
+  pre-existing exporter KeyError on the corpus RootModel; it is not implemented
+  here. Required schema bytes were rendered using the existing registry API.
+- 2026-10-15T23:30:09Z: verification pass
+- 2026-10-15T23:30:14Z: Verification pass 2026-10-15T23:30:09Z after strict recovery TDD, simplification, independent review, both fixes and fresh disposition verification; all mandatory gates pass.

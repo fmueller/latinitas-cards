@@ -5,12 +5,14 @@ import json
 from pydantic import BaseModel
 
 from .cli_contract import CliResult
+from .corpus_manifest import CorpusManifest
 from .corpus_model import CorpusDescriptor, CorpusRecordSchema
 
 SCHEMAS: dict[str, type[BaseModel]] = {
     "latinitas-cli-result": CliResult,
     "latinitas-corpus": CorpusRecordSchema,
     "latinitas-corpus-descriptor": CorpusDescriptor,
+    "latinitas-corpus-manifest": CorpusManifest,
 }
 
 

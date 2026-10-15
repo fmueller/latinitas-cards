@@ -32,7 +32,13 @@
         "passage_id_mismatch",
         "invalid_citation",
         "float_value",
-        "invalid_record"
+        "invalid_record",
+        "invalid_manifest",
+        "invalid_approval",
+        "retired_ref",
+        "review_required",
+        "invalid_line",
+        "duplicate_source_ref"
       ],
       "title": "Code",
       "type": "string"

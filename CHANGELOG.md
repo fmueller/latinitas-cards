@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `corpus normalize --adapter text` creates validated JSONL with stable reviewed
+  passage refs or labeled citations, and safely resumes interrupted manifest writes.
 - `corpus validate CORPUS [--json]` checks normalized corpus records, identities,
   ordering and canonical text without modifying the input, reporting all findings.
 
