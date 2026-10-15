@@ -1,0 +1,15 @@
+                                                     Cloze Preview                                                      
+                                                                                                                        
+  Front     Cloze Examples                                                                                              
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 
+  amo       verbum {{c1::amo}}. titulus <span style='color:#888'>(AAA 1:1)</span><br><br>{{c1::amo}} {{c1::amo}} sum.   
+            nota verbum est. <span style='color:#888'>(ZZZ 2:1)</span><br><br>{{c1::amo}} duplicatum. <span             
+            style='color:#888'>(ZZZ 2:1)</span>                                                                         
+  sum       {{c1::sum}} verbum. <span style='color:#888'>(AAA 1:2)</span><br><br>amo amo {{c1::sum}}. nota verbum est.  
+            <span style='color:#888'>(ZZZ 2:1)</span><br><br>{{c1::sum}} et amas verba. <span style='color:#888'>(ZZZ   
+            2:3)</span>                                                                                                 
+  verbum    {{c1::verbum}} amo. titulus <span style='color:#888'>(AAA 1:1)</span><br><br>sum {{c1::verbum}}. <span      
+            style='color:#888'>(AAA 1:2)</span><br><br>amo amo sum. nota {{c1::verbum}} est. <span                      
+            style='color:#888'>(ZZZ 2:1)</span>                                                                         
+  titulus   verbum amo. {{c1::titulus}} <span style='color:#888'>(AAA 1:1)</span>                                       
+                                                                                                                        

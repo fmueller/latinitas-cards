@@ -1,0 +1,4 @@
+form,meaning,extra,CorpusCloze,difficulty_score,difficulty_label,translation_translation_en,translation_translation_de
+amo,I love,keep,{{c1::amo}} sum <span style='color:#888'>(parallel 1:1)</span>,11.80,hard,I love and am,ich liebe und bin
+sum,I am,other,amo {{c1::sum}} <span style='color:#888'>(parallel 1:1)</span>,11.80,hard,I love and am,ich liebe und bin
+verbum,the word,last,{{c1::verbum}} est <span style='color:#888'>(parallel 1:2)</span>,13.00,hard,the word is,das Wort ist

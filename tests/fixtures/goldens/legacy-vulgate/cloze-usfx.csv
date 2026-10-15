@@ -1,0 +1,4 @@
+form,meaning,extra,CorpusCloze,difficulty_score,difficulty_label
+amo,I love,keep,verbum {{c1::amo}}. titulus <span style='color:#888'>(AAA 1:1)</span><br><br>{{c1::amo}} amo sum. nota verbum est. <span style='color:#888'>(ZZZ 2:1)</span><br><br>{{c1::amo}} duplicatum. <span style='color:#888'>(ZZZ 2:1)</span>,4.80,easy
+sum,I am,other,{{c1::sum}} verbum. <span style='color:#888'>(AAA 1:2)</span><br><br>amo amo {{c1::sum}}. nota verbum est. <span style='color:#888'>(ZZZ 2:1)</span><br><br>{{c1::sum}} et amas verba. <span style='color:#888'>(ZZZ 2:3)</span>,5.73,easy
+verbum,the word,last,{{c1::verbum}} amo. titulus <span style='color:#888'>(AAA 1:1)</span><br><br>sum {{c1::verbum}}. <span style='color:#888'>(AAA 1:2)</span><br><br>amo amo sum. nota {{c1::verbum}} est. <span style='color:#888'>(ZZZ 2:1)</span>,6.83,medium

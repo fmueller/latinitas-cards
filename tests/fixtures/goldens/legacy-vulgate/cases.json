@@ -1,0 +1,398 @@
+[
+  {
+    "argv": [
+      "preview",
+      "--input",
+      "{FIX}/input.csv",
+      "--usfx",
+      "{FIX}/sample.usfx.xml",
+      "--limit",
+      "5"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "preview",
+    "outputs": {},
+    "stdout": "preview.stdout"
+  },
+  {
+    "argv": [
+      "preview",
+      "--input",
+      "{FIX}/input.csv",
+      "--usfx",
+      "{FIX}/sample.usfx.xml",
+      "--limit",
+      "5",
+      "--multi-cloze-per-verse",
+      "--max-examples",
+      "3"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "preview-multi",
+    "outputs": {},
+    "stdout": "preview-multi.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "{FIX}/input.csv",
+      "--usfx",
+      "{FIX}/sample.usfx.xml",
+      "--output",
+      "{TMP}/out.csv"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "generate",
+    "outputs": {
+      "out.csv": "generate.csv"
+    },
+    "stdout": "generate.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "{FIX}/existing.csv",
+      "--usfx",
+      "{FIX}/sample.usfx.xml",
+      "--output",
+      "{TMP}/existing.csv",
+      "--append"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "generate-append",
+    "outputs": {
+      "existing.csv": "generate-append.csv"
+    },
+    "stdout": "generate-append.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "{FIX}/input.csv",
+      "--usfx",
+      "{FIX}/sample.usfx.xml",
+      "--output",
+      "{TMP}/out.csv",
+      "--stopwords",
+      "{FIX}/stopwords.txt",
+      "--word-forms",
+      "{FIX}/word-forms.txt",
+      "--lemmas",
+      "{FIX}/lemmas.txt",
+      "--ignore-pattern",
+      "^titulus$",
+      "--max-examples",
+      "5"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "generate-filters",
+    "outputs": {
+      "out.csv": "generate-filters.csv"
+    },
+    "stdout": "generate-filters.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/sample.usfx.xml",
+      "--max-examples",
+      "5"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-usfx",
+    "outputs": {
+      "out.csv": "cloze-usfx.csv"
+    },
+    "stdout": "cloze-usfx.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/sample.txt"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-txt",
+    "outputs": {
+      "out.csv": "cloze-txt.csv"
+    },
+    "stdout": "cloze-txt.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/parallel.csv",
+      "--latin-column",
+      "la",
+      "--parallel-mode",
+      "include"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-parallel",
+    "outputs": {
+      "out.csv": "cloze-parallel.csv"
+    },
+    "stdout": "cloze-parallel.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/parallel.csv",
+      "--translation-lang",
+      "en"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-translation",
+    "outputs": {
+      "out.csv": "cloze-translation.csv"
+    },
+    "stdout": "cloze-translation.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/parallel.csv",
+      "--parallel-mode",
+      "prompt"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-prompt",
+    "outputs": {
+      "out.csv": "cloze-prompt.csv"
+    },
+    "stdout": "cloze-prompt.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/sample.txt",
+      "--difficulty",
+      "easy"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-easy",
+    "outputs": {
+      "out.csv": "cloze-easy.csv"
+    },
+    "stdout": "cloze-easy.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/sample.txt",
+      "--include-column",
+      "form",
+      "--include-column",
+      "CorpusCloze"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-include",
+    "outputs": {
+      "out.csv": "cloze-include.csv"
+    },
+    "stdout": "cloze-include.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/sample.txt",
+      "--exclude-column",
+      "extra"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-exclude",
+    "outputs": {
+      "out.csv": "cloze-exclude.csv"
+    },
+    "stdout": "cloze-exclude.stdout"
+  },
+  {
+    "argv": [
+      "cloze",
+      "--input",
+      "{FIX}/forms.csv",
+      "--output",
+      "{TMP}/out.csv",
+      "--corpus",
+      "{FIX}/sample.usfx.xml",
+      "--corpus",
+      "{FIX}/sample.txt"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "cloze-mixed",
+    "outputs": {
+      "out.csv": "cloze-mixed.csv"
+    },
+    "stdout": "cloze-mixed.stdout"
+  },
+  {
+    "argv": [
+      "validate",
+      "--input",
+      "{FIX}/input.csv",
+      "--usfx",
+      "{FIX}/sample.usfx.xml"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "validate",
+    "outputs": {},
+    "stdout": "validate.stdout"
+  },
+  {
+    "argv": [
+      "validate",
+      "--input",
+      "{FIX}/input.csv",
+      "--usfx",
+      "{FIX}/empty.usfx.xml"
+    ],
+    "exclusions": {},
+    "exit_code": 1,
+    "name": "validate-empty",
+    "outputs": {},
+    "stdout": "validate-empty.stdout"
+  },
+  {
+    "argv": [
+      "validate",
+      "--input",
+      "{FIX}/input.csv",
+      "--usfx",
+      "{FIX}/malformed.usfx.xml"
+    ],
+    "exclusions": {},
+    "exit_code": 1,
+    "name": "validate-malformed",
+    "outputs": {},
+    "stdout": "validate-malformed.stdout"
+  },
+  {
+    "argv": [
+      "validate",
+      "--input",
+      "{FIX}/missing-front.csv",
+      "--usfx",
+      "{FIX}/sample.usfx.xml"
+    ],
+    "exclusions": {},
+    "exit_code": 1,
+    "name": "validate-front",
+    "outputs": {},
+    "stdout": "validate-front.stdout"
+  },
+  {
+    "apkg": true,
+    "argv": [
+      "generate",
+      "--input",
+      "{FIX}/input.apkg",
+      "--usfx",
+      "{FIX}/sample.usfx.xml",
+      "--output",
+      "{TMP}/out.apkg"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "generate-apkg",
+    "outputs": {
+      "out.apkg": "generate-apkg.flds.json"
+    },
+    "stdout": "generate-apkg.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "{FIX}/vulgate-words.csv",
+      "--usfx",
+      "{FIX}/full.xml",
+      "--output",
+      "{TMP}/out.csv",
+      "--max-examples",
+      "2"
+    ],
+    "digest": true,
+    "exclusions": {},
+    "exit_code": 0,
+    "full_vulgate": true,
+    "name": "vulgate-generate",
+    "outputs": {
+      "out.csv": "vulgate-generate.digest.json"
+    },
+    "stdout": "vulgate-generate.stdout"
+  },
+  {
+    "argv": [
+      "preview",
+      "--input",
+      "{FIX}/vulgate-words.csv",
+      "--usfx",
+      "{FIX}/full.xml",
+      "--limit",
+      "5"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "full_vulgate": true,
+    "name": "vulgate-preview",
+    "outputs": {},
+    "stdout": "vulgate-preview.stdout"
+  }
+]

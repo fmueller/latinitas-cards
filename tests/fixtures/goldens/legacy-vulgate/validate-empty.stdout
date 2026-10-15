@@ -1,0 +1,8 @@
+                                                   Validation Report                                                    
+                                                                                                                        
+  Check            Status   Details                                                                                     
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 
+  USFX structure    FAIL    Could not parse USFX structure: Parsed zero verses from USFX; check that <v/> ... text ...  
+                            <ve/> structure is present.                                                                 
+  Input columns     PASS    Column 'Front' is present. Non-empty rows: 4/4                                              
+                                                                                                                        

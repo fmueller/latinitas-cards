@@ -1,0 +1,4 @@
+form,meaning,extra,CorpusCloze,difficulty_score,difficulty_label
+amo,I love,keep,{{c1::amo}} amo sum. <span style='color:#888'>(sample 1:1)</span><br><br>sum et {{c1::amo}}. <span style='color:#888'>(sample 1:3)</span>,5.43,easy
+sum,I am,other,amo amo {{c1::sum}}. <span style='color:#888'>(sample 1:1)</span><br><br>{{c1::sum}} et amo. <span style='color:#888'>(sample 1:3)</span>,7.10,medium
+verbum,the word,last,{{c1::verbum}} est bonum. <span style='color:#888'>(sample 1:2)</span>,13.30,hard

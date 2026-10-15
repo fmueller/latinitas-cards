@@ -1,0 +1,4 @@
+form,CorpusCloze
+amo,{{c1::amo}} amo sum. <span style='color:#888'>(sample 1:1)</span><br><br>sum et {{c1::amo}}. <span style='color:#888'>(sample 1:3)</span>
+sum,amo amo {{c1::sum}}. <span style='color:#888'>(sample 1:1)</span><br><br>{{c1::sum}} et amo. <span style='color:#888'>(sample 1:3)</span>
+verbum,{{c1::verbum}} est bonum. <span style='color:#888'>(sample 1:2)</span>

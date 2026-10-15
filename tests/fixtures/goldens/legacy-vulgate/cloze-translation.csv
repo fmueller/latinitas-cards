@@ -1,0 +1,4 @@
+form,meaning,extra,CorpusCloze,difficulty_score,difficulty_label
+amo,I love,keep,{{c1::amo}} sum <span style='color:#888'>(parallel 1:1)</span>,11.80,hard
+sum,I am,other,amo {{c1::sum}} <span style='color:#888'>(parallel 1:1)</span>,11.80,hard
+verbum,the word,last,{{c1::verbum}} est <span style='color:#888'>(parallel 1:2)</span>,13.00,hard

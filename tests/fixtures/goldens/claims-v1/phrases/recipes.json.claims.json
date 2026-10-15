@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "decisions": [
+    {
+      "base_fingerprint": "59eef5639d84d9ab18bd03c78c3e6ef1583a9826562c7abc3f1a8001e33f96c8",
+      "decision": {
+        "claim_fingerprint": "59eef5639d84d9ab18bd03c78c3e6ef1583a9826562c7abc3f1a8001e33f96c8",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "de9af6861a0ddf05e7d03af8dc0f2ded034eb5357f588a276c2fd6c3f9787e5b",
+      "decision": {
+        "claim_fingerprint": "de9af6861a0ddf05e7d03af8dc0f2ded034eb5357f588a276c2fd6c3f9787e5b",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    }
+  ]
+}

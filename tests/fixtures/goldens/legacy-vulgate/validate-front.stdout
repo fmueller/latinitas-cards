@@ -1,0 +1,8 @@
+                                         Validation Report                                          
+                                                                                                    
+  Check             Status   Details                                                                
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 
+  USFX columns       PASS    All expected verse columns are present.                                
+  USFX verse text    PASS    Parsed 5 verses with non-empty text.                                   
+  Input columns      FAIL    Missing required column 'Front'. Available: ['Word', 'Back', 'Notes']  
+                                                                                                    

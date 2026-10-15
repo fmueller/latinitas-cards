@@ -1,0 +1,7 @@
+                                        Validation Report                                        
+                                                                                                 
+  Check            Status   Details                                                              
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 
+  USFX structure    FAIL    Could not parse USFX structure: no element found: line 1, column 12  
+  Input columns     PASS    Column 'Front' is present. Non-empty rows: 4/4                       
+                                                                                                 

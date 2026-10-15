@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "decisions": [
+    {
+      "base_fingerprint": "df0a0d249669030b03d3e7a6dbdf46d78a508cea1ce8780bbbf54c5a340e3b77",
+      "decision": {
+        "claim_fingerprint": "df0a0d249669030b03d3e7a6dbdf46d78a508cea1ce8780bbbf54c5a340e3b77",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "7c6b435b02679787e47a25fe2114a5e05f6034cc9752e024e7017fde6ee7300b",
+      "decision": {
+        "claim_fingerprint": "7c6b435b02679787e47a25fe2114a5e05f6034cc9752e024e7017fde6ee7300b",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "5cb18a07a244ea7f635314faf79b563545e0fbdcccfc58812496cf8e3d1fc9e0",
+      "decision": {
+        "claim_fingerprint": "5cb18a07a244ea7f635314faf79b563545e0fbdcccfc58812496cf8e3d1fc9e0",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "8830e35d01a5606092db5f8d995079d0968bf2e9940b55615d8392408d2ed5a5",
+      "decision": {
+        "claim_fingerprint": "8830e35d01a5606092db5f8d995079d0968bf2e9940b55615d8392408d2ed5a5",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "dbdd2c66aa3a6a8129ca82ea04f814617813a31c0e97eb88a9b6820b5cf00601",
+      "decision": {
+        "claim_fingerprint": "dbdd2c66aa3a6a8129ca82ea04f814617813a31c0e97eb88a9b6820b5cf00601",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "df9a0a9c46202effd01cfd5e1f74c0063b732b95c967da0dc0e56e2fda3d7549",
+      "decision": {
+        "claim_fingerprint": "df9a0a9c46202effd01cfd5e1f74c0063b732b95c967da0dc0e56e2fda3d7549",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "cc4371ef06e12837177d5fdf6bd644cfb4dc29c902be15319aab966fe7652ee6",
+      "decision": {
+        "claim_fingerprint": "cc4371ef06e12837177d5fdf6bd644cfb4dc29c902be15319aab966fe7652ee6",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "c9cd70b0d4b68bdac5e44838d4e74be36b49d7424877f305ccb8b6e05dfc254c",
+      "decision": {
+        "claim_fingerprint": "c9cd70b0d4b68bdac5e44838d4e74be36b49d7424877f305ccb8b6e05dfc254c",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "02dab86d8651eb8b7ca3156b127f1bc9d946e1a81dcb19551e0866d14c8df194",
+      "decision": {
+        "claim_fingerprint": "02dab86d8651eb8b7ca3156b127f1bc9d946e1a81dcb19551e0866d14c8df194",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "bbe621e6db37fbaf4382a6f38e9c11314017f16412a7fd7fde788b32f9d26d0f",
+      "decision": {
+        "claim_fingerprint": "bbe621e6db37fbaf4382a6f38e9c11314017f16412a7fd7fde788b32f9d26d0f",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "b4c2a12f1e85d6b41e6679b12c8aad2e24226087b770bcc7b0b03aba6ac7a397",
+      "decision": {
+        "claim_fingerprint": "b4c2a12f1e85d6b41e6679b12c8aad2e24226087b770bcc7b0b03aba6ac7a397",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "ab6cf5b41ba84b78f4b98fe534ddbfd671743d2affc236860abbe7d39fd69181",
+      "decision": {
+        "claim_fingerprint": "ab6cf5b41ba84b78f4b98fe534ddbfd671743d2affc236860abbe7d39fd69181",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "9af0fc9eb92a96d841c26a8da7aee11156da558647660cf6ea9f8f06b4e20c43",
+      "decision": {
+        "claim_fingerprint": "9af0fc9eb92a96d841c26a8da7aee11156da558647660cf6ea9f8f06b4e20c43",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "5d9a1eca7d4bae40a98524bb645b0320327c411c87eb212cfd99515fad3988c2",
+      "decision": {
+        "claim_fingerprint": "5d9a1eca7d4bae40a98524bb645b0320327c411c87eb212cfd99515fad3988c2",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "9d1927564c489afd07a38270250206bad6a53b037f64fdafaa68921a3831cece",
+      "decision": {
+        "claim_fingerprint": "9d1927564c489afd07a38270250206bad6a53b037f64fdafaa68921a3831cece",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "dc8d4b112e49a7997b27abd0107ed5f7ebbb0dfffba430c159baee4a03933671",
+      "decision": {
+        "claim_fingerprint": "dc8d4b112e49a7997b27abd0107ed5f7ebbb0dfffba430c159baee4a03933671",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    }
+  ]
+}

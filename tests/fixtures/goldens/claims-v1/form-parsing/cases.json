@@ -1,0 +1,25 @@
+{
+  "exclusions": {},
+  "exports": [
+    {
+      "argv": [
+        "form-parsing",
+        "export",
+        "parsing.json",
+        "out.csv",
+        "--approve-fresh-import"
+      ],
+      "golden": "out.csv",
+      "output": "out.csv"
+    }
+  ],
+  "replay": [
+    {
+      "args": [
+        "parsing.json"
+      ],
+      "batch": "decisions-0.json",
+      "sidecar": "parsing.json.claims.json"
+    }
+  ]
+}

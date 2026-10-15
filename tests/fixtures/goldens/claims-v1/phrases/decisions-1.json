@@ -1,0 +1,14 @@
+[
+  {
+    "fingerprint": "59eef5639d84d9ab18bd03c78c3e6ef1583a9826562c7abc3f1a8001e33f96c8",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "accepted"
+  },
+  {
+    "fingerprint": "de9af6861a0ddf05e7d03af8dc0f2ded034eb5357f588a276c2fd6c3f9787e5b",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "accepted"
+  }
+]

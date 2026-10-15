@@ -83,6 +83,7 @@ also_copy = [
     "README.md",
     "CHANGELOG.md",
     "THIRD_PARTY_NOTICES.md",
+    "data/",
     "docs/",
     "planning/tasks/",
     ".agents/skills/extracting-authored-notes/",

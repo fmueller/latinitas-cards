@@ -1,0 +1,121 @@
+{
+  "limits": {
+    "max_exercises": 20,
+    "variants_per_binding": 2
+  },
+  "selections": [
+    {
+      "bindings": [
+        {
+          "entry": "friend",
+          "form": "abl-sg",
+          "role": "object",
+          "sense": "person",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "friend"
+          }
+        }
+      ],
+      "object_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+      "pattern": "with",
+      "source_identity": "phrase-source-v1-48390372846cabffae0b2b502bf115cf5bd5ff0e60c55dee057fe75418560f49",
+      "source_scope": "phrase-input-v1"
+    },
+    {
+      "bindings": [
+        {
+          "entry": "friend",
+          "form": "acc-sg",
+          "role": "object",
+          "sense": "person",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "friend"
+          }
+        },
+        {
+          "entry": "girl",
+          "form": "nom-sg",
+          "role": "subject",
+          "sense": "person",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "girl"
+          }
+        },
+        {
+          "entry": "see",
+          "form": "present-sg",
+          "role": "verb",
+          "sense": "perceive",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "see"
+          }
+        }
+      ],
+      "object_key": "phrase-object-v1-e9fbcd5782af73ca71b170ff986aea315a2d3a7eefa264ff42606d042199b49f",
+      "pattern": "sees",
+      "source_identity": "phrase-source-v1-ff886ab6a917aac92a0e5f1e3b84d83e205a95e84968a50daffbafc5f03fe655",
+      "source_scope": "phrase-input-v1"
+    },
+    {
+      "bindings": [
+        {
+          "entry": "friend",
+          "form": "gen-sg",
+          "role": "dependent",
+          "sense": "person",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "friend"
+          }
+        },
+        {
+          "entry": "book",
+          "form": "nom-sg",
+          "role": "head",
+          "sense": "volume",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "book"
+          }
+        }
+      ],
+      "object_key": "phrase-object-v1-890d90464ddba69f662011a304f77ec82cb1daf07aa94d2851b39376cbffbea1",
+      "pattern": "possessor",
+      "source_identity": "phrase-source-v1-2e3c4d71d9b85be87cf419900c75ea38b8dc60959cb38b60a40f0483cc0ddbaa",
+      "source_scope": "phrase-input-v1"
+    },
+    {
+      "bindings": [
+        {
+          "entry": "friend",
+          "form": "nom-sg",
+          "role": "head",
+          "sense": "person",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "friend"
+          }
+        },
+        {
+          "entry": "good",
+          "form": "masc-sg",
+          "role": "modifier",
+          "sense": "quality",
+          "source": {
+            "scope": "reviewed-fixture-scope",
+            "value": "good"
+          }
+        }
+      ],
+      "object_key": "phrase-object-v1-ae5749722a2b353511e5c903f4a7831ca401d65a30d23dbc14e7df503ec50b11",
+      "pattern": "quality",
+      "source_identity": "phrase-source-v1-8fe6bb7f1293663db0330092c0472619ed6327f0387470ee364e350875d2383e",
+      "source_scope": "phrase-input-v1"
+    }
+  ],
+  "version": 1
+}

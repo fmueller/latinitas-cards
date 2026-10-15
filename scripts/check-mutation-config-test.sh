@@ -10,6 +10,7 @@ fail() {
 grep -Eq '"mutmut>=3\.8\.0,<4"' "$root/pyproject.toml" || fail 'mutmut development dependency is not pinned'
 grep -F '[tool.mutmut]' "$root/pyproject.toml" >/dev/null || fail 'mutmut configuration is missing'
 grep -F 'source_paths = ["src/latinitas_cards/"]' "$root/pyproject.toml" >/dev/null || fail 'mutation source path is wrong'
+grep -F '"data/",' "$root/pyproject.toml" >/dev/null || fail 'mutation sandbox omits the bundled corpus'
 grep -F 'testpaths = ["tests"]' "$root/pyproject.toml" >/dev/null || fail 'pytest collection is not bounded'
 grep -F 'name = "mutmut"' "$root/uv.lock" >/dev/null || fail 'mutmut is absent from the lock'
 

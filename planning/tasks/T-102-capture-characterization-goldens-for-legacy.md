@@ -1,11 +1,11 @@
 ---
 id: T-102-capture-characterization-goldens-for-legacy
 title: Capture characterization goldens for legacy Vulgate paths and v1 claim exports
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#usfx-normalization
 dependencies: []
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-15T21:31:48Z"
 ---
 
 # T-102-capture-characterization-goldens-for-legacy Capture characterization goldens for legacy Vulgate paths and v1 claim exports
@@ -112,3 +112,93 @@ claim sidecar v2 is T-115.
 - Size guard: fixtures, the `CAPTURE` manifest, two test modules (plus the manifest
   test) and one script; no `src/` change. File a follow-up
   rather than widen.
+
+## Execution Evidence (2026-10-15)
+
+- Ownership: fetched `origin/main` and checked HEAD and remote both equal
+  `7615a121a5c94b86974f6c52f0d538c9b0c373c6` before starting. `taskrail validate`
+  passed; `taskrail next --json` selected only this task before start and again
+  before finalization (active task already in progress). No conflicting owner.
+- Pinned spec SHA-256 remained
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+- Capture: `uv run python scripts/regen-legacy-goldens.py
+  --i-know-this-rewrites-characterization-goldens` against the original HEAD,
+  with no `src/` differences. 21 legacy cases, 83 manifested fixture files,
+  three claim families, four version-1 sidecars. Full Vulgate generation:
+  40 rows, 15,948 bytes, SHA-256
+  `9ad9d91e916f5b02c2972d706850b7fd75e93372ba59bbb67aa93fc311a6d3da`.
+  Bundled XML SHA-256:
+  `05bcb3f669d9b36deab6cf26950b8a24c7609b292e5af1abfa51717677701950`.
+  CAPTURE SHA-256:
+  `051ae0d397d572f6392715bf5fc007fc0b7503c4f4ebd4deadf769a1a3382015`.
+- Command naming: the existing phrase CLI consumes `inputs.json`, which refers
+  to `deck.csv`; passing `deck.csv` directly fails JSON validation. Captures
+  preserve this actual API rather than changing source. The contextual fixture
+  is named `parsing.json` to avoid colliding with the replay `cases.json` metadata.
+  Deterministic identity manifests, per-recipe checkpoints and empty review locks
+  are compared too; no random/clock exclusions were needed.
+- Strict RED: `uv run pytest -q tests/unit/legacy_goldens_test.py
+  tests/unit/claim_goldens_test.py tests/unit/golden_manifest_test.py` produced
+  6 failed, 1 passed (missing script/CAPTURE). GREEN with mutation-config tests
+  added: 26 passed in 22.46s. Mutation configuration RED:
+  `uv run pytest -q tests/unit/mutation_config_test.py -k data` produced 1 failed,
+  18 deselected (data not copied); shell guard failed with
+  `FAIL: mutation sandbox omits the bundled corpus`. Adding `data/` made both pass.
+- Negative control on a disposable copy of committed `generate.csv`: changing
+  exactly one byte (`I love` to `I Love`) failed with `golden mismatch`; restoring
+  the original bytes passed the same case. No test writes repository fixtures.
+- Initial full chain: `uv run ruff check` passed; `uv run mypy` passed (110 files);
+  `uv run pytest -v` passed (1,058 tests, 71.28s).
+- Simplification: dedicated Task loaded `code-simplifier`, inspected the actual
+  diff and found no safe useful simplification. No edits or rejected concrete
+  suggestions; retained separate replay/output-audit phases. Focused 7 passed.
+- Independent parallel review Tasks: General loaded `code-reviewer`, reviewer
+  index and ECC General reviewer (no companions specified); Python loaded
+  `code-reviewer`, index, ECC Python reviewer and `python-patterns`. General is
+  mandatory; Python is triggered by the Python harness. Security, database,
+  framework and other domain lanes omitted because no corresponding production
+  boundaries or persistence schemas change. Two lanes, within specialist budget.
+- Fresh candidate-validation Task loaded `code-reviewer` in candidate-validation
+  mode and General/Python references; validated both candidates, rejected none,
+  deduplicated none. Verbatim validated findings and dispositions follow.
+
+### Validated review findings
+
+**T102-1 (medium, tests):** "The legacy write-set audit does not detect a command
+modifying an existing input file unless that file is also listed as an expected
+output." Evidence: `scripts/regen-legacy-goldens.py:90–91,111–115` at review time.
+Disposition: **Fixed**. Snapshot bytes, not only filenames, and audit creations,
+changes and deletions against declared outputs/exclusions.
+
+**PY-1 (medium, tests):** "The legacy golden subprocess tests can run the normally
+installed package instead of the mutated package, allowing those cases to pass
+without exercising the mutant." Evidence: script lines 43–65 and legacy test
+lines 14–20 at review time; mutmut adjusts only the parent interpreter's sys.path.
+Disposition: **Fixed**. In mutation mode expose the sandbox source package by a
+symlink inside the disposable cwd, preserving the fixed environment and exact
+`sys.executable -m latinitas_cards` command. No PYTHONPATH inheritance added.
+
+- Disposition strict RED: `uv run pytest -q tests/unit/legacy_goldens_test.py
+  -k 'overwrite or sandbox_source'` produced 2 failed, 3 deselected (overwrite
+  failed to raise; baseline help appeared instead of mutation sentinel). Same
+  command GREEN: 2 passed, 3 deselected in 0.05s. Full focused suite: 9 passed
+  in 22.12s. `MUTANT_UNDER_TEST=stats uv run pytest -q
+  tests/unit/legacy_goldens_test.py tests/unit/claim_goldens_test.py
+  tests/unit/golden_manifest_test.py`: 7 passed, 2 skipped in 15.73s.
+- Additional mutation control: copied the source to a disposable sandbox and
+  reversed USFX book/chapter/verse sorting. With MUTANT_UNDER_TEST and that source
+  path the generation case failed with `golden mismatch: .../generate.csv`;
+  restoring the original source in that same copy passed. No worktree source edit.
+- Fresh final chain: ruff passed; mypy passed (110 files); pytest passed
+  (1,060 tests, 63.61s). `mise run check` passed: ruff, format (314 files), mypy,
+  pytest (1,060 tests, 65.89s), commit-message, push-message, author and mutation
+  result/configuration shell checks. Checked at 2026-10-15T21:30:50Z.
+- Fresh disposition-verification Task loaded `code-reviewer` in
+  disposition-verification mode, General/Python ECC references and
+  `python-patterns`: "No concrete task-relevant findings." Both IDs resolved;
+  its fresh focused run passed 28 tests. One review/fix/recheck cycle, no deferrals
+  or follow-ups. No releases, tags, deployments, spec edits or second task claim.
+- Hooks installed with `mise exec -- lefthook install`; maintainer identity
+  confirmed before first commit, with no attribution trailers.
+- 2026-10-15T21:31:41Z: verification pass
+- 2026-10-15T21:31:48Z: Verified pass 2026-10-15T21:31:41Z after strict TDD, simplification, independent General/Python review, fresh candidate validation, both fixes and fresh disposition verification; final 1060 pytest and mise check passed. Captured original baseline without src or spec changes.

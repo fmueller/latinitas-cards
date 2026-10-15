@@ -16,6 +16,7 @@ ROOT = Path(__file__).parents[2]
         "README.md",
         "CHANGELOG.md",
         "THIRD_PARTY_NOTICES.md",
+        "data/lat-clementine.usfx.xml",
         "docs/extraction-content-review.md",
         "docs/legacy-transition.md",
         "docs/reference-note-type.md",

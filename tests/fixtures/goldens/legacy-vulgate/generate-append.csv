@@ -1,0 +1,3 @@
+Front,Back,Notes,VulgataCloze
+amo,I love,1,old amo<br><br>verbum {{c1::amo}}. titulus <span style='color:#888'>(AAA 1:1)</span><br><br>{{c1::amo}} amo sum. nota verbum est. <span style='color:#888'>(ZZZ 2:1)</span>
+sum,I am,2,old sum<br><br>{{c1::sum}} verbum. <span style='color:#888'>(AAA 1:2)</span><br><br>amo amo {{c1::sum}}. nota verbum est. <span style='color:#888'>(ZZZ 2:1)</span>

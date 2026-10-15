@@ -1,0 +1,38 @@
+{
+  "exclusions": {},
+  "exports": [
+    {
+      "argv": [
+        "phrases",
+        "export",
+        "inputs.json",
+        "selected.json",
+        "recipes.json",
+        "out.csv"
+      ],
+      "golden": "out.csv",
+      "output": "out.csv"
+    }
+  ],
+  "replay": [
+    {
+      "args": [
+        "inputs.json",
+        "--phrase-input"
+      ],
+      "batch": "decisions-0.json",
+      "sidecar": "inputs.json.claims.json"
+    },
+    {
+      "args": [
+        "inputs.json",
+        "--selections",
+        "selected.json",
+        "--recipes",
+        "recipes.json"
+      ],
+      "batch": "decisions-1.json",
+      "sidecar": "recipes.json.claims.json"
+    }
+  ]
+}

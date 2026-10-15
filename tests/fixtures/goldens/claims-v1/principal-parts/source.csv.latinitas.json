@@ -1,0 +1,11 @@
+{
+  "entries": [],
+  "schema_version": 2,
+  "source_columns": [
+    "ID",
+    "Lemma",
+    "Forms",
+    "Meaning"
+  ],
+  "source_scope": "legacy-golden-principal-parts-v1"
+}

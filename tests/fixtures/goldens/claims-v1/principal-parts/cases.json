@@ -1,0 +1,56 @@
+{
+  "exclusions": {},
+  "exports": [
+    {
+      "argv": [
+        "generate",
+        "--input",
+        "source.csv",
+        "--profile",
+        "profile.json",
+        "--recipe",
+        "principal_part_completion",
+        "--output",
+        "principal_part_completion.csv",
+        "--approve-fresh-import"
+      ],
+      "artifacts": {
+        "source.csv.latinitas-cards.json": "principal_part_completion.checkpoint.json",
+        "source.csv.latinitas.json": "principal_part_completion.manifest.json"
+      },
+      "golden": "principal_part_completion.csv",
+      "output": "principal_part_completion.csv"
+    },
+    {
+      "argv": [
+        "generate",
+        "--input",
+        "source.csv",
+        "--profile",
+        "profile.json",
+        "--recipe",
+        "principal_part_recognition",
+        "--output",
+        "principal_part_recognition.csv",
+        "--approve-fresh-import"
+      ],
+      "artifacts": {
+        "source.csv.latinitas-cards.json": "principal_part_recognition.checkpoint.json",
+        "source.csv.latinitas.json": "principal_part_recognition.manifest.json"
+      },
+      "golden": "principal_part_recognition.csv",
+      "output": "principal_part_recognition.csv"
+    }
+  ],
+  "replay": [
+    {
+      "args": [
+        "source.csv",
+        "--profile",
+        "profile.json"
+      ],
+      "batch": "decisions-0.json",
+      "sidecar": "source.csv.claims.json"
+    }
+  ]
+}

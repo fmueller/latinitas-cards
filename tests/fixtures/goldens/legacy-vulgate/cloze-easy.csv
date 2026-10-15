@@ -1,0 +1,2 @@
+form,meaning,extra,CorpusCloze,difficulty_score,difficulty_label
+amo,I love,keep,{{c1::amo}} amo sum. <span style='color:#888'>(sample 1:1)</span><br><br>sum et {{c1::amo}}. <span style='color:#888'>(sample 1:3)</span>,5.43,easy
