@@ -1,0 +1,42 @@
+{"passages": [
+  {
+    "name": "GEN 1:1", "text": "In principio creavit Deus cælum et terram.",
+    "tokens": [["In", "word", 0, 2], ["principio", "word", 3, 12], ["creavit", "word", 13, 20], ["Deus", "word", 21, 25], ["cælum", "word", 26, 31], ["et", "word", 32, 34], ["terram", "word", 35, 41], [".", "punct", 41, 42]],
+    "sentences": [[0, 42, 0, 8, false, false]]
+  },
+  {
+    "name": "GEN 1:3", "text": "Dixitque Deus : Fiat lux. Et facta est lux.",
+    "tokens": [["Dixitque", "word", 0, 8], ["Deus", "word", 9, 13], [":", "punct", 14, 15], ["Fiat", "word", 16, 20], ["lux", "word", 21, 24], [".", "punct", 24, 25], ["Et", "word", 26, 28], ["facta", "word", 29, 34], ["est", "word", 35, 38], ["lux", "word", 39, 42], [".", "punct", 42, 43]],
+    "sentences": [[0, 25, 0, 6, false, false], [26, 43, 6, 11, false, false]]
+  },
+  {
+    "name": "closers", "text": ".\" .' .) .» .” ?» ! . )",
+    "tokens": [[".", "punct", 0, 1], ["\"", "punct", 1, 2], [".", "punct", 3, 4], ["'", "punct", 4, 5], [".", "punct", 6, 7], [")", "punct", 7, 8], [".", "punct", 9, 10], ["»", "punct", 10, 11], [".", "punct", 12, 13], ["”", "punct", 13, 14], ["?", "punct", 15, 16], ["»", "punct", 16, 17], ["!", "punct", 18, 19], [".", "punct", 20, 21], [")", "punct", 22, 23]],
+    "sentences": [[0, 2, 0, 2, false, false], [3, 5, 2, 4, false, false], [6, 8, 4, 6, false, false], [9, 11, 6, 8, false, false], [12, 14, 8, 10, false, false], [15, 17, 10, 12, false, false], [18, 19, 12, 13, false, false], [20, 21, 13, 14, false, false], [22, 23, 14, 15, true, false]]
+  },
+  {
+    "name": "orthography", "text": "d'arma d’arma œ ā_2 virumque;:",
+    "tokens": [["d", "word", 0, 1], ["'", "punct", 1, 2], ["arma", "word", 2, 6], ["d", "word", 7, 8], ["’", "punct", 8, 9], ["arma", "word", 9, 13], ["œ", "word", 14, 15], ["ā_2", "word", 16, 20], ["virumque", "word", 21, 29], [";", "punct", 29, 30], [":", "punct", 30, 31]],
+    "sentences": [[0, 31, 0, 11, true, false]]
+  },
+  {
+    "name": "chained closers and asymmetric boundaries", "text": "A.\")»” B? C!D",
+    "tokens": [["A", "word", 0, 1], [".", "punct", 1, 2], ["\"", "punct", 2, 3], [")", "punct", 3, 4], ["»", "punct", 4, 5], ["”", "punct", 5, 6], ["B", "word", 7, 8], ["?", "punct", 8, 9], ["C", "word", 10, 11], ["!", "punct", 11, 12], ["D", "word", 12, 13]],
+    "sentences": [[0, 6, 0, 6, false, false], [7, 9, 6, 8, false, false], [10, 12, 8, 10, false, false], [12, 13, 10, 11, true, false]]
+  },
+  {"name": "empty", "text": "", "tokens": [], "sentences": []}
+], "work": [
+  {"text": "Fiant luminaria:", "work": "GEN", "order": 1,
+   "tokens": [["Fiant", "word", 0, 5], ["luminaria", "word", 6, 15], [":", "punct", 15, 16]],
+   "sentences": [[0, 16, 0, 3, true, false]]},
+  {"text": "lux. Nox:", "work": "GEN", "order": 2,
+   "tokens": [["lux", "word", 0, 3], [".", "punct", 3, 4], ["Nox", "word", 5, 8], [":", "punct", 8, 9]],
+   "sentences": [[0, 4, 0, 2, false, true], [5, 9, 2, 4, true, false]]},
+  {"text": "sic.", "work": "GEN", "order": 3,
+   "tokens": [["sic", "word", 0, 3], [".", "punct", 3, 4]],
+   "sentences": [[0, 4, 0, 2, false, true]]},
+  {"text": "incipit", "work": "EXO", "order": 4,
+   "tokens": [["incipit", "word", 0, 7]], "sentences": [[0, 7, 0, 1, true, false]]},
+  {"text": "novum.", "work": "LEV", "order": 5,
+   "tokens": [["novum", "word", 0, 5], [".", "punct", 5, 6]], "sentences": [[0, 6, 0, 2, false, false]]}
+]}

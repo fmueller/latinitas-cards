@@ -1,12 +1,12 @@
 ---
 id: T-106-segment-sentences-and-tokenize-passages-with-the
 title: Segment sentences and tokenize passages with the fixed latin-seg and latin-tok rules
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#normalized-jsonl-corpus-model
 dependencies:
     - T-104-define-versioned-corpus-records-with-a-canonical
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-15T23:03:55Z"
 ---
 
 # T-106-segment-sentences-and-tokenize-passages-with-the Segment sentences and tokenize passages with the fixed latin-seg and latin-tok rules
@@ -76,3 +76,5 @@ text and passage sequences. Wrapping results into `segmentation` annotation reco
 - Apostrophe handling is resolved by the prepared spec, not an open maintainer decision.
   Keep its literal punctuation rule; implementation workers may not amend the spec.
 - Size guard: one module and its tests; no command. File a follow-up rather than widen.
+- 2026-10-15T23:03:55Z: verification pass
+- 2026-10-15T23:03:55Z: Implemented fixed segmentation in one pure module with frozen records, exact code-point spans, adjacent closers and work continuation/reset. Handwritten fixtures and fixture-wide partition checks pass. Strict RED missing-module import then GREEN 5 focused tests. Dedicated simplifier no change; independent parallel General/Python lanes, fresh candidate validator and fresh disposition verifier all reported no concrete task-relevant findings (one cycle, no deferrals). Mandatory ruff/mypy/pytest chain and mise run check passed, 1245 tests; no commands or annotation integration added. Verification timestamp recorded by taskrail verify; no follow-ups.
