@@ -1,12 +1,12 @@
 ---
 id: T-108-extract-usfx-parsing-from-cli-py-into-an-adapter
 title: Extract USFX parsing from cli.py into an adapter module with a legacy projection
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#usfx-normalization
 dependencies:
     - T-102-capture-characterization-goldens-for-legacy
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-15T23:47:08Z"
 ---
 
 # T-108-extract-usfx-parsing-from-cli-py-into-an-adapter Extract USFX parsing from cli.py into an adapter module with a legacy projection
@@ -71,3 +71,5 @@ DTD rejection arrive with T-109/T-110 and are applied to the legacy path by T-11
   tests beyond this task's differential test.
 - Size guard: one new module and call-site edits in `cli.py`. File a follow-up rather than
   widen.
+- 2026-10-15T23:47:08Z: verification pass
+- 2026-10-15T23:47:08Z: Behavior-preserving parser/normalizer extraction with frozen verbatim oracle, differential fixtures and six command spies. RED 2026-10-15T23:34:28Z; GREEN 2026-10-15T23:35:50Z. Focused 91 and full 1344 tests passed; ruff/mypy and mise run check passed. Dedicated simplifier, separate General/Python/Security review lanes, fresh candidate validation and fresh disposition verification: no concrete task-relevant findings; one cycle, no deferrals. All T102 goldens and full Vulgate digest unchanged; no fixture edits. Verification run recorded immediately before completion.
