@@ -1,14 +1,14 @@
 ---
 id: T-115-record-corpus-claim-decisions-through-claim
 title: Record corpus claim decisions through claim sidecar version 2
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#sidecar-annotation-model
 dependencies:
     - T-113-define-annotation-sidecar-records-and-the
     - T-102-capture-characterization-goldens-for-legacy
     - T-114-report-stale-orphaned-and-unmatched-annotations-in
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T10:14:54Z"
 ---
 
 # T-115-record-corpus-claim-decisions-through-claim Record corpus claim decisions through claim sidecar version 2
@@ -85,6 +85,63 @@ planning and apply revalidation (T-117, T-119), and the `--claims` options of
 - Record verification timestamps and results; do not commit gitignored artifact paths.
 - Record the pinned corpus fingerprint and the golden comparison results.
 
+### Execution evidence (2026-10-16)
+
+- Base: accepted `origin/main` a4a91020612401a50e4c9df186ec87e792389f61;
+  spec SHA256 fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704.
+  `taskrail validate` passed; selector named T-115 before start and again before verify.
+  Started 09:56:44Z; verification run 10:14:14Z passed after all review/check gates.
+- V1 guard first: four sidecars load/serialize byte-identically, and all four CSV
+  exports (both principal-part recipes, parsing, phrases) match committed goldens.
+  `uv run pytest tests/unit/claim_goldens_test.py -q`: 4 passed before production edits.
+- Initial RED: 2 failures for missing v2 models and missing deck-version diagnostic;
+  then 11 expected failures for absent corpus module/options and deck error code.
+  GREEN: focused corpus/golden suite passed, eventually 28 tests after review fixes.
+- Independent canonical fixture bytes piped to `sha256sum` pin fixture-morph to
+  `0abc30c213eaaafe24de770bc93cd0c89d5434df4d002dbfe5d12445470b01c2`;
+  ordinary JSON separators yield a different digest.
+- Real CLI normalize/segment/import reproduced the committed corpus/annotation bytes.
+  Six claims began open; three individually selected morphology fingerprints were
+  accepted. Renormalizing the edited text hid line 2, reported one stale decision
+  and check exit 1; line 1/3 morphology decisions remained accepted, segmentations open.
+- Temporary persistence probes: existing claims lock blocks recording, remains at
+  the same inode, and is never removed; identical retry preserves exact bytes;
+  injected pre-replace failure preserves prior bytes and removes staged temporary files.
+- Dedicated Task loaded `code-simplifier`; accepted only separation of corpus option
+  checks from report generation, removing an unused report in recording. Post-check:
+  focused 25 tests, ruff and mypy passed. No rejected simplification suggestions.
+- Separate parallel Tasks loaded `code-reviewer`: General used ECC code-reviewer;
+  Database/persistence used database-reviewer plus postgres-patterns/database-migrations;
+  Security used security-reviewer plus security-review. General and Database both:
+  "No concrete task-relevant findings." These lanes cover correctness, integrity,
+  locks and trust boundaries; no framework/SQL/model-provider behavior is changed.
+  A separate Python lane was omitted as General plus strict mypy covered those risks.
+- Fresh candidate validation confirmed the sole candidate SEC-001 below; none were
+  rejected or deduplicated. Disposition: FIXED in corpus loader only, preserving
+  deck behavior. At 2,000 levels Python 3.14 parsed the fixture; corrected to the
+  reviewer's 100,000 levels before editing production: 3 RED failures (empty output),
+  then 3 GREEN with legacy invalid diagnostics/exit 1 and unchanged persisted bytes.
+- Fresh disposition-verification Task loaded code-reviewer, General/Python/Security
+  guidance and python-patterns/security-review references; independently ran the
+  3 regression cases and verified SEC-001 resolved, no new issues. One review/fix/
+  recheck cycle; no deferred findings or newly required follow-ups.
+- Final exact chain: `uv run ruff check` passed; `uv run mypy` passed (150 files);
+  `uv run pytest -v`: 1,588 passed, one existing Pydantic serializer warning, 91.95s.
+  `mise run check` passed: ruff, formatting, mypy, 1,588 tests (91.19s), and all
+  commit/push/author/mutation policy scripts. `git diff --check` passed.
+- Production scope: one new corpus_claims module and edits only to claim_sidecar
+  and commands/claims. T-125 joins, T-127 exporter repair, T-128 dense-memory work
+  and blocked T-038 release remain excluded; no spec or gate changes.
+
+Validated finding, verbatim:
+
+> FINDING SEC-001 — security
+> Severity: low
+> Evidence: `src/latinitas_cards/corpus_claims.py:75`; `src/latinitas_cards/commands/claims.py:101,158,188`. `load_corpus_decisions` calls `json.loads` without handling `RecursionError`, while the CLI handlers catch `OSError`, `ValueError`, and `ContractError`. Reproduced with a v2 claims file containing 100,000 nested arrays: `claims list ... --annotations ... --json` raised `RecursionError` and emitted no diagnostics.
+> Finding: Deeply nested malformed corpus decision JSON escapes the legacy error handling and crashes the claims command instead of returning the required legacy diagnostic JSON.
+> Failure/impact: A malformed persisted file can make `claims list`, `record`, or `inspect` fail with an uncaught exception rather than a controlled `invalid` response.
+> Recommended direction: Treat `RecursionError` from decoding/validation as malformed input and test that deeply nested decision JSON returns the legacy diagnostic shape without modifying the file.
+
 ## Implementation Notes
 
 - New `corpus_claims.py` builds corpus claims from the corpus reader `corpus_io` (T-104)
@@ -107,3 +164,5 @@ planning and apply revalidation (T-117, T-119), and the `--claims` options of
 - TDD order: v1 golden guard first, v2 models, deck rejection, fingerprint golden, list,
   record, inspect and the stale decision. Size guard: one new module plus edits to
   `claim_sidecar.py` and `commands/claims.py`; file a follow-up for anything wider.
+- 2026-10-16T10:14:14Z: verification pass
+- 2026-10-16T10:14:54Z: Reviewed corpus claims v2; verification 2026-10-16T10:14:14Z passed after ruff/mypy/1588 tests, mise check and fresh disposition verification. Legacy v1 bytes/exports preserved; SEC-001 fixed; no deferred findings.

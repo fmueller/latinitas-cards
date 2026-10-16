@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import fcntl
+import json
 import os
 import tempfile
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from .annotation_sidecar import Layer
 from .claim_review import Claim, ClaimAssessment, Evidence, ReviewDecision, assess_claim, review_claim
+from .corpus_model import CorpusId, Sha256
 
 
 @dataclass(frozen=True)
@@ -54,6 +57,54 @@ class Sidecar(BaseModel):
     decisions: tuple[StoredDecision, ...] = ()
 
 
+class CorpusBinding(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    kind: Literal["corpus"] = "corpus"
+    corpus_id: CorpusId
+    passage_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{1,62}:(?:[A-Za-z0-9._-]|%[0-9A-F]{2})+$", max_length=256)
+    passage_hash: Sha256
+    annotation_id: Sha256
+    layer: Layer
+
+    @model_validator(mode="after")
+    def corpus_identity(self) -> Self:
+        if not self.passage_id.startswith(f"{self.corpus_id}:"):
+            raise ValueError("passage_id must belong to corpus_id")
+        return self
+
+
+class StoredDecisionV2(StoredDecision):
+    base_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$", strict=True)
+    binding: CorpusBinding
+
+    @model_validator(mode="after")
+    def corpus_decision(self) -> Self:
+        if self.base_fingerprint != self.decision.claim_fingerprint:
+            raise ValueError("corpus decision fingerprint must equal base_fingerprint")
+        if self.value is not None or self.evidence is not None or self.selected_sense is not None:
+            raise ValueError("corpus decisions cannot author values, evidence or selected senses")
+        return self
+
+
+class SidecarV2(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    version: Literal[2] = 2
+    decisions: tuple[StoredDecisionV2, ...] = ()
+
+    @model_validator(mode="before")
+    @classmethod
+    def version_type(cls, value: object) -> object:
+        if isinstance(value, dict) and "version" in value and type(value["version"]) is not int:
+            raise ValueError("version must be an integer")
+        return value
+
+
+class UnsupportedVersion(ValueError):
+    code = "unsupported_version"
+
+
 @dataclass(frozen=True)
 class Diagnostic:
     code: str
@@ -66,7 +117,13 @@ def sidecar_path(source: Path) -> Path:
 
 
 def load_sidecar(path: Path) -> Sidecar:
-    return Sidecar.model_validate_json(path.read_text(encoding="utf-8")) if path.exists() else Sidecar()
+    if not path.exists():
+        return Sidecar()
+    payload = path.read_text(encoding="utf-8")
+    raw = json.loads(payload)
+    if isinstance(raw, dict) and "version" in raw and raw["version"] != 1:
+        raise UnsupportedVersion("unsupported_version: deck claims require version 1")
+    return Sidecar.model_validate_json(payload)
 
 
 def authored_claim(

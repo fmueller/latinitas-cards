@@ -56,6 +56,50 @@ Do not treat it as destination state or put it in a managed approval file.
 Stale/unmatched decisions are reported and ignored; resolve stale sidecar entries
 before recording further decisions. Retain old evidence separately if needed.
 
+## Corpus annotation review (version 2)
+
+Select corpus mode with `--annotations`; do not combine it with deck profiles,
+phrase inputs/selections/recipes, or rendered artifacts:
+
+```sh
+uv run latinitas-cards claims list corpus.jsonl --annotations annotations.jsonl --json
+uv run latinitas-cards claims record corpus.jsonl --annotations annotations.jsonl \
+  --fingerprint '<one current fingerprint>' --status accepted \
+  --reviewer 'Latin reviewer' --reason 'Checked this annotation in context'
+uv run latinitas-cards claims inspect corpus.jsonl --annotations annotations.jsonl --check --json
+```
+
+Only current, non-superseded, non-retracted annotations are claims. Segmentation,
+morphology, translation and correction each require their own explicit decision;
+missing decisions remain `open` and withheld. Confidence never implies acceptance.
+There is no `--policy` or approve-all option. `--batch` uses the individual decision
+array shown above, with no authored fields. `--value`, `--evidence` and
+`--selected-sense` exit 3 in corpus mode; those keys in a batch reject the whole
+batch with exit 1, even when null. A correction is reviewed as a proposal, never
+as an edit to the source.
+
+Corpus decisions live at `<corpus>.claims.json`, with shape
+`{"version": 2, "decisions": [...]}` (no `format`). Each entry retains the v1
+decision fields and adds `binding: {kind: "corpus", corpus_id, passage_id,
+passage_hash, annotation_id, layer}`, copied from the annotation. Both
+`base_fingerprint` and `decision.claim_fingerprint` hold the unprefixed SHA-256
+hex digest of canonical JSON of `{annotation_id, layer, value, anchor, producer}`:
+sorted keys, literal Unicode, compact `,`/`:` separators and no NaN.
+
+Decisions must match both the current fingerprint and copied binding. Editing a
+passage hides its stale annotations from the claim list; inspection reports their
+decisions as `stale`, and `--check` exits 1. Other passages retain their decisions.
+Unknown, stale, invalid or conflicting batch items reject the entire write.
+Recording takes the persistent blocking `<corpus>.claims.json.lock`, validates
+everything, then atomically replaces the decision file. Identical retries are
+idempotent. Stale/unmatched decisions must be resolved before further recording.
+
+Deck sidecars remain version 1; deck commands reject version 2 and corpus mode
+rejects version 1 with `unsupported_version`. Claims keeps its legacy JSON
+objects and diagnostics, not a `CliResult` envelope. Unreadable or malformed
+inputs and invalid batches exit 1; Click usage errors exit 2. Decision-aware
+`--claims` joins in corpus/annotation views are separate work.
+
 ## Authored corrections
 
 An item can add `value` and an `evidence` array containing `source`, `reference`,

@@ -10,6 +10,8 @@ from typing import Annotated
 import typer
 
 from ..claim_sidecar import claim_report, record_batch, sidecar_path
+from ..cli_contract import ContractError
+from ..corpus_claims import corpus_claim_report, record_corpus_batch
 from ..phrase_inputs import load_inputs
 from ..phrase_review import phrase_workspace
 from ..review_adapters import ReviewState
@@ -29,9 +31,34 @@ def _emit(report: dict[str, object], machine: bool) -> None:
             typer.echo(json.dumps(value, indent=2, ensure_ascii=True))
 
 
-def _error(error: Exception, machine: bool) -> None:
-    _emit({"diagnostics": [{"code": "invalid", "item": None, "message": str(error)}]}, machine)
-    raise typer.Exit(1)
+def _error(error: Exception, machine: bool, *, exit_code: int = 1) -> None:
+    code = getattr(error, "code", "invalid")
+    _emit({"diagnostics": [{"code": code, "item": None, "message": str(error)}]}, machine)
+    raise typer.Exit(exit_code)
+
+
+def _corpus_state(
+    source: Path,
+    annotations: Path,
+    profile: Path | None,
+    phrase_input: bool,
+    selections: Path | None,
+    recipes: Path | None,
+    artifact: Path | None = None,
+) -> dict[str, object]:
+    _validate_corpus_options(profile, phrase_input, selections, recipes, artifact)
+    return corpus_claim_report(source, annotations)
+
+
+def _validate_corpus_options(
+    profile: Path | None,
+    phrase_input: bool,
+    selections: Path | None,
+    recipes: Path | None,
+    artifact: Path | None = None,
+) -> None:
+    if profile is not None or phrase_input or selections is not None or recipes is not None or artifact is not None:
+        raise ValueError("--annotations cannot be combined with deck/profile/phrase/artifact options")
 
 
 def _state(
@@ -52,6 +79,7 @@ def _state(
 def list_claims(
     source: Path,
     profile: Path | None = None,
+    annotations: Path | None = None,
     phrase_input: bool = False,
     selections: Path | None = None,
     recipes: Path | None = None,
@@ -59,6 +87,9 @@ def list_claims(
 ) -> None:
     """List principal-part, contextual, or --phrase-input file claims."""
     try:
+        if annotations is not None:
+            _emit(_corpus_state(source, annotations, profile, phrase_input, selections, recipes), machine)
+            return
         state = _state(source, profile, phrase_input, selections, recipes)
         _emit(
             {
@@ -67,7 +98,7 @@ def list_claims(
             },
             machine,
         )
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, ContractError) as error:
         _error(error, machine)
 
 
@@ -75,6 +106,7 @@ def list_claims(
 def record(
     source: Path,
     profile: Path | None = None,
+    annotations: Path | None = None,
     batch: Path | None = None,
     fingerprint: str | None = None,
     status: str | None = None,
@@ -90,6 +122,14 @@ def record(
 ) -> None:
     """Record one fingerprint or an explicit JSON array; no approve-all path."""
     try:
+        if annotations is not None:
+            if value is not None or evidence is not None or selected_sense is not None:
+                _error(
+                    ValueError("corpus decisions cannot author values, evidence or selected senses"),
+                    machine,
+                    exit_code=3,
+                )
+            _validate_corpus_options(profile, phrase_input, selections, recipes)
         if batch is not None:
             if any(v is not None for v in (fingerprint, status, reviewer, reason, value, evidence, selected_sense)):
                 raise ValueError("batch and single-decision options cannot be combined")
@@ -105,14 +145,17 @@ def record(
             if selected_sense is not None:
                 item["selected_sense"] = selected_sense
             items = [item]
-        state = _state(source, profile, phrase_input, selections, recipes)
-        diagnostics = record_batch(sidecar_path(recipes if recipes is not None else source), state.bases, items)
+        if annotations is not None:
+            diagnostics = record_corpus_batch(source, annotations, items)
+        else:
+            state = _state(source, profile, phrase_input, selections, recipes)
+            diagnostics = record_batch(sidecar_path(recipes if recipes is not None else source), state.bases, items)
         _emit(
             {"diagnostics": [asdict(d) for d in diagnostics], "recorded": len(items) if not diagnostics else 0}, machine
         )
         if diagnostics:
             raise typer.Exit(1)
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, ContractError) as error:
         _error(error, machine)
 
 
@@ -120,6 +163,7 @@ def record(
 def inspect_cards(
     source: Path,
     profile: Path | None = None,
+    annotations: Path | None = None,
     artifact: Path | None = None,
     selections: Path | None = None,
     recipes: Path | None = None,
@@ -128,7 +172,9 @@ def inspect_cards(
 ) -> None:
     """Inspect rendered fields and backing claims; --check fails closed on drift."""
     try:
-        if selections is not None or recipes is not None:
+        if annotations is not None:
+            report = _corpus_state(source, annotations, profile, False, selections, recipes, artifact)
+        elif selections is not None or recipes is not None:
             if selections is None or recipes is None or profile is not None:
                 raise ValueError("phrase inspection requires --selections and --recipes, without --profile")
             report = inspect_workspace(phrase_workspace(source, selections, recipes)[1], artifact)
@@ -139,5 +185,5 @@ def inspect_cards(
         _emit(report, machine)
         if check and report["diagnostics"]:
             raise typer.Exit(1)
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, ContractError) as error:
         _error(error, machine)
