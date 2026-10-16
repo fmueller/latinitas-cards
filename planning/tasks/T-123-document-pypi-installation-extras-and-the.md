@@ -1,12 +1,12 @@
 ---
 id: T-123-document-pypi-installation-extras-and-the
 title: Document PyPI installation, extras and the maintainer release runbook
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies:
     - T-122-add-the-tag-only-trusted-publishing-release
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T14:09:02Z"
 ---
 
 # T-123-document-pypi-installation-extras-and-the Document PyPI installation, extras and the maintainer release runbook
@@ -78,3 +78,89 @@ release itself to T-038. No `pyproject.toml` or extra changes.
   `.github/workflows/` entry from T-121.
 - Size guard: README section, one runbook and one test module. If docs for other
   commands need rework, file a follow-up rather than widen.
+
+## Workflow-v3 cycle audit (2026-10-16)
+
+1. Understand/source: fetched origin/main before lifecycle writes. HEAD and
+   origin/main both equaled accepted cumulative base
+   `6a56cf742205c30fb41e257a8e61aeaeff6f6f26`; worktree was clean. Active spec was
+   `specs/v0.3.0.md`, SHA256
+   `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+   `mise exec -- taskrail validate` returned `state valid`; selector returned this
+   task, todo, with zero active. Started only T-123 using Taskrail. Read the task,
+   PyPI Publishing contract and relevant README/workflow/packaging settings.
+   Scope: README installation and absolute documentation link, one runbook,
+   one test module and one user-focused Unreleased bullet; no product changes.
+2. Strict TDD: added `tests/unit/install_docs_test.py` before prose.
+   `uv run pytest -q tests/unit/install_docs_test.py` returned 3 failed:
+   missing `uv tool install latinitas-cards` and missing runbook (two tests).
+   After the minimal documentation additions, docs plus unchanged packaging
+   metadata/absolute-link tests returned `6 passed`.
+3. Initial exact chain: `uv run ruff check` returned `All checks passed!`;
+   `uv run mypy` returned no issues in 169 files; `uv run pytest -v` returned
+   `2455 passed, 1 warning in 141.14s`. The warning is Pydantic serialization,
+   not a failed test. No failing gate was skipped or suppressed.
+4. Dedicated simplifier Task loaded personal `code-simplifier`, its
+   `ATTRIBUTION.md` and license. Result: "No edits made." It found no concrete
+   safe reduction of the contract-focused extraction, negative control or gate
+   safeguards. Post-simplification focused docs/metadata tests: `6 passed`.
+5. Separate parallel independent review Tasks loaded `code-reviewer` and the
+   reviewer index. General loaded ECC code-reviewer and common rule sets;
+   Python loaded python-reviewer and python-patterns; Security loaded
+   security-reviewer, security-review and common security/code-review rules.
+   General was mandatory; Python covered test parsing/coverage; Security covered
+   package-index trust and publishing instructions. Database, frameworks, ML,
+   network configuration and other languages were omitted: no runtime, schema,
+   model, infrastructure or framework changes. Within specialist budget.
+   General: "No concrete task-relevant findings."
+   Security: "No concrete task-relevant findings."
+   General also ran docs/metadata/release-candidate tests: `9 passed`;
+   Python ran docs/metadata: `6 passed`.
+6. Python candidate below is preserved verbatim. A fresh candidate-validation
+   Task loaded code-reviewer and Python references and rejected PY-1: the actual
+   acceptance requires the publish action repository, not every action. The test
+   extracts `pypa/gh-action-pypi-publish` and the runbook documents it. No accepted
+   findings, deferrals or finding-fix TDD were applicable. Candidate validator
+   ran focused docs tests: `3 passed`.
+7. Final exact chain: `uv run ruff check` passed; `uv run mypy` passed (169 files);
+   `uv run pytest -v` returned `2455 passed, 1 warning in 131.42s`.
+   `mise run check` exited 0, including format, mypy, all 2455 tests and commit,
+   push-message, author, mutation, distribution and publishing synthetic guards.
+   A fresh disposition-verification Task loaded code-reviewer plus General,
+   Python and Security references. It independently confirmed PY-1 rejected and
+   returned "No unresolved or new task-relevant findings." Focused tests:
+   `3 passed`. One review cycle, no fixes needed. `git diff --check` passed.
+8. Finalization: all review/disposition/check gates preceded Taskrail verify and
+   complete. Hooks installed with `mise exec -- lefthook install`; git identity
+   confirmed Felix Müller. No attribution trailers. Taskrail verification and
+   completion timestamps below are authoritative lifecycle evidence.
+
+### Verbatim review candidate and disposition
+
+FINDING PY-1 — tests
+Severity: medium
+Evidence: `tests/unit/install_docs_test.py:52` restricts action extraction to `pypa/[^@]+`; `.github/workflows/release.yml` also uses `actions/checkout`, `astral-sh/setup-uv`, `actions/setup-python`, and `actions/upload-artifact` / `actions/download-artifact`.
+Finding: The workflow/runbook test does not check every action repository named by the acceptance criteria.
+Failure/impact: Renaming or changing any non-PyPA action repository would leave this test green, and the current runbook’s omission of those repository names is not detected.
+Recommended direction: Extract repository identifiers from every `uses:` line in the workflow and assert each is documented; keep the in-memory renamed-job negative control.
+
+Disposition: rejected (not an acceptance requirement), independently confirmed
+by candidate validation and final disposition verification. No code change.
+
+### Consistency and limits
+
+- Checked names against committed `release.yml`: file name; `build`, `verify`,
+  `publish`, `verify-pypi`; `pypi`; `v[0-9]+.[0-9]+.[0-9]+`;
+  `pypa/gh-action-pypi-publish`. In-memory renamed-job control proves drift fails.
+- Runbook retains maintainer prerequisites including corpus provenance/descriptor
+  confirmation, candidate Build/applicable CodeQL, protected environment review,
+  artifact hashes, ordered approval/publication/verification/release/evidence,
+  no TestPyPI/tokens/manual upload/tag rewrite/blind retry/re-upload.
+- Only authored docs/tests; did not execute documented release commands or change
+  tags, releases, deployments, secrets, providers, environments or infrastructure.
+  No current PyPI availability, macOS GPU or Windows verification claimed.
+- Current release line, clone v0.2.1 command and release_candidate_test.py retained
+  for T-124. T-038 stays blocked/maintainer-only; T-127 remains todo/unfixed;
+  T-128 remains future-spec todo/unstarted. No second task or persistent thread.
+- 2026-10-16T14:09:02Z: verification pass
+- 2026-10-16T14:09:02Z: Workflow-v3 complete after independent reviews and fresh disposition verification; exact ruff/mypy/pytest and mise run check passed. Documentation only; T038 remains blocked.

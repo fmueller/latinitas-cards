@@ -47,7 +47,41 @@ Anki setup details.
 
 ## Installation
 
-**Prerequisites:** Python 3.13 or 3.14 and [uv](https://docs.astral.sh/uv/).
+**Prerequisites:** Python 3.13 or 3.14. Linux and macOS are supported; Windows is not supported.
+The default install needs no CLTK, Stanza or PyTorch.
+
+### PyPI installation (planned)
+
+PyPI releases start with v0.3.0. These commands become available
+only after the future v0.3.0 maintainer release gate publishes the package;
+they are not a claim of current PyPI availability. Choose one isolated install:
+
+```bash
+uv tool install latinitas-cards
+# Or, with pipx:
+pipx install latinitas-cards
+# Or, with pip inside an activated virtual environment:
+python -m venv .venv
+source .venv/bin/activate
+pip install latinitas-cards
+```
+
+Upgrade using the same installer (activate the venv first for pip):
+
+```bash
+uv tool upgrade latinitas-cards
+pipx upgrade latinitas-cards
+pip install --upgrade latinitas-cards
+```
+
+The bundled Vulgate is not in the wheel or sdist. For corpus workflows, supply
+your own USFX path and optionally `--descriptor FILE` for corpus metadata.
+
+### Git development checkout
+
+The development checkout remains available with [uv](https://docs.astral.sh/uv/).
+This command keeps the current release checkout; contributors targeting unreleased
+work should select the appropriate development revision instead.
 
 ```bash
 git clone --branch v0.2.1 --depth 1 https://github.com/fmueller/latinitas-cards.git
@@ -56,19 +90,35 @@ uv sync --locked
 uv run latinitas-cards --help
 ```
 
-The optional `annotate` command is experimental and needs the CPU-only extra. It
-installs CLTK 2, Stanza, and CPU-only PyTorch; the first run downloads Latin Stanza
-models:
+### Experimental annotation extras
+
+Both `annotate` and `annotate-gpu` are experimental; the two extras must not be combined.
+`annotate` downloads Stanza models on first run (network and disk space required).
+For a checkout, the CPU extra installs CLTK 2, Stanza and CPU-only PyTorch:
 
 ```bash
 uv sync --locked --extra annotate
 ```
 
+uv's CPU torch index and extra conflict do not transfer to pip. After PyPI publication,
+use this CPU-extra command inside the activated venv on Linux:
+
+```bash
+pip install 'latinitas-cards[annotate]' --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+On macOS, PyPI's torch wheels are already CPU-only; use
+`pip install 'latinitas-cards[annotate]'`. pip does not enforce uv's extra conflict:
+choose one extra, never both. The additional index participates in dependency
+resolution; use only trusted indexes and review the resolved packages.
+
 > [!WARNING]
 > **Highly experimental:** `uv sync --locked --extra annotate-gpu` selects CUDA
-> PyTorch instead. It needs a matching NVIDIA driver, is not tested in CI, and cannot
-> be combined with the CPU `annotate` extra. Core deck-first workflows do not require
-> CLTK, Stanza, PyTorch, or network access.
+> PyTorch instead on compatible Linux/NVIDIA systems. After publication, the pip
+> equivalent is `pip install 'latinitas-cards[annotate-gpu]'` in a separate venv,
+> without the CPU index. It needs a matching NVIDIA driver and is not tested in CI.
+> This is not a claim of verified macOS GPU or Windows support. Core deck-first
+> workflows do not require CLTK, Stanza, PyTorch, or network access.
 >
 > `annotate --use-llm` sends source-derived forms and analyses to the configured Ollama
 > endpoint. Do not use a remote endpoint with private deck data without reviewing that
@@ -296,6 +346,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 
 ## Documentation
 
+- [Maintainer PyPI release runbook](https://github.com/fmueller/latinitas-cards/blob/main/docs/releasing.md)
 - [Changelog](https://github.com/fmueller/latinitas-cards/blob/main/CHANGELOG.md)
 - [v0.1.0 release readiness](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-readiness.md)
 - [v0.1.1 release readiness and limitations](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.1.1.md)
