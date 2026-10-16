@@ -1,13 +1,13 @@
 ---
 id: T-125-join-corpus-claim-decisions-into-corpus-views
 title: Join corpus claim decisions into corpus show, corpus validate and annotations inspect
-status: in_progress
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#sidecar-annotation-model
 dependencies:
     - T-114-report-stale-orphaned-and-unmatched-annotations-in
     - T-115-record-corpus-claim-decisions-through-claim
-updated_at: "2026-10-16T14:16:38Z"
+updated_at: "2026-10-16T14:39:33Z"
 ---
 
 # T-125-join-corpus-claim-decisions-into-corpus-views Join corpus claim decisions into corpus show, corpus validate and annotations inspect
@@ -164,3 +164,21 @@ list|record|inspect` (T-115).
 - Spec pin rechecked unchanged, Taskrail `state valid`, only T125 active before
   finalization. Hooks installed before first commit; maintainer identity is
   Felix Müller. No attribution trailers or external release actions.
+- 2026-10-16T14:39:33Z: verification pass
+- 2026-10-16T14:39:33Z: Verified after all workflow-v3 gates on 2026-10-16. Implemented only T125; durable audit and read-only evidence committed; all review findings fixed.
+
+### Lifecycle and tested revision
+
+- Committed implementation and audit as
+  `2cf5e691964ed806a27861d8abdf38b3d91ca6b4`, then reran the exact mandatory
+  ruff → mypy → pytest chain and `mise run check` sequentially at that revision:
+  both passed, 2477 tests in each full suite, one existing serializer warning.
+- Taskrail verify pass and complete both at `2026-10-16T14:39:33Z`, after reviews,
+  disposition verification and all gates. Only task/state audit changes follow
+  the tested implementation revision; no product or test edits afterward.
+- Final `taskrail validate`: `state valid`; 124 done, zero active, one blocked,
+  three todo. Authoritative next is T127, observed only, NOT started or fixed.
+  T124 now appears as another eligible candidate, not selected. T038 remains
+  blocked maintainer-only; T128 remains future-spec todo and unstarted.
+- Final spec SHA256 remains pinned. Delivery uses a focused non-force push to
+  origin/main after fetch/reconciliation; overseer acceptance remains independent.
