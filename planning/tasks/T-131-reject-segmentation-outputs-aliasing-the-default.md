@@ -1,11 +1,11 @@
 ---
 id: T-131-reject-segmentation-outputs-aliasing-the-default
 title: Reject segmentation outputs aliasing the default manifest lock
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#sidecar-annotation-model
 dependencies: []
-updated_at: "2026-10-16T17:35:23Z"
+updated_at: "2026-10-16T18:03:17Z"
 ---
 
 # T-131-reject-segmentation-outputs-aliasing-the-default Reject segmentation outputs aliasing the default manifest lock
@@ -121,3 +121,81 @@ annotation sidecar and normalization bypasses the still-held old inode.
 logical claims lock to `append_records`, but omits the default manifest lock.
 `annotation_sidecar.append_records` protects only these explicit inputs and its
 own output lock. `commands/corpus.py` locks both corpus and default manifest.
+
+## T-131 Workflow Audit
+
+### Understanding and ownership
+
+- Accepted cumulative base: `a35519b776a61b23a41126f324a41c171b4a3762`;
+  previously tested product: `fd9a677ad9cc8ff43efac09b036a5ddafcbb20a5`.
+- Before start: fetched origin/main equaled HEAD and the accepted base; clean
+  worktree, valid Taskrail state, zero active tasks, T-131 sole eligible high
+  todo. Spec SHA256 matched the pin in Description. Only T-131 was started.
+- Source owner is segment's protected-path list. Added the default manifest
+  lock there, using existing resolved-path/same-inode alias rejection before
+  output creation, locking or replacement. Inspected normalizer lock targets,
+  append output-lock protection, corpus logical/resolved locks and exact
+  logical claims lock. No new helper, lock semantics or custom discovery.
+
+### Independent public CLI reproduction and TDD
+
+- Ran the self-contained Description reproducer before production changes:
+  exits `0, 0, 4, 0, 0, 0`; held inode `1569708` became `1569714`.
+  SHA256 changed from
+  `a66fa0f09d1f85c0a0113fd32a79ea9c1d39631afc69097342e216e4677f5b05`
+  to `df8b1eedfc8ce8a42bebcf70307459051741c4c2ccc17a66479c3ba4dc9a8916`.
+- RED: `uv run pytest tests/unit/annotations_command_test.py -k
+  'manifest and (held_reserved or absent_reserved)' -q`: 10 failed,
+  57 deselected; segment returned 0 instead of 3, before the source fix.
+- GREEN: `uv run pytest tests/unit/annotations_command_test.py -q`:
+  67 passed. Held-lock cases cover direct, symlink, hardlink, chained and
+  directory aliases for manifest/corpus/claims/symlinked-claims; absent
+  reserved cases also cover the output's lock alias. Assertions check alias
+  diagnostics, unchanged bytes/inodes, real exclusion, ordinary output and
+  released normalization. Missing files cannot have hardlink aliases.
+- Replayed the same Description CLI after the fix: `0, 0, 4, 3, 4, 0`;
+  held inode stayed `1570176`, SHA256 stayed
+  `a66fa0f09d1f85c0a0113fd32a79ea9c1d39631afc69097342e216e4677f5b05`.
+  Only direct/directory replacement bypassed the original exclusion before
+  the fix; symlink/hardlink replacement detached the selected alias only.
+
+### Simplification and independent review
+
+- Dedicated Task loaded `code-simplifier`: no edits; direct protected-path
+  addition and explicit public CLI matrix needed no added abstraction.
+- Separate read-only Tasks loaded `code-reviewer`, reviewer-index and each
+  dedicated ECC lane: General (code-reviewer); Security (security-reviewer,
+  security-review companion/common security rules); Database
+  (database-reviewer, postgres-patterns/database-migrations companions,
+  relevant filesystem-lock concurrency only); Python (python-reviewer,
+  python-patterns plus common review/testing guidance).
+- General mandatory; Security covers filesystem alias/data-integrity risk;
+  Database covers persistent flock serialization; Python covers changed
+  language/test contracts. Three specialist lanes meet the default budget.
+  Framework, ML/RAG, healthcare and network lanes omitted: not affected.
+- Each lane's verbatim conclusion: "No concrete task-relevant findings."
+  Database independently ran alias/lock tests: 30 passed, 37 deselected.
+- Fresh candidate-validation Task loaded `code-reviewer`, checked the actual
+  diff and relevant references: "No concrete task-relevant findings."
+  It independently ran the same 30 cases successfully. Empty candidate set
+  validated: no rejected IDs, deferred findings or finding-fix TDD needed.
+
+### Validation and limits
+
+- Initial exact `uv run ruff check` → `uv run mypy` → `uv run pytest -v`:
+  all passed; mypy 169 files, pytest 2516 passed, one existing Pydantic
+  serialization warning. Full suites run sequentially for browser isolation.
+- Final exact chain passed again: ruff clean, mypy 169 files, pytest
+  2516 passed in 188.63 seconds. Then `mise run check` passed, including
+  formatting, 2516 tests in 183.83 seconds and every policy-guard suite.
+- Fresh disposition-verification Task loaded `code-reviewer` in disposition
+  mode plus General/Security/Database/Python references and companions:
+  "No concrete task-relevant findings." Empty dispositions validated;
+  no unresolved/new issues. One review cycle; no finding-fix cycle needed.
+- Unreleased changelog extends existing lock-alias entry; v0.3.0 release
+  remains unchanged. No custom manifests discovered, locking redesigned,
+  spec/priority/dependency/gate changes or release actions performed.
+- T-038 remains blocked for the maintainer; T-128 stays unstarted future
+  v0.8.0 work. This cycle does not run round 3 or select another task.
+- 2026-10-16T18:03:08Z: verification pass
+- 2026-10-16T18:03:17Z: Verified pass 2026-10-16T18:03:08Z after required gates and independent review; durable workflow audit records reproduction and disposition evidence.

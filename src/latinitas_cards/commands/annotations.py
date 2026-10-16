@@ -163,6 +163,7 @@ def segment(
                 corpus,
                 Path(f"{corpus}.claims.json"),
                 corpus.with_suffix(".manifest.json"),
+                Path(f"{corpus.with_suffix('.manifest.json')}.lock"),
                 Path(f"{corpus}.lock"),
                 Path(f"{corpus.resolve()}.lock"),
                 Path(f"{corpus}.claims.json.lock"),

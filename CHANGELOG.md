@@ -8,8 +8,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 - `corpus show`, `corpus validate` and `annotations inspect --claims` report
   duplicate review decisions instead of internal errors, leaving those claims open.
-- `annotations segment` rejects outputs aliasing corpus and claims locks, preserving
-  held writer locks and leaving ordinary sidecar output unchanged.
+- `annotations segment` rejects outputs aliasing corpus, claims and default manifest
+  locks, preserving held writer locks and leaving ordinary sidecar output unchanged.
 
 ## [0.3.0] - 2026-10-16
 

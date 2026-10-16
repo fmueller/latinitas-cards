@@ -146,8 +146,8 @@ def test_alias_no_write(tmp_path: Path, kind: str) -> None:
     assert not output.exists() or output in before
 
 
-@pytest.mark.parametrize("kind", ["direct", "symlink", "hardlink"])
-@pytest.mark.parametrize("reserved", ["corpus", "claims", "symlinked-claims"])
+@pytest.mark.parametrize("kind", ["direct", "symlink", "hardlink", "chained", "directory"])
+@pytest.mark.parametrize("reserved", ["corpus", "claims", "symlinked-claims", "manifest"])
 def test_segment_preserves_held_reserved_lock(tmp_path: Path, reserved: str, kind: str) -> None:
     def run(*args: object) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -170,6 +170,8 @@ def test_segment_preserves_held_reserved_lock(tmp_path: Path, reserved: str, kin
         decisions.write_text('{"version":2,"decisions":[]}')
         claims.symlink_to(decisions)
     lock = Path(f"{corpus if reserved == 'corpus' else claims}.lock")
+    if reserved == "manifest":
+        lock = Path(f"{corpus.with_suffix('.manifest.json')}.lock")
     seed = b'{"format":"latinitas-annotations","record":"header","version":1}\n'
     lock.write_bytes(seed)
     output = tmp_path / "alias.jsonl"
@@ -177,12 +179,20 @@ def test_segment_preserves_held_reserved_lock(tmp_path: Path, reserved: str, kin
         output = lock
     elif kind == "symlink":
         output.symlink_to(lock)
-    else:
+    elif kind == "hardlink":
         os.link(lock, output)
+    elif kind == "chained":
+        intermediate = tmp_path / "intermediate"
+        intermediate.symlink_to(lock)
+        output.symlink_to(intermediate)
+    else:
+        directory = tmp_path / "directory"
+        directory.symlink_to(tmp_path, target_is_directory=True)
+        output = directory / lock.name
     with lock.open("ab") as held:
         fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
         inode = os.fstat(held.fileno()).st_ino
-        if reserved == "corpus":
+        if reserved in {"corpus", "manifest"}:
             assert run(*normal).returncode == 4
         result = run("annotations", "segment", corpus, "--output", output, "--timestamp", STAMP)
         after = lock.read_bytes()
@@ -204,7 +214,7 @@ def test_segment_preserves_held_reserved_lock(tmp_path: Path, reserved: str, kin
             timeout=20,
         )
         assert probe.returncode == 1 and "BlockingIOError" in probe.stderr
-        if reserved == "corpus":
+        if reserved in {"corpus", "manifest"}:
             assert run(*normal).returncode == 4
         assert (
             run(
@@ -213,19 +223,39 @@ def test_segment_preserves_held_reserved_lock(tmp_path: Path, reserved: str, kin
             == 0
         )
         assert lock.stat().st_ino == inode and lock.read_bytes() == seed
+    assert run(*normal).returncode == 0
     assert not Path(f"{output.resolve()}.lock").exists()
     if reserved == "symlinked-claims":
         assert claims.is_symlink() and decisions.read_text() == '{"version":2,"decisions":[]}'
         assert not Path(f"{decisions}.lock").exists()
 
 
-def test_segment_rejects_absent_logical_claims_lock(tmp_path: Path) -> None:
+@pytest.mark.parametrize("reserved", ["claims", "manifest"])
+@pytest.mark.parametrize("kind", ["direct", "symlink", "chained", "directory", "output-lock"])
+def test_segment_rejects_absent_reserved_lock(tmp_path: Path, reserved: str, kind: str) -> None:
     corpus = tmp_path / "corpus.jsonl"
     corpus.write_bytes(CORPUS.read_bytes())
-    output = Path(f"{corpus}.claims.json.lock")
+    lock = Path(
+        f"{corpus}.claims.json.lock" if reserved == "claims" else f"{corpus.with_suffix('.manifest.json')}.lock"
+    )
+    output = lock
+    if kind in {"symlink", "chained", "output-lock"}:
+        output = tmp_path / "alias.jsonl"
+        alias = Path(f"{output}.lock") if kind == "output-lock" else output
+        if kind == "chained":
+            intermediate = tmp_path / "intermediate"
+            intermediate.symlink_to(lock)
+            alias.symlink_to(intermediate)
+        else:
+            alias.symlink_to(lock)
+    elif kind == "directory":
+        directory = tmp_path / "directory"
+        directory.symlink_to(tmp_path, target_is_directory=True)
+        output = directory / lock.name
+    before = set(tmp_path.iterdir())
     result = segment(output, "--timestamp", STAMP, corpus=corpus)
     assert result.exit_code == 3 and result.diagnostics[0].code == "alias"
-    assert set(tmp_path.iterdir()) == {corpus}
+    assert set(tmp_path.iterdir()) == before and not lock.exists()
 
 
 def test_replace_failure_keeps_previous_bytes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
