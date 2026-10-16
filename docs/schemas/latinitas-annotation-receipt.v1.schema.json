@@ -1,0 +1,52 @@
+{
+  "$defs": {
+    "Sha256": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "actor": {
+      "pattern": "^(human|agent):[^\\s:]+$",
+      "title": "Actor",
+      "type": "string"
+    },
+    "format": {
+      "const": "latinitas-annotation-receipt",
+      "title": "Format",
+      "type": "string"
+    },
+    "operations": {
+      "items": {
+        "$ref": "#/$defs/Sha256"
+      },
+      "title": "Operations",
+      "type": "array"
+    },
+    "plan_id": {
+      "$ref": "#/$defs/Sha256"
+    },
+    "review": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Review",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "format",
+    "plan_id",
+    "operations",
+    "actor",
+    "review"
+  ],
+  "title": "AnnotationReceipt",
+  "type": "object"
+}

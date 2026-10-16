@@ -1,5 +1,6 @@
 import json
 import runpy
+import shutil
 import sys
 from pathlib import Path
 
@@ -228,3 +229,40 @@ def test_regenerator_force_does_not_modify_hardlink_target(
     assert protected.read_bytes() == b"unchanged"
     assert output.read_bytes() != b"unchanged"
     assert not output.samefile(protected)
+
+
+@pytest.mark.parametrize("mode", ["symlink", "hardlink", "overwrite"])
+def test_annotation_plan_capture_preserves_fixture_guards(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mode: str
+) -> None:
+    root = tmp_path / "repo"
+    source = Path(__file__).parents[1] / "fixtures"
+    for relative in ("corpus/valid/ordinal.jsonl", "annotations/ordinal.annotations.jsonl"):
+        destination = root / "tests/fixtures" / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source / relative, destination)
+    protected = tmp_path / "legacy-sentinel"
+    protected.write_bytes(b"unchanged")
+    output = root / "tests/fixtures/annotations/mixed.patch.json"
+    if mode == "symlink":
+        output.symlink_to(protected)
+    elif mode == "hardlink":
+        output.hardlink_to(protected)
+    else:
+        output.write_bytes(b"unchanged")
+    script = Path(__file__).parents[2] / "scripts/regen-corpus-fixtures.py"
+    main = runpy.run_path(str(script))["main"]
+    monkeypatch.setitem(main.__globals__, "ROOT", root)
+    monkeypatch.setitem(main.__globals__, "FIXTURES", root / "tests/fixtures/corpus")
+    monkeypatch.setattr(
+        sys, "argv", [str(script), "--target", "annotation-plans", *(["--force"] if mode != "overwrite" else [])]
+    )
+    if mode == "hardlink":
+        main()
+        assert not output.samefile(protected)
+    else:
+        with pytest.raises(SystemExit) as error:
+            main()
+        assert error.value.code == 2
+        assert not (root / "tests/fixtures/annotation-plans/add.plan.json").exists()
+    assert protected.read_bytes() == b"unchanged"

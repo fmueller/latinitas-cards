@@ -43,6 +43,18 @@ always compute to zero. New codes must be added to the enum, registry and table.
 
 | code | exit | meaning |
 | --- | --- | --- |
+| `invalid_input` | 3 | Declared approval input is invalid |
+| `invalid_patch` | 3 | Patch document is invalid |
+| `invalid_plan` | 3 | Plan identity or structure is invalid |
+| `unknown_operation` | 3 | Selected operation is unknown |
+| `invalid_operation` | 3 | Selected operation is invalid |
+| `input_hash` | 1 | Input hash differs from the anchor |
+| `invalid_value` | 1 | Proposed annotation value is invalid |
+| `span_out_of_range` | 1 | Proposed span exceeds its binding |
+| `unknown_segmentation` | 1 | Referenced segmentation is unknown |
+| `unknown_target` | 1 | Operation target is unknown |
+| `target_inactive` | 1 | Operation target is inactive |
+| `duplicate_operation` | 1 | Patch contains a duplicate operation |
 | `exists` | 3 | Output exists with different bytes |
 | `binding_drift` | 4 | Bound state differs from the plan base |
 | `busy` | 4 | Writer lock is held |
@@ -104,8 +116,14 @@ executable cases together.
 | corpus normalize | 0, 1, 2, 3, 4 |
 | annotations segment | 0, 2, 3, 4 |
 | annotations inspect | 0, 1, 3 |
+| annotations plan | 0, 1, 3, 4 |
+| annotations approve | 0, 3, 4, 5 |
 | corpus show | 0, 3 |
 | policy validate | 0, 3 |
+
+`annotations approve` requires explicit `--operation` IDs (no approve-all).
+An auto ID is accepted as a no-op selection. Empty/blank `--review` or a malformed
+declared `--actor` exits 3 `invalid_input`, without a receipt. Actors are not authenticated.
 
 `corpus validate CORPUS [--json]` streams the input without modifying it. Its
 result is `{"counts":{"header":1,"corpus":1,"work":N,"passage":M}}`;

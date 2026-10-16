@@ -17,6 +17,18 @@ type ExitCode = Literal[0, 1, 2, 3, 4, 5, 70]
 
 
 class Code(StrEnum):
+    INVALID_INPUT = "invalid_input"
+    INVALID_PATCH = "invalid_patch"
+    INVALID_PLAN = "invalid_plan"
+    UNKNOWN_OPERATION = "unknown_operation"
+    INVALID_OPERATION = "invalid_operation"
+    INPUT_HASH = "input_hash"
+    INVALID_VALUE = "invalid_value"
+    SPAN_OUT_OF_RANGE = "span_out_of_range"
+    UNKNOWN_SEGMENTATION = "unknown_segmentation"
+    UNKNOWN_TARGET = "unknown_target"
+    TARGET_INACTIVE = "target_inactive"
+    DUPLICATE_OPERATION = "duplicate_operation"
     EXISTS = "exists"
     BINDING_DRIFT = "binding_drift"
     BUSY = "busy"
@@ -73,6 +85,18 @@ class DiagnosticCode:
 
 
 DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
+    Code.INVALID_INPUT: DiagnosticCode(3, "Declared approval input is invalid"),
+    Code.INVALID_PATCH: DiagnosticCode(3, "Patch document is invalid"),
+    Code.INVALID_PLAN: DiagnosticCode(3, "Plan identity or structure is invalid"),
+    Code.UNKNOWN_OPERATION: DiagnosticCode(3, "Selected operation is unknown"),
+    Code.INVALID_OPERATION: DiagnosticCode(3, "Selected operation is invalid"),
+    Code.INPUT_HASH: DiagnosticCode(1, "Input hash differs from the anchor"),
+    Code.INVALID_VALUE: DiagnosticCode(1, "Proposed annotation value is invalid"),
+    Code.SPAN_OUT_OF_RANGE: DiagnosticCode(1, "Proposed span exceeds its binding"),
+    Code.UNKNOWN_SEGMENTATION: DiagnosticCode(1, "Referenced segmentation is unknown"),
+    Code.UNKNOWN_TARGET: DiagnosticCode(1, "Operation target is unknown"),
+    Code.TARGET_INACTIVE: DiagnosticCode(1, "Operation target is inactive"),
+    Code.DUPLICATE_OPERATION: DiagnosticCode(1, "Patch contains a duplicate operation"),
     Code.EXISTS: DiagnosticCode(3, "Output exists with different bytes"),
     Code.BINDING_DRIFT: DiagnosticCode(4, "Bound state differs from the plan base"),
     Code.BUSY: DiagnosticCode(4, "Writer lock is held"),

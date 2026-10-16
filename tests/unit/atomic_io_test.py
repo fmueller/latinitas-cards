@@ -128,7 +128,7 @@ def test_stage_both_before_replace_and_fsync_parents(tmp_path: Path, monkeypatch
 
 def test_filesystem_failures_are_input_rejection(tmp_path: Path) -> None:
     missing = tmp_path / "missing" / "file"
-    operations: list[Callable[[], None]] = [
+    operations: list[Callable[[], object]] = [
         lambda: atomic_replace(missing, b"x"),
         lambda: write_artifact(missing, b"x", []),
     ]

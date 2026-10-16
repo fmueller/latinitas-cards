@@ -155,3 +155,59 @@ name = "latinitas-annotations"
 Path(f"docs/schemas/{name}.v1.schema.json").write_text(render_schema(SCHEMAS[name]), encoding="utf-8")
 PY
 ```
+
+## Plan and explicitly approve (without applying)
+
+```sh
+latinitas-cards annotations plan patch.json --corpus corpus.jsonl \
+  --sidecar corpus.annotations.jsonl --output plan.json --json
+latinitas-cards annotations approve plan.json --operation sha256:<operation-id> \
+  --actor human:reviewer --review "Checked this exact proposal" --output receipt.json --json
+```
+
+A version-1 `latinitas-annotation-patch` contains `operations`: `add` supplies
+`layer`, `anchor`, `value`, `producer` and optional `alternatives`, `confidence`,
+`created`; `supersede` adds `target`; `retract` supplies only `target`, `producer`
+and optional `created`. IDs and input hashes are derived, never supplied.
+No timestamp is invented in a plan. Invalid annotation values remain inspectable
+in an `invalid` operation: the plan is written and the command exits 1. Bad input
+documents exit 3 without an artifact. Review/deny routes alone still exit 0.
+
+Plans bind canonical header/patch and raw sidecar/policy digests, not paths.
+An absent sidecar or policy has a null digest. The embedded patch and plan body
+have recomputable identities. No claims digest or claims path option is added.
+Decisions are read only from `<CORPUS>.claims.json` with the existing v2 loader;
+accepted/withheld bindings count even when stale. Malformed, v1 or unreadable
+claims files are rejected rather than treated as an empty decision set.
+
+Safety includes sorted dependent/conflicting IDs from the effective sidecar
+**and the entire patch**, deduplicated by annotation ID (independent of `created`).
+Same anchor/layer/producer with different values conflicts; identical values and
+an add's own already-present record do not. Existing adds still route normally.
+Supersede/retract targets must be current and active. The reusable
+`annotation_plans.evaluate_operations` evaluator supplies these same facts for
+future apply-time revalidation; this command does not append any sidecar records.
+
+Approval requires explicit operation IDs and nonblank review text; there is no
+approve-all switch. Auto IDs may be selected. Unknown/invalid operations exit 3,
+deny or an agent actor on a human-only plan exits 5; 3 takes precedence over 5.
+Plan tampering exits 3. No receipt is written for a failed approval.
+Artifacts are immutable: identical bytes are a no-op, different bytes exit 3,
+protected input/manifest/lock aliases exit 3 and held artifact locks exit 4.
+Actors are declarations, not authentication or linguistic acceptance.
+
+Reusable add/safety/invalid patch-plan pairs and an add receipt for the upcoming
+apply tasks live in `tests/fixtures/annotation-plans`. The required
+`fixture-morph.patch.json`, `mixed.patch.json`, `mixed-valid.patch.json`, their
+plans and `mixed.base.annotations.jsonl` live in `tests/fixtures/annotations`;
+`tests/fixtures/policy/mixed.policy.json` supplies the mixed deny/auto policy.
+Regenerate explicitly:
+
+```sh
+uv run python scripts/regen-corpus-fixtures.py --target annotation-plans --force
+```
+
+The generator captures only temporary artifacts before the existing shared
+symlink/overwrite guards and atomic replacement run on every fixture destination.
+It does not touch legacy goldens. For the three new schema names, use the same
+`SCHEMAS`/`render_schema` API above; the existing exporter remains T-127 scope.

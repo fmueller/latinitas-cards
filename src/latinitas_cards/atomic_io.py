@@ -88,8 +88,8 @@ def atomic_replace(path: Path, data: bytes) -> None:
         replace_staged(path, staged)
 
 
-def write_artifact(path: Path, data: bytes, protected: Iterable[Path]) -> None:
-    """Create an immutable artifact, accepting byte-identical reruns only."""
+def write_artifact(path: Path, data: bytes, protected: Iterable[Path]) -> bool:
+    """Create an immutable artifact; return false for a byte-identical rerun."""
     protected = tuple(protected)
     with _filesystem(path):
         lock = Path(f"{path.resolve()}.lock")
@@ -101,6 +101,8 @@ def write_artifact(path: Path, data: bytes, protected: Iterable[Path]) -> None:
             previous = path.read_bytes()
         except FileNotFoundError:
             atomic_replace(path, data)
+            return True
         else:
             if previous != data:
                 raise ContractError(Code.EXISTS, "Output exists with different bytes", path=str(path))
+            return False

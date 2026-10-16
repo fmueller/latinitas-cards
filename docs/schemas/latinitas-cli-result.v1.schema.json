@@ -2,6 +2,18 @@
   "$defs": {
     "Code": {
       "enum": [
+        "invalid_input",
+        "invalid_patch",
+        "invalid_plan",
+        "unknown_operation",
+        "invalid_operation",
+        "input_hash",
+        "invalid_value",
+        "span_out_of_range",
+        "unknown_segmentation",
+        "unknown_target",
+        "target_inactive",
+        "duplicate_operation",
         "exists",
         "binding_drift",
         "busy",

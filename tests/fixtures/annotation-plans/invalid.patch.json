@@ -1,0 +1,1 @@
+{"format":"latinitas-annotation-patch","operations":[{"anchor":{"passage_hash":"sha256:f231be94df2e0e4e7899e12485f82668689fe2d6596d0ab5af2b31e484619e73","passage_id":"test-corpus:p000001"},"layer":"morphology","operation":"add","producer":{"kind":"rule","name":"fixture-morph","version":"1"},"value":{}}],"version":1}

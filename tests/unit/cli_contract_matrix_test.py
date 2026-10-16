@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from contextlib import nullcontext
+from functools import partial
 from pathlib import Path
 from typing import Annotated
 
@@ -12,6 +13,7 @@ from typer.core import TyperGroup
 from typer.main import get_command
 from typer.testing import CliRunner
 
+from latinitas_cards.annotation_plans import AnnotationPlan
 from latinitas_cards.atomic_io import writer_lock
 from latinitas_cards.cli import app as real_app
 from latinitas_cards.cli_contract import CliResult, Code, ContractError, Diagnostic, run_contract
@@ -101,7 +103,42 @@ def annotations_case(tmp: Path, exit_code: int) -> list[str]:
     return args + (["--timestamp", "not-a-date"] if exit_code == 2 else ["--timestamp", "2026-01-01T00:00:00Z"])
 
 
+def annotation_plan_case(tmp: Path, exit_code: int) -> list[str]:
+    patch = FIXTURES.parent / "annotation-plans" / ("invalid.patch.json" if exit_code == 1 else "add.patch.json")
+    return [
+        "annotations",
+        "plan",
+        str(patch),
+        "--corpus",
+        str(FIXTURES / "valid/ordinal.jsonl"),
+        "--sidecar",
+        str(tmp / "missing" if exit_code == 3 else FIXTURES.parent / "annotations/ordinal.annotations.jsonl"),
+        "--output",
+        str(tmp / "missing" / "plan.json" if exit_code == 3 else tmp / "out.jsonl"),
+    ]
+
+
+def annotation_approve_case(tmp: Path, exit_code: int) -> list[str]:
+    plan = FIXTURES.parent / "annotation-plans/add.plan.json"
+    operation_id = AnnotationPlan.model_validate_json(plan.read_bytes()).operations[0].operation_id
+    return [
+        "annotations",
+        "approve",
+        str(plan),
+        "--operation",
+        "unknown" if exit_code == 3 else operation_id,
+        "--actor",
+        "agent:test" if exit_code == 5 else "human:test",
+        "--review",
+        "checked",
+        "--output",
+        str(tmp / "out.jsonl"),
+    ]
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    **{("annotations plan", code): partial(annotation_plan_case, exit_code=code) for code in (0, 1, 3, 4)},
+    **{("annotations approve", code): partial(annotation_approve_case, exit_code=code) for code in (0, 3, 4, 5)},
     ("annotations inspect", 0): lambda _: [
         "annotations",
         "inspect",
@@ -186,7 +223,7 @@ def test_matrix_covers_registered_contract_commands() -> None:
 
 @pytest.mark.parametrize("pair", CONTRACT_EXIT_CASES)
 def test_contract_exit_case(pair: tuple[str, int], tmp_path: Path) -> None:
-    with writer_lock(tmp_path / "out.jsonl") if pair == ("annotations segment", 4) else nullcontext():
+    with writer_lock(tmp_path / "out.jsonl") if pair[1] == 4 and pair[0].startswith("annotations ") else nullcontext():
         result = CliRunner().invoke(real_app, [*CONTRACT_EXIT_CASES[pair](tmp_path), "--json"])
     envelope = CliResult.model_validate_json(result.stdout)
     assert envelope.command == pair[0]

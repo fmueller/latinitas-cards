@@ -1,0 +1,516 @@
+{
+  "$defs": {
+    "Add": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alternatives"
+        },
+        "anchor": {
+          "$ref": "#/$defs/Anchor"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "created": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Created"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "$ref": "#/$defs/Layer"
+        },
+        "operation": {
+          "const": "add",
+          "title": "Operation",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "layer",
+        "anchor",
+        "value",
+        "producer",
+        "operation"
+      ],
+      "title": "Add",
+      "type": "object"
+    },
+    "Anchor": {
+      "additionalProperties": false,
+      "properties": {
+        "passage_hash": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "passage_id": {
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9-]{1,62}:(?:[A-Za-z0-9._-]|%[0-9A-F]{2})+$",
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "segmentation_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Span"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "passage_id",
+        "passage_hash"
+      ],
+      "title": "Anchor",
+      "type": "object"
+    },
+    "AnnotationPatch": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "latinitas-annotation-patch",
+          "title": "Format",
+          "type": "string"
+        },
+        "operations": {
+          "items": {
+            "$ref": "#/$defs/PatchOperation"
+          },
+          "title": "Operations",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version",
+        "format",
+        "operations"
+      ],
+      "title": "AnnotationPatch",
+      "type": "object"
+    },
+    "Created": {
+      "type": "string"
+    },
+    "JsonValue": {},
+    "Layer": {
+      "enum": [
+        "segmentation",
+        "morphology",
+        "translation",
+        "correction"
+      ],
+      "type": "string"
+    },
+    "PatchOperation": {
+      "discriminator": {
+        "mapping": {
+          "add": "#/$defs/Add",
+          "retract": "#/$defs/Retract",
+          "supersede": "#/$defs/Supersede"
+        },
+        "propertyName": "operation"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Add"
+        },
+        {
+          "$ref": "#/$defs/Supersede"
+        },
+        {
+          "$ref": "#/$defs/Retract"
+        }
+      ]
+    },
+    "PlanBase": {
+      "additionalProperties": false,
+      "properties": {
+        "corpus_header": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "patch": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sidecar": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "corpus_header",
+        "sidecar",
+        "policy",
+        "patch"
+      ],
+      "title": "PlanBase",
+      "type": "object"
+    },
+    "PlannedOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "minimum": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "records": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Records",
+          "type": "array"
+        },
+        "route": {
+          "enum": [
+            "auto",
+            "review",
+            "deny",
+            "invalid"
+          ],
+          "title": "Route",
+          "type": "string"
+        },
+        "safety": {
+          "$ref": "#/$defs/Safety"
+        }
+      },
+      "required": [
+        "operation_id",
+        "index",
+        "route",
+        "reasons",
+        "safety",
+        "records"
+      ],
+      "title": "PlannedOperation",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "rule",
+            "analyzer",
+            "agent",
+            "llm",
+            "human"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "Retract": {
+      "additionalProperties": false,
+      "properties": {
+        "created": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Created"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "operation": {
+          "const": "retract",
+          "title": "Operation",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "target": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "operation",
+        "target",
+        "producer"
+      ],
+      "title": "Retract",
+      "type": "object"
+    },
+    "Safety": {
+      "additionalProperties": false,
+      "properties": {
+        "conflicts": {
+          "items": {
+            "$ref": "#/$defs/Sha256"
+          },
+          "title": "Conflicts",
+          "type": "array"
+        },
+        "decision_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "accepted",
+                "withheld"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decision Status"
+        },
+        "dependents": {
+          "items": {
+            "$ref": "#/$defs/Sha256"
+          },
+          "title": "Dependents",
+          "type": "array"
+        }
+      },
+      "required": [
+        "decision_status",
+        "dependents",
+        "conflicts"
+      ],
+      "title": "Safety",
+      "type": "object"
+    },
+    "Sha256": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Span": {
+      "items": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    },
+    "Supersede": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alternatives"
+        },
+        "anchor": {
+          "$ref": "#/$defs/Anchor"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "created": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Created"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layer": {
+          "$ref": "#/$defs/Layer"
+        },
+        "operation": {
+          "const": "supersede",
+          "title": "Operation",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "target": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "layer",
+        "anchor",
+        "value",
+        "producer",
+        "operation",
+        "target"
+      ],
+      "title": "Supersede",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "base": {
+      "$ref": "#/$defs/PlanBase"
+    },
+    "format": {
+      "const": "latinitas-annotation-plan",
+      "title": "Format",
+      "type": "string"
+    },
+    "operations": {
+      "items": {
+        "$ref": "#/$defs/PlannedOperation"
+      },
+      "title": "Operations",
+      "type": "array"
+    },
+    "patch": {
+      "$ref": "#/$defs/AnnotationPatch"
+    },
+    "plan_id": {
+      "$ref": "#/$defs/Sha256"
+    },
+    "receipt_actor": {
+      "enum": [
+        "human",
+        "any"
+      ],
+      "title": "Receipt Actor",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "format",
+    "plan_id",
+    "base",
+    "receipt_actor",
+    "patch",
+    "operations"
+  ],
+  "title": "AnnotationPlan",
+  "type": "object"
+}

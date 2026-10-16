@@ -11,6 +11,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+from latinitas_cards.annotation_plans import approve_plan, create_plan
 from latinitas_cards.annotation_sidecar import Annotation, annotation_id, append_records
 from latinitas_cards.atomic_io import atomic_replace
 from latinitas_cards.canonical import canonical_json, digest_bytes
@@ -143,6 +144,7 @@ def main() -> None:
             "vulgate-digest",
             "cloze-jsonl",
             "annotations",
+            "annotation-plans",
             "annotation-state",
         ],
         required=True,
@@ -155,6 +157,94 @@ def main() -> None:
             for name, model in SCHEMAS.items()
             if name.startswith("latinitas-corpus")
         }
+    elif args.target == "annotation-plans":
+        outputs = {}
+        corpus = FIXTURES / "valid/ordinal.jsonl"
+        sidecar = ROOT / "tests/fixtures/annotations/ordinal.annotations.jsonl"
+        target = json.loads(sidecar.read_text().splitlines()[1])
+        add = {
+            "operation": "add",
+            "layer": "morphology",
+            "anchor": target["anchor"],
+            "value": {"tagset": "fixture/1", "lemma": "principium"},
+            "producer": {"kind": "rule", "name": "fixture-morph", "version": "1"},
+        }
+        mixed = [
+            add,
+            {
+                **add,
+                "operation": "supersede",
+                "target": target["annotation_id"],
+                "layer": "segmentation",
+                "value": target["value"],
+            },
+            {**add, "producer": {**add["producer"], "name": "denied"}},
+            {**add, "value": {}},
+        ]
+        outputs[ROOT / "tests/fixtures/annotations/mixed.base.annotations.jsonl"] = sidecar.read_text(encoding="utf-8")
+        policy_data = (
+            canonical_json(
+                {
+                    "format": "latinitas-policy",
+                    "version": 1,
+                    "receipt_actor": "human",
+                    "rules": [
+                        {
+                            "operation": "add",
+                            "layer": "*",
+                            "producer_kind": "*",
+                            "producer": "denied",
+                            "action": "deny",
+                        },
+                        {"operation": "add", "layer": "*", "producer_kind": "*", "producer": "*", "action": "auto"},
+                    ],
+                }
+            )
+            + "\n"
+        )
+        outputs[ROOT / "tests/fixtures/policy/mixed.policy.json"] = policy_data
+        # Capture only in a temporary workspace. The common output guard below
+        # still checks every destination before any committed fixture is replaced.
+        with TemporaryDirectory() as temporary:
+            policy = Path(temporary) / "mixed.policy.json"
+            policy.write_text(policy_data, encoding="utf-8")
+            for name, operations in {
+                "add": [add],
+                "fixture-morph": [add],
+                "mixed": mixed,
+                "mixed-valid": mixed[:-1],
+                "safety": [
+                    {"operation": "retract", "target": target["annotation_id"], "producer": add["producer"]},
+                    {**add, "anchor": {**target["anchor"], "segmentation_id": target["annotation_id"]}},
+                    {
+                        **add,
+                        "anchor": {**target["anchor"], "segmentation_id": target["annotation_id"]},
+                        "value": {"tagset": "fixture/1", "lemma": "other"},
+                    },
+                ],
+                "invalid": [{**add, "value": {}}],
+            }.items():
+                patch = Path(temporary) / f"{name}.patch.json"
+                plan = Path(temporary) / f"{name}.plan.json"
+                patch.write_text(
+                    canonical_json({"format": "latinitas-annotation-patch", "version": 1, "operations": operations})
+                    + "\n",
+                    encoding="utf-8",
+                )
+                result, _ = create_plan(patch, corpus, sidecar, policy if name.startswith("mixed") else None, plan)
+                assert isinstance(result, dict)
+                for source in (patch, plan):
+                    directory = (
+                        "annotations" if name in {"fixture-morph", "mixed", "mixed-valid"} else "annotation-plans"
+                    )
+                    outputs[ROOT / "tests/fixtures" / directory / source.name] = source.read_text(encoding="utf-8")
+                if name == "add":
+                    receipt = Path(temporary) / "add.receipt.json"
+                    operation_id = json.loads(plan.read_bytes())["operations"][0]["operation_id"]
+                    approve_plan(plan, [operation_id], "human:fixture", "Reviewed fixture proposal", receipt)
+                    outputs[ROOT / "tests/fixtures/annotation-plans" / receipt.name] = receipt.read_text(
+                        encoding="utf-8"
+                    )
     elif args.target == "cloze-jsonl":
         outputs = {ROOT / "tests/fixtures/goldens/cloze-jsonl/inputs/corpus.jsonl": ""}
     elif args.target == "annotation-state":

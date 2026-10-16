@@ -49,14 +49,19 @@ does not compute them or perform writes.
 2. `destructive`, if that fact is true, even when the action is already review/deny.
 3. `conflicting`, if that fact is true, even when the action is already review/deny.
 
+Plans also classify operation-level invalidity using the closed reasons `unmatched`,
+`stale`, `orphaned`, `input_hash`, `invalid_value`, `span_out_of_range`,
+`unknown_segmentation`, `unknown_target`, `target_inactive`, `duplicate_operation`.
+Invalid operations are persisted for inspection but cannot receive approval.
+
 `policy_digest(path)` returns `sha256:` plus SHA-256 of the **raw file bytes**,
 so whitespace changes the digest; no path returns `None`.
 
 ## Safety boundary
 
 `receipt_actor` is `human` (default) or `any`. Actors are declared, **not
-authenticated**. This task parses that setting; future plan/apply/approval
-commands enforce it. Validation and routing do not approve or apply operations.
+authenticated**. `annotations approve` enforces it; an agent declaration is refused
+when the plan requires a human. Validation and routing do not approve or apply operations.
 
 The policy gates sidecar writes only, not linguistic acceptance. It is not part
 of the deck profile or claim fingerprint and cannot create a claim decision.

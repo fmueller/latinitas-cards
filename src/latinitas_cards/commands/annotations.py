@@ -8,6 +8,7 @@ from typing import Annotated, Any
 import typer
 from pydantic import JsonValue
 
+from ..annotation_plans import approve_plan, create_plan
 from ..annotation_sidecar import Annotation, Retraction, annotation_id, append_records, resolve_created
 from ..annotation_state import inspect_annotations
 from ..cli_contract import Code, Diagnostic, run_contract
@@ -17,6 +18,32 @@ from ..corpus_segmentation import segment_work, tokenize
 from ..corpus_validation import validate_records
 
 app = typer.Typer(help="Produce versioned annotation sidecars.")
+
+
+@app.command()
+def plan(
+    patch: Annotated[Path, typer.Argument()],
+    corpus: Annotated[Path, typer.Option()],
+    sidecar: Annotated[Path, typer.Option()],
+    output: Annotated[Path, typer.Option()],
+    policy: Annotated[Path | None, typer.Option()] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Classify an entire patch without appending any annotations."""
+    run_contract("annotations plan", json_output, lambda: create_plan(patch, corpus, sidecar, policy, output))
+
+
+@app.command()
+def approve(
+    plan: Annotated[Path, typer.Argument()],
+    operation: Annotated[list[str], typer.Option()],
+    actor: Annotated[str, typer.Option()],
+    review: Annotated[str, typer.Option()],
+    output: Annotated[Path, typer.Option()],
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Record explicit review of selected operation IDs by a declared actor."""
+    run_contract("annotations approve", json_output, lambda: approve_plan(plan, operation, actor, review, output))
 
 
 @app.command()
