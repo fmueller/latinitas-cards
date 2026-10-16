@@ -43,7 +43,7 @@ always compute to zero. New codes must be added to the enum, registry and table.
 
 | code | exit | meaning |
 | --- | --- | --- |
-| `invalid_input` | 3 | Declared approval input is invalid |
+| `invalid_input` | 3 | Declared approval or claim decision input is invalid |
 | `invalid_patch` | 3 | Patch document is invalid |
 | `invalid_plan` | 3 | Plan identity or structure is invalid |
 | `invalid_receipt` | 3 | Receipt structure or plan binding is invalid |
@@ -204,6 +204,11 @@ All three accept an explicit `--claims SIDECAR` version 2 decision file.
 decisions as errors (1), with code `stale`, `ref` = claim fingerprint and `path`
 = claims file. `annotations inspect` reports decision findings as warnings unless
 `--check` is used. Show omits stale annotations, not current withheld proposals.
+Duplicate live decisions, whether identical or opposite, are ignored and reported
+as `invalid_input` with the claims path and fingerprint. `corpus show` and inspect
+without `--check` warn (exit 0); validate and inspect `--check` error (exit 3).
+Show continues to omit stale-decision diagnostics. Mixed findings retain the
+standard exit precedence (3 before 4, 5, 1).
 Show and inspect add `review_status`: `open`, `accepted` or `withheld`; no matching
 live decision means `open`. Neither grants acceptance nor changes decisions.
 For corpus show/validate, `--claims` without `--annotations` exits 2 `usage_error`

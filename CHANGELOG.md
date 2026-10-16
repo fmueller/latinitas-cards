@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `corpus show`, `corpus validate` and `annotations inspect --claims` report
+  duplicate review decisions instead of internal errors, leaving those claims open.
 - `annotations segment` rejects outputs aliasing corpus and claims locks, preserving
   held writer locks and leaving ordinary sidecar output unchanged.
 

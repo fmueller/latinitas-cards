@@ -126,7 +126,7 @@ def join_corpus_decisions(corpus: Path, sidecar: Path, claims: Path) -> tuple[di
         assert finding.item is not None
         diagnostics.append(
             CliDiagnostic(
-                code=Code(finding.code),
+                code=Code.INVALID_INPUT if finding.code == "conflict" else Code(finding.code),
                 message=finding.message,
                 path=str(claims),
                 ref=stored.decisions[finding.item].base_fingerprint,

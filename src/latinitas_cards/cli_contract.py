@@ -86,7 +86,7 @@ class DiagnosticCode:
 
 
 DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
-    Code.INVALID_INPUT: DiagnosticCode(3, "Declared approval input is invalid"),
+    Code.INVALID_INPUT: DiagnosticCode(3, "Declared approval or claim decision input is invalid"),
     Code.INVALID_PATCH: DiagnosticCode(3, "Patch document is invalid"),
     Code.INVALID_PLAN: DiagnosticCode(3, "Plan identity or structure is invalid"),
     Code.INVALID_RECEIPT: DiagnosticCode(3, "Receipt structure or plan binding is invalid"),

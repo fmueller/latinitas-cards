@@ -206,6 +206,75 @@ def test_claim_view_join(command: str, corpus_review: tuple[Path, Path], tmp_pat
         assert not list(tmp_path.glob("*.lock"))
 
 
+@pytest.mark.parametrize("command", ["show", "inspect", "inspect-check", "validate"])
+@pytest.mark.parametrize("duplicate_status", ["accepted", "withheld"])
+def test_duplicate_claim_view_join(
+    command: str, duplicate_status: str, corpus_review: tuple[Path, Path], tmp_path: Path
+) -> None:
+    corpus, sidecar = corpus_review
+    claim = json.loads(invoke("list", corpus, sidecar).output)["claims"][0]
+    assert (
+        invoke(
+            "record",
+            corpus,
+            sidecar,
+            "--fingerprint",
+            claim["fingerprint"],
+            "--status",
+            "accepted",
+            "--reviewer",
+            "R",
+            "--reason",
+            "Checked",
+        ).exit_code
+        == 0
+    )
+    path = sidecar_path(corpus)
+    Path(f"{path}.lock").unlink()
+    args = (
+        ["annotations", "inspect", str(sidecar), "--corpus", str(corpus)]
+        if command.startswith("inspect")
+        else ["corpus", command, str(corpus), "--annotations", str(sidecar)]
+    )
+    if command == "inspect-check":
+        args.append("--check")
+    stored = json.loads(path.read_text())
+    for duplicate in (False, True):
+        if duplicate:
+            entry = json.loads(json.dumps(stored["decisions"][0]))
+            entry["decision"]["status"] = duplicate_status
+            stored["decisions"].append(entry)
+            path.write_text(json.dumps(stored))
+        before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()}
+        result = RUNNER.invoke(app, [*args, "--claims", str(path), "--json"])
+        assert result.exit_code == (3 if duplicate and command in {"validate", "inspect-check"} else 0), result.output
+        report = json.loads(result.output)
+        assert report["exit_code"] == result.exit_code
+        assert report["diagnostics"] == (
+            [
+                {
+                    "code": "invalid_input",
+                    "severity": "error" if result.exit_code else "warning",
+                    "message": "Duplicate decisions ignored",
+                    "path": str(path),
+                    "ref": claim["fingerprint"],
+                    "item": None,
+                }
+            ]
+            if duplicate
+            else []
+        )
+        if command != "validate":
+            rows = (
+                [a for p in report["result"]["passages"] for a in p["annotations"]]
+                if command == "show"
+                else report["result"]["annotations"]
+            )
+            row = next(a for a in rows if a["annotation_id"] == claim["annotation_id"])
+            assert row["review_status"] == ("open" if duplicate else "accepted")
+        assert before == {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()}
+
+
 @pytest.mark.parametrize("command", ["show", "inspect", "validate"])
 @pytest.mark.parametrize("failure", ["missing", "directory", "v1", "v3"])
 def test_claim_view_input_errors(command: str, failure: str, corpus_review: tuple[Path, Path], tmp_path: Path) -> None:

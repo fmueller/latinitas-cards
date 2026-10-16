@@ -123,8 +123,12 @@ def show(
             ]
         states = annotation_states(hashes, rows)
         reviews: dict[str, str] = {}
+        decision_diagnostics: list[Diagnostic] = []
         if claims is not None and annotations is not None:
-            reviews, _ = join_corpus_decisions(corpus, annotations, claims)
+            reviews, findings = join_corpus_decisions(corpus, annotations, claims)
+            decision_diagnostics = [
+                d.model_copy(update={"severity": "warning"}) for d in findings if d.code == Code.INVALID_INPUT
+            ]
         by_passage: dict[str, list[JsonValue]] = {}
         for row in rows:
             state = states[row.annotation_id]
@@ -154,7 +158,7 @@ def show(
                 for row in selected
             ],
             "truncated": matched > limit,
-        }, []
+        }, decision_diagnostics
 
     run_contract("corpus show", json_output, body)
 
