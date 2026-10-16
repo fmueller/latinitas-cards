@@ -6,7 +6,6 @@ import json
 import os
 import re
 import sqlite3
-import sys
 import tempfile
 import time
 import unicodedata
@@ -24,7 +23,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from . import usfx_adapter
+from . import interaction, usfx_adapter
 from .annotation import analyze_cltk_word
 from .cli_contract import ContractError
 from .corpus_cloze import load_jsonl_corpus
@@ -865,10 +864,6 @@ def score_cloze_difficulty(term_norm: str, sentence_norm: str, freq: dict[str, i
     return score, "hard"
 
 
-def _is_interactive() -> bool:
-    return sys.stdin.isatty() and sys.stdout.isatty()
-
-
 def _resolve_parallel_columns(
     corpus_df: pd.DataFrame,
     translation_langs: list[str],
@@ -885,7 +880,7 @@ def _resolve_parallel_columns(
         return []
     if parallel_mode == "include":
         return translation_columns
-    if _is_interactive():
+    if interaction._is_interactive():
         include = typer.confirm("Parallel translations found. Include translation columns in output?", default=False)
         if include:
             return translation_columns

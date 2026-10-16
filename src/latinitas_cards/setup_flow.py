@@ -10,6 +10,7 @@ from typing import Annotated, Any
 
 import typer
 
+from . import interaction
 from .profile import ProfileOverrides, ProfileValidationError, load_profile, resolve_profile
 from .profile_setup import (
     FieldChoiceRole,
@@ -181,7 +182,13 @@ def setup(
         _error(str(error), json_output)
         raise typer.Exit(code=2) from error
 
-    if not confirm and (non_interactive or not typer.confirm("Save this confirmed profile?", default=False)):
+    save = confirm
+    if not confirm and not non_interactive:
+        if interaction._is_interactive():
+            save = typer.confirm("Save this confirmed profile?", default=False)
+        else:
+            raise interaction.prompt_required("--confirm", "--non-interactive")
+    if not save:
         _emit(
             {
                 "status": "cancelled",
@@ -326,6 +333,8 @@ def _field_choice_error(proposal: ProfileSetupProposal) -> str:
 
 
 def _prompt_for_field_choices(proposal: ProfileSetupProposal) -> ProfileSetupProposal:
+    if not interaction._is_interactive():
+        raise interaction.prompt_required("--lexical-entry-field", "--principal-parts-field", "--confirm")
     fields: dict[str, str] = {}
     for required in sorted(proposal.field_choices_required, key=lambda choice: choice.role):
         label, override_key = _FIELD_CHOICE_PROMPTS[required.role]
@@ -348,6 +357,8 @@ def _prompt_for_field_choices(proposal: ProfileSetupProposal) -> ProfileSetupPro
 
 
 def _prompt_for_corrections(proposal: ProfileSetupProposal) -> ProfileSetupProposal:
+    if not interaction._is_interactive():
+        raise interaction.prompt_required("--confirm", "--non-interactive")
     current = proposal.profile
     note_type = typer.prompt("Source note type", default=current.note_type)
     lexical_field = typer.prompt("Lexical-entry field", default=current.fields.lexical_entry_field)

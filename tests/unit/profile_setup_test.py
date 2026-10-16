@@ -152,7 +152,10 @@ def test_setup_explicit_corrections_are_persisted_and_cancelled_setup_writes_not
     assert source.read_bytes() == source_before
 
 
-def test_setup_interactive_flow_shows_examples_uncertainty_and_requires_confirmation(tmp_path: Path) -> None:
+def test_setup_interactive_flow_shows_examples_uncertainty_and_requires_confirmation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("latinitas_cards.interaction._is_interactive", lambda: True)
     source = tmp_path / "source.csv"
     profile_path = tmp_path / "interactive.json"
     _write_csv(source)
@@ -601,7 +604,10 @@ def test_sparse_lexical_evidence_requires_explicit_choice_before_saving(tmp_path
     assert DeckProfile.from_json(profile_path.read_text(encoding="utf-8")).fields.lexical_entry_field == "Wort"
 
 
-def test_interactive_tied_setup_requires_typing_an_explicit_field_choice(tmp_path: Path) -> None:
+def test_interactive_tied_setup_requires_typing_an_explicit_field_choice(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("latinitas_cards.interaction._is_interactive", lambda: True)
     source = tmp_path / "tied.csv"
     profile_path = tmp_path / "interactive-tied.json"
     _write_tied_lexical_csv(source)
@@ -628,7 +634,10 @@ def test_interactive_tied_setup_requires_typing_an_explicit_field_choice(tmp_pat
     assert not empty_choice_path.exists()
 
 
-def test_interactive_rejected_final_confirmation_writes_nothing(tmp_path: Path) -> None:
+def test_interactive_rejected_final_confirmation_writes_nothing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("latinitas_cards.interaction._is_interactive", lambda: True)
     source = tmp_path / "source.csv"
     profile_path = tmp_path / "rejected.json"
     _write_csv(source)
@@ -724,7 +733,10 @@ def test_missing_principal_structure_requires_explicit_principal_choice(tmp_path
     assert not profile_path.exists()
 
 
-def test_interactive_principal_choice_prompt_rejects_empty_and_unknown_answers(tmp_path: Path) -> None:
+def test_interactive_principal_choice_prompt_rejects_empty_and_unknown_answers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("latinitas_cards.interaction._is_interactive", lambda: True)
     source = tmp_path / "tied-principal.csv"
     profile_path = tmp_path / "interactive-principal.json"
     _write_tied_principal_csv(source)

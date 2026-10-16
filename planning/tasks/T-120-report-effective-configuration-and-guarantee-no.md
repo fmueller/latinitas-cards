@@ -1,12 +1,12 @@
 ---
 id: T-120-report-effective-configuration-and-guarantee-no
 title: Report effective configuration and guarantee no hidden prompts across the CLI
-status: todo
+status: in_progress
 priority: medium
 spec_ref: specs/v0.3.0.md#agent-ready-cli-contract
 dependencies:
     - T-118-apply-planned-annotation-operations-atomically
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T12:36:53Z"
 ---
 
 # T-120-report-effective-configuration-and-guarantee-no Report effective configuration and guarantee no hidden prompts across the CLI
@@ -89,3 +89,58 @@ Other legacy commands keep their exit semantics and output.
 - TDD order: static scan RED against current `setup_flow.py`, interaction module, setup
   guards, subprocess tests, `corpus config`. Size guard: two small modules plus guarded
   call sites.
+
+## Execution Evidence (2026-10-16)
+
+- Ownership/base gate: fetched origin/main; HEAD and remote both
+  `897f70aee45487ae1250fa705c94ae58c5ef90a6`, clean worktree, no active task.
+  Taskrail validate passed; next --json selected this todo task before start.
+  Pinned specs/v0.3.0.md SHA256:
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+- Understand: source ownership is setup_flow, cli parallel-column selection,
+  commands/corpus, corpus_io/corpus_validation, policy and json_schemas. The
+  registry already documents prompt_required. No new schema/exporter changes.
+- RED: interaction_test static scan counted 14 calls and failed on unguarded
+  setup_flow (1 failed, 2 passed). GREEN after shared interaction module and
+  guarded sites: scan and existing setup tests, 35 passed.
+- DEVNULL subprocess RED exposed standalone Click UsageError incompatibility
+  with Typer's vendored exceptions (exit 1 instead of 2); typer.BadParameter
+  fixes the public exit contract without changing legacy output. Cloze's Rich
+  stderr wrapping is normalized in the assertion, not changed in production.
+- DEVNULL post-simplification evidence (20-second timeout per process): setup
+  choice=false/confirm=false exit 2 in 0.773s; true/false exit 2 in 0.785s;
+  false/true exit 0 in 0.614s; true/true exit 0 in 0.661s. Cloze exit 0 in
+  0.574s, stderr warns, no translation_* column. Inputs unchanged, profiles
+  exist only for successful confirmed runs. Prompt-call count remains 14.
+- Config RED: 13 failures because command was absent; GREEN: 13 passed.
+  A second RED (2 failures) exposed omitted legacy managed/baseline formats;
+  the report now includes all twelve supported latinitas-* formats at v1.
+  Origin, digest, loader-error and no-byte/mtime-change assertions pass.
+- Initial broad run exposed two test integration issues: Typer's test runner
+  rejects stream objects, and the existing command-registration assertion
+  needed config. The no-read matrix now uses the repository's Click runner
+  cast pattern with a failing-on-read empty stream. All 34 matrix cases pass.
+- Exact initial chain: uv run ruff check; uv run mypy; uv run pytest -v:
+  all passed, 2445 tests and one existing Pydantic serializer warning in
+  116.34s. Ruff format --check: 378 files already formatted.
+- Dedicated Task loaded personal code-simplifier and inspected tracked plus
+  untracked scope: "No changes made." It rejected consolidation that would
+  add indirection or obscure acceptance coverage. Post-simplifier focused
+  interaction/config/matrix/profile tests: 105 passed in 6.16s.
+- Independent parallel read-only Task lanes: General (ECC code-reviewer),
+  Python (ECC python-reviewer, python-patterns and common rules), Security
+  (ECC security-reviewer, security-review and common/security). All loaded
+  personal code-reviewer and reviewer-index routing. Each returned verbatim:
+  "No concrete task-relevant findings." Python and Security each reran the
+  105-test focused suite; General checked diff whitespace.
+- Fresh candidate-validation Task loaded personal code-reviewer and relevant
+  reviewer references, inspected actual scope/acceptance and ran 156 tests.
+  Verbatim: "No concrete task-relevant findings." Empty candidate set: no
+  rejected IDs, no deduplication, no findings to fix or defer.
+- Lane rationale: General always required; Python covers changed language and
+  exception/test contracts; Security covers untrusted inputs and no-write/
+  consent boundaries. No database, concurrency, framework, ML, RAG, healthcare
+  or network changes; those lanes omitted. One review cycle, no findings.
+- Scope: two focused production modules, thin config callback, guarded setup
+  sites, reduced cli.py, tests, fixture and user docs. T038 stays blocked;
+  T127 exporter remains unfixed/todo; T128 remains excluded/unstarted.

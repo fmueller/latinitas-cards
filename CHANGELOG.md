@@ -6,6 +6,9 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `corpus config` reports effective versions, paths, digests and value origins
+  without modifying inputs; setup now reports missing flags instead of prompting
+  when no terminal is available.
 - `annotations apply` atomically appends planned automatic and reviewed proposals,
   reports pending reviews, skips applied records, and requires re-planning when
   pending operations' decisions, dependents, conflicts or validity change.

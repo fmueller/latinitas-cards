@@ -121,6 +121,7 @@ executable cases together.
 | annotations approve | 0, 3, 4, 5 |
 | annotations apply | 0, 2, 3, 4, 5 |
 | corpus show | 0, 3 |
+| corpus config | 0, 3 |
 | policy validate | 0, 3 |
 
 `annotations approve` requires explicit `--operation` IDs (no approve-all).
@@ -198,7 +199,30 @@ limit is 20, maximum 1000; 0 and 1001 are Click usage errors (2, no envelope).
 `truncated` means more matching passages exist, not merely more corpus passages.
 Unknown requested IDs exit 3 (`unknown_passage`), even beyond the selected page.
 All three readers leave bytes and mtimes unchanged and create no locks.
-`corpus config` and claim joins are not implemented here.
+Claim joins are not implemented here.
+
+`corpus config [--policy FILE] [--corpus FILE] [--json]` reports `tool_version`,
+`supported_formats` (format name to maximum version), `rule_versions`, resolved
+`policy_path`/`corpus_path`, `policy_digest`, `corpus_digest`,
+`corpus_header_digest`, and `receipt_actor`. Every entry is `{value, origin}`:
+`default` for built-in or absent values, `flag` for paths supplied on the command
+line, and `file` for values/digests read from those files. There is no project
+configuration file. Omitted digests/paths are null; omitted `receipt_actor` is
+`human`, even when a policy file is supplied. File digests hash exact bytes;
+the header digest hashes the canonical validated corpus header, matching plans.
+Invalid corpus findings produce `invalid_corpus` naming the first finding,
+followed by the findings; loader diagnostics retain their codes (exit 3).
+The report is read-only: no writes, locks or mtime changes.
+
+Prompts require both stdin and stdout to be TTYs. `setup` needing field choices
+without a terminal exits 2 with `prompt_required` naming
+`--lexical-entry-field`, `--principal-parts-field`, and `--confirm`; otherwise a
+needed confirmation names `--confirm` and `--non-interactive`. Supplying all
+needed field flags and `--confirm` saves without prompting. Explicit
+`--non-interactive` preserves legacy setup outcomes, including cancellation
+without `--confirm`. Setup keeps its legacy output, not a result envelope.
+`cloze --parallel-mode prompt` without a terminal warns on stderr and ignores
+translations. Contract commands (`corpus`, `annotations`, `policy`) never prompt.
 
 `corpus normalize` accepts plain text or structural USFX and returns `{"review_items":[]}` on success.
 Unresolved ordinal assignments return `review_required` (1) with items containing

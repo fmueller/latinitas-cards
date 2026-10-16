@@ -18,10 +18,21 @@ from ..corpus_manifest import Approvals, materialize, read_optional
 from ..corpus_model import CorpusDescriptor, CorpusPassage, CorpusRecord, encode_ref_component, passage_hash
 from ..corpus_text import build_corpus, parse_template, read_lines
 from ..corpus_validation import validate_corpus, validate_records
+from ..effective_config import build_report
 from ..profile_setup import encode_unsafe_controls
 from ..usfx_adapter import build_usfx
 
 app = typer.Typer(help="Normalize and inspect versioned corpora.")
+
+
+@app.command("config")
+def corpus_config(
+    policy: Annotated[Path | None, typer.Option(help="Report this write policy.")] = None,
+    corpus: Annotated[Path | None, typer.Option(help="Report this normalized corpus.")] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Report effective configuration and value origins without writing files."""
+    run_contract("corpus config", json_output, lambda: build_report(policy, corpus))
 
 
 def _render_text(result: CliResult) -> None:

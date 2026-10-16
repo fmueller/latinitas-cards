@@ -342,7 +342,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     commands.remove(terminology)
     commands.extend(terminology.commands.values())
     corpus = cast(click.Group, click_app.commands["corpus"])
-    assert set(corpus.commands) == {"normalize", "validate", "show"}
+    assert set(corpus.commands) == {"normalize", "validate", "show", "config"}
     commands.remove(corpus)
     commands.extend(corpus.commands.values())
     annotations = cast(click.Group, click_app.commands["annotations"])

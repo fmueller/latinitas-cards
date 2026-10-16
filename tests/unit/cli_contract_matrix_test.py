@@ -3,11 +3,14 @@
 from collections.abc import Callable
 from contextlib import nullcontext
 from functools import partial
+from io import BytesIO
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 
+import click
 import pytest
 import typer
+from click.testing import CliRunner as ClickRunner
 from pydantic import JsonValue
 from typer.core import TyperGroup
 from typer.main import get_command
@@ -157,6 +160,8 @@ def annotation_apply_case(tmp: Path, exit_code: int) -> list[str]:
 
 
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    ("corpus config", 0): lambda _: ["corpus", "config"],
+    ("corpus config", 3): lambda tmp: ["corpus", "config", "--corpus", str(tmp / "missing.jsonl")],
     **{("annotations plan", code): partial(annotation_plan_case, exit_code=code) for code in (0, 1, 3, 4)},
     **{("annotations approve", code): partial(annotation_approve_case, exit_code=code) for code in (0, 3, 4, 5)},
     **{("annotations apply", code): partial(annotation_apply_case, exit_code=code) for code in (0, 2, 3, 4, 5)},
@@ -244,8 +249,23 @@ def test_matrix_covers_registered_contract_commands() -> None:
 
 @pytest.mark.parametrize("pair", CONTRACT_EXIT_CASES)
 def test_contract_exit_case(pair: tuple[str, int], tmp_path: Path) -> None:
+    class NoReadInput(BytesIO):
+        def read(self, size: int | None = -1) -> bytes:
+            assert size == 0, "Contract command attempted to read stdin"
+            return b""
+
+        def read1(self, size: int | None = -1) -> bytes:
+            raise AssertionError("Contract command attempted to read stdin")
+
+        def readline(self, size: int | None = -1) -> bytes:
+            raise AssertionError("Contract command attempted to read stdin")
+
     with writer_lock(tmp_path / "out.jsonl") if pair[1] == 4 and pair[0].startswith("annotations ") else nullcontext():
-        result = CliRunner().invoke(real_app, [*CONTRACT_EXIT_CASES[pair](tmp_path), "--json"])
+        result = ClickRunner().invoke(
+            cast(click.Command, get_command(real_app)),
+            [*CONTRACT_EXIT_CASES[pair](tmp_path), "--json"],
+            input=NoReadInput(),
+        )
     envelope = CliResult.model_validate_json(result.stdout)
     assert envelope.command == pair[0]
     assert envelope.exit_code == result.exit_code == pair[1]
