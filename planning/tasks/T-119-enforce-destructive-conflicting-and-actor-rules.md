@@ -1,12 +1,12 @@
 ---
 id: T-119-enforce-destructive-conflicting-and-actor-rules
 title: Enforce destructive, conflicting and actor rules across plan, approve and apply
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#policy-gated-agent-automation
 dependencies:
     - T-118-apply-planned-annotation-operations-atomically
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T12:29:59Z"
 ---
 
 # T-119-enforce-destructive-conflicting-and-actor-rules Enforce destructive, conflicting and actor rules across plan, approve and apply
@@ -126,3 +126,101 @@ T-125. No command or option is added.
   Size guard: focused apply/planning/state/I/O integration, schemas if required, docs
   and adversarial/routing tests. This is implementation work, not merely a matrix;
   required safety fixes may not be deferred because of the obsolete two-file guard.
+
+## Execution Evidence
+
+- Ownership: fetched origin/main and HEAD both matched the accepted base
+  `4366d5bd6dde253ee12f8bd4f82316b5da8d6ee6`; spec SHA-256 matched
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+  `taskrail validate` passed and `next --json` selected exactly T-119 before
+  `start` at 2026-10-16T12:00:56Z. All Taskrail calls use `mise exec -- taskrail`.
+- Strict TDD: first decision/same-plan-suffix run produced four failures
+  (`assert 0 == 4`: unsafe success instead of binding drift). Locked evaluator
+  integration made those tests plus the existing apply suite pass (62 tests).
+  An additional completed-patch segmentation revival test reproduced unsafe
+  success; the evaluator lifecycle correction turned it green. Final focused
+  planning/apply/routing suite: 152 passed.
+- Matrix: 40 routing cases cover fresh/stale accepted/withheld decisions,
+  changed/removed decisions, unrelated decisions, added/removed dependents and
+  conflicts, expected patch-proposed suffixes, invalid anchors/targets, actor
+  declarations, deny precedence, created-only duplicates, invalid batch atomicity,
+  provenance, no accepted claims and static optional-provider import rejection.
+  Each matrix apply logs routes and before/after sidecar SHA-256; rejected
+  batches assert identical hashes. Existing apply tests also cover foreign
+  suffixes, all three busy locks, the exact logical symlinked claims lock and
+  a synchronized blocking claims writer held through replacement.
+- Dedicated `code-simplifier` Task loaded its personal skill, reused one current
+  records collection in apply and one AST parse in the import scan; 152 focused
+  tests passed. Parent inspected the diff and reran routing/apply: 98 passed.
+- Separate parallel read-only `code-reviewer` Tasks selected General, Security
+  and Database (persistence/concurrency) lanes. General loaded its ECC reviewer;
+  Security loaded its ECC reviewer, security-review, linked cloud-security
+  resource and common security rules; Database loaded its ECC reviewer,
+  postgres-patterns and database-migrations (SQL guidance not applicable).
+  Python-specific review was not a separate lane: General covers this small
+  typed-Python integration; no framework, schema or SQL changes require more
+  lanes. Two specialist lanes stay within the default budget.
+- All three returned verbatim: "No concrete task-relevant findings."
+  A fresh candidate-validation `code-reviewer` Task inspected the actual diff,
+  loaded General/Python/Security/Database references and applicable companions,
+  and independently ran 152 focused tests. Its conclusion was also:
+  "No concrete task-relevant findings." Candidate IDs accepted/rejected: none;
+  dispositions/finding-fix TDD: none required. No candidates were suppressed or
+  deferred. This is one review cycle; final disposition verification follows
+  the final gates before lifecycle completion.
+- Scope: no new command/option, authentication, claims digest/decision writes,
+  provider changes, spec/gate/dependency/priority edits or second task. T-127
+  schema exporter, future v0.8.0 T-128 memory work and blocked T-038 release
+  publication remain unchanged and excluded. No in-scope follow-up is needed.
+- Self-verification strengthened the inherited competing-writer test with a
+  subprocess handshake at the actual blocking claims-lock syscall, avoiding a
+  false positive from slow CLI startup. A process-local deliberate regression
+  omitting only apply's claims lock failed with `DID NOT RAISE TimeoutExpired`;
+  the unchanged correct implementation passed the strengthened test (1 passed).
+  No production lock behavior or on-disk source was changed by that experiment.
+- The first `mise run check` caught formatting in the simplifier's AST helper.
+  Ruff formatting corrected it; the full exact chain and repository gate were
+  rerun rather than waiving the formatting failure. Earlier full-chain counts
+  were 2404 before final matrix expansion and 2418 after expansion.
+- Isolated accepted-base apply replay (no on-disk code edits) reran the expanded
+  decision/suffix regressions: 6 failed, 34 deselected, all returning unsafe exit
+  0. For the decision cases, sidecar SHA-256 changed from
+  `cb822ae209d8905721a582b3e271582f8da76f9226a1c017ccf167afb617ce4e`
+  to `1fe5dcdddd4532544c101b8c0773ed23b55ba1d7949fbc66e8262545c33cd5b2`.
+  Corrected CLI envelopes return exit 4 `binding_drift` and retain the original
+  hash. The current matrix run reports 40 passed, including partial/no-op controls.
+- Final exact chain after all code/test changes: `uv run ruff check` passed;
+  `uv run mypy` reported no issues in 162 source files; `uv run pytest -v`
+  reported 2418 passed, one existing Pydantic serialization warning, in 127.86s.
+  `mise run check` passed (2418 tests, format check and all five shell guard
+  suites); a separate format check reported 374 files already formatted.
+  Gates were confirmed at 2026-10-16T12:25:09Z.
+- First fresh disposition-verification Task loaded `code-reviewer` and
+  Python/security/database references and inspected the new lock handshake.
+  It returned no implementation issue but raised this candidate verbatim:
+
+  > FINDING T-119-R1 — tests
+  > Severity: low
+  > Evidence: `tests/unit/annotation_routing_test.py:488` iterates `FIXTURES.parent.rglob("*.py")`. `FIXTURES` is `tests/fixtures`, so this scans `tests/fixtures/**/*.py`, not the required `tests/**/*.py`.
+  > Finding: The optional-provider import guard does not scan the test suite as required by T-119 acceptance criteria.
+  > Failure/impact: A future test could import `cltk`, `stanza`, `torch`, `openai`, `anthropic`, or `ollama` without this guard detecting it.
+  > Recommended direction: Scan from the `tests` directory and retain the synthetic-source negative control.
+
+  A fresh candidate-validation `code-reviewer` Task rejected T-119-R1:
+  `annotation_apply_test.py:18` sets FIXTURES to tests/fixtures, so its parent
+  is tests. Both parent and validator executed the scan: 80 Python files,
+  including the routing unit test; negative controls detect forbidden imports.
+  Accepted findings remain none; disposition is rejected/not reproducible, not
+  deferred. No code change or finding-fix TDD is appropriate for this false
+  positive. A final fresh verifier checks this rejection before finalization;
+  the review/fix/recheck limit remains at most two cycles.
+- Second/final fresh disposition-verification Task independently confirmed the
+  rejection, loaded its `code-reviewer` skill, Python reviewer/patterns, common
+  review rules and TDD references, and ran the import guard plus synchronized
+  writer test: 2 passed. Final conclusion verbatim: "No concrete task-relevant
+  findings." Accepted/deferred findings: zero. Two verification passes, no
+  finding-fix cycle required and no unresolved issues. At 2026-10-16T12:29:28Z,
+  state validation, active selector, spec hash and fetched base were rechecked
+  before lifecycle finalization; all still matched this task's ownership.
+- 2026-10-16T12:29:50Z: verification pass
+- 2026-10-16T12:29:59Z: Verified pass at 2026-10-16T12:29:50Z after final exact ruff/mypy/pytest2418 and mise check, independent General/Security/persistence-concurrency review, candidate validation and fresh final disposition verification; no validated or deferred findings. Full safety drift and invalid-pending rejection under existing locks; matrix and concurrency evidence recorded.

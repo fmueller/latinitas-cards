@@ -283,11 +283,11 @@ def evaluate_operations(
                 reasons.append("stale")
             else:
                 segmentation = segmentations.get(record.anchor.segmentation_id or "")
-                if record.anchor.segmentation_id is not None and segmentation is None:
-                    old = states.get(record.anchor.segmentation_id)
-                    reasons.append(
-                        "orphaned" if old is not None and (old.superseded or old.retracted) else "unknown_segmentation"
-                    )
+                old = states.get(record.anchor.segmentation_id or "")
+                if old is not None and (old.superseded or old.retracted):
+                    reasons.append("orphaned")
+                elif record.anchor.segmentation_id is not None and segmentation is None:
+                    reasons.append("unknown_segmentation")
                 try:
                     validate_anchor(record, passage, segmentation)
                 except ValueError:

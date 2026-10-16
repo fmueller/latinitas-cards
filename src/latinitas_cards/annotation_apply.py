@@ -7,7 +7,16 @@ from pathlib import Path
 
 from pydantic import JsonValue
 
-from .annotation_plans import AnnotationPlan, AnnotationReceipt, Retract, checked_record, load_document, proposed_record
+from .annotation_plans import (
+    AnnotationPlan,
+    AnnotationReceipt,
+    Retract,
+    checked_record,
+    evaluate_operations,
+    load_document,
+    proposed_record,
+    read_decisions,
+)
 from .annotation_sidecar import Annotation, Retraction, append_records, read_sidecar, resolve_created
 from .atomic_io import reject_aliases, writer_locks
 from .canonical import digest, digest_bytes
@@ -15,7 +24,7 @@ from .cli_contract import Code, ContractError, Diagnostic
 from .corpus_io import read_corpus
 from .corpus_model import CorpusHeader, CorpusPassage
 from .corpus_validation import validate_records
-from .policy import policy_digest
+from .policy import load_policy, policy_digest
 
 
 def check_sidecar_base(data: bytes | None, plan: AnnotationPlan) -> None:
@@ -127,7 +136,8 @@ def apply_plan(
             raise ContractError(Code.UNREADABLE, str(error), path=str(sidecar)) from error
         check_sidecar_base(data, plan)
         current = list(read_sidecar(sidecar)) if data is not None else []
-        targets_by_id = {row.annotation_id: row for row in current if isinstance(row, Annotation)}
+        current_records = [row for row in current if isinstance(row, Annotation | Retraction)]
+        targets_by_id = {row.annotation_id: row for row in current_records if isinstance(row, Annotation)}
         for patch_operation, operation in zip(plan.patch.operations, plan.operations, strict=True):
             if isinstance(patch_operation, Retract):
                 expected = proposed_record(patch_operation, targets_by_id)
@@ -135,7 +145,19 @@ def apply_plan(
                     raise ContractError(Code.BINDING_DRIFT, "Retraction target is missing; re-plan")
                 if operation.records != [expected]:
                     raise ContractError(Code.INVALID_PLAN, "Retraction binding differs from its target")
-        known = {row.annotation_id for row in current if isinstance(row, Annotation | Retraction)}
+        known = {row.annotation_id for row in current_records}
+        evaluated = evaluate_operations(
+            plan.patch,
+            passages,
+            current_records,
+            read_decisions(corpus),
+            load_policy(policy_path) if policy_path is not None else None,
+        )
+        for planned, fresh in zip(plan.operations, evaluated, strict=True):
+            if all(str(raw["annotation_id"]) in known for raw in planned.records):
+                continue
+            if fresh.route == "invalid" or fresh.route != planned.route or fresh.safety != planned.safety:
+                raise ContractError(Code.BINDING_DRIFT, "Pending operation safety differs from the plan; re-plan")
         selected = [
             row
             for row in plan.operations
@@ -160,8 +182,6 @@ def apply_plan(
                     raise ContractError(Code.BINDING_DRIFT, "Planned passage is missing or edited; re-plan")
                 additions.append(record)
                 known.add(record.annotation_id)
-        # T-119 plugs current pending-operation route and complete safety comparison
-        # into this locked snapshot, before actor checks, timestamps or replacement.
         if receipt is not None and receipt.actor.startswith("agent:") and plan.receipt_actor == "human":
             raise ContractError(Code.ACTOR_REFUSED, "A declared human actor is required")
         if any(by_id[operation_id].route == "deny" for operation_id in approved):

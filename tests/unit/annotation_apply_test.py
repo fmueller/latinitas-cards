@@ -2,6 +2,7 @@
 
 import json
 import os
+import select
 import subprocess
 import sys
 from pathlib import Path
@@ -389,9 +390,23 @@ def test_competing_normalizer_and_claim_writer_before_replace(tmp_path: Path, mo
         )
         assert normalizer.returncode == 4, normalizer.stdout + normalizer.stderr
         assert json.loads(normalizer.stdout)["diagnostics"][0]["code"] == "busy"
+        # Signal at the real blocking syscall, not merely after process startup.
+        writer_script = """
+import fcntl
+original = fcntl.flock
+def observed(lock, operation):
+    if operation == fcntl.LOCK_EX:
+        print("claims-lock-attempt", flush=True)
+    return original(lock, operation)
+fcntl.flock = observed
+from latinitas_cards.cli import app
+app()
+"""
         writer = subprocess.Popen(
             [
-                *command,
+                sys.executable,
+                "-c",
+                writer_script,
                 "claims",
                 "record",
                 str(corpus),
@@ -412,6 +427,9 @@ def test_competing_normalizer_and_claim_writer_before_replace(tmp_path: Path, mo
             text=True,
         )
         writers.append(writer)
+        assert writer.stdout is not None
+        assert select.select([writer.stdout], [], [], 20)[0], "Claims writer never reached its lock"
+        assert writer.stdout.readline().strip() == "claims-lock-attempt"
         with pytest.raises(subprocess.TimeoutExpired):
             writer.communicate(timeout=1)
         assert corpus.read_bytes() == previous_corpus

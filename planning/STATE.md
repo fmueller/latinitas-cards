@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T11:55:13Z"
+updated_at: "2026-10-16T12:29:59Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-119-enforce-destructive-conflicting-and-actor-rules: Enforce destructive, conflicting and actor rules across plan, approve and apply'
-last_verification_result: pass for T-118-apply-planned-annotation-operations-atomically at 2026-10-16T11:54:42Z
+next_action: 'Start task T-120-report-effective-configuration-and-guarantee-no: Report effective configuration and guarantee no hidden prompts across the CLI'
+last_verification_result: pass for T-119-enforce-destructive-conflicting-and-actor-rules at 2026-10-16T12:29:50Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-118-apply-planned-annotation-operations-atomically at 2026-10-16T11:54:42Z
+- pass for T-119-enforce-destructive-conflicting-and-actor-rules at 2026-10-16T12:29:50Z
 
 ## Next Action
 
-- Start task T-119-enforce-destructive-conflicting-and-actor-rules: Enforce destructive, conflicting and actor rules across plan, approve and apply
+- Start task T-120-report-effective-configuration-and-guarantee-no: Report effective configuration and guarantee no hidden prompts across the CLI
 
 ## Relevant Artifacts
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 9
+- todo: 8
 - in_progress: 0
-- completed: 118
+- completed: 119
 - blocked: 1
 - cancelled: 0

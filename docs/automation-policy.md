@@ -42,6 +42,13 @@ Destructive or conflicting operations are never `auto`: demote to `review`,
 but retain a matching `deny`. The caller supplies those risk facts; this router
 does not compute them or perform writes.
 
+Plans compute destructiveness for `supersede`/`retract` from accepted or withheld
+decisions bound to the target annotation ID, even if the decision binding is stale,
+and from annotations depending on the target segmentation. Conflicts are different
+values at the same layer and anchor from the same producer. Current live records
+and the entire patch contribute to these facts, deduplicated by annotation ID;
+different creation timestamps alone do not create a conflict.
+
 `Route(action, reasons)` contains ordered tokens from this closed vocabulary:
 
 1. Exactly one base token: `no_policy`, `rule:<index>` (zero-based winning rule),
@@ -61,7 +68,31 @@ so whitespace changes the digest; no path returns `None`.
 
 `receipt_actor` is `human` (default) or `any`. Actors are declared, **not
 authenticated**. `annotations approve` enforces it; an agent declaration is refused
-when the plan requires a human. Validation and routing do not approve or apply operations.
+when the plan requires a human. Apply enforces the same rule for hand-built receipts.
+`receipt_actor: any` permits either declaration; it does not authenticate the actor.
+Invalid operations cannot be approved or applied regardless of producer or actor kind.
+Denied operations cannot be approved and are reported as warnings without appending
+at apply. Validation and routing do not approve or apply operations.
+
+## Apply-time safety
+
+Apply holds the corpus, annotation sidecar and exact `<CORPUS>.claims.json.lock`
+writer locks from snapshot reads through replacement. Contention exits 4 `busy`;
+`claims record` keeps its blocking protocol on that same claims lock. Lock files may
+be created even when claims are absent, but claims are never written by apply.
+
+Every pending operation is checked again against the current corpus, effective
+sidecar, whole embedded patch and version 2 decisions in `<CORPUS>.claims.json`.
+Its validity, route and complete safety facts (decision status and sorted dependent
+and conflicting annotation IDs) must still match. Any changed fact or route, or a
+newly invalid pending operation, rejects the **whole batch before any append** with
+4 `binding_drift`, even if the route remains `review`. Re-plan and re-approve;
+an old receipt cannot authorize changed context. Unrelated decisions do not cause
+drift and there is no claims digest in the plan. Expected partial appends are
+deduplicated; completed records are not reapplied or subjected to pending checks.
+
+Missing claims means no decisions. Unreadable, malformed and v1 claims fail closed
+with exit 3 `unreadable`, `invalid_sidecar` and `unsupported_version`, respectively.
 
 The policy gates sidecar writes only, not linguistic acceptance. It is not part
 of the deck profile or claim fingerprint and cannot create a claim decision.

@@ -139,8 +139,27 @@ The sidecar must match its base or a line-boundary base plus this plan's records
 Only new records need a timestamp: patch `created`, then `--timestamp`, then
 `SOURCE_DATE_EPOCH`; reruns neither append nor require a timestamp.
 Apply never records claim decisions. Pending-operation route and complete safety
-fact revalidation is the separately tracked T-119 integration, not supplied by
-the locked transaction alone.
+facts are recomputed under those locks using the entire embedded patch and current
+version 2 decisions. Changed decision status, dependent IDs, conflict IDs or route,
+or newly invalid anchors/targets, reject the entire batch with `binding_drift` (4)
+before any append, even if both routes are `review`. Re-plan/re-approve; unrelated
+decisions and expected deduplicated partial appends do not invalidate the plan.
+Completed operations skip pending checks. Malformed/unreadable/v1 claims exit 3,
+not empty decisions. Default human-only actor enforcement also applies to hand-built
+receipts (`actor_refused`, 5); `receipt_actor: any` permits agent declarations.
+
+| apply safety case | exit / write effect |
+| --- | --- |
+| changed or removed decision/dependent/conflict; new invalid pending operation | 4 `binding_drift`, no append |
+| expected partial append, later receipt, completed rerun, unrelated decision | 0, append only new eligible records |
+| claims unreadable / malformed / v1 | 3 `unreadable` / `invalid_sidecar` / `unsupported_version`, no append |
+| claims writer lock held | 4 `busy`, no append |
+| invalid plan operation, any producer/actor kind | 3 `invalid_operation`, no append |
+| agent receipt under human-only policy | 5 `actor_refused`, no append |
+| deny operation without receipt selection | 0 with `denied` warning, denied records never appended |
+
+The routing matrix lives in `tests/unit/annotation_routing_test.py`; lock contention
+and synchronized competing claims writers also run in `annotation_apply_test.py`.
 
 `corpus validate CORPUS [--json]` streams the input without modifying it. Its
 result is `{"counts":{"header":1,"corpus":1,"work":N,"passage":M}}`;
