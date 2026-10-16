@@ -53,6 +53,8 @@ jobs:
         run: bash scripts/check-mutation-config-test.sh
       - name: Check distribution inspection
         run: bash scripts/check-dist-test.sh
+      - name: Check publish boundaries
+        run: bash scripts/check-publish-guard-test.sh
 
   unit-tests:
     name: Unit Tests (Python ${{ matrix.python-version }})

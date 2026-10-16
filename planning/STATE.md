@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T13:23:39Z"
+updated_at: "2026-10-16T13:49:55Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-122-add-the-tag-only-trusted-publishing-release: Add the tag-only Trusted Publishing release workflow with no-publish guards'
-last_verification_result: pass for T-121-complete-package-metadata-notices-and-distribution at 2026-10-16T13:23:39Z
+next_action: 'Start task T-123-document-pypi-installation-extras-and-the: Document PyPI installation, extras and the maintainer release runbook'
+last_verification_result: pass for T-122-add-the-tag-only-trusted-publishing-release at 2026-10-16T13:49:49Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-121-complete-package-metadata-notices-and-distribution at 2026-10-16T13:23:39Z
+- pass for T-122-add-the-tag-only-trusted-publishing-release at 2026-10-16T13:49:49Z
 
 ## Next Action
 
-- Start task T-122-add-the-tag-only-trusted-publishing-release: Add the tag-only Trusted Publishing release workflow with no-publish guards
+- Start task T-123-document-pypi-installation-extras-and-the: Document PyPI installation, extras and the maintainer release runbook
 
 ## Relevant Artifacts
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 6
+- todo: 5
 - in_progress: 0
-- completed: 121
+- completed: 122
 - blocked: 1
 - cancelled: 0

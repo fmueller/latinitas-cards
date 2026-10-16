@@ -40,4 +40,5 @@ run = [
   "bash scripts/check-mutation-results-test.sh",
   "bash scripts/check-mutation-config-test.sh",
   "bash scripts/check-dist-test.sh",
+  "bash scripts/check-publish-guard-test.sh",
 ]

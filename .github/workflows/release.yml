@@ -1,0 +1,107 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Require matching version and main ancestry
+        run: |
+          version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          [[ "$GITHUB_REF_NAME" == "v$version" ]]
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Build and inspect distributions
+        run: |
+          bash scripts/check-dist.sh
+          sha256sum dist/* >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - run: bash scripts/check-install.sh "$(uv python find)"
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist/
+
+  verify-pypi:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: astral-sh/setup-uv@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Verify the exact PyPI version without NLP extras
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          uv venv --python 3.14 "$RUNNER_TEMP/pypi-verify"
+          python="$RUNNER_TEMP/pypi-verify/bin/python"
+          deadline=$((SECONDS + 540))
+          until timeout 60s uv pip install --no-config --no-cache --python "$python" --index-url https://pypi.org/simple "latinitas-cards==$VERSION"; do
+            (( SECONDS < deadline )) || exit 1
+            sleep 10
+          done
+          "$RUNNER_TEMP/pypi-verify/bin/latinitas-cards" --help
+          "$python" -I - <<'PY'
+          import importlib.metadata
+
+          def distribution(name):
+              try:
+                  return importlib.metadata.distribution(name)
+              except importlib.metadata.PackageNotFoundError:
+                  return None
+
+          assert distribution("cltk") is None
+          assert distribution("stanza") is None
+          assert distribution("torch") is None
+          PY

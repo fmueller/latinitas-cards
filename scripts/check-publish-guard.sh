@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Intentionally line-oriented: release trigger structure is a strict allowlist.
+set -euo pipefail
+directory="${1:-.github/workflows}"
+shopt -s nullglob
+files=("$directory"/*.yml "$directory"/*.yaml)
+for file in "${files[@]}"; do
+  if [[ $(basename "$file") != release.yml ]]; then
+    if grep -En "id-token[\"']?[[:space:]]*:[[:space:]]*[\"']?write|pypa/gh-action-pypi-publish|twine[[:space:]]+upload|uv[[:space:]]+publish|environment[\"']?[[:space:]]*:[[:space:]]*[\"']?pypi" "$file"; then
+      printf 'publish guard failed: %s: publishing capability outside release.yml\n' "$file" >&2
+      exit 1
+    fi
+  else
+    awk '
+      function fail(message) {
+        print "publish guard failed: " FILENAME ": " message > "/dev/stderr"
+        bad = 1
+      }
+      /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+      /^[^ ]/ {
+        trigger = ($0 == "on:")
+        jobs = ($0 == "jobs:")
+        job = ""
+        if (trigger) seen++
+        if ($0 ~ /^["\047]?on["\047]?[[:space:]]*:/ && !trigger) fail("non-tag trigger syntax")
+      }
+      trigger && !/^on:/ {
+        if ($0 == "  push:") push++
+        else if ($0 == "    tags:") tags++
+        else if ($0 == "      - '\''v[0-9]+.[0-9]+.[0-9]+'\''") pattern++
+        else fail("non-tag trigger: " $0)
+      }
+      jobs && /^  [^ ]/ { job = $0 }
+      /id-token["\047]?[[:space:]]*:[[:space:]]*["\047]?write/ {
+        if (!jobs || job != "  publish:") fail("id-token: write outside publish")
+      }
+      END {
+        if (seen != 1 || push != 1 || tags != 1 || pattern != 1) fail("expected only the release tag trigger")
+        exit bad
+      }
+    ' "$file"
+  fi
+done
+printf 'publish guard passed\n'
