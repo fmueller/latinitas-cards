@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `annotations segment` writes reproducible sentence/token sidecars, preserves
+  existing proposals, and safely skips byte-identical reruns without a timestamp.
 - `cloze` reads normalized JSONL corpora with source citations and optional
   language-selected translations, including alongside XML, text and CSV inputs.
 - `corpus normalize --adapter usfx` preserves markup, notes and headings in citable

@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T08:47:53Z"
+updated_at: "2026-10-16T09:21:02Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-113-define-annotation-sidecar-records-and-the: Define annotation sidecar records and the annotations segment writer'
-last_verification_result: pass for T-112-route-legacy-vulgate-commands-through-the-adapter at 2026-10-16T08:44:50Z
+next_action: 'Start task T-114-report-stale-orphaned-and-unmatched-annotations-in: Report stale, orphaned and unmatched annotations in inspect and validate'
+last_verification_result: pass for T-113-define-annotation-sidecar-records-and-the at 2026-10-16T09:20:55Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-112-route-legacy-vulgate-commands-through-the-adapter at 2026-10-16T08:44:50Z
+- pass for T-113-define-annotation-sidecar-records-and-the at 2026-10-16T09:20:55Z
 
 ## Next Action
 
-- Start task T-113-define-annotation-sidecar-records-and-the: Define annotation sidecar records and the annotations segment writer
+- Start task T-114-report-stale-orphaned-and-unmatched-annotations-in: Report stale, orphaned and unmatched annotations in inspect and validate
 
 ## Relevant Artifacts
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 15
+- todo: 14
 - in_progress: 0
-- completed: 112
+- completed: 113
 - blocked: 1
 - cancelled: 0

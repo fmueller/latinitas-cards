@@ -1,0 +1,304 @@
+{
+  "$defs": {
+    "Anchor": {
+      "additionalProperties": false,
+      "properties": {
+        "passage_hash": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "passage_id": {
+          "maxLength": 256,
+          "pattern": "^[a-z0-9][a-z0-9-]{1,62}:(?:[A-Za-z0-9._-]|%[0-9A-F]{2})+$",
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "segmentation_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Span"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "passage_id",
+        "passage_hash"
+      ],
+      "title": "Anchor",
+      "type": "object"
+    },
+    "Annotation": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alternatives"
+        },
+        "anchor": {
+          "$ref": "#/$defs/Anchor"
+        },
+        "annotation_id": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "created": {
+          "$ref": "#/$defs/Created"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "layer": {
+          "$ref": "#/$defs/Layer"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "record": {
+          "const": "annotation",
+          "title": "Record",
+          "type": "string"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "annotation_id",
+        "layer",
+        "anchor",
+        "producer",
+        "input_hash",
+        "created",
+        "plan",
+        "record",
+        "value"
+      ],
+      "title": "Annotation",
+      "type": "object"
+    },
+    "AnnotationHeader": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "latinitas-annotations",
+          "title": "Format",
+          "type": "string"
+        },
+        "record": {
+          "const": "header",
+          "title": "Record",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version",
+        "format",
+        "record"
+      ],
+      "title": "AnnotationHeader",
+      "type": "object"
+    },
+    "Created": {
+      "type": "string"
+    },
+    "JsonValue": {},
+    "Layer": {
+      "enum": [
+        "segmentation",
+        "morphology",
+        "translation",
+        "correction"
+      ],
+      "type": "string"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "rule",
+            "analyzer",
+            "agent",
+            "llm",
+            "human"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "Retraction": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/Anchor"
+        },
+        "annotation_id": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "created": {
+          "$ref": "#/$defs/Created"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "layer": {
+          "$ref": "#/$defs/Layer"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "record": {
+          "const": "retraction",
+          "title": "Record",
+          "type": "string"
+        },
+        "retracts": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "annotation_id",
+        "layer",
+        "anchor",
+        "producer",
+        "input_hash",
+        "created",
+        "plan",
+        "record",
+        "retracts"
+      ],
+      "title": "Retraction",
+      "type": "object"
+    },
+    "Sha256": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "SidecarRecord": {
+      "discriminator": {
+        "mapping": {
+          "annotation": "#/$defs/Annotation",
+          "header": "#/$defs/AnnotationHeader",
+          "retraction": "#/$defs/Retraction"
+        },
+        "propertyName": "record"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AnnotationHeader"
+        },
+        {
+          "$ref": "#/$defs/Annotation"
+        },
+        {
+          "$ref": "#/$defs/Retraction"
+        }
+      ]
+    },
+    "Span": {
+      "items": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    }
+  },
+  "$ref": "#/$defs/SidecarRecord",
+  "description": "Schema for each line of the sidecar, including its strict header.",
+  "title": "AnnotationSchema"
+}

@@ -345,6 +345,10 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     assert set(corpus.commands) == {"normalize", "validate"}
     commands.remove(corpus)
     commands.extend(corpus.commands.values())
+    annotations = cast(click.Group, click_app.commands["annotations"])
+    assert set(annotations.commands) == {"segment"}
+    commands.remove(annotations)
+    commands.extend(annotations.commands.values())
     assert all(command.callback is not None for command in commands)
     command_modules = {command.name: command.callback.__module__ for command in commands}
 

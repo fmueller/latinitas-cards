@@ -2384,6 +2384,7 @@ def validate_impl(
 
 def _register_commands() -> None:
     from .commands.annotate import annotate
+    from .commands.annotations import app as annotations_app
     from .commands.authored import app as authored_app
     from .commands.claims import app as claims_app
     from .commands.cloze import cloze
@@ -2414,6 +2415,7 @@ def _register_commands() -> None:
     app.add_typer(form_parsing_app, name="form-parsing")
     app.add_typer(claims_app, name="claims")
     app.add_typer(corpus_app, name="corpus")
+    app.add_typer(annotations_app, name="annotations")
     app.add_typer(phrases_app, name="phrases")
     app.add_typer(terminology_app, name="terminology")
 

@@ -36,6 +36,8 @@
         "float_value",
         "invalid_record",
         "invalid_manifest",
+        "invalid_sidecar",
+        "segmentation_differs",
         "invalid_approval",
         "retired_ref",
         "review_required",

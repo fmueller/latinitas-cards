@@ -1,6 +1,7 @@
 """Executable envelope exits and extensible real-command coverage matrix."""
 
 from collections.abc import Callable
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Annotated
 
@@ -94,7 +95,17 @@ def normalize_case(tmp: Path, exit_code: int) -> list[str]:
     return args
 
 
+def annotations_case(tmp: Path, exit_code: int) -> list[str]:
+    corpus = FIXTURES / ("invalid/hash.jsonl" if exit_code == 3 else "valid/ordinal.jsonl")
+    args = ["annotations", "segment", str(corpus), "--output", str(tmp / "out.jsonl")]
+    return args + (["--timestamp", "not-a-date"] if exit_code == 2 else ["--timestamp", "2026-01-01T00:00:00Z"])
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    ("annotations segment", 0): lambda tmp: annotations_case(tmp, 0),
+    ("annotations segment", 2): lambda tmp: annotations_case(tmp, 2),
+    ("annotations segment", 3): lambda tmp: annotations_case(tmp, 3),
+    ("annotations segment", 4): lambda tmp: annotations_case(tmp, 4),
     ("corpus validate", 0): lambda _: ["corpus", "validate", str(FIXTURES / "valid/ordinal.jsonl")],
     ("corpus validate", 1): lambda _: ["corpus", "validate", str(FIXTURES / "invalid/hash.jsonl")],
     ("corpus validate", 3): lambda tmp: ["corpus", "validate", str(tmp / "missing.jsonl")],
@@ -143,7 +154,8 @@ def test_matrix_covers_registered_contract_commands() -> None:
 
 @pytest.mark.parametrize("pair", CONTRACT_EXIT_CASES)
 def test_contract_exit_case(pair: tuple[str, int], tmp_path: Path) -> None:
-    result = CliRunner().invoke(real_app, [*CONTRACT_EXIT_CASES[pair](tmp_path), "--json"])
+    with writer_lock(tmp_path / "out.jsonl") if pair == ("annotations segment", 4) else nullcontext():
+        result = CliRunner().invoke(real_app, [*CONTRACT_EXIT_CASES[pair](tmp_path), "--json"])
     envelope = CliResult.model_validate_json(result.stdout)
     assert envelope.command == pair[0]
     assert envelope.exit_code == result.exit_code == pair[1]

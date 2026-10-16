@@ -5,9 +5,13 @@ import argparse
 import copy
 import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
+from latinitas_cards.annotation_sidecar import Annotation, annotation_id
 from latinitas_cards.atomic_io import atomic_replace
 from latinitas_cards.canonical import canonical_json, digest_bytes
 from latinitas_cards.cli_contract import ContractError
@@ -130,7 +134,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--target",
-        choices=["valid", "invalid", "schemas", "usfx", "markup", "vulgate-digest", "cloze-jsonl"],
+        choices=["valid", "invalid", "schemas", "usfx", "markup", "vulgate-digest", "cloze-jsonl", "annotations"],
         required=True,
     )
     parser.add_argument("--force", action="store_true")
@@ -143,6 +147,50 @@ def main() -> None:
         }
     elif args.target == "cloze-jsonl":
         outputs = {ROOT / "tests/fixtures/goldens/cloze-jsonl/inputs/corpus.jsonl": ""}
+    elif args.target == "annotations":
+        with TemporaryDirectory() as temporary:
+            sidecar = Path(temporary) / "ordinal.annotations.jsonl"
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "latinitas_cards",
+                    "annotations",
+                    "segment",
+                    str(FIXTURES / "valid/ordinal.jsonl"),
+                    "--output",
+                    str(sidecar),
+                    "--timestamp",
+                    "2026-01-01T00:00:00Z",
+                    "--json",
+                ],
+                check=True,
+                capture_output=True,
+            )
+            data = sidecar.read_text(encoding="utf-8")
+        lines = data.splitlines()
+        segmentation = json.loads(lines[2])
+        morphology = {
+            "record": "annotation",
+            "layer": "morphology",
+            "anchor": {**segmentation["anchor"], "segmentation_id": segmentation["annotation_id"], "span": [0, 5]},
+            "value": {"tagset": "UD", "lemma": "māter", "upos": "NOUN"},
+            "producer": {"kind": "analyzer", "name": "fixture-morph", "version": "1"},
+            "input_hash": segmentation["input_hash"],
+            "created": "2026-01-01T00:00:00Z",
+            "plan": None,
+        }
+        morphology["annotation_id"] = annotation_id(morphology)
+        Annotation.model_validate(morphology)
+        outputs = {
+            ROOT / "tests/fixtures/annotations/ordinal.annotations.jsonl": data,
+            ROOT / "tests/fixtures/annotations/fixture-morph.annotations.jsonl": lines[0]
+            + "\n"
+            + lines[2]
+            + "\n"
+            + canonical_json(morphology)
+            + "\n",
+        }
     elif args.target == "vulgate-digest":
         outputs = {FIXTURES / "usfx/vulgate.digest.json": ""}
     elif args.target == "markup":

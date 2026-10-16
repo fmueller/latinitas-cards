@@ -77,6 +77,8 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `float_value` | 1 | JSON floats are forbidden |
 | `invalid_record` | 1 | Corpus record schema or order is invalid |
 | `invalid_manifest` | 3 | Corpus manifest is invalid |
+| `invalid_sidecar` | 3 | Annotation sidecar is invalid |
+| `segmentation_differs` | 0 | Current segmentation differs from recomputed value |
 | `invalid_approval` | 3 | Approval is invalid or contradictory |
 | `retired_ref` | 3 | Approval names a retired reference |
 | `review_required` | 1 | Identity reconciliation requires review |
@@ -98,6 +100,7 @@ executable cases together.
 | --- | --- |
 | corpus validate | 0, 1, 3 |
 | corpus normalize | 0, 1, 2, 3, 4 |
+| annotations segment | 0, 2, 3, 4 |
 
 `corpus validate CORPUS [--json]` streams the input without modifying it. Its
 result is `{"counts":{"header":1,"corpus":1,"work":N,"passage":M}}`;

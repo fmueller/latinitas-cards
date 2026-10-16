@@ -1,14 +1,14 @@
 ---
 id: T-113-define-annotation-sidecar-records-and-the
 title: Define annotation sidecar records and the annotations segment writer
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#sidecar-annotation-model
 dependencies:
     - T-106-segment-sentences-and-tokenize-passages-with-the
     - T-105-validate-normalized-corpora-with-corpus-validate
     - T-103-define-the-cli-result-envelope-exit-codes
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T09:20:55Z"
 ---
 
 # T-113-define-annotation-sidecar-records-and-the Define annotation sidecar records and the annotations segment writer
@@ -117,3 +117,87 @@ plus `atomic_io` (T-103). Not in this task: anchor states and `annotations inspe
   ID rule, timestamps) and register new codes in the registry and its docs table.
 - TDD order: ID golden, model rejections, segment write, rerun/timestamp, lock and alias,
   failure injection. Size guard: one domain module plus one command module.
+
+## Workflow-v3 Evidence
+
+| Step | Evidence | Result |
+| --- | --- | --- |
+| Understand | Fetched origin; HEAD and origin/main matched accepted base 3b4e8ff99978de1d78ab9dc613f561752781b667. Spec SHA-256 fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704 matched. Taskrail validate passed; next selected T-113, off_spec false; start recorded 2026-10-16T08:54:09Z. | Exact authoritative task, no conflicting owner/spec drift. |
+| Strict TDD | Literal ID test first failed missing module, then passed. Rejection/shape tests: 10 failed, 19 passed before implementation, then 29 passed. Real segment tests: 12 failed missing command, then 41 combined passed. Lock/alias/failure phase: 9 failed, 17 passed, then 55 combined passed. | ID, rejection, writer/time, then persistence sequence retained. |
+| Edge-case TDD | Contextual spans and layered corpus gate tests failed before fixes. Retraction binding test failed before reader/writer validation. Historical retracted duplicate ID test failed timestamp_required before moving timestamp resolution after ID deduplication. Invalid explicit timestamp on no-op failed before unconditional explicit-flag validation. | No clock needed for actual no-op; bad explicit flags still rejected. |
+| Initial checks | ruff check; mypy; pytest -v. First full suite exposed the existing registration test's missing annotations-group traversal (1 failed, 1536 passed); extended the test using its established pattern. Repeated full chain: 1539 passed, one existing serializer warning. | Green before simplification/review. |
+| Simplify | Dedicated Task loaded personal code-simplifier; indexed current segmentations by passage rather than scanning full history per passage. ruff/mypy and 139 focused tests passed; inspected diff. | Behavior and contracts unchanged; no rejected simplifications. |
+| Review | Separate parallel read-only Tasks: General, Security, Database (filesystem persistence/concurrency), Python. Each instructed to load personal code-reviewer and reviewer-index ECC guidance. General: code-reviewer/common rules; Security: security-reviewer/security-review/cloud support; Database: database-reviewer/postgres-patterns/database-migrations (SQL-specific portions not applicable); Python: python-reviewer/python-patterns. | General plus three specialists within budget; no other framework/domain lanes apply. |
+| Candidate validation | Fresh read-only code-reviewer candidate-validation Task reproduced General/Security candidates, rejected false Database runtime assertion, and deduplicated its schema concern into SEC-001. Python: "No concrete task-relevant findings." | Two validated findings; no invented findings. |
+| Disposition/recheck | Both validated findings fixed with six red regressions, then six green; 151 focused tests passed. Fresh code-reviewer disposition verifier independently reran 151 focused tests: both resolved, Database candidate rejected, no new in-scope issues. | One risky review/fix cycle; no remaining findings. |
+| Final gates | 2026-10-16T09:19Z: exact ruff check / mypy / pytest -v chain passed (1545 tests, one pre-existing corpus serializer warning); mise run check passed (1545 tests, format check and all shell policy/mutation suites). git diff --check passed. | No suppressed failures or altered gates. |
+
+### Independent review candidates and dispositions
+
+**T113-G-001, correctness, medium — fixed.** Verbatim finding:
+
+> read_sidecar accepts non-canonical JSONL records even though the sidecar format requires canonical lines.
+
+Reviewer evidence: annotation_sidecar.py's json.loads/record validation accepted
+reordered, whitespace-padded input; a no-op preserved the noncanonical stream.
+Impact: accepted sidecars did not meet the documented wire contract.
+Recommended direction: compare each line with canonical_json(raw) plus newline.
+New reader cases for spaces, reordered keys, no final newline, duplicate keys,
+and CRLF all failed "DID NOT RAISE ContractError" before the fix. They pass with
+exact canonical comparison and newline translation disabled. Format/version gates
+still precede the canonical check. Canonical fixture bytes and IDs are unchanged.
+
+**SEC-001, security, low — fixed.** Verbatim finding:
+
+> The published annotation schema accepts an incomplete header that the sidecar contract and runtime reader reject.
+
+Reviewer evidence: defaulted header fields left the generated AnnotationHeader
+definition without required keys; an empty object satisfied that schema branch.
+Impact: schema consumers and the wire reader could disagree about valid input.
+Recommended direction: require the header fields and add missing-key regressions.
+The schema/model test failed required=set() before removing defaults; it now
+requires format, record and version, and each missing key is rejected. The writer
+constructs all fields explicitly. Regenerated through render_schema, not the
+excluded exporter. A temporary jsonschema Draft202012Validator independently
+accepted the exact header, rejected the empty/missing-key variants, and validated
+all committed annotation fixture lines. No dependency changes were retained.
+
+**T113-DB-001, correctness, medium — rejected.** Verbatim candidate:
+
+> The sidecar reader accepts a header missing "record": "header", despite the task requiring the first line to be exactly the specified three-key object.
+
+Fresh candidate validation reproduced the contrary result: the discriminated
+union raises ContractError for the missing record tag, so the claimed runtime
+acceptance/silent normalization did not occur. Its schema concern duplicates
+SEC-001. Fresh disposition verification confirmed the rejection. No false
+runtime fix was applied; no findings were deferred.
+
+### Real workflow and fixture evidence
+
+- Manual plan/report executed in a TemporaryDirectory through real CLI
+  subprocesses: corpus validate exit 0; segment appended 3/skipped 0; timestamp-free
+  rerun appended 0/skipped 3 with identical bytes and inode 1572133; different
+  timestamp retained the ordered ID set. Missing/date-only timestamp exited 2
+  without output; epoch zero yielded exactly 1970-01-01T00:00:00Z.
+- Invalid corpus emitted invalid_corpus then hash_mismatch (exit 3); unsupported
+  version and alias exited 3 without byte changes; parent-held flock caused the
+  separate CLI process to exit 4 busy. Replacement injection unit regression kept
+  previous bytes and removed staged temporary files.
+- Fixture morphology anchor [0,5] selected Māter using Unicode code points and
+  referenced token boundaries. All fixture records roundtrip byte-identically.
+- Independent literal golden annotation_id:
+  sha256:2ee246345cc09c45bba19839e626dad38091beae1a34698cc9df7d2bd98a634b.
+- Segmented ordinal fixture SHA-256:
+  cb822ae209d8905721a582b3e271582f8da76f9226a1c017ccf167afb617ce4e.
+- The missing annotations fixture-generator target was added minimally using the
+  existing preflight/--force/atomic-output pattern; it captures the real CLI in a
+  temporary directory. Forced regeneration was byte-identical; non-force rerun
+  refused overwrite with exit 2. No unrelated generator helpers were introduced.
+- Size guard: one new domain module and one command module. Legacy/goldens and
+  pinned spec are unchanged. No inspect/policy/claims/plans/apply functionality,
+  no CLTK/Stanza/Torch imports, no release/tag/deployment/publication, and no gate,
+  priority or dependency changes. T-127 exporter follow-up remains untouched;
+  T-128 future dense-metadata hardening remains unstarted and excluded. No new
+  follow-up tasks were needed.
+- 2026-10-16T09:20:55Z: verification pass
+- 2026-10-16T09:20:55Z: Implemented annotation sidecars and segment producer after all workflow-v3 reviews, fresh disposition verification and full gates; see task evidence.

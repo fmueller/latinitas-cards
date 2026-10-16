@@ -51,6 +51,8 @@ class Code(StrEnum):
     FLOAT_VALUE = "float_value"
     INVALID_RECORD = "invalid_record"
     INVALID_MANIFEST = "invalid_manifest"
+    INVALID_SIDECAR = "invalid_sidecar"
+    SEGMENTATION_DIFFERS = "segmentation_differs"
     INVALID_APPROVAL = "invalid_approval"
     RETIRED_REF = "retired_ref"
     REVIEW_REQUIRED = "review_required"
@@ -103,6 +105,8 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.FLOAT_VALUE: DiagnosticCode(1, "JSON floats are forbidden"),
     Code.INVALID_RECORD: DiagnosticCode(1, "Corpus record schema or order is invalid"),
     Code.INVALID_MANIFEST: DiagnosticCode(3, "Corpus manifest is invalid"),
+    Code.INVALID_SIDECAR: DiagnosticCode(3, "Annotation sidecar is invalid"),
+    Code.SEGMENTATION_DIFFERS: DiagnosticCode(0, "Current segmentation differs from recomputed value"),
     Code.INVALID_APPROVAL: DiagnosticCode(3, "Approval is invalid or contradictory"),
     Code.RETIRED_REF: DiagnosticCode(3, "Approval names a retired reference"),
     Code.REVIEW_REQUIRED: DiagnosticCode(1, "Identity reconciliation requires review"),
