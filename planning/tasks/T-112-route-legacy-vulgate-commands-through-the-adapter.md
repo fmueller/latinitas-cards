@@ -189,3 +189,19 @@ gain no corpus option and no deprecation notice. Corpus-first cards are v0.4.0.
   `mise exec -- lefthook install`; maintainer identity confirmed, no trailers.
 - 2026-10-16T08:44:50Z: verification pass
 - 2026-10-16T08:45:04Z: Verified pass at 2026-10-16T08:44:50Z after full gates and fresh independent disposition verification; 1472 tests, 55 focused cases, 20 real subprocess checks; legacy goldens unchanged; SEC-1 and SEC-2 fixed with strict TDD.
+
+## Delivery Evidence
+
+- Implementation committed as [dfe4d8c](https://github.com/fmueller/latinitas-cards/commit/dfe4d8ca3f056c46c302c0f19557cfeede91f5ef)
+  and pushed directly to origin/main after the pre-push policy guard and all
+  1472 tests passed again (96.24 s). Fetch and `ls-remote refs/heads/main`
+  confirmed the exact implementation commit. No release/tag/deployment action.
+- Final selector at 2026-10-16T08:47:53Z was T-113, `off_spec: false`; it was
+  observed only, not started. `taskrail next --json` demonstrably refreshes the
+  STATE timestamp (08:45:56Z → 08:47:53Z) without changing task semantics.
+  This handoff records that CLI-generated refresh rather than hand-editing state.
+- State: 112 completed, zero active; T-038 still blocked; T-128 still unstarted
+  off-spec v0.8 work. T-127 remains the existing schema-export follow-up, with
+  no duplicate or implementation here. Active spec and legacy golden diff empty.
+- GitHub push reported four existing Dependabot alerts (three high, one
+  moderate). No vulnerability triage or unrelated dependency update was made.
