@@ -266,5 +266,5 @@ is `exists` (3); identical bytes are a no-op. Legacy writers are unchanged.
 
 Structured hashes use UTF-8 canonical JSON (sorted keys, Unicode preserved,
 compact separators, no floats) and a `sha256:` prefix. Regenerate registered
-schemas with `uv run python scripts/export-json-schemas.py`; tests only check
-drift and never regenerate files.
+schemas with `uv run python scripts/export-json-schemas.py`; tests check drift
+and exercise the exporter in a temporary directory, never rewriting committed files.

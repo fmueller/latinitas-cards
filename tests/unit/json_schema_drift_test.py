@@ -1,3 +1,6 @@
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import get_args
 
@@ -24,3 +27,19 @@ def test_schema_matches_model(format_name: str) -> None:
 def test_schema_directory_has_no_unregistered_files() -> None:
     expected = {f"{name}.v{schema_version(model)}.schema.json" for name, model in SCHEMAS.items()}
     assert {path.name for path in SCHEMA_DIR.iterdir() if path.is_file()} == expected
+
+
+def test_exporter_regenerates_complete_registry(tmp_path: Path) -> None:
+    script = SCHEMA_DIR.parents[1] / "scripts/export-json-schemas.py"
+    isolated_script = tmp_path / "scripts" / script.name
+    isolated_script.parent.mkdir()
+    shutil.copyfile(script, isolated_script)
+
+    result = subprocess.run([sys.executable, str(isolated_script)], capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stderr
+    expected_names = {f"{name}.v{schema_version(model)}.schema.json" for name, model in SCHEMAS.items()}
+    exported = tmp_path / "docs/schemas"
+    assert {path.name for path in exported.iterdir()} == expected_names
+    for name in expected_names:
+        assert (exported / name).read_bytes() == (SCHEMA_DIR / name).read_bytes(), name
