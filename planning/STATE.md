@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T17:07:53Z"
+updated_at: "2026-10-16T17:37:06Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: No active-spec task is ready
+next_action: 'Start task T-131-reject-segmentation-outputs-aliasing-the-default: Reject segmentation outputs aliasing the default manifest lock'
 last_verification_result: pass for T-130-report-duplicate-corpus-claim-decisions-without at 2026-10-16T17:07:53Z
 relevant_artifacts: []
 continuation_notes:
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- No active-spec task is ready
+- Start task T-131-reject-segmentation-outputs-aliasing-the-default: Reject segmentation outputs aliasing the default manifest lock
 
 ## Relevant Artifacts
 
@@ -51,7 +51,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 2
 - in_progress: 0
 - completed: 128
 - blocked: 1
