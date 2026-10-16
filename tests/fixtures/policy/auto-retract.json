@@ -1,0 +1,1 @@
+{"format":"latinitas-policy","version":1,"rules":[{"operation":"retract","layer":"*","producer_kind":"*","producer":"*","action":"auto"}]}

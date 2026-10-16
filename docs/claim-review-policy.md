@@ -17,6 +17,10 @@ from those results (including error uncertainty), not from extraction counts or
 principal-part performance transferred to future contextual token parsing.
 Until then the applicable threshold is **not established: require explicit review**.
 
+The v0.3.0 [automation policy](automation-policy.md) gates sidecar writes only,
+not linguistic acceptance. It is separate from deck profiles, never enters claim
+fingerprints, and cannot record or bypass a claim review decision.
+
 ## Offline review path
 
 The focused Python API is `latinitas_cards.claim_review`. Construct a `Claim` for

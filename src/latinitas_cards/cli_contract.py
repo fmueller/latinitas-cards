@@ -31,6 +31,7 @@ class Code(StrEnum):
     INTERNAL = "internal"
     UNREADABLE = "unreadable"
     INVALID_JSON = "invalid_json"
+    INVALID_POLICY = "invalid_policy"
     MISSING_HEADER = "missing_header"
     UNSUPPORTED_FORMAT = "unsupported_format"
     ALIAS = "alias"
@@ -86,6 +87,7 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.INTERNAL: DiagnosticCode(70, "Unexpected internal failure"),
     Code.UNREADABLE: DiagnosticCode(3, "Filesystem input or output is inaccessible"),
     Code.INVALID_JSON: DiagnosticCode(3, "Input is not valid JSON"),
+    Code.INVALID_POLICY: DiagnosticCode(3, "Policy document is invalid"),
     Code.MISSING_HEADER: DiagnosticCode(3, "Stream header is missing"),
     Code.UNSUPPORTED_FORMAT: DiagnosticCode(3, "Document format is unsupported"),
     Code.ALIAS: DiagnosticCode(3, "Output aliases a protected path"),

@@ -1,0 +1,8342 @@
+[
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": null,
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "no_policy",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "first-match",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "auto",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "add",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:1",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "supersede",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "segmentation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "morphology",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive"
+    ]
+  },
+  {
+    "action": "deny",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "translation",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "rule:0",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "rule",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "analyzer",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "agent",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "llm",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": false,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "conflicting"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": false,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive"
+    ]
+  },
+  {
+    "action": "review",
+    "conflicting": true,
+    "destructive": true,
+    "layer": "correction",
+    "operation": "retract",
+    "policy": "deny-precedence",
+    "producer_kind": "human",
+    "producer_name": "fixture-one",
+    "reasons": [
+      "default_review",
+      "destructive",
+      "conflicting"
+    ]
+  }
+]

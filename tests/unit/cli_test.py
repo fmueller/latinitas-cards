@@ -349,6 +349,10 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     assert set(annotations.commands) == {"segment", "inspect"}
     commands.remove(annotations)
     commands.extend(annotations.commands.values())
+    policy = cast(click.Group, click_app.commands["policy"])
+    assert set(policy.commands) == {"validate"}
+    commands.remove(policy)
+    commands.extend(policy.commands.values())
     assert all(command.callback is not None for command in commands)
     command_modules = {command.name: command.callback.__module__ for command in commands}
 

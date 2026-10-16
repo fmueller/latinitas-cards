@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "Action": {
+      "enum": [
+        "auto",
+        "review",
+        "deny"
+      ],
+      "type": "string"
+    },
+    "Layer": {
+      "enum": [
+        "segmentation",
+        "morphology",
+        "translation",
+        "correction"
+      ],
+      "type": "string"
+    },
+    "Operation": {
+      "enum": [
+        "add",
+        "supersede",
+        "retract"
+      ],
+      "type": "string"
+    },
+    "PolicyRule": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/Action"
+        },
+        "layer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Layer"
+            },
+            {
+              "const": "*",
+              "type": "string"
+            }
+          ],
+          "title": "Layer"
+        },
+        "operation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Operation"
+            },
+            {
+              "const": "*",
+              "type": "string"
+            }
+          ],
+          "title": "Operation"
+        },
+        "producer": {
+          "title": "Producer",
+          "type": "string"
+        },
+        "producer_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProducerKind"
+            },
+            {
+              "const": "*",
+              "type": "string"
+            }
+          ],
+          "title": "Producer Kind"
+        }
+      },
+      "required": [
+        "operation",
+        "layer",
+        "producer_kind",
+        "producer",
+        "action"
+      ],
+      "title": "PolicyRule",
+      "type": "object"
+    },
+    "ProducerKind": {
+      "enum": [
+        "rule",
+        "analyzer",
+        "agent",
+        "llm",
+        "human"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "latinitas-policy",
+      "title": "Format",
+      "type": "string"
+    },
+    "receipt_actor": {
+      "default": "human",
+      "enum": [
+        "human",
+        "any"
+      ],
+      "title": "Receipt Actor",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/PolicyRule"
+      },
+      "title": "Rules",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "rules"
+  ],
+  "title": "Policy",
+  "type": "object"
+}

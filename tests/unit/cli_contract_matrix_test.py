@@ -144,6 +144,8 @@ CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
     ("corpus normalize", 2): lambda tmp: normalize_case(tmp, 2),
     ("corpus normalize", 3): lambda tmp: normalize_case(tmp, 3),
     ("corpus normalize", 4): lambda tmp: normalize_case(tmp, 4),
+    ("policy validate", 0): lambda _: ["policy", "validate", str(FIXTURES.parent / "policy/first-match.json")],
+    ("policy validate", 3): lambda tmp: ["policy", "validate", str(tmp / "missing-policy.json")],
 }
 
 

@@ -1,0 +1,1 @@
+{"format":"latinitas-policy","version":1,"receipt_actor":"any","rules":[{"operation":"*","layer":"translation","producer_kind":"*","producer":"fixture-*","action":"deny"},{"operation":"add","layer":"*","producer_kind":"*","producer":"*","action":"auto"}]}

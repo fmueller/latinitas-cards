@@ -16,6 +16,7 @@
         "internal",
         "unreadable",
         "invalid_json",
+        "invalid_policy",
         "missing_header",
         "unsupported_format",
         "alias",

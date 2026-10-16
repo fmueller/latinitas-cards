@@ -1,13 +1,13 @@
 ---
 id: T-116-define-the-versioned-automation-policy-file-and
 title: Define the versioned automation policy file and routing truth table
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#policy-gated-agent-automation
 dependencies:
     - T-103-define-the-cli-result-envelope-exit-codes
     - T-113-define-annotation-sidecar-records-and-the
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T10:43:08Z"
 ---
 
 # T-116-define-the-versioned-automation-policy-file-and Define the versioned automation policy file and routing truth table
@@ -87,3 +87,92 @@ computing the destructive and conflicting facts belongs to T-117 and T-119, and
   T-119.
 - TDD order: model rejections, validate command, router spot rows, generated truth table.
   Size guard: one module plus one command module.
+
+## Workflow-v3 execution evidence (2026-10-16)
+
+1. **Understand / ownership.** Fetched and verified accepted `origin/main`
+   `ae37ca35c9c3ab1c103b9caf1208ea83d53b9682`; clean initial worktree, no
+   product edits transferred. `taskrail validate` returned `state valid` and
+   `taskrail next --json` selected exactly this task before start. Active-spec
+   SHA-256 remained
+   `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+   Read the full task and bounded policy, versioning and hashing contracts.
+   IO Delegate doctor reported missing local provider configuration; no
+   provider settings changed and subsequent direct reads were bounded.
+2. **Strict TDD, in required order.** Model tests failed on missing policy
+   module, then 17 passed. CLI tests failed with `No such command 'policy'`
+   (exit 2); model plus CLI tests then passed (36). Literal routing tests
+   failed importing missing `route`, then 15 passed (14 handwritten rows and
+   the raw-byte digest test). Truth-table tests failed on the missing fixture;
+   independent generation then yielded 601 passing table/completeness tests.
+   Deliberately stripping bytes before hashing made the digest regression fail;
+   restoring raw-byte hashing made it pass. Schema drift failed after the new
+   diagnostic; generated the policy and updated envelope schema via the existing
+   `render_schema` API, without changing the known exporter bug.
+3. **Initial checks / real CLI.** Focused policy/schema/CLI matrix: 693 passed.
+   Initial mypy exposed one test annotation issue, fixed locally. The restarted
+   full chain passed Ruff and mypy (157 files), then pytest reported 2 failed,
+   2243 passed: the registry documentation and command-module structure cases
+   below. Real `uv run latinitas-cards policy validate ... --json` emitted
+   exit-0 success with `{receipt_actor: human, rules: 2}`, exit-3
+   `invalid_policy` for version 1.0, and exit-3 `unreadable` for a missing path.
+   Text mode also exposed the declared `any` actor for deny-precedence.json.
+4. **Simplify.** Dedicated Task loaded personal `code-simplifier`, inspected
+   tracked and untracked changes, made no edits, and passed 660 focused tests
+   plus Ruff. Rejected removing explicit strict-version validation and
+   compressing routing/generator branches because they obscure contracts.
+5. **Independent review.** Separate parallel read-only General, Security and
+   Python Tasks loaded personal `code-reviewer` and their dedicated ECC guidance.
+   Security loaded security-review and common security guidance; Python loaded
+   python-patterns. General: "No concrete task-relevant findings."
+   Security covers the policy trust boundary; Python covers strict models and
+   CLI/module integration. Database and framework lanes omitted: no database,
+   persistence, web framework or concurrency changes. Two specialist lanes are
+   within the soft budget. A fresh candidate-validation Task loaded
+   `code-reviewer`, validated all three candidates below, rejected none and
+   found no duplicates.
+6. **Findings and dispositions (all fixed).**
+   - S1: "Reject duplicate JSON object keys when loading a policy; otherwise a
+     policy that appears to deny an operation can be accepted and interpreted
+     as auto by this loader." Nested action deny/auto and top-level rules
+     duplication both failed new CLI tests (exit 0 instead of 3). A local
+     object-pairs hook now rejects duplicates with `invalid_policy`; both
+     regression cases pass, including code and path assertions. Documented it.
+   - P1: "The new `invalid_policy` diagnostic is missing from the documented
+     registry." Existing registry test reproduced the mismatch; added the
+     exit-3 row with registered meaning, then that test passed.
+   - P2: "The command-module structure test does not account for the newly
+     registered `policy` group." Existing test reproduced callback-None failure;
+     extended its existing group assertions/flattening for exactly `validate`,
+     then it passed. No production workaround or broad test refactor.
+7. **Fresh disposition verification.** One review/fix/recheck cycle. A fresh
+   read-only Task loaded `code-reviewer` in disposition-verification mode,
+   marked S1/P1/P2 RESOLVED, ran 62 focused checks and diff whitespace checks,
+   and reported "No concrete task-relevant findings." Final mandatory chain:
+   `uv run ruff check` passed; `uv run mypy` passed (157 files);
+   `uv run pytest -v`: 2247 passed, 1 warning in 113.47 seconds.
+   Fresh policy/schema/matrix rerun: 695 passed at 2026-10-16T10:42:04Z.
+8. **Finalization.** `mise run check` passed: Ruff; format check (369 files);
+   mypy (157 files); pytest (2247 passed, 1 warning, 116.91 seconds); commit,
+   push, author, mutation-result and mutation-configuration shell checks.
+   Revalidated state, selector and pinned hash before verify and complete.
+   Verification passed at 2026-10-16T10:43:00Z; completed at
+   2026-10-16T10:43:08Z. Observed next selector is T-117 (not started).
+   State reports 116 done, 0 active, 1 blocked, 11 todo.
+   Hooks installed with `lefthook install`;
+   author and committer resolve to the maintainer, with no attribution trailers.
+
+Truth table: 600 committed independent expected rows (200 per policy; each
+40 add, 80 supersede, 80 retract). SHA-256:
+`6a1028d2d3ca4cac587bbfa695642215c1c6a1309afd01e216ac0105fb0e5d5b`.
+Generator imports only standard library, never policy implementation.
+
+Scope: one 125-line policy module and one 26-line command module, plus required
+registration/diagnostics/schema/docs/tests. No profile fields, claim imports or
+fingerprints, automatic linguistic acceptance, plan/apply/actor enforcement,
+legacy/golden/spec/priority/dependency/gate changes. T-127 remains an existing
+todo exporter follow-up (not fixed); T-128 remains future v0.8.0 dense-memory
+work (not started or an active gate); T-038 remains blocked. No new follow-up
+was needed for this task.
+- 2026-10-16T10:43:00Z: verification pass
+- 2026-10-16T10:43:08Z: Completed after workflow-v3 review and fresh disposition verification; verify pass 2026-10-16T10:43:00Z. Ruff/mypy/pytest 2247 and mise run check passed; independent truth table 600 rows.

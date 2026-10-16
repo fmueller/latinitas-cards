@@ -57,6 +57,7 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `internal` | 70 | Unexpected internal failure |
 | `unreadable` | 3 | Filesystem input or output is inaccessible |
 | `invalid_json` | 3 | Input is not valid JSON |
+| `invalid_policy` | 3 | Policy document is invalid |
 | `missing_header` | 3 | Stream header is missing |
 | `unsupported_format` | 3 | Document format is unsupported |
 | `alias` | 3 | Output aliases a protected path |
@@ -104,6 +105,7 @@ executable cases together.
 | annotations segment | 0, 2, 3, 4 |
 | annotations inspect | 0, 1, 3 |
 | corpus show | 0, 3 |
+| policy validate | 0, 3 |
 
 `corpus validate CORPUS [--json]` streams the input without modifying it. Its
 result is `{"counts":{"header":1,"corpus":1,"work":N,"passage":M}}`;
