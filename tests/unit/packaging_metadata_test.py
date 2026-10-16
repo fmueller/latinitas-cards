@@ -46,7 +46,7 @@ def test_package_metadata_preserves_install_contract() -> None:
     }
     inventory = tomllib.loads((ROOT / "uv.lock").read_text())["package"]
     assert hashlib.sha256(json.dumps(inventory, sort_keys=True).encode()).hexdigest() == (
-        "62107ba85509a64a2eca8c90b416321a11d54afb198a5fd5155727bc0e400bb5"
+        "901378ad9589536b0c6c4a1f916e3f750e6b236354e2bbf7113b96c4997e1385"
     )
 
 

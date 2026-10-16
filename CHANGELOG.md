@@ -4,6 +4,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-16
+
 ### Added
 
 - `corpus show`, `corpus validate` and `annotations inspect` accept `--claims`
@@ -36,6 +38,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 - Legacy Vulgate commands reject XML with DTDs/entities, over 64 MiB of input,
   or element depth above 64, without writing output.
+
+### Limitations
+
+- Publication is maintainer-gated; annotation extras remain experimental, and
+  corpus/sidecar formats may change before 1.0. No new native Anki evidence is claimed.
 
 ## [0.2.1] - 2026-10-14
 
@@ -187,7 +194,8 @@ and export them for import into Anki, without modifying the source.
 - Legacy splitting/APKG mutation, annotation, Ollama analysis, and corpus cloze
   workflows remain experimental. This release is available on GitHub, not PyPI.
 
-[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/fmueller/latinitas-cards/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/fmueller/latinitas-cards/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/fmueller/latinitas-cards/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/fmueller/latinitas-cards/compare/v0.1.0...v0.1.1

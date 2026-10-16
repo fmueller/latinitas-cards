@@ -9,8 +9,9 @@ CSV export into repeatable principal-part study cards. It inspects a source, sav
 confirmed profile, previews generated cards, and writes a deterministic UTF-8 Anki
 text-import CSV without modifying the source.
 
-> **Current release:** [v0.2.1](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.1).
-> PyPI publishing remains deferred; see [release readiness and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.1.md).
+> **Current release:** [v0.3.0](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md) candidate, not published.
+> The last published release is v0.2.1. Tagging and PyPI publication require the maintainer gate;
+> see [release readiness and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md).
 
 ## Workflow
 
@@ -80,11 +81,12 @@ your own USFX path and optionally `--descriptor FILE` for corpus metadata.
 ### Git development checkout
 
 The development checkout remains available with [uv](https://docs.astral.sh/uv/).
-This command keeps the current release checkout; contributors targeting unreleased
-work should select the appropriate development revision instead.
+The tagged-checkout command below is reserved for the maintainer-created v0.3.0
+tag, which does not exist yet. For the candidate, check out the reviewed candidate
+commit instead; v0.2.1 remains the published tagged checkout.
 
 ```bash
-git clone --branch v0.2.1 --depth 1 https://github.com/fmueller/latinitas-cards.git
+git clone --branch v0.3.0 --depth 1 https://github.com/fmueller/latinitas-cards.git
 cd latinitas-cards
 uv sync --locked
 uv run latinitas-cards --help
@@ -352,6 +354,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 - [v0.1.1 release readiness and limitations](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.1.1.md)
 - [v0.2.0 release readiness and limitations](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.0.md)
 - [v0.2.1 release readiness, accepted Linux native evidence and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.1.md)
+- [v0.3.0 candidate readiness, offline walkthrough and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)
 - [Authored note JSONL import format](https://github.com/fmueller/latinitas-cards/blob/main/docs/authored-note-import.md)
 - [Stable generated-note identity](https://github.com/fmueller/latinitas-cards/blob/main/docs/stable-generated-note-identity.md)
 - [Principal-part parser support matrix](https://github.com/fmueller/latinitas-cards/blob/main/docs/principal-part-parsing.md)

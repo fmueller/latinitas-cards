@@ -24,7 +24,7 @@ def test_installation_guide() -> None:
         "only after the future v0.3.0 maintainer release gate",
         "PyPI releases start with v0.3.0",
         "development checkout",
-        "git clone --branch v0.2.1 --depth 1 https://github.com/fmueller/latinitas-cards.git",
+        "git clone --branch v0.3.0 --depth 1 https://github.com/fmueller/latinitas-cards.git",
         "default install needs no CLTK, Stanza or PyTorch",
         "Both `annotate` and `annotate-gpu` are experimental",
         "uv's CPU torch index and extra conflict do not transfer to pip",
@@ -38,8 +38,11 @@ def test_installation_guide() -> None:
         assert required in installation, required
     documentation = readme.split("## Documentation\n", 1)[1]
     assert "https://github.com/fmueller/latinitas-cards/blob/main/docs/releasing.md" in documentation
-    unreleased = (ROOT / "CHANGELOG.md").read_text().split("## [Unreleased]", 1)[1].split("## [", 1)[0]
-    assert "PyPI installation" in unreleased
+    changelog = (ROOT / "CHANGELOG.md").read_text()
+    unreleased = changelog.split("## [Unreleased]", 1)[1].split("## [", 1)[0]
+    assert not unreleased.strip()
+    candidate = changelog.split("## [0.3.0]", 1)[1].split("## [", 1)[0]
+    assert "PyPI installation" in candidate
 
 
 def workflow_names(workflow: str) -> list[str]:

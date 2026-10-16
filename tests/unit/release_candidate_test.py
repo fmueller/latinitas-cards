@@ -332,7 +332,7 @@ def test_release_candidate_managed_updates_preserve_user_owned_notes() -> None:
     assert changed.personal_notes == "Review this next week"
 
 
-def test_release_metadata_and_current_lock_audit_are_versioned_for_v021() -> None:
+def test_release_metadata_and_current_lock_audit_are_versioned_for_v030() -> None:
     with (ROOT / "pyproject.toml").open("rb") as project_file:
         project = tomllib.load(project_file)
     with (ROOT / "uv.lock").open("rb") as lock_file:
@@ -343,22 +343,28 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v021() -> Non
     audit = (ROOT / "docs" / "license-compatibility-audit.md").read_text(encoding="utf-8")
     notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
 
-    assert project["project"]["version"] == "0.2.1"
-    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.2.1"
+    assert project["project"]["version"] == "0.3.0"
+    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.3.0"
+    assert "## [0.3.0] - 2026-10-16" in changelog
     assert "## [0.2.1] - 2026-10-14" in changelog
     assert "## [0.2.0] - 2026-10-08" in changelog
-    assert "compare/v0.2.1...HEAD" in changelog
+    assert "compare/v0.3.0...HEAD" in changelog
+    assert "compare/v0.2.1...v0.3.0" in changelog
     assert "compare/v0.2.0...v0.2.1" in changelog
     assert "compare/v0.1.1...v0.2.0" in changelog
     assert changelog.index("## [Unreleased]") < changelog.index("## [0.2.1]")
     assert "## [0.1.1] - 2026-10-04" in changelog
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "git clone --branch v0.2.1 --depth 1" in readme
-    assert "**Current release:** [v0.2.1]" in readme
+    assert "git clone --branch v0.3.0 --depth 1" in readme
+    assert "**Current release:** [v0.3.0]" in readme
     assert (
         "[release readiness and limits]"
-        "(https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.1.md)" in readme
+        "(https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)" in readme
     )
+    assert "release-v0.3.0.md" in release
+    current_candidate = (ROOT / "docs" / "release-v0.3.0.md").read_text(encoding="utf-8")
+    assert "0.3.0" in current_candidate
+    assert "candidate" in current_candidate
     assert "publication pending" not in readme
     assert "after publication" not in readme
     spec_index = (ROOT / "specs" / "README.md").read_text(encoding="utf-8")

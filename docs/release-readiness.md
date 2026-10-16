@@ -3,6 +3,9 @@
 This document records the technical release-candidate boundary. It is not a publication
 approval or a native Anki test report.
 
+Current candidate: [v0.3.0 readiness and offline validation](release-v0.3.0.md).
+The historical v0.1.0 record below is unchanged.
+
 ## Version and candidate status
 
 - Package version in `pyproject.toml`: `0.1.0`.
