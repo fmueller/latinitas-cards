@@ -12,6 +12,7 @@ ROOT = Path(__file__).parents[2]
     "required",
     [
         "pyproject.toml",
+        "mise.toml",
         "uv.lock",
         "README.md",
         "CHANGELOG.md",
@@ -30,6 +31,7 @@ ROOT = Path(__file__).parents[2]
         ".claude/skills/extracting-authored-notes/SKILL.md",
         "scripts/check-managed-anki.py",
         "specs/README.md",
+        ".github/workflows/build.yml",
     ],
 )
 def test_mutation_sandbox_includes_repository_test_dependencies(required: str) -> None:

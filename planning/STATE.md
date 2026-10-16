@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T12:58:19Z"
+updated_at: "2026-10-16T13:03:42Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
-current_task: ""
-current_task_title: ""
-status_summary: blocked
+current_task: T-121-complete-package-metadata-notices-and-distribution
+current_task_title: Complete package metadata, notices and distribution and install check scripts
+status_summary: in_progress
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-121-complete-package-metadata-notices-and-distribution: Complete package metadata, notices and distribution and install check scripts'
+next_action: Implement T-121-complete-package-metadata-notices-and-distribution and run targeted tests
 last_verification_result: pass for T-120-report-effective-configuration-and-guarantee-no at 2026-10-16T12:58:19Z
 relevant_artifacts: []
 continuation_notes:
@@ -23,11 +23,12 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: none
+- Task: `T-121-complete-package-metadata-notices-and-distribution`
+- Title: Complete package metadata, notices and distribution and install check scripts
 
 ## Status
 
-- blocked
+- in_progress
 
 ## Blockers
 
@@ -39,7 +40,7 @@ continuation_notes:
 
 ## Next Action
 
-- Start task T-121-complete-package-metadata-notices-and-distribution: Complete package metadata, notices and distribution and install check scripts
+- Implement T-121-complete-package-metadata-notices-and-distribution and run targeted tests
 
 ## Relevant Artifacts
 
@@ -51,8 +52,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 7
-- in_progress: 0
+- todo: 6
+- in_progress: 1
 - completed: 120
 - blocked: 1
 - cancelled: 0

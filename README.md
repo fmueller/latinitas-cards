@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/fmueller/latinitas-cards/actions/workflows/build.yml/badge.svg)](https://github.com/fmueller/latinitas-cards/actions/workflows/build.yml)
 [![Python 3.13 | 3.14](https://img.shields.io/badge/python-3.13%20%7C%203.14-blue)](https://www.python.org/)
-[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-green)](LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-green)](https://github.com/fmueller/latinitas-cards/blob/main/LICENSE)
 
 Latinitas Cards is an offline-first CLI for turning an existing Latin Anki deck or
 CSV export into repeatable principal-part study cards. It inspects a source, saves a
@@ -10,7 +10,7 @@ confirmed profile, previews generated cards, and writes a deterministic UTF-8 An
 text-import CSV without modifying the source.
 
 > **Current release:** [v0.2.1](https://github.com/fmueller/latinitas-cards/releases/tag/v0.2.1).
-> PyPI publishing remains deferred; see [release readiness and limits](docs/release-v0.2.1.md).
+> PyPI publishing remains deferred; see [release readiness and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.1.md).
 
 ## Workflow
 
@@ -26,7 +26,7 @@ The supported workflow is **deck-first**:
 Also available: [`managed` updates](#updating-imported-notes-managed) for notes you
 already imported, [explanations and themes](#explanations-and-themes) on principal-part
 answers, reviewed `form-parsing` exercises, and
-[reviewed lexical/pattern selections and bounded phrase proposals](docs/reviewed-phrase-inputs.md)
+[reviewed lexical/pattern selections and bounded phrase proposals](https://github.com/fmueller/latinitas-cards/blob/main/docs/reviewed-phrase-inputs.md)
 via `phrases`, with separately reviewed translation/recognition exercises and offline
 eligibility checks, deterministic approved CSV export and managed retained-slot updates.
 Initial creation is manual CSV import plus explicit adoption; withdrawal remains a
@@ -41,8 +41,8 @@ diagnostics are English; generated study content is German with the profile's ex
 The profile workflow never mutates the source CSV/APKG/COLPKG. ID-less CSV sources
 require explicit identity reconciliation decisions on first use or when review items
 appear; unchanged rows with a valid manifest are reused automatically. See the focused
-[identity contract](docs/stable-generated-note-identity.md) and
-[CSV/import workflow](docs/deterministic-csv-export.md) for ownership, recovery, and
+[identity contract](https://github.com/fmueller/latinitas-cards/blob/main/docs/stable-generated-note-identity.md) and
+[CSV/import workflow](https://github.com/fmueller/latinitas-cards/blob/main/docs/deterministic-csv-export.md) for ownership, recovery, and
 Anki setup details.
 
 ## Installation
@@ -131,7 +131,7 @@ uv run latinitas-cards setup \
   --role perfect_passive_participle
 ```
 
-For the [reviewed source layouts](docs/source-extraction-fixtures.md), the saved
+For the [reviewed source layouts](https://github.com/fmueller/latinitas-cards/blob/main/docs/source-extraction-fixtures.md), the saved
 profile's `principal_parts` section can set `pipe_alternatives: true` (keep `|`
 alternatives within a role) and `trailing_poet_hint: true` (keep a trailing `poet.`
 after the perfect form as a hint). Both are off by default; check representative values
@@ -144,12 +144,12 @@ first import; the note type keeps a user-owned `Personal Notes` field that gener
 never contain. For repeat imports, use the same note type with `LatinitasID` as the
 first/matching field; `Personal Notes` stays unmapped because no CSV column exists for it.
 Map a legacy CSV's `Personal Notes` column to **Ignore field** on every repeat import. The
-[deterministic CSV export guide](docs/deterministic-csv-export.md) has the complete
+[deterministic CSV export guide](https://github.com/fmueller/latinitas-cards/blob/main/docs/deterministic-csv-export.md) has the complete
 checklist, including native Anki behavior already verified in a disposable collection;
 retest it there before relying on it.
 
 Collections from earlier pre-release Latinitas models are never silently converted: the
-[legacy transition policy](docs/legacy-transition.md) keeps such data read-only, retains
+[legacy transition policy](https://github.com/fmueller/latinitas-cards/blob/main/docs/legacy-transition.md) keeps such data read-only, retains
 collections with valuable history or personal annotations, and offers only an explicitly
 approved, backed-up fresh start into a new dedicated note type for disposable data.
 
@@ -179,7 +179,7 @@ request/result plus `commands.json` and checks full card/history/model/deck tabl
 personal text and manual tags. It does not verify the Desktop dialog or AnkiMobile.
 
 For your destination, first follow the [closed-backup acquisition and adoption
-guide](docs/managed-capture-and-adoption.md). Schema-18 protobuf definitions are
+guide](https://github.com/fmueller/latinitas-cards/blob/main/docs/managed-capture-and-adoption.md). Schema-18 protobuf definitions are
 optional; no Anki runtime is added to the default installation. The selection file
 records your collection/profile binding and the **whole immutable source/object
 membership**; the ownership file records each note's explicitly reviewed tag origins
@@ -207,7 +207,7 @@ Only content fields and tags can be updated; adding, retiring, or reactivating c
 not supported. Capture/adoption are not apply approval. Proposals and the plan/handoff/
 observation envelopes remain explicit JSON; the runnable fixture demonstrates their
 construction, and the format and full checklist are in
-[destination snapshots and file transport](docs/destination-snapshots-and-file-transport.md).
+[destination snapshots and file transport](https://github.com/fmueller/latinitas-cards/blob/main/docs/destination-snapshots-and-file-transport.md).
 
 ## Explanations and themes
 
@@ -228,7 +228,7 @@ again. An explicit `morphology` object must include `"version": 1` and versioned
 terminology. Explicitly upgrading a legacy profile uses muted/light/static defaults
 when the whole section was absent.
 Paste the reference CSS into your note type by hand; see
-[reference note type](docs/reference-note-type.md#morphology-presentation-contract).
+[reference note type](https://github.com/fmueller/latinitas-cards/blob/main/docs/reference-note-type.md#morphology-presentation-contract).
 
 ### Grammatical terminology
 
@@ -271,7 +271,7 @@ PPP and supine remain distinct semantic roles.
 `form-parsing` offers offline, individually reviewed contextual feature preview and
 fresh CSV export, not automatic analysis or managed application. Display checks
 passed only for test notes on Anki Desktop 26.09.2 and AnkiMobile 25.09. See the
-[review policy and separate manual reference setup](docs/contextual-form-parsing.md).
+[review policy and separate manual reference setup](https://github.com/fmueller/latinitas-cards/blob/main/docs/contextual-form-parsing.md).
 
 Authored JSONL study notes can be validated, previewed, and exported without corpus
 resources or profile mappings:
@@ -285,38 +285,38 @@ uv run latinitas-cards authored export notes.jsonl --namespace my-course \
 ```
 
 Validation and preview write nothing; export writes one CSV per selected kind and
-never changes the input. See the [authored import guide](docs/authored-note-import.md) for combined filters,
+never changes the input. See the [authored import guide](https://github.com/fmueller/latinitas-cards/blob/main/docs/authored-note-import.md) for combined filters,
 whole-file diagnostics, and first/repeat Anki import with Personal Notes unmapped.
 
 For loosely structured Markdown, ask your repository agent to use
-[`extracting-authored-notes`](.agents/skills/extracting-authored-notes/SKILL.md)
+[`extracting-authored-notes`](https://github.com/fmueller/latinitas-cards/blob/main/.agents/skills/extracting-authored-notes/SKILL.md)
 (also installed under `.claude/skills/`). Supply notes, language, a stable namespace,
 and any existing JSONL. Review QA keys and the validated preview before export;
 re-extraction preserves keys and skip decisions and reports new/changed/missing items.
 
 ## Documentation
 
-- [Changelog](CHANGELOG.md)
-- [v0.1.0 release readiness](docs/release-readiness.md)
-- [v0.1.1 release readiness and limitations](docs/release-v0.1.1.md)
-- [v0.2.0 release readiness and limitations](docs/release-v0.2.0.md)
-- [v0.2.1 release readiness, accepted Linux native evidence and limits](docs/release-v0.2.1.md)
-- [Authored note JSONL import format](docs/authored-note-import.md)
-- [Stable generated-note identity](docs/stable-generated-note-identity.md)
-- [Principal-part parser support matrix](docs/principal-part-parsing.md)
-- [Sanitized representative-deck validation](docs/representative-deck-validation.md)
-- [Deterministic CSV export and Anki import](docs/deterministic-csv-export.md)
-- [Reference note type and safe import](docs/reference-note-type.md)
-- [Legacy note-model transitions](docs/legacy-transition.md)
-- [Destination snapshots and file transport](docs/destination-snapshots-and-file-transport.md)
-- [Managed CSV native verification](docs/managed-csv-native-verification.md)
-- [Managed CSV Desktop dialog verification](docs/managed-csv-desktop-verification.md)
-- [Claim review policy](docs/claim-review-policy.md)
-- [Reviewed claim CLI and offline checks](docs/reviewed-claim-cli.md)
-- [Contextual form parsing](docs/contextual-form-parsing.md)
-- [Morphology native verification](docs/morphology-native-verification.md)
-- [Third-party notices](THIRD_PARTY_NOTICES.md)
-- [License compatibility audit](docs/license-compatibility-audit.md)
+- [Changelog](https://github.com/fmueller/latinitas-cards/blob/main/CHANGELOG.md)
+- [v0.1.0 release readiness](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-readiness.md)
+- [v0.1.1 release readiness and limitations](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.1.1.md)
+- [v0.2.0 release readiness and limitations](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.0.md)
+- [v0.2.1 release readiness, accepted Linux native evidence and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.1.md)
+- [Authored note JSONL import format](https://github.com/fmueller/latinitas-cards/blob/main/docs/authored-note-import.md)
+- [Stable generated-note identity](https://github.com/fmueller/latinitas-cards/blob/main/docs/stable-generated-note-identity.md)
+- [Principal-part parser support matrix](https://github.com/fmueller/latinitas-cards/blob/main/docs/principal-part-parsing.md)
+- [Sanitized representative-deck validation](https://github.com/fmueller/latinitas-cards/blob/main/docs/representative-deck-validation.md)
+- [Deterministic CSV export and Anki import](https://github.com/fmueller/latinitas-cards/blob/main/docs/deterministic-csv-export.md)
+- [Reference note type and safe import](https://github.com/fmueller/latinitas-cards/blob/main/docs/reference-note-type.md)
+- [Legacy note-model transitions](https://github.com/fmueller/latinitas-cards/blob/main/docs/legacy-transition.md)
+- [Destination snapshots and file transport](https://github.com/fmueller/latinitas-cards/blob/main/docs/destination-snapshots-and-file-transport.md)
+- [Managed CSV native verification](https://github.com/fmueller/latinitas-cards/blob/main/docs/managed-csv-native-verification.md)
+- [Managed CSV Desktop dialog verification](https://github.com/fmueller/latinitas-cards/blob/main/docs/managed-csv-desktop-verification.md)
+- [Claim review policy](https://github.com/fmueller/latinitas-cards/blob/main/docs/claim-review-policy.md)
+- [Reviewed claim CLI and offline checks](https://github.com/fmueller/latinitas-cards/blob/main/docs/reviewed-claim-cli.md)
+- [Contextual form parsing](https://github.com/fmueller/latinitas-cards/blob/main/docs/contextual-form-parsing.md)
+- [Morphology native verification](https://github.com/fmueller/latinitas-cards/blob/main/docs/morphology-native-verification.md)
+- [Third-party notices](https://github.com/fmueller/latinitas-cards/blob/main/THIRD_PARTY_NOTICES.md)
+- [License compatibility audit](https://github.com/fmueller/latinitas-cards/blob/main/docs/license-compatibility-audit.md)
 
 ## Development and contribution
 
@@ -327,7 +327,7 @@ Set up the pinned development toolchain and local hooks with
 mise run setup
 ```
 
-Read [AGENTS.md](AGENTS.md) for the project structure, coding conventions, test
+Read [AGENTS.md](https://github.com/fmueller/latinitas-cards/blob/main/AGENTS.md) for the project structure, coding conventions, test
 commands, and contribution/commit policy. The required local checks are:
 
 ```bash
@@ -344,4 +344,4 @@ with sanitized commands and error output; do not upload private decks or credent
 
 ## License
 
-[GPL-3.0-or-later](LICENSE)
+[GPL-3.0-or-later](https://github.com/fmueller/latinitas-cards/blob/main/LICENSE)

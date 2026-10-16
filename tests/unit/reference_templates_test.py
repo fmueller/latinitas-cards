@@ -311,7 +311,10 @@ def test_missing_form_examples_match_generated_eligibility_and_the_published_tab
 
 def test_readme_documents_the_reference_setup_guide() -> None:
     readme = README_PATH.read_text(encoding="utf-8")
-    assert "[Reference note type and safe import](docs/reference-note-type.md)" in readme
+    assert (
+        "[Reference note type and safe import]"
+        "(https://github.com/fmueller/latinitas-cards/blob/main/docs/reference-note-type.md)" in readme
+    )
 
 
 TAG_WARNING_REFERENCE_PINS = (

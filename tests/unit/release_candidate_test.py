@@ -355,6 +355,10 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v021() -> Non
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "git clone --branch v0.2.1 --depth 1" in readme
     assert "**Current release:** [v0.2.1]" in readme
+    assert (
+        "[release readiness and limits]"
+        "(https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.1.md)" in readme
+    )
     assert "publication pending" not in readme
     assert "after publication" not in readme
     spec_index = (ROOT / "specs" / "README.md").read_text(encoding="utf-8")

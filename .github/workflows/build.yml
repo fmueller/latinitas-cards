@@ -51,6 +51,8 @@ jobs:
         run: bash scripts/check-mutation-results-test.sh
       - name: Check mutation configuration
         run: bash scripts/check-mutation-config-test.sh
+      - name: Check distribution inspection
+        run: bash scripts/check-dist-test.sh
 
   unit-tests:
     name: Unit Tests (Python ${{ matrix.python-version }})
@@ -79,3 +81,29 @@ jobs:
         run: uv sync --locked --dev
       - name: Run unit tests
         run: uv run pytest -v
+
+  package:
+    name: Package (Python ${{ matrix.python-version }})
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check distributions
+        run: bash scripts/check-dist.sh
+      - name: Check installations
+        run: bash scripts/check-install.sh "$(uv python find)"

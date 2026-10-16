@@ -1,13 +1,13 @@
 ---
 id: T-121-complete-package-metadata-notices-and-distribution
 title: Complete package metadata, notices and distribution and install check scripts
-status: todo
+status: in_progress
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies:
     - T-109-normalize-usfx-sources-into-the-corpus-model-with
     - T-103-define-the-cli-result-envelope-exit-codes
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T13:03:42Z"
 ---
 
 # T-121-complete-package-metadata-notices-and-distribution Complete package metadata, notices and distribution and install check scripts
@@ -99,3 +99,144 @@ the runbook to T-123, the 0.3.0 bump to T-124; nothing here tags or publishes.
   files, not directories), since the tests read `build.yml` inside the mutmut sandbox.
 - Size guard: metadata, two scripts with one test suite and one CI job. If the work
   needs more (for example new runtime resources), file a follow-up rather than widen.
+
+## Execution Audit — 2026-10-16
+
+### 1. Understand and acquire
+
+- Fetched `origin/main`: checkout and remote both at
+  `e83c2f13c39844f6f5ceca83f4985dc3805e442c`. After unshallowing, confirmed
+  tested T120 `13c65c6120317a7fddebadb5d7eafbe3255d8d84` is an ancestor.
+- Pinned `specs/v0.3.0.md` SHA-256:
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+- `mise exec -- taskrail validate`: state valid. `next --json` selected exactly
+  T121, todo; status showed zero active tasks. No source-checkout guard applies
+  (this adopter has no Taskrail source helper). `start` recorded in_progress at
+  2026-10-16T13:03:42Z. All Taskrail commands use `mise exec -- taskrail`.
+- Ownership: setuptools/pyproject, README, build workflow, mise gate and script
+  guards; no runtime product modules changed. Deck-first metadata serves package
+  readers; installed smoke commands prove packaged runtime files work outside
+  editable/source imports. Dependencies, both extras, uv.lock and release version
+  remain unchanged. Only this task is owned; no second task started.
+- Installed hooks with `mise exec -- lefthook install`; confirmed maintainer
+  identity Felix Müller. `uv sync --locked --dev`: resolved 93, checked 41.
+
+### 2. Strict TDD
+
+- First changed README assertions and added metadata/link/line-by-line workflow
+  acceptance tests, then ran `uv run pytest -q` on packaging_metadata_test.py,
+  reference_templates_test.py and release_candidate_test.py: 5 failed, 10 passed.
+  Failures named old cloze-first metadata, relative README links, absent package
+  job and the two absolute-link README assertions. Implemented metadata, links
+  and CI: same files plus mutation_config_test.py passed, 35 tests.
+- Added offline synthetic guard before inspector: `bash scripts/check-dist-test.sh`
+  exited 1 because check-dist.sh was absent. Implemented inspector: 41 cases passed.
+  `check-install.sh` initially exited 127 because absent; implemented it and later
+  exercised real wheel and sdist installs rather than running builds inside pytest.
+- Actual setuptools build exposed reordered `Requires-Python` specifiers. Changed
+  the conforming synthetic metadata to `<3.15,>=3.13`: guard exited 1 with
+  `Requires-Python must equal >=3.13,<3.15`. Inspector now compares comma-separated
+  constraint sets, retaining the discriminating `>=3.14` negative: 41 passed.
+- Added mise.toml mutation-sandbox parameter first: 1 failed, 20 deselected,
+  `mutmut does not copy mise.toml`. Added also_copy entry: 21 passed. Workflow
+  directory and concrete build.yml dependency are copied/asserted too.
+- Final implementer cross-check found empty directory members were ignored.
+  Added synthetic directory cases: exited 1 at `wheel: forbidden directory tests/`
+  because defective wheel passed. Inspect all archive names, including directories.
+  Added unequal rebuilt-wheel directory list: exited 1 because defect passed;
+  compare complete member names instead of regular files only. Final 54 cases pass
+  (one conforming control and 53 isolated defects); tar directory diagnostics use
+  normalized component names because tarfile strips trailing slashes.
+
+### 3. Initial checks and real artifacts
+
+- Initial exact `uv run ruff check` → `uv run mypy` → `uv run pytest -v`:
+  all passed; mypy 167 source files; pytest 2449 passed, one existing
+  PydanticSerializationUnexpectedValue warning, 102.36 seconds. Subsequent addition
+  of the mise sandbox parameter increases the full count by one.
+- Shell syntax, `git diff --check` and `uv run ruff format --check` passed.
+- First `UV_OFFLINE=1 bash scripts/check-dist.sh`: exit 2, missing cached
+  setuptools (`setuptools>=77.0.1 needs to be downloaded from a registry`).
+  Prescribed `bash scripts/check-dist.sh` network retry fetched build dependencies,
+  then exited 1 on the specifier-order inspector bug above. After its TDD fix,
+  offline build/rebuild inspection exited 0. No MANIFEST.in was necessary: actual
+  artifacts already exclude forbidden paths.
+- First `UV_OFFLINE=1 bash scripts/check-install.sh "$(uv python find 3.14)"`:
+  exit 1, `pydantic was not found in the cache`. Prescribed network retry exited 0
+  for both wheel and sdist. A warmed-offline repetition also exited 0. This is the
+  explicitly scoped acceptance-permitted cache/network fallback, not an offline
+  success claim about the initial cache. Nothing was skipped or waived otherwise.
+- Final offline build/rebuild and offline install both exited 0 at
+  2026-10-16T13:16:36Z, after the complete-member TDD fixes. Python 3.14.2
+  (Clang 21.1.4); stdlib inspection uses `python3 -I`. Each installed artifact ran
+  `--help`, exact `latinitas-cards 0.2.1`, USFX `corpus normalize`, and
+  `corpus validate --json` with exit 0 and `ok=true`. Fresh separate temp venvs and
+  working directory outside checkout; cltk, stanza and torch distributions absent.
+  No optional resources were installed or downloaded.
+
+| Final artifact | SHA-256 |
+|---|---|
+| latinitas_cards-0.2.1-py3-none-any.whl | 823ede512c98b1f5185fe9c6960855e7146178b4639c178ade7253d27b50d972 |
+| latinitas_cards-0.2.1.tar.gz | 8d34910ea87942d3239fa45b131f3e56ffccbe265060cf4995a7876abb988f24 |
+| rebuilt latinitas_cards-0.2.1-py3-none-any.whl | 3f9e0ed704d14a83c366cb0a6cba51f642b7432af8a280f5bf122c2e2ac6278b |
+
+Both wheels have identical 91-file member lists; sdist has 96 regular files.
+Rebuilt bytes need not match (archive timestamps); acceptance compares member lists.
+Synthetic metadata/content is independently authored, not produced by the inspector.
+
+### 4–6. Simplification, review and dispositions
+
+- Dedicated Task loaded personal code-simplifier, inspected actual diff and bounded
+  task contract: **no changes made**, no concerns. Its 41-case synthetic suite,
+  24 focused tests, ruff/format and shell syntax checks passed. No suggestions rejected.
+- Selected separate parallel General, Python and Security Tasks. General is always
+  required; Python covers stdlib archive logic/tests; Security covers shell/temp-file
+  effects, archive leakage, URLs and CI permissions. Two specialist lanes are within
+  budget. Omitted FastAPI (no API/model changes), Database (no persistence changes),
+  ML/RAG (optional resources explicitly excluded), Network Configuration (no network
+  infrastructure changes), and other languages/frameworks (not changed).
+- All loaded personal code-reviewer and reviewer-index. General loaded ECC
+  code-reviewer (no companions); Python loaded python-reviewer and python-patterns;
+  Security loaded security-reviewer, security-review and common security,
+  code-review and testing rules. Each inspected actual diff plus untracked files.
+- General verbatim: `No concrete task-relevant findings.` Its 41 synthetic cases,
+  36 focused tests, diff and syntax checks passed.
+- Python verbatim: `No concrete task-relevant findings.` Its 41 synthetic cases,
+  36 focused tests, README scan, inventory comparison and diff checks passed.
+- Security verbatim: `No concrete task-relevant findings.` Its 41 synthetic cases,
+  actual warmed-offline build/rebuild and diff checks passed. It did not claim
+  fresh installs or CI itself.
+- Fresh candidate-validation Task loaded code-reviewer and reviewer index:
+  zero supplied, zero validated, zero rejected/deduplicated; found no contradiction.
+  Verbatim: `No concrete task-relevant findings.` Its synthetic/diff checks passed.
+- No reviewer finding IDs, fixes or deferrals exist. The implementer's later empty
+  directory acceptance correction is documented with RED/GREEN above and is included
+  in fresh final disposition verification. One review cycle; no persistent threads.
+
+### 7. Final recheck and fresh disposition verification
+
+- After all implementation corrections, restarted the entire mandatory chain at
+  2026-10-16T13:16:21Z: `uv run ruff check` (all checks passed) → `uv run mypy`
+  (167 source files, no issues) → `uv run pytest -v` (2450 passed, one existing
+  serializer warning, 103.31 seconds). Exit 0 at 2026-10-16T13:18:05Z.
+- `mise run check`: exit 0 at 2026-10-16T13:19:53Z. Ruff, format, mypy, full pytest
+  and all six shell guard suites passed, including the 54-case offline dist guard.
+- Fresh dedicated Task loaded code-reviewer in Disposition Verification Mode,
+  reviewer-index, General ECC reviewer and applicable general references. Read
+  actual final changes, acceptance, audit and late directory correction. Verbatim:
+  `Disposition: RESOLVED — no prior finding IDs or deferrals; none are unresolved.`
+  `No concrete task-relevant findings.` It confirmed complete-name leakage and
+  wheel-member comparisons plus RED/GREEN coverage; no new issues, no edits.
+  It did not rerun checks/builds or modify the recorded artifacts.
+
+### Scope and delivery limits
+
+- All quality/review gates preceded Taskrail verification/completion. No changes
+  to spec, priorities, dependencies, acceptance gates, runtime modules, extras or
+  lock inventory. No task followed automatically after this one.
+- Local distribution checks are not candidate CI acceptance. Python 3.13/3.14
+  `package` CI is the binding T038 maintainer gate; no manual workflow run,
+  id-token, tag, publication, release or deployment was performed here.
+- T127 exporter remains todo/unfixed; T128 future v0.8 memory remains excluded
+  and unstarted; T038 stays blocked/excluded. T122 release workflow, T123 docs
+  and T124 version bump retain their own scope. No additional follow-up created.
