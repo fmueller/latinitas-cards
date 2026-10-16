@@ -11,6 +11,7 @@ from typer.core import TyperGroup
 from typer.main import get_command
 from typer.testing import CliRunner
 
+from latinitas_cards.atomic_io import writer_lock
 from latinitas_cards.cli import app as real_app
 from latinitas_cards.cli_contract import CliResult, Code, ContractError, Diagnostic, run_contract
 
@@ -146,3 +147,34 @@ def test_contract_exit_case(pair: tuple[str, int], tmp_path: Path) -> None:
     envelope = CliResult.model_validate_json(result.stdout)
     assert envelope.command == pair[0]
     assert envelope.exit_code == result.exit_code == pair[1]
+
+
+@pytest.mark.parametrize("exit_code", [0, 2, 3, 4])
+def test_usfx_normalize_exit_matrix(exit_code: int, tmp_path: Path) -> None:
+    output = tmp_path / "out.jsonl"
+    source = FIXTURES / "usfx/gen-1-1-5.usfx.xml"
+    if exit_code == 3:
+        source = FIXTURES / "usfx/duplicate.usfx.xml"
+    args = [
+        "corpus",
+        "normalize",
+        str(source),
+        "--adapter",
+        "usfx",
+        "--corpus-id",
+        "test-corpus",
+        "--output",
+        str(output),
+        "--json",
+    ]
+    if exit_code == 2:
+        args += ["--manifest", str(tmp_path / "unused")]
+    if exit_code == 4:
+        with writer_lock(output):
+            result = CliRunner().invoke(real_app, args)
+    else:
+        result = CliRunner().invoke(real_app, args)
+    envelope = CliResult.model_validate_json(result.stdout)
+    assert envelope.command == "corpus normalize"
+    assert envelope.exit_code == result.exit_code == exit_code
+    assert output.exists() == (exit_code == 0)

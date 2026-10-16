@@ -54,6 +54,10 @@ class Code(StrEnum):
     REVIEW_REQUIRED = "review_required"
     INVALID_LINE = "invalid_line"
     DUPLICATE_SOURCE_REF = "duplicate_source_ref"
+    INVALID_STRUCTURE = "invalid_structure"
+    EMPTY_PASSAGE = "empty_passage"
+    INVALID_XML = "invalid_xml"
+    UNSAFE_XML = "unsafe_xml"
 
 
 @dataclass(frozen=True)
@@ -100,6 +104,10 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.REVIEW_REQUIRED: DiagnosticCode(1, "Identity reconciliation requires review"),
     Code.INVALID_LINE: DiagnosticCode(3, "Text line does not match citation template"),
     Code.DUPLICATE_SOURCE_REF: DiagnosticCode(3, "Source label is repeated"),
+    Code.INVALID_STRUCTURE: DiagnosticCode(3, "USFX structure is invalid"),
+    Code.EMPTY_PASSAGE: DiagnosticCode(3, "Source passage has no canonical text"),
+    Code.INVALID_XML: DiagnosticCode(3, "Source is not well-formed XML"),
+    Code.UNSAFE_XML: DiagnosticCode(3, "Source XML contains a forbidden declaration"),
 }
 
 

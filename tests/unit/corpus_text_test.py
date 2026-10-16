@@ -57,7 +57,7 @@ def test_refrain_and_template_roundtrip(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "flags,code",
     [
-        (["--adapter", "usfx"], "usage_error"),
+        (["--adapter", "unknown"], "usage_error"),
         (["--language", "x-latin"], "usage_error"),
         (["--citation-template", "bad"], "usage_error"),
         (["--citation-template", "wsl:work.line", "--manifest", "unused"], "usage_error"),
@@ -147,13 +147,17 @@ def test_busy_writers(tmp_path: Path, lock: str) -> None:
             assert normalize(source, tmp_path / "second", "--manifest", str(manifest)).exit_code == 4
 
 
-def test_subprocess_determinism(tmp_path: Path) -> None:
+@pytest.mark.parametrize("adapter", ["text", "usfx"])
+def test_subprocess_determinism(tmp_path: Path, adapter: str) -> None:
     results = []
     for i, (tz, locale, seed) in enumerate([("UTC", "C", "1"), ("Europe/Zagreb", "C.UTF-8", "777")]):
         directory = tmp_path / str(i)
         directory.mkdir()
         source = directory / "input.txt"
-        source.write_bytes(b"\xef\xbb\xbfa\r\n b\t c \n\na\n")
+        raw = b"\xef\xbb\xbfa\r\n b\t c \n\na\n"
+        if adapter == "usfx":
+            raw = (FIXTURES.parent / "usfx/gen-1-1-5.usfx.xml").read_bytes()
+        source.write_bytes(raw)
         output = directory / "out.jsonl"
         env = {**os.environ, "TZ": tz, "LC_ALL": locale, "PYTHONHASHSEED": seed}
         result = subprocess.run(
@@ -165,7 +169,7 @@ def test_subprocess_determinism(tmp_path: Path) -> None:
                 "normalize",
                 str(source),
                 "--adapter",
-                "text",
+                adapter,
                 "--corpus-id",
                 "test-corpus",
                 "--output",
@@ -177,7 +181,10 @@ def test_subprocess_determinism(tmp_path: Path) -> None:
             check=False,
         )
         assert result.returncode == 0, result.stderr
-        results.append((output.read_bytes(), output.with_suffix(".manifest.json").read_bytes()))
+        assert source.read_bytes() == raw
+        results.append(
+            (output.read_bytes(), output.with_suffix(".manifest.json").read_bytes() if adapter == "text" else b"")
+        )
     assert results[0] == results[1]
     assert str(tmp_path).encode() not in b"".join(results[0])
 

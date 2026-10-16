@@ -10,11 +10,13 @@ from pydantic import JsonValue, ValidationError
 from .. import atomic_io
 from ..canonical import digest_bytes
 from ..cli_contract import CliResult, Code, ContractError, Diagnostic, run_contract
+from ..corpus_io import write_corpus
 from ..corpus_manifest import Approvals, materialize, read_optional
 from ..corpus_model import CorpusDescriptor, encode_ref_component, passage_hash
 from ..corpus_text import build_corpus, parse_template, read_lines
 from ..corpus_validation import validate_corpus
 from ..profile_setup import encode_unsafe_controls
+from ..usfx_adapter import build_usfx
 
 app = typer.Typer(help="Normalize and inspect versioned corpora.")
 
@@ -65,11 +67,29 @@ def normalize(
     """Normalize text with stable reviewed ordinal refs, or explicit source labels."""
 
     def body() -> tuple[JsonValue, list[Diagnostic]]:
-        if adapter != "text":
+        if adapter not in {"text", "usfx"}:
             raise ContractError(Code.USAGE_ERROR, f"Adapter {adapter!r} is not yet supported")
         if not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*", language):
             raise ContractError(Code.USAGE_ERROR, "Malformed language tag")
         template = parse_template(citation_template)
+        if adapter == "usfx":
+            if (
+                citation_template is not None
+                or manifest is not None
+                or approve_reuse
+                or approve_allocation
+                or approve_removal
+            ):
+                raise ContractError(Code.USAGE_ERROR, "USFX cannot use templates, manifests or approvals")
+            try:
+                usfx_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes()) if descriptor else None
+                records = build_usfx(source, corpus_id, language, usfx_descriptor)
+                write_corpus(output, records, [source, *([descriptor] if descriptor else [])])
+            except ValidationError as error:
+                raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
+            except OSError as error:
+                raise ContractError(Code.UNREADABLE, str(error)) from error
+            return {"review_items": []}, []
         if template and (manifest is not None or approve_reuse or approve_allocation or approve_removal):
             raise ContractError(Code.USAGE_ERROR, "Templates cannot use manifests or approvals")
         approvals = Approvals.parse(approve_reuse or [], approve_allocation or [], approve_removal or [])

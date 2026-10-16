@@ -11,6 +11,7 @@ from latinitas_cards.atomic_io import atomic_replace
 from latinitas_cards.canonical import digest_bytes
 from latinitas_cards.corpus_io import write_corpus
 from latinitas_cards.corpus_model import (
+    CorpusDescriptor,
     CorpusHeader,
     CorpusMetadata,
     CorpusPassage,
@@ -22,6 +23,7 @@ from latinitas_cards.corpus_model import (
     passage_hash,
 )
 from latinitas_cards.json_schemas import SCHEMAS, render_schema
+from latinitas_cards.usfx_adapter import build_usfx
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/corpus"
@@ -123,7 +125,7 @@ def invalid_files() -> dict[str, str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", choices=["valid", "invalid", "schemas"], required=True)
+    parser.add_argument("--target", choices=["valid", "invalid", "schemas", "usfx"], required=True)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     if args.target == "schemas":
@@ -134,6 +136,13 @@ def main() -> None:
         }
     elif args.target == "invalid":
         outputs = {FIXTURES / "invalid" / name: data for name, data in invalid_files().items()}
+    elif args.target == "usfx":
+        raw = (ROOT / "data/lat-clementine.usfx.xml").read_bytes()
+        end = raw.index(b"<ve/>", raw.index(b'<v id="5"/>')) + len(b"<ve/>")
+        outputs = {
+            FIXTURES / "usfx/gen-1-1-5.usfx.xml": (raw[:end] + b"</book></usfx>\n").decode("utf-8"),
+            FIXTURES / "usfx/gen-1-1-5.expected.jsonl": "",
+        }
     else:
         outputs = {FIXTURES / f"valid/{name}.jsonl": "" for name in ["usfx-bcv", "ordinal", "wsl"]}
     for path in outputs:
@@ -145,6 +154,12 @@ def main() -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         if args.target == "valid":
             write_corpus(path, valid_records(path.stem), [])
+        elif args.target == "usfx" and path.suffix == ".jsonl":
+            descriptor = CorpusDescriptor.model_validate_json(
+                (ROOT / "data/lat-clementine.descriptor.json").read_bytes()
+            )
+            source = FIXTURES / "usfx/gen-1-1-5.usfx.xml"
+            write_corpus(path, build_usfx(source, "vulgata-clementina", "la", descriptor), [source])
         else:
             atomic_replace(path, data.encode("utf-8"))
 

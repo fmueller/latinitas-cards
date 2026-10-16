@@ -155,3 +155,16 @@ MIT/BSD/ISC/PSF/Apache/MPL notices still need to be preserved in redistributed a
 MPL and GPL-family packages carry their own source/notice obligations. The NVIDIA entries
 require separate review of the EULA and redistribution terms. The unresolved `cuda-toolkit`
 metadata is a limitation of this audit and must not be filled with an assumption.
+
+## Bundled corpus provenance
+
+The repository-only `data/lat-clementine.usfx.xml` has SHA-256
+`05bcb3f669d9b36deab6cf26950b8a24c7609b292e5af1abfa51717677701950`.
+Its descriptor, `data/lat-clementine.descriptor.json`, records edition
+"Biblia Sacra Vulgata Clementina", publisher "eBible.org", URL
+<https://ebible.org/find/details.php?id=latVUC>, and license "Public Domain".
+These are declared provenance values, **maintainer confirmation pending**:
+the release gate must confirm the values and whether this bundled file derives
+from the eBible.org latVUC file. The normalization fixture is an exact byte
+prefix through GEN 1:5, closed with `</book></usfx>` and a newline. Neither the
+bundled corpus nor its fixture is shipped as an installed runtime resource.

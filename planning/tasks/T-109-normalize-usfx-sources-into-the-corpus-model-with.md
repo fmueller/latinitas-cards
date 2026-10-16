@@ -1,13 +1,13 @@
 ---
 id: T-109-normalize-usfx-sources-into-the-corpus-model-with
 title: Normalize USFX sources into the corpus model with descriptor provenance
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#usfx-normalization
 dependencies:
     - T-107-normalize-plain-text-sources-with-manifest
     - T-108-extract-usfx-parsing-from-cli-py-into-an-adapter
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T00:16:17Z"
 ---
 
 # T-109-normalize-usfx-sources-into-the-corpus-model-with Normalize USFX sources into the corpus model with descriptor provenance
@@ -76,6 +76,75 @@ legacy commands keep ElementTree until T-112.
 ## Verification Notes
 
 - Record verification timestamps and results; do not commit gitignored artifact paths.
+- Verified and completed through Taskrail at 2026-10-16T00:16:17Z, after all gates.
+- Base: origin/main `e86480c75aecb537b5343cb817cafd97e22e9f50`. Spec SHA-256:
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+  Initial validate was clean; next selected this task, with no active owner.
+- Strict TDD: initial public CLI tests failed 16 cases (unsupported USFX) then
+  passed 21. An explicit empty-container regression failed with invalid_structure
+  instead of empty_passage, then passed (25 total focused cases).
+- Dedicated Task loaded code-simplifier; no safe meaningful simplification found,
+  no edits made. Initial mandatory chain passed: ruff, mypy (138 source files),
+  pytest (1370 passed in 84.58s).
+- Separate parallel code-reviewer Tasks covered General, Security and Python.
+  General loaded ECC code-reviewer and common rules; Security loaded ECC
+  security-reviewer, security-review and common security rules; Python loaded
+  ECC python-reviewer and python-patterns. General reported:
+  "No concrete task-relevant findings." Security was required for untrusted XML;
+  Python for expat/state-machine semantics. No framework, database or other domain
+  lane was applicable. Two specialists stayed within the default review budget.
+- Fresh candidate-validation Task loaded code-reviewer, independently reproduced
+  and validated both candidates below. None were rejected or deduplicated.
+
+### Validated findings and dispositions
+
+- SEC-001 (medium), verbatim finding: "USFX XML with an unsupported encoding
+  declaration escapes the `invalid_xml` diagnostic path and is reported as an
+  internal failure (exit 70), rather than a malformed-XML error (exit 3)."
+  Evidence: parser caught only expat.ExpatError; bogus encoding raised LookupError
+  and UTF-32 raised ValueError. Fixed by translating these parser failures into
+  invalid_xml. Four public CLI regressions cover both encodings with existing
+  and absent output, preserving source and output bytes or absence.
+- F-109-1 (medium), verbatim finding: "Reject a USFX document that contains no
+  works; the adapter currently accepts an empty root and writes a corpus that
+  violates the Fixed Contract definition of a corpus as containing one or more
+  works." Evidence: `<usfx/>` returned success with only header/corpus records.
+  Fixed by requiring at least one work before building records. Two CLI
+  regressions preserve existing output or absence and require invalid_structure.
+- Both fixes used strict TDD: the six new cases failed before production edits
+  (6 failed, 25 deselected); after the minimal fixes, the combined USFX/text/exit
+  matrix suite passed 101 tests. No deferrals or new follow-up tasks.
+- Fresh disposition-verification Task loaded code-reviewer in the required mode
+  with General guidance. Both findings VERIFIED; 12 targeted tests passed,
+  42 deselected. Conclusion: "No concrete task-relevant findings."
+  One complete review/fix/recheck cycle; no unresolved findings.
+
+### Final evidence
+
+- Exact mandatory chain: `uv run ruff check` passed; `uv run mypy` passed
+  (138 source files); `uv run pytest -v` passed (1381 tests in 78.07s).
+- `mise run check` exited 0: ruff/format/mypy passed; 1381 tests passed in
+  79.17s; commit-message, push-message, author, differential/full mutation and
+  mutation-configuration guard suites passed. Legacy characterization goldens
+  and release_candidate_test.py passed unchanged.
+- Real subprocess CLI normalize, validate and rerun all exited 0. Validation
+  counted header=1, corpus=1, work=1, passage=5. Genesis bytes matched the
+  committed snapshot, SHA-256
+  `f9fdb165d6f070b302a30ecf874c7ad989336e058c7b7cf9cfefd2a2a8ef1cc6`.
+  Regenerated deliberately with `regen-corpus-fixtures.py --target usfx`;
+  tests pin source-prefix bytes and independent literal IDs/text/hash/citations.
+- Cross-environment subprocess tests cover cwd, TZ, locale and hash seed for
+  both adapters. Additional disposable probes crossed 64-KiB chunk boundaries
+  in UTF-8 (65607 bytes) and UTF-16LE/BE (131216 bytes), each yielding exactly
+  65534 expected text characters without added separators or source mutation.
+- Source SHA-256 remains
+  `05bcb3f669d9b36deab6cf26950b8a24c7609b292e5af1abfa51717677701950`;
+  spec hash unchanged. Product edits respect the task size guard. Legacy
+  projection is untouched. Markup/full hardening, full-corpus oracle and legacy
+  routing remain T-110/T-111/T-112; existing T-127 was not duplicated or changed.
+  Descriptor provenance still requires maintainer confirmation at the release gate.
+- After completion, validate returned state valid; next selected T-110 with
+  off_spec=false. No next task was started; T-038 remains blocked.
 
 ## Implementation Notes
 
@@ -91,3 +160,5 @@ legacy commands keep ElementTree until T-112.
   `docs/normalized-corpus.md` (T-107).
 - Size guard: the expat reader and strict builder in `usfx_adapter.py` plus wiring in
   `commands/corpus.py`. File a follow-up rather than widen.
+- 2026-10-16T00:16:17Z: verification pass
+- 2026-10-16T00:16:17Z: Reviewed structural USFX normalization; both validated findings fixed and independently verified. Mandatory chain and mise check pass; no changes to spec or legacy projection.

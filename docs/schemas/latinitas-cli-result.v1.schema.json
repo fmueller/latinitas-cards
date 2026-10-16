@@ -38,7 +38,11 @@
         "retired_ref",
         "review_required",
         "invalid_line",
-        "duplicate_source_ref"
+        "duplicate_source_ref",
+        "invalid_structure",
+        "empty_passage",
+        "invalid_xml",
+        "unsafe_xml"
       ],
       "title": "Code",
       "type": "string"

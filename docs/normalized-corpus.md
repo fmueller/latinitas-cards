@@ -1,7 +1,7 @@
 # Normalized corpora
 
-`corpus normalize` converts one UTF-8 source to canonical JSONL without changing
-deck exports. USFX normalization is not yet supported. Each non-empty canonical
+`corpus normalize` converts one source to canonical JSONL without changing
+deck exports. For plain UTF-8 text, each non-empty canonical
 text line becomes a passage (NFC, Unicode whitespace collapsed, trimmed); one
 leading BOM is stripped and LF/CRLF inputs are accepted.
 
@@ -99,3 +99,41 @@ Duplicate labels and malformed lines fail with exit 3. Templates never read or
 write a manifest, and combining them with `--manifest` or approval flags is a
 usage error (2), as is a malformed template. `--json` emits the same versioned
 result envelope as validation; default text output summarizes diagnostics.
+
+## Structural USFX
+
+```sh
+uv run latinitas-cards corpus normalize tests/fixtures/corpus/usfx/gen-1-1-5.usfx.xml \
+  --adapter usfx --corpus-id vulgata-clementina --output genesis.jsonl \
+  --descriptor data/lat-clementine.descriptor.json --json
+```
+
+The supported subset is `usfx`, `book@id` (container or empty milestone), `h`
+(work title), `c@id|n`, `v@id|n` (milestone or container), and `ve`. Root attributes
+are ignored; `id` wins over `n`. Milestone verses must end with `ve`; container
+verses may have a trailing `ve`. Works retain first-appearance order and passages
+retain document order, not book-ID sort. Character data joins without inserted
+separators before canonicalization. Raw NFC book/chapter/verse citation parts
+produce `GEN 1:3a`; their individually encoded components form `GEN.1.3a`.
+Literal `.` and `%2E` encode distinctly as `%2E` and `%252E`.
+
+The `usfx/1` header hashes and counts raw source bytes; the source is never
+rewritten. No descriptor is selected implicitly, even for the bundled source.
+With no `--descriptor`, provenance fields are null. See the
+[provenance audit](license-compatibility-audit.md#bundled-corpus-provenance)
+for the declared Clementine provenance and pending maintainer confirmation.
+
+This adapter writes only the corpus, using the shared locked atomic writer and
+alias checks. `--manifest`, approvals and citation templates are usage errors
+(2). Duplicate references, empty passages, invalid structure, malformed XML and
+DOCTYPE declarations fail with exit 3 and leave the output unchanged. Unknown
+elements produce one diagnostic with every name and count, also with exit 3.
+Notes, headings other than `h`, and `p`/`q`/`wj`/`w` markup are **not supported
+yet**; there is no `--allow-unknown` option. Full size/depth and entity hardening
+are pending; do not treat this structural subset as a resource-bounded XML
+ingestor. Legacy Vulgate commands retain their existing parsing and outputs.
+
+The GEN 1:1–5 fixture and expected JSONL are committed. Regenerate deliberately
+with `uv run python scripts/regen-corpus-fixtures.py --target usfx --force`;
+tests never regenerate snapshots. The fixture is the bundled source's exact
+prefix through GEN 1:5's `ve`, followed by `</book></usfx>` and a newline.

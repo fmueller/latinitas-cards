@@ -80,6 +80,10 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `review_required` | 1 | Identity reconciliation requires review |
 | `invalid_line` | 3 | Text line does not match citation template |
 | `duplicate_source_ref` | 3 | Source label is repeated |
+| `invalid_structure` | 3 | USFX structure is invalid |
+| `empty_passage` | 3 | Source passage has no canonical text |
+| `invalid_xml` | 3 | Source is not well-formed XML |
+| `unsafe_xml` | 3 | Source XML contains a forbidden declaration |
 
 ## Contract command matrix
 
@@ -113,13 +117,13 @@ derived-value findings. Diagnostics use the CORPUS argument as given for `path`,
 Encoded references are compared verbatim, never decoded. Sidecar validation,
 `corpus show` and `corpus config` are not implemented by this command yet.
 
-`corpus normalize` accepts plain text and returns `{"review_items":[]}` on success.
+`corpus normalize` accepts plain text or structural USFX and returns `{"review_items":[]}` on success.
 Unresolved ordinal assignments return `review_required` (1) with items containing
 `kind`, zero-based `ordinal` (null for removals), and `candidates` refs. Findings
 are ordered by ordinal, then removed refs. No output bytes change until all are
 approved. See [normalized corpora](normalized-corpus.md) for the flags and recovery
 protocol. Template/manifest or template/approval combinations, malformed templates
-or languages, and the not-yet-supported `--adapter usfx` return `usage_error` (2).
+or languages, and USFX combined with templates, manifests or approvals return `usage_error` (2).
 Rejected input/approvals/aliases and expected filesystem failures return 3;
 lock contention and recovery binding drift return 4. Existing corpus files are
 atomically replaced, not treated as immutable artifacts (`exists` does not apply).

@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `corpus normalize --adapter usfx` converts structural USFX to ordered, citable
+  JSONL with optional descriptor provenance; unsupported markup fails without output.
 - `corpus normalize --adapter text` creates validated JSONL with stable reviewed
   passage refs or labeled citations, and safely resumes interrupted manifest writes.
 - `corpus validate CORPUS [--json]` checks normalized corpus records, identities,
