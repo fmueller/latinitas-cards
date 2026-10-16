@@ -1,0 +1,432 @@
+[
+  {
+    "phase": "before",
+    "argv": [
+      "claims",
+      "inspect",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--annotations",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--check"
+    ],
+    "exit": 0,
+    "literal_json": "{\n  \"claims\": [\n    {\n      \"identity\": \"wsl:poem.1.1\",\n      \"annotation_id\": \"sha256:b17f16797e8a881b5efea9c25ab098302f8b49d325adc6447c0cc9fa2f47ed15\",\n      \"kind\": \"segmentation\",\n      \"value\": {\n        \"sentences\": [\n          {\n            \"continued\": false,\n            \"continues\": false,\n            \"span\": [\n              0,\n              19\n            ],\n            \"tokens\": [\n              0,\n              4\n            ]\n          }\n        ],\n        \"tokenizer\": \"latin-tok/1\",\n        \"tokens\": [\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              0,\n              4\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              5,\n              13\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              14,\n              18\n            ]\n          },\n          {\n            \"kind\": \"punct\",\n            \"span\": [\n              18,\n              19\n            ]\n          }\n        ]\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"rule\",\n        \"name\": \"latin-seg\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"35baa237bc1cfd589c65d185ab86b5af7f7634da883867270eb0c1458a668efa\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.2\",\n      \"annotation_id\": \"sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514\",\n      \"kind\": \"segmentation\",\n      \"value\": {\n        \"sentences\": [\n          {\n            \"continued\": false,\n            \"continues\": false,\n            \"span\": [\n              0,\n              18\n            ],\n            \"tokens\": [\n              0,\n              4\n            ]\n          }\n        ],\n        \"tokenizer\": \"latin-tok/1\",\n        \"tokens\": [\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              0,\n              5\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              6,\n              12\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              13,\n              17\n            ]\n          },\n          {\n            \"kind\": \"punct\",\n            \"span\": [\n              17,\n              18\n            ]\n          }\n        ]\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"rule\",\n        \"name\": \"latin-seg\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"de1f974448bc26d1b81c82aa5c6cc09689acad64b8f752a04a15e825b3d4eaef\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.3\",\n      \"annotation_id\": \"sha256:7476dda82d28b33546a9734a63440fbaf827f95ce337fff421cbd736a81552df\",\n      \"kind\": \"segmentation\",\n      \"value\": {\n        \"sentences\": [\n          {\n            \"continued\": false,\n            \"continues\": false,\n            \"span\": [\n              0,\n              18\n            ],\n            \"tokens\": [\n              0,\n              4\n            ]\n          }\n        ],\n        \"tokenizer\": \"latin-tok/1\",\n        \"tokens\": [\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              0,\n              4\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              5,\n              10\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              11,\n              17\n            ]\n          },\n          {\n            \"kind\": \"punct\",\n            \"span\": [\n              17,\n              18\n            ]\n          }\n        ]\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"rule\",\n        \"name\": \"latin-seg\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"4ac45b3c28e9393d9e9c40cdd108d7e1dc65a01868b157069fb61dae32d3d803\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.1\",\n      \"annotation_id\": \"sha256:5d69255e76a21cea0e47446897fc64ede7a2e661de28c79d454401396494609a\",\n      \"kind\": \"morphology\",\n      \"value\": {\n        \"tagset\": \"fixture\",\n        \"upos\": \"NOUN\"\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"analyzer\",\n        \"name\": \"fixture-morph\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"66e32e73dec3a6aebac2718951e7647e83fc5104ae41538157ebc5fc9c7d9296\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.2\",\n      \"annotation_id\": \"sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041\",\n      \"kind\": \"morphology\",\n      \"value\": {\n        \"tagset\": \"fixture\",\n        \"upos\": \"NOUN\"\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"analyzer\",\n        \"name\": \"fixture-morph\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"f5cfdfa67aca0820b34e675cfc0a31e847d109f994f434f3f662a77494984ada\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.3\",\n      \"annotation_id\": \"sha256:440bfda602c2ab0bc9ef8301577a8a7933a7f08006aa35c1d3dde351e98404c4\",\n      \"kind\": \"morphology\",\n      \"value\": {\n        \"tagset\": \"fixture\",\n        \"upos\": \"NOUN\"\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"analyzer\",\n        \"name\": \"fixture-morph\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"505a9fe9f8ac2d6a4e75211fc164671a26559af08b44b002ea80aeeb38646473\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    }\n  ],\n  \"diagnostics\": []\n}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "f201bebe04ae63a456c51f80e8ba511312b8d3f8bd320e5ebfeebb76ff609a02",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161098755122493,
+        "mtime_ns_after": 1792161098755122493
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  },
+  {
+    "phase": "before",
+    "argv": [
+      "corpus",
+      "show",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--annotations",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--claims",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json"
+    ],
+    "exit": 0,
+    "literal_json": "{\"command\":\"corpus show\",\"diagnostics\":[],\"exit_code\":0,\"format\":\"latinitas-cli-result\",\"ok\":true,\"result\":{\"passages\":[{\"annotations\":[{\"annotation_id\":\"sha256:b17f16797e8a881b5efea9c25ab098302f8b49d325adc6447c0cc9fa2f47ed15\",\"layer\":\"segmentation\",\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"sentences\":[{\"continued\":false,\"continues\":false,\"span\":[0,19],\"tokens\":[0,4]}],\"tokenizer\":\"latin-tok/1\",\"tokens\":[{\"kind\":\"word\",\"span\":[0,4]},{\"kind\":\"word\",\"span\":[5,13]},{\"kind\":\"word\",\"span\":[14,18]},{\"kind\":\"punct\",\"span\":[18,19]}]}},{\"annotation_id\":\"sha256:5d69255e76a21cea0e47446897fc64ede7a2e661de28c79d454401396494609a\",\"layer\":\"morphology\",\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"tagset\":\"fixture\",\"upos\":\"NOUN\"}}],\"citation\":{\"display\":\"poem.1.1\",\"parts\":[{\"unit\":\"work\",\"value\":\"poem\"},{\"unit\":\"section\",\"value\":\"1\"},{\"unit\":\"line\",\"value\":\"1\"}],\"scheme\":\"wsl\"},\"passage_id\":\"wsl:poem.1.1\",\"text\":\"Arma virumque cano.\"},{\"annotations\":[{\"annotation_id\":\"sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514\",\"layer\":\"segmentation\",\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"sentences\":[{\"continued\":false,\"continues\":false,\"span\":[0,18],\"tokens\":[0,4]}],\"tokenizer\":\"latin-tok/1\",\"tokens\":[{\"kind\":\"word\",\"span\":[0,5]},{\"kind\":\"word\",\"span\":[6,12]},{\"kind\":\"word\",\"span\":[13,17]},{\"kind\":\"punct\",\"span\":[17,18]}]}},{\"annotation_id\":\"sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041\",\"layer\":\"morphology\",\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"tagset\":\"fixture\",\"upos\":\"NOUN\"}}],\"citation\":{\"display\":\"poem.1.2\",\"parts\":[{\"unit\":\"work\",\"value\":\"poem\"},{\"unit\":\"section\",\"value\":\"1\"},{\"unit\":\"line\",\"value\":\"2\"}],\"scheme\":\"wsl\"},\"passage_id\":\"wsl:poem.1.2\",\"text\":\"Mater filium amat.\"},{\"annotations\":[{\"annotation_id\":\"sha256:7476dda82d28b33546a9734a63440fbaf827f95ce337fff421cbd736a81552df\",\"layer\":\"segmentation\",\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"sentences\":[{\"continued\":false,\"continues\":false,\"span\":[0,18],\"tokens\":[0,4]}],\"tokenizer\":\"latin-tok/1\",\"tokens\":[{\"kind\":\"word\",\"span\":[0,4]},{\"kind\":\"word\",\"span\":[5,10]},{\"kind\":\"word\",\"span\":[11,17]},{\"kind\":\"punct\",\"span\":[17,18]}]}},{\"annotation_id\":\"sha256:440bfda602c2ab0bc9ef8301577a8a7933a7f08006aa35c1d3dde351e98404c4\",\"layer\":\"morphology\",\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"tagset\":\"fixture\",\"upos\":\"NOUN\"}}],\"citation\":{\"display\":\"poem.1.3\",\"parts\":[{\"unit\":\"work\",\"value\":\"poem\"},{\"unit\":\"section\",\"value\":\"1\"},{\"unit\":\"line\",\"value\":\"3\"}],\"scheme\":\"wsl\"},\"passage_id\":\"wsl:poem.1.3\",\"text\":\"Puer aquam portat.\"}],\"truncated\":false},\"version\":1}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "f201bebe04ae63a456c51f80e8ba511312b8d3f8bd320e5ebfeebb76ff609a02",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161098755122493,
+        "mtime_ns_after": 1792161098755122493
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  },
+  {
+    "phase": "before",
+    "argv": [
+      "annotations",
+      "inspect",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--corpus",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--claims",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json"
+    ],
+    "exit": 0,
+    "literal_json": "{\"command\":\"annotations inspect\",\"diagnostics\":[],\"exit_code\":0,\"format\":\"latinitas-cli-result\",\"ok\":true,\"result\":{\"annotations\":[{\"annotation_id\":\"sha256:b17f16797e8a881b5efea9c25ab098302f8b49d325adc6447c0cc9fa2f47ed15\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:966f9068487527be32dafd443189860b75c6fe7063f59147c6bcc54c01c26e95\",\"layer\":\"segmentation\",\"passage_id\":\"wsl:poem.1.1\",\"plan\":null,\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:c57e2463ef7e5304945bfbb50b1456a4754ac50b01c6c1919ce5a4993394be64\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:07b7590a403c224409b75233279df750f1653666f4c857f183cfbaf7d97bcd10\",\"layer\":\"segmentation\",\"passage_id\":\"wsl:poem.1.2\",\"plan\":null,\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:c57e2463ef7e5304945bfbb50b1456a4754ac50b01c6c1919ce5a4993394be64\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:7476dda82d28b33546a9734a63440fbaf827f95ce337fff421cbd736a81552df\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:b31a40df4aff388a3b158c135311847070cd1dad214e43dc01233603e76381c6\",\"layer\":\"segmentation\",\"passage_id\":\"wsl:poem.1.3\",\"plan\":null,\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:c57e2463ef7e5304945bfbb50b1456a4754ac50b01c6c1919ce5a4993394be64\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:5d69255e76a21cea0e47446897fc64ede7a2e661de28c79d454401396494609a\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:966f9068487527be32dafd443189860b75c6fe7063f59147c6bcc54c01c26e95\",\"layer\":\"morphology\",\"passage_id\":\"wsl:poem.1.1\",\"plan\":null,\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:c57e2463ef7e5304945bfbb50b1456a4754ac50b01c6c1919ce5a4993394be64\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:07b7590a403c224409b75233279df750f1653666f4c857f183cfbaf7d97bcd10\",\"layer\":\"morphology\",\"passage_id\":\"wsl:poem.1.2\",\"plan\":null,\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:c57e2463ef7e5304945bfbb50b1456a4754ac50b01c6c1919ce5a4993394be64\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:440bfda602c2ab0bc9ef8301577a8a7933a7f08006aa35c1d3dde351e98404c4\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:b31a40df4aff388a3b158c135311847070cd1dad214e43dc01233603e76381c6\",\"layer\":\"morphology\",\"passage_id\":\"wsl:poem.1.3\",\"plan\":null,\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:c57e2463ef7e5304945bfbb50b1456a4754ac50b01c6c1919ce5a4993394be64\",\"state\":\"current\",\"superseded\":false}]},\"version\":1}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "f201bebe04ae63a456c51f80e8ba511312b8d3f8bd320e5ebfeebb76ff609a02",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161098755122493,
+        "mtime_ns_after": 1792161098755122493
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  },
+  {
+    "phase": "before",
+    "argv": [
+      "corpus",
+      "validate",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--annotations",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--claims",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json"
+    ],
+    "exit": 0,
+    "literal_json": "{\"command\":\"corpus validate\",\"diagnostics\":[],\"exit_code\":0,\"format\":\"latinitas-cli-result\",\"ok\":true,\"result\":{\"counts\":{\"corpus\":1,\"header\":1,\"passage\":3,\"work\":1}},\"version\":1}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "f201bebe04ae63a456c51f80e8ba511312b8d3f8bd320e5ebfeebb76ff609a02",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161098755122493,
+        "mtime_ns_after": 1792161098755122493
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  },
+  {
+    "phase": "after",
+    "argv": [
+      "claims",
+      "inspect",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--annotations",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--check"
+    ],
+    "exit": 1,
+    "literal_json": "{\n  \"claims\": [\n    {\n      \"identity\": \"wsl:poem.1.1\",\n      \"annotation_id\": \"sha256:b17f16797e8a881b5efea9c25ab098302f8b49d325adc6447c0cc9fa2f47ed15\",\n      \"kind\": \"segmentation\",\n      \"value\": {\n        \"sentences\": [\n          {\n            \"continued\": false,\n            \"continues\": false,\n            \"span\": [\n              0,\n              19\n            ],\n            \"tokens\": [\n              0,\n              4\n            ]\n          }\n        ],\n        \"tokenizer\": \"latin-tok/1\",\n        \"tokens\": [\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              0,\n              4\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              5,\n              13\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              14,\n              18\n            ]\n          },\n          {\n            \"kind\": \"punct\",\n            \"span\": [\n              18,\n              19\n            ]\n          }\n        ]\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"rule\",\n        \"name\": \"latin-seg\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"35baa237bc1cfd589c65d185ab86b5af7f7634da883867270eb0c1458a668efa\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.3\",\n      \"annotation_id\": \"sha256:7476dda82d28b33546a9734a63440fbaf827f95ce337fff421cbd736a81552df\",\n      \"kind\": \"segmentation\",\n      \"value\": {\n        \"sentences\": [\n          {\n            \"continued\": false,\n            \"continues\": false,\n            \"span\": [\n              0,\n              18\n            ],\n            \"tokens\": [\n              0,\n              4\n            ]\n          }\n        ],\n        \"tokenizer\": \"latin-tok/1\",\n        \"tokens\": [\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              0,\n              4\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              5,\n              10\n            ]\n          },\n          {\n            \"kind\": \"word\",\n            \"span\": [\n              11,\n              17\n            ]\n          },\n          {\n            \"kind\": \"punct\",\n            \"span\": [\n              17,\n              18\n            ]\n          }\n        ]\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"rule\",\n        \"name\": \"latin-seg\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"4ac45b3c28e9393d9e9c40cdd108d7e1dc65a01868b157069fb61dae32d3d803\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.1\",\n      \"annotation_id\": \"sha256:5d69255e76a21cea0e47446897fc64ede7a2e661de28c79d454401396494609a\",\n      \"kind\": \"morphology\",\n      \"value\": {\n        \"tagset\": \"fixture\",\n        \"upos\": \"NOUN\"\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"analyzer\",\n        \"name\": \"fixture-morph\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"66e32e73dec3a6aebac2718951e7647e83fc5104ae41538157ebc5fc9c7d9296\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    },\n    {\n      \"identity\": \"wsl:poem.1.3\",\n      \"annotation_id\": \"sha256:440bfda602c2ab0bc9ef8301577a8a7933a7f08006aa35c1d3dde351e98404c4\",\n      \"kind\": \"morphology\",\n      \"value\": {\n        \"tagset\": \"fixture\",\n        \"upos\": \"NOUN\"\n      },\n      \"alternatives\": [],\n      \"producer\": {\n        \"kind\": \"analyzer\",\n        \"name\": \"fixture-morph\",\n        \"version\": \"1\"\n      },\n      \"fingerprint\": \"505a9fe9f8ac2d6a4e75211fc164671a26559af08b44b002ea80aeeb38646473\",\n      \"status\": \"accepted\",\n      \"review_status\": \"accepted\",\n      \"reason\": \"Checked\"\n    }\n  ],\n  \"diagnostics\": [\n    {\n      \"code\": \"stale\",\n      \"message\": \"Stale or unmatched decision ignored\",\n      \"item\": 1\n    },\n    {\n      \"code\": \"stale\",\n      \"message\": \"Stale or unmatched decision ignored\",\n      \"item\": 4\n    }\n  ]\n}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "eaf04bdb757dd46eabf05cbd94b276ba6cc057d006042eb772e59debdfbb7731",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161103499209624,
+        "mtime_ns_after": 1792161103499209624
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  },
+  {
+    "phase": "after",
+    "argv": [
+      "corpus",
+      "show",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--annotations",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--claims",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json"
+    ],
+    "exit": 0,
+    "literal_json": "{\"command\":\"corpus show\",\"diagnostics\":[],\"exit_code\":0,\"format\":\"latinitas-cli-result\",\"ok\":true,\"result\":{\"passages\":[{\"annotations\":[{\"annotation_id\":\"sha256:b17f16797e8a881b5efea9c25ab098302f8b49d325adc6447c0cc9fa2f47ed15\",\"layer\":\"segmentation\",\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"sentences\":[{\"continued\":false,\"continues\":false,\"span\":[0,19],\"tokens\":[0,4]}],\"tokenizer\":\"latin-tok/1\",\"tokens\":[{\"kind\":\"word\",\"span\":[0,4]},{\"kind\":\"word\",\"span\":[5,13]},{\"kind\":\"word\",\"span\":[14,18]},{\"kind\":\"punct\",\"span\":[18,19]}]}},{\"annotation_id\":\"sha256:5d69255e76a21cea0e47446897fc64ede7a2e661de28c79d454401396494609a\",\"layer\":\"morphology\",\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"tagset\":\"fixture\",\"upos\":\"NOUN\"}}],\"citation\":{\"display\":\"poem.1.1\",\"parts\":[{\"unit\":\"work\",\"value\":\"poem\"},{\"unit\":\"section\",\"value\":\"1\"},{\"unit\":\"line\",\"value\":\"1\"}],\"scheme\":\"wsl\"},\"passage_id\":\"wsl:poem.1.1\",\"text\":\"Arma virumque cano.\"},{\"annotations\":[],\"citation\":{\"display\":\"poem.1.2\",\"parts\":[{\"unit\":\"work\",\"value\":\"poem\"},{\"unit\":\"section\",\"value\":\"1\"},{\"unit\":\"line\",\"value\":\"2\"}],\"scheme\":\"wsl\"},\"passage_id\":\"wsl:poem.1.2\",\"text\":\"Mater filiam amat.\"},{\"annotations\":[{\"annotation_id\":\"sha256:7476dda82d28b33546a9734a63440fbaf827f95ce337fff421cbd736a81552df\",\"layer\":\"segmentation\",\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"sentences\":[{\"continued\":false,\"continues\":false,\"span\":[0,18],\"tokens\":[0,4]}],\"tokenizer\":\"latin-tok/1\",\"tokens\":[{\"kind\":\"word\",\"span\":[0,4]},{\"kind\":\"word\",\"span\":[5,10]},{\"kind\":\"word\",\"span\":[11,17]},{\"kind\":\"punct\",\"span\":[17,18]}]}},{\"annotation_id\":\"sha256:440bfda602c2ab0bc9ef8301577a8a7933a7f08006aa35c1d3dde351e98404c4\",\"layer\":\"morphology\",\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"review_status\":\"accepted\",\"value\":{\"tagset\":\"fixture\",\"upos\":\"NOUN\"}}],\"citation\":{\"display\":\"poem.1.3\",\"parts\":[{\"unit\":\"work\",\"value\":\"poem\"},{\"unit\":\"section\",\"value\":\"1\"},{\"unit\":\"line\",\"value\":\"3\"}],\"scheme\":\"wsl\"},\"passage_id\":\"wsl:poem.1.3\",\"text\":\"Puer aquam portat.\"}],\"truncated\":false},\"version\":1}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "eaf04bdb757dd46eabf05cbd94b276ba6cc057d006042eb772e59debdfbb7731",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161103499209624,
+        "mtime_ns_after": 1792161103499209624
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  },
+  {
+    "phase": "after",
+    "argv": [
+      "annotations",
+      "inspect",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--corpus",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--claims",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json"
+    ],
+    "exit": 0,
+    "literal_json": "{\"command\":\"annotations inspect\",\"diagnostics\":[{\"code\":\"stale\",\"item\":null,\"message\":\"Annotation sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514 on passage wsl:poem.1.2: passage hash differs from the anchor\",\"path\":\"/tmp/t125-1f2p8d4b/annotations.jsonl\",\"ref\":\"sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514\",\"severity\":\"warning\"},{\"code\":\"stale\",\"item\":null,\"message\":\"Annotation sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041 on passage wsl:poem.1.2: passage hash differs from the anchor\",\"path\":\"/tmp/t125-1f2p8d4b/annotations.jsonl\",\"ref\":\"sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041\",\"severity\":\"warning\"},{\"code\":\"stale\",\"item\":null,\"message\":\"Stale or unmatched decision ignored\",\"path\":\"/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json\",\"ref\":\"de1f974448bc26d1b81c82aa5c6cc09689acad64b8f752a04a15e825b3d4eaef\",\"severity\":\"warning\"},{\"code\":\"stale\",\"item\":null,\"message\":\"Stale or unmatched decision ignored\",\"path\":\"/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json\",\"ref\":\"f5cfdfa67aca0820b34e675cfc0a31e847d109f994f434f3f662a77494984ada\",\"severity\":\"warning\"}],\"exit_code\":0,\"format\":\"latinitas-cli-result\",\"ok\":true,\"result\":{\"annotations\":[{\"annotation_id\":\"sha256:b17f16797e8a881b5efea9c25ab098302f8b49d325adc6447c0cc9fa2f47ed15\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:966f9068487527be32dafd443189860b75c6fe7063f59147c6bcc54c01c26e95\",\"layer\":\"segmentation\",\"passage_id\":\"wsl:poem.1.1\",\"plan\":null,\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:871786f7c9077bb41e8cd000abee5e76b6c1046a5bbc27c9db1f8af3a634fd2b\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:07b7590a403c224409b75233279df750f1653666f4c857f183cfbaf7d97bcd10\",\"layer\":\"segmentation\",\"passage_id\":\"wsl:poem.1.2\",\"plan\":null,\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"open\",\"source_sha256\":\"sha256:871786f7c9077bb41e8cd000abee5e76b6c1046a5bbc27c9db1f8af3a634fd2b\",\"state\":\"stale\",\"superseded\":false},{\"annotation_id\":\"sha256:7476dda82d28b33546a9734a63440fbaf827f95ce337fff421cbd736a81552df\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:b31a40df4aff388a3b158c135311847070cd1dad214e43dc01233603e76381c6\",\"layer\":\"segmentation\",\"passage_id\":\"wsl:poem.1.3\",\"plan\":null,\"producer\":{\"kind\":\"rule\",\"name\":\"latin-seg\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:871786f7c9077bb41e8cd000abee5e76b6c1046a5bbc27c9db1f8af3a634fd2b\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:5d69255e76a21cea0e47446897fc64ede7a2e661de28c79d454401396494609a\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:966f9068487527be32dafd443189860b75c6fe7063f59147c6bcc54c01c26e95\",\"layer\":\"morphology\",\"passage_id\":\"wsl:poem.1.1\",\"plan\":null,\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:871786f7c9077bb41e8cd000abee5e76b6c1046a5bbc27c9db1f8af3a634fd2b\",\"state\":\"current\",\"superseded\":false},{\"annotation_id\":\"sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:07b7590a403c224409b75233279df750f1653666f4c857f183cfbaf7d97bcd10\",\"layer\":\"morphology\",\"passage_id\":\"wsl:poem.1.2\",\"plan\":null,\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"open\",\"source_sha256\":\"sha256:871786f7c9077bb41e8cd000abee5e76b6c1046a5bbc27c9db1f8af3a634fd2b\",\"state\":\"stale\",\"superseded\":false},{\"annotation_id\":\"sha256:440bfda602c2ab0bc9ef8301577a8a7933a7f08006aa35c1d3dde351e98404c4\",\"created\":\"2026-01-01T00:00:00Z\",\"input_hash\":\"sha256:b31a40df4aff388a3b158c135311847070cd1dad214e43dc01233603e76381c6\",\"layer\":\"morphology\",\"passage_id\":\"wsl:poem.1.3\",\"plan\":null,\"producer\":{\"kind\":\"analyzer\",\"name\":\"fixture-morph\",\"version\":\"1\"},\"retracted\":false,\"review_status\":\"accepted\",\"source_sha256\":\"sha256:871786f7c9077bb41e8cd000abee5e76b6c1046a5bbc27c9db1f8af3a634fd2b\",\"state\":\"current\",\"superseded\":false}]},\"version\":1}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "eaf04bdb757dd46eabf05cbd94b276ba6cc057d006042eb772e59debdfbb7731",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161103499209624,
+        "mtime_ns_after": 1792161103499209624
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  },
+  {
+    "phase": "after",
+    "argv": [
+      "corpus",
+      "validate",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--annotations",
+      "/tmp/t125-1f2p8d4b/annotations.jsonl",
+      "--claims",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json"
+    ],
+    "exit": 1,
+    "literal_json": "{\"command\":\"corpus validate\",\"diagnostics\":[{\"code\":\"stale\",\"item\":null,\"message\":\"Annotation sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514 on passage wsl:poem.1.2: passage hash differs from the anchor\",\"path\":\"/tmp/t125-1f2p8d4b/annotations.jsonl\",\"ref\":\"sha256:5db20f7ec29d3d7a5ff1bcdb8e1c762e6e80440f293989ccfdc24ffa2e9b1514\",\"severity\":\"error\"},{\"code\":\"stale\",\"item\":null,\"message\":\"Annotation sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041 on passage wsl:poem.1.2: passage hash differs from the anchor\",\"path\":\"/tmp/t125-1f2p8d4b/annotations.jsonl\",\"ref\":\"sha256:4d5110efa95bf9d0e84e7ac32fbd71086b43e3d01f3243d20a49cb96e9f04041\",\"severity\":\"error\"},{\"code\":\"stale\",\"item\":null,\"message\":\"Stale or unmatched decision ignored\",\"path\":\"/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json\",\"ref\":\"de1f974448bc26d1b81c82aa5c6cc09689acad64b8f752a04a15e825b3d4eaef\",\"severity\":\"error\"},{\"code\":\"stale\",\"item\":null,\"message\":\"Stale or unmatched decision ignored\",\"path\":\"/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json\",\"ref\":\"f5cfdfa67aca0820b34e675cfc0a31e847d109f994f434f3f662a77494984ada\",\"severity\":\"error\"}],\"exit_code\":1,\"format\":\"latinitas-cli-result\",\"ok\":false,\"result\":{\"counts\":{\"corpus\":1,\"header\":1,\"passage\":3,\"work\":1}},\"version\":1}\n",
+    "claims_sha256_before": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "claims_sha256_after": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+    "input_stats": [
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl",
+        "sha256": "eaf04bdb757dd46eabf05cbd94b276ba6cc057d006042eb772e59debdfbb7731",
+        "bytes": 1928,
+        "mtime_ns_before": 1792161103499209624,
+        "mtime_ns_after": 1792161103499209624
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/annotations.jsonl",
+        "sha256": "df2004933ded12efd8ecf96a2d6852a67977535cc8f62f842eba98a35bd1b067",
+        "bytes": 4019,
+        "mtime_ns_before": 1792161098903125210,
+        "mtime_ns_after": 1792161098903125210
+      },
+      {
+        "path": "/tmp/t125-1f2p8d4b/corpus.jsonl.claims.json",
+        "sha256": "a5618c0791135c8209ce755d592195f1efa16dedb6012854c7d3a178169299a1",
+        "bytes": 4480,
+        "mtime_ns_before": 1792161100099147172,
+        "mtime_ns_after": 1792161100099147172
+      }
+    ],
+    "normalization_argv": [
+      "corpus",
+      "normalize",
+      "/tmp/t125-1f2p8d4b/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--output",
+      "/tmp/t125-1f2p8d4b/corpus.jsonl",
+      "--citation-template",
+      "wsl:work.section.line"
+    ],
+    "bytes_and_mtimes_unchanged": true,
+    "locks_absent": true
+  }
+]

@@ -113,14 +113,14 @@ executable cases together.
 
 | command | exit codes |
 | --- | --- |
-| corpus validate | 0, 1, 3 |
+| corpus validate | 0, 1, 2, 3 |
 | corpus normalize | 0, 1, 2, 3, 4 |
 | annotations segment | 0, 2, 3, 4 |
 | annotations inspect | 0, 1, 3 |
 | annotations plan | 0, 1, 3, 4 |
 | annotations approve | 0, 3, 4, 5 |
 | annotations apply | 0, 2, 3, 4, 5 |
-| corpus show | 0, 3 |
+| corpus show | 0, 2, 3 |
 | corpus config | 0, 3 |
 | policy validate | 0, 3 |
 
@@ -186,11 +186,11 @@ order: `stale`, `orphaned`, `unmatched` (1). `ref` is the annotation ID, `path`
 is SIDECAR, and the message names its passage. Unsupported sidecar formats or
 versions and invalid sidecar records exit 3; no lock is taken or created.
 
-`annotations inspect SIDECAR --corpus CORPUS [--check] [--json]` lists provenance
+`annotations inspect SIDECAR --corpus CORPUS [--claims SIDECAR] [--check] [--json]` lists provenance
 and lifecycle flags in sidecar order. Anchor findings are warnings (0) unless
 `--check` promotes them to errors (1). Both modes report identical states.
 
-`corpus show CORPUS [--passage ID]... [--limit N] [--annotations SIDECAR] [--json]`
+`corpus show CORPUS [--passage ID]... [--limit N] [--annotations SIDECAR] [--claims SIDECAR] [--json]`
 returns `{"passages":[{"passage_id","citation","text","annotations"}],"truncated":bool}`.
 Each annotation has `annotation_id`, `layer`, `value`, `producer`; only current,
 non-superseded, non-retracted proposals are visible. Retraction events are not
@@ -199,7 +199,17 @@ limit is 20, maximum 1000; 0 and 1001 are Click usage errors (2, no envelope).
 `truncated` means more matching passages exist, not merely more corpus passages.
 Unknown requested IDs exit 3 (`unknown_passage`), even beyond the selected page.
 All three readers leave bytes and mtimes unchanged and create no locks.
-Claim joins are not implemented here.
+All three accept an explicit `--claims SIDECAR` version 2 decision file.
+`corpus validate CORPUS --annotations SIDECAR --claims SIDECAR` reports stale
+decisions as errors (1), with code `stale`, `ref` = claim fingerprint and `path`
+= claims file. `annotations inspect` reports decision findings as warnings unless
+`--check` is used. Show omits stale annotations, not current withheld proposals.
+Show and inspect add `review_status`: `open`, `accepted` or `withheld`; no matching
+live decision means `open`. Neither grants acceptance nor changes decisions.
+For corpus show/validate, `--claims` without `--annotations` exits 2 `usage_error`
+with an envelope. Inspect takes the annotation sidecar positionally.
+An explicit missing/unreadable claims file exits 3 `unreadable`; v1 or higher
+versions exit 3 `unsupported_version`, each with one envelope under `--json`.
 
 `corpus config [--policy FILE] [--corpus FILE] [--json]` reports `tool_version`,
 `supported_formats` (format name to maximum version), `rule_versions`, resolved

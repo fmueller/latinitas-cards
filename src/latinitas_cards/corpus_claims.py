@@ -21,6 +21,8 @@ from .claim_sidecar import (
     UnsupportedVersion,
     sidecar_path,
 )
+from .cli_contract import Code, ContractError
+from .cli_contract import Diagnostic as CliDiagnostic
 from .corpus_io import CorpusFinding, read_corpus
 from .corpus_model import CorpusPassage, CorpusRecord
 from .corpus_validation import validate_records
@@ -67,10 +69,12 @@ def _binding(record: Annotation) -> CorpusBinding:
     )
 
 
-def load_corpus_decisions(path: Path) -> SidecarV2:
+def load_corpus_decisions(path: Path, *, missing_ok: bool = True) -> SidecarV2:
     try:
         payload = path.read_text(encoding="utf-8")
     except FileNotFoundError:
+        if not missing_ok:
+            raise
         return SidecarV2()
     try:
         raw = json.loads(payload)
@@ -99,6 +103,36 @@ def _resolve(
             decisions[entry.base_fingerprint] = entry
         seen.add(entry.base_fingerprint)
     return decisions, tuple(diagnostics)
+
+
+def join_corpus_decisions(corpus: Path, sidecar: Path, claims: Path) -> tuple[dict[str, str], list[CliDiagnostic]]:
+    """Join explicit v2 decisions to live annotations without locks or writes."""
+    try:
+        stored = load_corpus_decisions(claims, missing_ok=False)
+    except UnsupportedVersion as error:
+        raise ContractError(Code.UNSUPPORTED_VERSION, str(error), path=str(claims)) from error
+    except OSError as error:
+        raise ContractError(Code.UNREADABLE, str(error), path=str(claims)) from error
+    except ValueError as error:
+        raise ContractError(Code.INVALID_INPUT, str(error), path=str(claims)) from error
+    rows = current_annotations(corpus, sidecar)
+    decisions, findings = _resolve(rows, stored)
+    statuses: dict[str, str] = {}
+    for row in rows:
+        entry = decisions.get(corpus_claim_fingerprint(row))
+        statuses[row.annotation_id] = entry.decision.status if entry else "open"
+    diagnostics = []
+    for finding in findings:
+        assert finding.item is not None
+        diagnostics.append(
+            CliDiagnostic(
+                code=Code(finding.code),
+                message=finding.message,
+                path=str(claims),
+                ref=stored.decisions[finding.item].base_fingerprint,
+            )
+        )
+    return statuses, diagnostics
 
 
 def corpus_claim_report(corpus: Path, sidecar: Path) -> dict[str, object]:

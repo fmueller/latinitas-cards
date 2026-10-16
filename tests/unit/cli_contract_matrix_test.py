@@ -160,6 +160,20 @@ def annotation_apply_case(tmp: Path, exit_code: int) -> list[str]:
 
 
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    ("corpus show", 2): lambda tmp: [
+        "corpus",
+        "show",
+        str(FIXTURES / "wsl-three.corpus.jsonl"),
+        "--claims",
+        str(tmp / "claims.json"),
+    ],
+    ("corpus validate", 2): lambda tmp: [
+        "corpus",
+        "validate",
+        str(FIXTURES / "wsl-three.corpus.jsonl"),
+        "--claims",
+        str(tmp / "claims.json"),
+    ],
     ("corpus config", 0): lambda _: ["corpus", "config"],
     ("corpus config", 3): lambda tmp: ["corpus", "config", "--corpus", str(tmp / "missing.jsonl")],
     **{("annotations plan", code): partial(annotation_plan_case, exit_code=code) for code in (0, 1, 3, 4)},
@@ -183,9 +197,11 @@ CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
     ("annotations inspect", 3): lambda tmp: [
         "annotations",
         "inspect",
-        str(tmp / "missing.jsonl"),
+        str(FIXTURES.parent / "annotations/wsl.annotations.jsonl"),
         "--corpus",
         str(FIXTURES / "wsl-three.corpus.jsonl"),
+        "--claims",
+        str(tmp / "missing.claims.json"),
     ],
     ("corpus show", 0): lambda _: ["corpus", "show", str(FIXTURES / "wsl-three.corpus.jsonl")],
     ("corpus show", 3): lambda _: [

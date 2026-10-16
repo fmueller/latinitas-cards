@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T14:09:03Z"
+updated_at: "2026-10-16T14:16:38Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
-current_task: ""
-current_task_title: ""
-status_summary: blocked
+current_task: T-125-join-corpus-claim-decisions-into-corpus-views
+current_task_title: Join corpus claim decisions into corpus show, corpus validate and annotations inspect
+status_summary: in_progress
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-125-join-corpus-claim-decisions-into-corpus-views: Join corpus claim decisions into corpus show, corpus validate and annotations inspect'
+next_action: Implement T-125-join-corpus-claim-decisions-into-corpus-views and run targeted tests
 last_verification_result: pass for T-123-document-pypi-installation-extras-and-the at 2026-10-16T14:09:02Z
 relevant_artifacts: []
 continuation_notes:
@@ -23,11 +23,12 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: none
+- Task: `T-125-join-corpus-claim-decisions-into-corpus-views`
+- Title: Join corpus claim decisions into corpus show, corpus validate and annotations inspect
 
 ## Status
 
-- blocked
+- in_progress
 
 ## Blockers
 
@@ -39,7 +40,7 @@ continuation_notes:
 
 ## Next Action
 
-- Start task T-125-join-corpus-claim-decisions-into-corpus-views: Join corpus claim decisions into corpus show, corpus validate and annotations inspect
+- Implement T-125-join-corpus-claim-decisions-into-corpus-views and run targeted tests
 
 ## Relevant Artifacts
 
@@ -51,8 +52,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 4
-- in_progress: 0
+- todo: 3
+- in_progress: 1
 - completed: 123
 - blocked: 1
 - cancelled: 0

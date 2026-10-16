@@ -13,6 +13,7 @@ from ..annotation_sidecar import Annotation, Retraction, read_sidecar
 from ..annotation_state import annotation_states, inspect_annotations
 from ..canonical import digest_bytes
 from ..cli_contract import CliResult, Code, ContractError, Diagnostic, run_contract
+from ..corpus_claims import join_corpus_decisions
 from ..corpus_io import CorpusFinding, read_corpus, write_corpus
 from ..corpus_manifest import Approvals, materialize, read_optional
 from ..corpus_model import CorpusDescriptor, CorpusPassage, CorpusRecord, encode_ref_component, passage_hash
@@ -53,13 +54,19 @@ def _render_text(result: CliResult) -> None:
 def validate(
     corpus: Annotated[str, typer.Argument(help="Normalized corpus JSONL file.")],
     annotations: Annotated[Path | None, typer.Option(help="Check annotation anchors.")] = None,
+    claims: Annotated[Path | None, typer.Option()] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Emit the versioned result envelope.")] = False,
 ) -> None:
     """Validate record schemas, ordering, identity and canonical passage content."""
 
     def body() -> tuple[JsonValue, list[Diagnostic]]:
+        if claims is not None and annotations is None:
+            raise ContractError(Code.USAGE_ERROR, "--claims requires --annotations")
         if annotations is not None:
             result, diagnostics = inspect_annotations(Path(corpus), annotations, check=True)
+            if claims is not None and not any(d.path == corpus and d.severity == "error" for d in diagnostics):
+                _, findings = join_corpus_decisions(Path(corpus), annotations, claims)
+                diagnostics.extend(findings)
             return {"counts": result["counts"]}, diagnostics
         counts, diagnostics = validate_corpus(corpus)
         return {"counts": dict(counts)}, diagnostics
@@ -73,11 +80,14 @@ def show(
     passage: Annotated[list[str] | None, typer.Option("--passage", help="Select IDs in corpus order.")] = None,
     limit: Annotated[int, typer.Option(min=1, max=1000)] = 20,
     annotations: Annotated[Path | None, typer.Option()] = None,
+    claims: Annotated[Path | None, typer.Option()] = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
     """Show a bounded read-only view with only current, live annotations."""
 
     def body() -> tuple[JsonValue, list[Diagnostic]]:
+        if claims is not None and annotations is None:
+            raise ContractError(Code.USAGE_ERROR, "--claims requires --annotations")
         hashes: dict[str, str] = {}
         selected: list[CorpusPassage] = []
         requested = set(passage or [])
@@ -112,6 +122,9 @@ def show(
                 for ref in sorted(missing)
             ]
         states = annotation_states(hashes, rows)
+        reviews: dict[str, str] = {}
+        if claims is not None and annotations is not None:
+            reviews, _ = join_corpus_decisions(corpus, annotations, claims)
         by_passage: dict[str, list[JsonValue]] = {}
         for row in rows:
             state = states[row.annotation_id]
@@ -127,6 +140,7 @@ def show(
                         "layer": row.layer,
                         "value": row.value,
                         "producer": row.producer.model_dump(mode="json"),
+                        **({"review_status": reviews.get(row.annotation_id, "open")} if claims is not None else {}),
                     }
                 )
         return {

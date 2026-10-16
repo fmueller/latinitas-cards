@@ -13,6 +13,7 @@ from ..annotation_plans import approve_plan, create_plan
 from ..annotation_sidecar import Annotation, Retraction, annotation_id, append_records, resolve_created
 from ..annotation_state import inspect_annotations
 from ..cli_contract import Code, Diagnostic, run_contract
+from ..corpus_claims import join_corpus_decisions
 from ..corpus_io import CorpusFinding, read_corpus
 from ..corpus_model import CorpusPassage
 from ..corpus_segmentation import segment_work, tokenize
@@ -167,6 +168,7 @@ def segment(
 def inspect(
     sidecar: Annotated[Path, typer.Argument(help="Annotation sidecar JSONL.")],
     corpus: Annotated[Path, typer.Option(help="Normalized corpus JSONL.")],
+    claims: Annotated[Path | None, typer.Option()] = None,
     check: Annotated[bool, typer.Option()] = False,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
@@ -174,6 +176,13 @@ def inspect(
 
     def body() -> tuple[JsonValue, list[Diagnostic]]:
         result, diagnostics = inspect_annotations(corpus, sidecar, check=check)
+        if claims is not None and not any(d.path == str(corpus) and d.severity == "error" for d in diagnostics):
+            reviews, findings = join_corpus_decisions(corpus, sidecar, claims)
+            assert isinstance(result["annotations"], list)
+            for row in result["annotations"]:
+                assert isinstance(row, dict) and isinstance(row["annotation_id"], str)
+                row["review_status"] = reviews.get(row["annotation_id"], "open")
+            diagnostics.extend(d.model_copy(update={"severity": "error" if check else "warning"}) for d in findings)
         return {"annotations": result["annotations"]}, diagnostics
 
     run_contract("annotations inspect", json_output, body)

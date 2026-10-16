@@ -122,6 +122,145 @@ def invoke(command: str, corpus: Path, sidecar: Path, *args: str) -> Result:
     return RUNNER.invoke(app, ["claims", command, str(corpus), "--annotations", str(sidecar), "--json", *args])
 
 
+def test_join_corpus_decisions(corpus_review: tuple[Path, Path], tmp_path: Path) -> None:
+    from latinitas_cards.corpus_claims import join_corpus_decisions
+
+    corpus, sidecar = corpus_review
+    claims = json.loads(invoke("list", corpus, sidecar).output)["claims"]
+    batch = tmp_path / "batch.json"
+    batch.write_text(
+        json.dumps(
+            [
+                dict(fingerprint=c["fingerprint"], status="accepted", reviewer="R", reason="Checked")
+                for i, c in enumerate(claims[1:], 1)
+            ]
+        )
+    )
+    assert invoke("record", corpus, sidecar, "--batch", str(batch)).exit_code == 0
+    statuses, diagnostics = join_corpus_decisions(corpus, sidecar, sidecar_path(corpus))
+    assert not diagnostics
+    assert statuses[claims[0]["annotation_id"]] == "open"
+    assert statuses[claims[4]["annotation_id"]] == "accepted"
+    corpus.write_bytes((FIXTURES / "corpus/wsl-three-edited.corpus.jsonl").read_bytes())
+    statuses, diagnostics = join_corpus_decisions(corpus, sidecar, sidecar_path(corpus))
+    assert claims[4]["annotation_id"] not in statuses
+    assert {d.ref for d in diagnostics} == {claims[i]["fingerprint"] for i in (1, 4)}
+    assert {d.code for d in diagnostics} == {"stale"}
+
+
+@pytest.mark.parametrize("command", ["show", "inspect", "validate"])
+def test_claim_view_join(command: str, corpus_review: tuple[Path, Path], tmp_path: Path) -> None:
+    corpus, sidecar = corpus_review
+    claims = json.loads(invoke("list", corpus, sidecar).output)["claims"]
+    batch = tmp_path / "batch.json"
+    batch.write_text(
+        json.dumps(
+            [
+                dict(
+                    fingerprint=c["fingerprint"],
+                    status="withheld" if i == 3 else "accepted",
+                    reviewer="R",
+                    reason="Checked",
+                )
+                for i, c in enumerate(claims)
+                if i != 0
+            ]
+        )
+    )
+    assert invoke("record", corpus, sidecar, "--batch", str(batch)).exit_code == 0
+    path = sidecar_path(corpus)
+    Path(f"{path}.lock").unlink()
+    args = (
+        ["annotations", "inspect", str(sidecar), "--corpus", str(corpus)]
+        if command == "inspect"
+        else ["corpus", command, str(corpus), "--annotations", str(sidecar)]
+    )
+    for edited in (False, True):
+        if edited:
+            corpus.write_bytes((FIXTURES / "corpus/wsl-three-edited.corpus.jsonl").read_bytes())
+        before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in (corpus, sidecar, path)}
+        result = RUNNER.invoke(app, [*args, "--claims", str(path), "--json"])
+        assert result.exit_code == (1 if edited and command == "validate" else 0), result.output
+        report = json.loads(result.output)
+        if command == "validate":
+            assert {d["ref"] for d in report["diagnostics"] if d["path"] == str(path)} == (
+                {claims[i]["fingerprint"] for i in (1, 4)} if edited else set()
+            )
+        else:
+            rows = (
+                [a for p in report["result"]["passages"] for a in p["annotations"]]
+                if command == "show"
+                else report["result"]["annotations"]
+            )
+            statuses = {a["annotation_id"]: a["review_status"] for a in rows}
+            assert statuses[claims[0]["annotation_id"]] == "open"
+            assert statuses[claims[3]["annotation_id"]] == "withheld"
+            assert statuses[claims[5]["annotation_id"]] == "accepted"
+            if not edited:
+                assert statuses[claims[4]["annotation_id"]] == "accepted"
+            elif command == "show":
+                assert claims[4]["annotation_id"] not in statuses
+            else:
+                assert statuses[claims[4]["annotation_id"]] == "open"
+        assert before == {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in before}
+        assert not list(tmp_path.glob("*.lock"))
+
+
+@pytest.mark.parametrize("command", ["show", "inspect", "validate"])
+@pytest.mark.parametrize("failure", ["missing", "directory", "v1", "v3"])
+def test_claim_view_input_errors(command: str, failure: str, corpus_review: tuple[Path, Path], tmp_path: Path) -> None:
+    corpus, sidecar = corpus_review
+    path = tmp_path / "claims.json"
+    if failure == "directory":
+        path.mkdir()
+    elif failure.startswith("v"):
+        path.write_text(json.dumps({"version": int(failure[1:]), "decisions": []}))
+    args = (
+        ["annotations", "inspect", str(sidecar), "--corpus", str(corpus)]
+        if command == "inspect"
+        else ["corpus", command, str(corpus), "--annotations", str(sidecar)]
+    )
+    before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in (corpus, sidecar) if p.is_file()}
+    if path.is_file():
+        before[path] = (path.read_bytes(), path.stat().st_mtime_ns)
+    result = RUNNER.invoke(app, [*args, "--claims", str(path), "--json"])
+    assert result.exit_code == 3, result.output
+    report = json.loads(result.output)
+    assert report["exit_code"] == 3 and report["result"] is None
+    assert [d["code"] for d in report["diagnostics"]] == [
+        "unsupported_version" if failure.startswith("v") else "unreadable"
+    ]
+    assert before == {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in before}
+    assert not list(tmp_path.glob("*.lock"))
+
+
+@pytest.mark.parametrize("command", ["show", "validate"])
+def test_claim_view_requires_annotations(command: str, corpus_review: tuple[Path, Path]) -> None:
+    corpus, _ = corpus_review
+    result = RUNNER.invoke(app, ["corpus", command, str(corpus), "--claims", "missing.json", "--json"])
+    assert result.exit_code == 2, result.output
+    assert [d["code"] for d in json.loads(result.output)["diagnostics"]] == ["usage_error"]
+
+
+@pytest.mark.parametrize("command", ["validate", "inspect"])
+def test_claim_join_preserves_invalid_corpus_diagnostics(command: str, tmp_path: Path) -> None:
+    corpus = FIXTURES / "corpus/invalid/hash.jsonl"
+    sidecar = FIXTURES / "annotations/wsl.annotations.jsonl"
+    claims = tmp_path / "claims.json"
+    claims.write_text('{"version":2,"decisions":[]}')
+    args = (
+        ["corpus", "validate", str(corpus), "--annotations", str(sidecar)]
+        if command == "validate"
+        else ["annotations", "inspect", str(sidecar), "--corpus", str(corpus)]
+    )
+    baseline = RUNNER.invoke(app, [*args, "--json"])
+    assert baseline.exit_code == 1
+    assert "hash_mismatch" in baseline.output
+    joined = RUNNER.invoke(app, [*args, "--claims", str(claims), "--json"])
+    assert joined.exit_code == 1, joined.output
+    assert json.loads(joined.output) == json.loads(baseline.output)
+
+
 def test_corpus_list_record_inspect_and_stale(corpus_review: tuple[Path, Path], tmp_path: Path) -> None:
     corpus, sidecar = corpus_review
     result = invoke("list", corpus, sidecar)

@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `corpus show`, `corpus validate` and `annotations inspect` accept `--claims`
+  to join explicit annotation reviews and report stale decisions without writing inputs.
 - PyPI installation and upgrade guidance for the planned v0.3.0 release, with optional annotation extras.
 - `corpus config` reports effective versions, paths, digests and value origins
   without modifying inputs; setup now reports missing flags instead of prompting

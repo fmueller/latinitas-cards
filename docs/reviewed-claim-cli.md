@@ -97,8 +97,31 @@ idempotent. Stale/unmatched decisions must be resolved before further recording.
 Deck sidecars remain version 1; deck commands reject version 2 and corpus mode
 rejects version 1 with `unsupported_version`. Claims keeps its legacy JSON
 objects and diagnostics, not a `CliResult` envelope. Unreadable or malformed
-inputs and invalid batches exit 1; Click usage errors exit 2. Decision-aware
-`--claims` joins in corpus/annotation views are separate work.
+inputs and invalid batches exit 1; Click usage errors exit 2.
+
+Join these decisions into read-only corpus views explicitly:
+
+```sh
+uv run latinitas-cards corpus show corpus.jsonl --annotations annotations.jsonl \
+  --claims corpus.jsonl.claims.json --json
+uv run latinitas-cards annotations inspect annotations.jsonl --corpus corpus.jsonl \
+  --claims corpus.jsonl.claims.json --json
+uv run latinitas-cards corpus validate corpus.jsonl --annotations annotations.jsonl \
+  --claims corpus.jsonl.claims.json --json
+```
+
+Show and inspect add `review_status` (`open`, `accepted`, `withheld`). Current
+withheld proposals remain visible; stale annotations are omitted from show.
+No matching live decision means `open`, never automatic acceptance. Validation
+reports stale decisions with their fingerprint as `ref` and exits 1; inspect
+uses warnings unless `--check` is given. Corpus show/validate require
+`--annotations` when `--claims` is supplied (exit 2 `usage_error`). Inspect uses
+its positional annotation sidecar, not an `--annotations` option.
+These readers emit a single `CliResult` envelope under `--json`: an explicit
+missing/unreadable claims file exits 3 `unreadable`, and v1 or higher versions
+exit 3 `unsupported_version`. They leave input bytes and mtimes unchanged,
+create/take no locks, and never record decisions. Planning/apply safety and
+legacy deck workflows are unchanged.
 
 ## Authored corrections
 
