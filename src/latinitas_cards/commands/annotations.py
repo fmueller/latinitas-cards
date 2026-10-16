@@ -8,6 +8,7 @@ from typing import Annotated, Any
 import typer
 from pydantic import JsonValue
 
+from ..annotation_apply import apply_plan
 from ..annotation_plans import approve_plan, create_plan
 from ..annotation_sidecar import Annotation, Retraction, annotation_id, append_records, resolve_created
 from ..annotation_state import inspect_annotations
@@ -18,6 +19,22 @@ from ..corpus_segmentation import segment_work, tokenize
 from ..corpus_validation import validate_records
 
 app = typer.Typer(help="Produce versioned annotation sidecars.")
+
+
+@app.command()
+def apply(
+    plan: Annotated[Path, typer.Argument()],
+    corpus: Annotated[Path, typer.Option()],
+    sidecar: Annotated[Path, typer.Option()],
+    policy: Annotated[Path | None, typer.Option()] = None,
+    receipt: Annotated[Path | None, typer.Option()] = None,
+    timestamp: Annotated[str | None, typer.Option()] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Atomically append automatic and explicitly receipted planned operations."""
+    run_contract(
+        "annotations apply", json_output, lambda: apply_plan(plan, corpus, sidecar, policy, receipt, timestamp)
+    )
 
 
 @app.command()

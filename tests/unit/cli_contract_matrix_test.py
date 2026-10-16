@@ -13,7 +13,7 @@ from typer.core import TyperGroup
 from typer.main import get_command
 from typer.testing import CliRunner
 
-from latinitas_cards.annotation_plans import AnnotationPlan
+from latinitas_cards.annotation_plans import AnnotationPlan, approve_plan, create_plan
 from latinitas_cards.atomic_io import writer_lock
 from latinitas_cards.cli import app as real_app
 from latinitas_cards.cli_contract import CliResult, Code, ContractError, Diagnostic, run_contract
@@ -136,9 +136,30 @@ def annotation_approve_case(tmp: Path, exit_code: int) -> list[str]:
     ]
 
 
+def annotation_apply_case(tmp: Path, exit_code: int) -> list[str]:
+    corpus = tmp / "corpus.jsonl"
+    corpus.write_bytes((FIXTURES / "valid/ordinal.jsonl").read_bytes())
+    sidecar, plan = tmp / "out.jsonl", tmp / "plan.json"
+    create_plan(FIXTURES.parent / "annotation-plans/add.patch.json", corpus, sidecar, None, plan)
+    args = ["annotations", "apply", str(plan), "--corpus", str(corpus), "--sidecar", str(sidecar)]
+    if exit_code != 2:
+        args += ["--timestamp", "2026-01-01T00:00:00Z"]
+    if exit_code == 3:
+        plan.unlink()
+    if exit_code == 5:
+        receipt = tmp / "receipt.json"
+        model = AnnotationPlan.model_validate_json(plan.read_bytes())
+        approve_plan(plan, [model.operations[0].operation_id], "human:test", "checked", receipt)
+        raw = receipt.read_text().replace("human:test", "agent:test")
+        receipt.write_text(raw)
+        args += ["--receipt", str(receipt)]
+    return args
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
     **{("annotations plan", code): partial(annotation_plan_case, exit_code=code) for code in (0, 1, 3, 4)},
     **{("annotations approve", code): partial(annotation_approve_case, exit_code=code) for code in (0, 3, 4, 5)},
+    **{("annotations apply", code): partial(annotation_apply_case, exit_code=code) for code in (0, 2, 3, 4, 5)},
     ("annotations inspect", 0): lambda _: [
         "annotations",
         "inspect",

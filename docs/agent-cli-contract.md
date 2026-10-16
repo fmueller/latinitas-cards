@@ -46,6 +46,7 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `invalid_input` | 3 | Declared approval input is invalid |
 | `invalid_patch` | 3 | Patch document is invalid |
 | `invalid_plan` | 3 | Plan identity or structure is invalid |
+| `invalid_receipt` | 3 | Receipt structure or plan binding is invalid |
 | `unknown_operation` | 3 | Selected operation is unknown |
 | `invalid_operation` | 3 | Selected operation is invalid |
 | `input_hash` | 1 | Input hash differs from the anchor |
@@ -118,12 +119,28 @@ executable cases together.
 | annotations inspect | 0, 1, 3 |
 | annotations plan | 0, 1, 3, 4 |
 | annotations approve | 0, 3, 4, 5 |
+| annotations apply | 0, 2, 3, 4, 5 |
 | corpus show | 0, 3 |
 | policy validate | 0, 3 |
 
 `annotations approve` requires explicit `--operation` IDs (no approve-all).
 An auto ID is accepted as a no-op selection. Empty/blank `--review` or a malformed
 declared `--actor` exits 3 `invalid_input`, without a receipt. Actors are not authenticated.
+
+`annotations apply PLAN --corpus CORPUS --sidecar SIDECAR [--policy FILE]
+[--receipt RECEIPT] [--timestamp T]` appends automatic and receipted review records
+in plan order. Denied operations warn; unreceipted review IDs remain `pending`.
+The result reports `appended`, `pending`, `denied` and `already_applied`.
+A receipt naming another plan is rejected input (`invalid_receipt`, exit 3),
+not binding drift. Input errors precede drift (4), then actor/policy refusal (5).
+The corpus, sidecar and exact corpus claims locks are held from snapshot reads
+through replacement; contention is `busy` (4), and lock files persist.
+The sidecar must match its base or a line-boundary base plus this plan's records.
+Only new records need a timestamp: patch `created`, then `--timestamp`, then
+`SOURCE_DATE_EPOCH`; reruns neither append nor require a timestamp.
+Apply never records claim decisions. Pending-operation route and complete safety
+fact revalidation is the separately tracked T-119 integration, not supplied by
+the locked transaction alone.
 
 `corpus validate CORPUS [--json]` streams the input without modifying it. Its
 result is `{"counts":{"header":1,"corpus":1,"work":N,"passage":M}}`;

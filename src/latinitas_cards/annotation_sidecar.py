@@ -4,6 +4,7 @@ import json
 import re
 import unicodedata
 from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self
@@ -286,14 +287,16 @@ def append_records(
     records: Iterable[Annotation | Retraction]
     | Callable[[list[Annotation | Retraction]], Iterable[Annotation | Retraction]],
     protected: Iterable[Path],
+    *,
+    locked: bool = False,
 ) -> int:
-    """Select and append while holding the writer lock, including no-op retries."""
+    """Select and append under a writer lock; ``locked`` requires caller ownership."""
     try:
         protected = tuple(protected)
         lock = Path(f"{path.resolve()}.lock")
         reject_aliases(path, [*protected, lock, Path(f"{path}.lock")])
         reject_aliases(lock, protected)
-        with writer_lock(path):
+        with nullcontext() if locked else writer_lock(path):
             reject_aliases(path, [*protected, lock])
             existing: list[SidecarRecord] = (
                 list(read_sidecar(path))
@@ -316,8 +319,13 @@ def append_records(
                     if isinstance(record, Annotation):
                         annotations[record.annotation_id] = record
             if additions or not path.exists():
-                data = "".join(canonical_json(row.model_dump(mode="json")) + "\n" for row in [*existing, *additions])
-                atomic_replace(path, data.encode("utf-8"))
+                prefix = (
+                    path.read_bytes()
+                    if path.exists()
+                    else (canonical_json(existing[0].model_dump(mode="json")) + "\n").encode()
+                )
+                data = "".join(canonical_json(row.model_dump(mode="json")) + "\n" for row in additions).encode()
+                atomic_replace(path, prefix + data)
             return len(additions)
     except OSError as error:
         raise ContractError(Code.UNREADABLE, str(error), path=str(path)) from error

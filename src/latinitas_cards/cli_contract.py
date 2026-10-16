@@ -20,6 +20,7 @@ class Code(StrEnum):
     INVALID_INPUT = "invalid_input"
     INVALID_PATCH = "invalid_patch"
     INVALID_PLAN = "invalid_plan"
+    INVALID_RECEIPT = "invalid_receipt"
     UNKNOWN_OPERATION = "unknown_operation"
     INVALID_OPERATION = "invalid_operation"
     INPUT_HASH = "input_hash"
@@ -88,6 +89,7 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.INVALID_INPUT: DiagnosticCode(3, "Declared approval input is invalid"),
     Code.INVALID_PATCH: DiagnosticCode(3, "Patch document is invalid"),
     Code.INVALID_PLAN: DiagnosticCode(3, "Plan identity or structure is invalid"),
+    Code.INVALID_RECEIPT: DiagnosticCode(3, "Receipt structure or plan binding is invalid"),
     Code.UNKNOWN_OPERATION: DiagnosticCode(3, "Selected operation is unknown"),
     Code.INVALID_OPERATION: DiagnosticCode(3, "Selected operation is invalid"),
     Code.INPUT_HASH: DiagnosticCode(1, "Input hash differs from the anchor"),

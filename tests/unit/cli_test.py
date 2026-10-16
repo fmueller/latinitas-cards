@@ -346,7 +346,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     commands.remove(corpus)
     commands.extend(corpus.commands.values())
     annotations = cast(click.Group, click_app.commands["annotations"])
-    assert set(annotations.commands) == {"segment", "inspect", "plan", "approve"}
+    assert set(annotations.commands) == {"segment", "inspect", "plan", "approve", "apply"}
     commands.remove(annotations)
     commands.extend(annotations.commands.values())
     policy = cast(click.Group, click_app.commands["policy"])

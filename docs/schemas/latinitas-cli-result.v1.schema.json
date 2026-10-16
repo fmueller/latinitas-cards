@@ -5,6 +5,7 @@
         "invalid_input",
         "invalid_patch",
         "invalid_plan",
+        "invalid_receipt",
         "unknown_operation",
         "invalid_operation",
         "input_hash",

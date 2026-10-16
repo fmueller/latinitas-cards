@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `annotations apply` atomically appends planned automatic and reviewed proposals,
+  reports pending reviews, and safely skips records already applied.
 - `annotations plan` classifies patches with whole-patch safety facts, and
   `annotations approve` records explicit operation reviews without changing sidecars.
 - `policy validate FILE [--json]` checks versioned sidecar-write policies,

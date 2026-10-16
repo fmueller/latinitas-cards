@@ -1,13 +1,13 @@
 ---
 id: T-118-apply-planned-annotation-operations-atomically
 title: Apply planned annotation operations atomically with idempotent reruns and busy locks
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#agent-ready-cli-contract
 dependencies:
     - T-117-plan-annotation-patches-against-policy-and-approve
     - T-115-record-corpus-claim-decisions-through-claim
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T11:44:17Z"
 ---
 
 # T-118-apply-planned-annotation-operations-atomically Apply planned annotation operations atomically with idempotent reruns and busy locks
@@ -106,3 +106,91 @@ plus the cross-command actor/invalid matrix; it is not merely a test-only follow
   the matrix notes. Size guard: one module plus one callback and necessary existing
   sidecar/shared I/O integration for the multi-lock transaction. Lock correctness cannot
   be deferred by the former single-module limit.
+
+## Execution evidence (2026-10-16)
+
+- Started at 11:19:16Z after `mise exec -- taskrail validate` and `next --json`
+  selected exactly T-118, with no conflicting active owner. HEAD and fetched
+  origin/main were `b35d523fd4658b00222eaa641e28379edcfe97ee` before start and
+  finalization. Spec SHA-256 remained
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+- Loaded workflow-v3 and autonomous-backlog. The initial IO Delegate factual
+  extraction was not dispatched (`subscription_approval`); no provider changes
+  or equivalent bulk extraction were made. Resumed the same cycle using narrow
+  implementation/review reads, not whole-source reconstruction: loader and plan
+  identity, record derivation/evaluation branches, append locking, timestamps,
+  POSIX lock/replace primitives, callback registration, and claims lock ownership.
+  Spec reads covered the task's sidecar/CLI contracts and relevant fixed
+  identity, files and runtime rules, not the full spec.
+- Strict red/green: initial mixed flow failed because apply was unregistered;
+  implemented module/callback and transaction integration. Record-integrity versus
+  drift regression failed with exit 4, then passed with invalid_plan/3. Reserved
+  lock/manifest output tests failed with successful writes, then rejected/3.
+  Mixed replan initially failed target_inactive; preserved the existing unplanned
+  inactive-target rejection while permitting already-plan-applied records.
+- Lock-removal in-memory mutation: all three held-lock tests plus competing
+  normalizer test failed (4 failures). Disabling the prefix guard caused foreign,
+  non-boundary and segment suffix regressions (3 failures). Restored production
+  code passed. These mutations changed no repository file. Tests cover blocked
+  real claims writer, persistent locks/release on contention, actual edited-source
+  renormalization, header-preserving passage edits/missing passages, replacement
+  failure cleanup, aliases, absent sidecar, timestamp/dedup and directory scope.
+- Dedicated code-simplifier Task loaded its skill and replaced repeated scans
+  with ID lookups; its 144 targeted tests, ruff and mypy passed. Integration caught
+  its exclusion of Retraction IDs: added a failing retraction apply/replan test,
+  restored all planned record IDs, and passed the test. No broad refactor accepted.
+- Separate parallel read-only code-reviewer Tasks loaded their skill and mapped
+  General, Security and Database/filesystem persistence/concurrency guidance.
+  General included Python companions; a separate Python lane was redundant.
+  SQL/framework/ML lanes had no changed implementation. Fresh candidate validator
+  validated SEC-1/SEC-2 and rejected DB-1; no candidate silently omitted.
+
+### Verbatim validated findings and dispositions
+
+- **T118-SEC-1 (fixed):** “A modified plan can change an auto operation’s annotation,
+  recompute its `annotation_id` and `plan_id`, and still pass apply’s integrity checks,
+  allowing a record unrelated to the embedded patch to be appended automatically.”
+  Evidence: original plan identity lines 124–128 and apply lines 130–141.
+  Rehashed value/producer/missing-record regressions all initially succeeded
+  incorrectly (3 failures), then rejected invalid_plan/3 with byte-identical sidecar.
+  Expected add/supersede records now derive from the embedded patch; retractions
+  check patch-controlled fields and the retained target inside the locked snapshot.
+- **T118-SEC-2 (fixed):** “When both conditions are present, apply reports
+  `invalid_receipt` rather than the earlier-priority `invalid_operation` specified
+  in T-118’s recheck order.” Evidence: original apply lines 72–75. Combined-condition
+  regression initially returned invalid_receipt, then passed with invalid_operation
+  and no write. Receipt structure still validates before either semantic check.
+- **DB-1 (rejected candidate):** “Applying a plan to a valid sidecar whose final
+  record has no trailing newline joins the first new record to that record,
+  corrupting the sidecar.” Fresh validation found read_sidecar lines 250–253
+  already reject noncanonical or unterminated lines before writes. No separator
+  insertion or prefix-boundary weakening was made.
+- General: “No concrete task-relevant findings.” Fresh disposition verifier
+  loaded code-reviewer and General/Python/Security guidance, verified both fixes
+  and DB-1 rejection, ran 111 planner/apply tests, and reported “New findings: None.”
+  One review/fix/recheck cycle; no deferred validated findings.
+
+### Gates and real CLI flow
+
+- Final `uv run ruff check` → `uv run mypy` → `uv run pytest -v` passed:
+  2,377 tests, one existing Pydantic serialization warning. `mise run check`
+  independently passed all gates: 373 files formatted, 161 mypy source files,
+  2,377 tests, commit/push/author and mutation policy guard suites. The first full
+  run's registration/matrix failures were fixed by adding the apply callback
+  registration and executable 0/2/3/4/5 matrix; no legacy expectations weakened.
+- Subprocess mixed flow at 11:38:25Z, timestamp 2026-01-02T03:04:05Z:
+  auto appended 1 with one review pending; human:reviewer receipt appended 1;
+  rerun appended 0/already_applied; replan appended nothing. Sidecar SHA-256:
+  - Base: `cb822ae209d8905721a582b3e271582f8da76f9226a1c017ccf167afb617ce4e`
+  - Auto: `32b29ffda2d2a271cbc9de3ea9a50f79b550e712c770b88219bffbee775a8283`
+  - Reviewed/rerun/replan: `fcf222b066850ff4e5c3ed1556f2bbb4093ea2366fc01bafd3bded9bea77a252`
+- Both subprocess determinism runs (UTC/C/seed12/relative and
+  Europe/Zagreb/C.UTF-8/seed98/absolute, different working directories) matched:
+  plan SHA-256 `8e115f3c0c71b9f0b3129c4bed952e47b8733366b134bd903391ec3b344dd3a0`;
+  sidecar SHA-256 `32b29ffda2d2a271cbc9de3ea9a50f79b550e712c770b88219bffbee775a8283`.
+- Scope: sidecar writes/locks only; no claim decisions, CSV, managed/package writes.
+  T-119 retains ownership of pending route/complete safety revalidation inside
+  this transaction. T-127 exporter, T-128 future memory work and T-038 release
+  gate were not changed. Hooks installed under the maintainer identity.
+- 2026-10-16T11:44:08Z: verification pass
+- 2026-10-16T11:44:17Z: Verified 2026-10-16T11:44:08Z after workflow-v3 simplification, independent lanes, fresh candidate/disposition verification and all mandatory gates; T119 remains the safety-revalidation follow-up.

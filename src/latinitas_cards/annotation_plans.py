@@ -138,9 +138,17 @@ class AnnotationReceipt(VersionOne):
     review: str = Field(min_length=1, pattern=r"\S")
 
 
-def load_document(path: Path, model: type[AnnotationPatch] | type[AnnotationPlan]) -> AnnotationPatch | AnnotationPlan:
+def load_document(
+    path: Path, model: type[AnnotationPatch] | type[AnnotationPlan] | type[AnnotationReceipt]
+) -> AnnotationPatch | AnnotationPlan | AnnotationReceipt:
     """Gate the envelope before strict model validation, without normalizing input."""
-    invalid = Code.INVALID_PLAN if model is AnnotationPlan else Code.INVALID_PATCH
+    invalid = (
+        Code.INVALID_RECEIPT
+        if model is AnnotationReceipt
+        else Code.INVALID_PLAN
+        if model is AnnotationPlan
+        else Code.INVALID_PATCH
+    )
     try:
         data = path.read_bytes()
     except OSError as error:
@@ -157,7 +165,7 @@ def load_document(path: Path, model: type[AnnotationPatch] | type[AnnotationPlan
     try:
         raw = json.loads(data, object_pairs_hook=unique)
     except (ValueError, UnicodeError, RecursionError) as error:
-        raise ContractError(invalid if model is AnnotationPlan else Code.INVALID_JSON, str(error)) from error
+        raise ContractError(Code.INVALID_JSON if model is AnnotationPatch else invalid, str(error)) from error
     if model is AnnotationPatch and isinstance(raw, dict):
         if raw.get("format") != "latinitas-annotation-patch":
             raise ContractError(Code.UNSUPPORTED_FORMAT, "Expected latinitas-annotation-patch")
@@ -226,6 +234,7 @@ def evaluate_operations(
     hashes = {key: row.passage_hash for key, row in passages.items()}
     states = annotation_states(hashes, sidecar)
     targets = {row.annotation_id: row for row in sidecar if isinstance(row, Annotation)}
+    planned_annotations = {row.annotation_id for row in sidecar if row.plan is not None}
     raws = [proposed_record(operation, targets) for operation in patch.operations]
     proposals: list[Annotation | Retraction | None] = []
     for raw in raws:
@@ -260,7 +269,9 @@ def evaluate_operations(
                 state = states[target.annotation_id]
                 if state.state != "current":
                     reasons.append(state.state)
-                if state.superseded or state.retracted:
+                if (state.superseded or state.retracted) and (
+                    record is None or record.annotation_id not in planned_annotations
+                ):
                     reasons.append("target_inactive")
         if raw is not None and record is None:
             reasons.append("invalid_value")
