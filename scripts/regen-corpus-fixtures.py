@@ -11,7 +11,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from latinitas_cards.annotation_sidecar import Annotation, annotation_id
+from latinitas_cards.annotation_sidecar import Annotation, annotation_id, append_records
 from latinitas_cards.atomic_io import atomic_replace
 from latinitas_cards.canonical import canonical_json, digest_bytes
 from latinitas_cards.cli_contract import ContractError
@@ -134,7 +134,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--target",
-        choices=["valid", "invalid", "schemas", "usfx", "markup", "vulgate-digest", "cloze-jsonl", "annotations"],
+        choices=[
+            "valid",
+            "invalid",
+            "schemas",
+            "usfx",
+            "markup",
+            "vulgate-digest",
+            "cloze-jsonl",
+            "annotations",
+            "annotation-state",
+        ],
         required=True,
     )
     parser.add_argument("--force", action="store_true")
@@ -147,6 +157,82 @@ def main() -> None:
         }
     elif args.target == "cloze-jsonl":
         outputs = {ROOT / "tests/fixtures/goldens/cloze-jsonl/inputs/corpus.jsonl": ""}
+    elif args.target == "annotation-state":
+        outputs = {}
+        with TemporaryDirectory() as temporary:
+            corpus = Path(temporary) / "corpus.jsonl"
+            sidecar = Path(temporary) / "annotations.jsonl"
+            for name in ("wsl-three", "wsl-three-edited"):
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "latinitas_cards",
+                        "corpus",
+                        "normalize",
+                        str(FIXTURES / f"text/{name}.txt"),
+                        "--adapter",
+                        "text",
+                        "--corpus-id",
+                        "wsl",
+                        "--citation-template",
+                        "wsl:work.section.line",
+                        "--output",
+                        str(corpus),
+                        "--json",
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+                outputs[FIXTURES / f"{name}.corpus.jsonl"] = corpus.read_text(encoding="utf-8")
+                if name != "wsl-three":
+                    continue
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "latinitas_cards",
+                        "annotations",
+                        "segment",
+                        str(corpus),
+                        "--output",
+                        str(sidecar),
+                        "--timestamp",
+                        "2026-01-01T00:00:00Z",
+                        "--json",
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+                segments = [json.loads(line) for line in sidecar.read_text().splitlines()[1:]]
+                morphs = []
+                for segment in segments:
+                    raw = {key: segment[key] for key in ("record", "anchor", "input_hash", "created", "plan")}
+                    raw["anchor"] = {
+                        **raw["anchor"],
+                        "segmentation_id": segment["annotation_id"],
+                        "span": segment["value"]["tokens"][0]["span"],
+                    }
+                    raw.update(
+                        layer="morphology",
+                        value={"tagset": "fixture", "upos": "NOUN"},
+                        producer={"kind": "analyzer", "name": "fixture-morph", "version": "1"},
+                    )
+                    raw["annotation_id"] = annotation_id(raw)
+                    morphs.append(Annotation.model_validate(raw))
+                append_records(sidecar, lambda _, morphs=morphs: morphs, [corpus])
+                outputs[ROOT / "tests/fixtures/annotations/wsl-morphology.jsonl"] = "".join(
+                    canonical_json(row.model_dump(mode="json")) + "\n" for row in morphs
+                )
+                outputs[ROOT / "tests/fixtures/annotations/wsl.annotations.jsonl"] = sidecar.read_text(encoding="utf-8")
+                replacement = {**segments[0], "supersedes": segments[0]["annotation_id"]}
+                replacement["annotation_id"] = annotation_id(replacement)
+                append_records(
+                    sidecar, lambda _, replacement=replacement: [Annotation.model_validate(replacement)], [corpus]
+                )
+                outputs[ROOT / "tests/fixtures/annotations/wsl-superseded.annotations.jsonl"] = sidecar.read_text(
+                    encoding="utf-8"
+                )
     elif args.target == "annotations":
         with TemporaryDirectory() as temporary:
             sidecar = Path(temporary) / "ordinal.annotations.jsonl"

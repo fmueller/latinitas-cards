@@ -102,6 +102,36 @@ def annotations_case(tmp: Path, exit_code: int) -> list[str]:
 
 
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    ("annotations inspect", 0): lambda _: [
+        "annotations",
+        "inspect",
+        str(FIXTURES.parent / "annotations/wsl.annotations.jsonl"),
+        "--corpus",
+        str(FIXTURES / "wsl-three.corpus.jsonl"),
+    ],
+    ("annotations inspect", 1): lambda _: [
+        "annotations",
+        "inspect",
+        str(FIXTURES.parent / "annotations/wsl.annotations.jsonl"),
+        "--corpus",
+        str(FIXTURES / "wsl-three-edited.corpus.jsonl"),
+        "--check",
+    ],
+    ("annotations inspect", 3): lambda tmp: [
+        "annotations",
+        "inspect",
+        str(tmp / "missing.jsonl"),
+        "--corpus",
+        str(FIXTURES / "wsl-three.corpus.jsonl"),
+    ],
+    ("corpus show", 0): lambda _: ["corpus", "show", str(FIXTURES / "wsl-three.corpus.jsonl")],
+    ("corpus show", 3): lambda _: [
+        "corpus",
+        "show",
+        str(FIXTURES / "wsl-three.corpus.jsonl"),
+        "--passage",
+        "wsl:missing",
+    ],
     ("annotations segment", 0): lambda tmp: annotations_case(tmp, 0),
     ("annotations segment", 2): lambda tmp: annotations_case(tmp, 2),
     ("annotations segment", 3): lambda tmp: annotations_case(tmp, 3),

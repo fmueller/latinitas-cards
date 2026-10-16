@@ -342,11 +342,11 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     commands.remove(terminology)
     commands.extend(terminology.commands.values())
     corpus = cast(click.Group, click_app.commands["corpus"])
-    assert set(corpus.commands) == {"normalize", "validate"}
+    assert set(corpus.commands) == {"normalize", "validate", "show"}
     commands.remove(corpus)
     commands.extend(corpus.commands.values())
     annotations = cast(click.Group, click_app.commands["annotations"])
-    assert set(annotations.commands) == {"segment"}
+    assert set(annotations.commands) == {"segment", "inspect"}
     commands.remove(annotations)
     commands.extend(annotations.commands.values())
     assert all(command.callback is not None for command in commands)

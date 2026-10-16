@@ -225,3 +225,101 @@ def test_lone_surrogate_is_a_safe_input_finding(tmp_path: Path, field: str, mach
     else:
         assert "invalid_record" in result.stderr
         assert "internal" not in result.stderr
+
+
+@pytest.mark.parametrize("edited", [False, True])
+def test_validate_annotations(edited: bool) -> None:
+    corpus = FIXTURES / ("wsl-three-edited.corpus.jsonl" if edited else "wsl-three.corpus.jsonl")
+    sidecar = FIXTURES.parent / "annotations/wsl.annotations.jsonl"
+    result = CliRunner().invoke(app, ["corpus", "validate", str(corpus), "--annotations", str(sidecar), "--json"])
+    assert result.exit_code == (1 if edited else 0), result.output
+    report = json.loads(result.stdout)
+    assert report["result"] == {"counts": {"header": 1, "corpus": 1, "work": 1, "passage": 3}}
+    inspected = CliRunner().invoke(
+        app, ["annotations", "inspect", str(sidecar), "--corpus", str(corpus), "--check", "--json"]
+    )
+    assert report["diagnostics"] == json.loads(inspected.stdout)["diagnostics"]
+
+
+def test_show_bounded_selection_and_current_annotations() -> None:
+    corpus = FIXTURES / "wsl-three-edited.corpus.jsonl"
+    sidecar = FIXTURES.parent / "annotations/wsl.annotations.jsonl"
+    args = ["corpus", "show", str(corpus), "--annotations", str(sidecar), "--json"]
+    shown = CliRunner().invoke(app, args)
+    assert shown.exit_code == 0, shown.output
+    result = json.loads(shown.stdout)["result"]
+    assert result["truncated"] is False
+    assert [row["passage_id"] for row in result["passages"]] == [f"wsl:poem.1.{i}" for i in (1, 2, 3)]
+    assert [row["text"] for row in result["passages"]] == [
+        "Arma virumque cano.",
+        "Mater filiam amat.",
+        "Puer aquam portat.",
+    ]
+    assert [len(row["annotations"]) for row in result["passages"]] == [2, 0, 2]
+    assert set(result["passages"][0]) == {"passage_id", "citation", "text", "annotations"}
+    assert all(
+        set(row) == {"annotation_id", "layer", "value", "producer"} for row in result["passages"][0]["annotations"]
+    )
+    for limit in (1, 2, 3, 20, 1000):
+        limited = CliRunner().invoke(app, [*args, "--limit", str(limit)])
+        view = json.loads(limited.stdout)["result"]
+        assert limited.exit_code == 0
+        assert view == {"passages": result["passages"][:limit], "truncated": limit < 3}
+    selected = CliRunner().invoke(
+        app, [*args, "--passage", "wsl:poem.1.3", "--passage", "wsl:poem.1.1", "--passage", "wsl:poem.1.3"]
+    )
+    assert json.loads(selected.stdout)["result"] == {
+        "passages": [result["passages"][i] for i in (0, 2)],
+        "truncated": False,
+    }
+    unknown = CliRunner().invoke(app, [*args, "--limit", "1", "--passage", "wsl:poem.1.1", "--passage", "wsl:missing"])
+    assert unknown.exit_code == 3
+    assert json.loads(unknown.stdout)["diagnostics"] == [
+        {
+            "code": "unknown_passage",
+            "severity": "error",
+            "message": "Unknown passage: wsl:missing",
+            "path": str(corpus),
+            "ref": "wsl:missing",
+            "item": None,
+        }
+    ]
+    for limit in (0, 1001):
+        rejected = CliRunner().invoke(app, [*args, "--limit", str(limit)])
+        assert rejected.exit_code == 2 and rejected.stdout == ""
+    plain = CliRunner().invoke(app, ["corpus", "show", str(corpus), "--json"])
+    assert plain.exit_code == 0
+    assert all(row["annotations"] == [] for row in json.loads(plain.stdout)["result"]["passages"])
+
+
+def test_show_default_limit_scans_past_page_for_unknown_ids_and_invalid_tail(tmp_path: Path) -> None:
+    source, corpus = tmp_path / "source.txt", tmp_path / "corpus.jsonl"
+    source.write_text("".join(f"poem.1.{i}\tVersus {i}.\n" for i in range(1, 23)))
+    normalized = CliRunner().invoke(
+        app,
+        [
+            "corpus",
+            "normalize",
+            str(source),
+            "--adapter",
+            "text",
+            "--corpus-id",
+            "wsl",
+            "--citation-template",
+            "wsl:work.section.line",
+            "--output",
+            str(corpus),
+        ],
+    )
+    assert normalized.exit_code == 0, normalized.output
+    args = ["corpus", "show", str(corpus), "--json"]
+    default = CliRunner().invoke(app, args)
+    result = json.loads(default.stdout)["result"]
+    assert default.exit_code == 0 and len(result["passages"]) == 20 and result["truncated"] is True
+    selected = CliRunner().invoke(app, [*args, "--passage", "wsl:poem.1.22", "--limit", "1"])
+    assert selected.exit_code == 0
+    assert json.loads(selected.stdout)["result"]["passages"][0]["text"] == "Versus 22."
+    with corpus.open("a") as stream:
+        stream.write("bad JSON\n")
+    rejected = CliRunner().invoke(app, args)
+    assert rejected.exit_code == 3 and json.loads(rejected.stdout)["result"] is None

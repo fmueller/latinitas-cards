@@ -1,6 +1,7 @@
 """Normalized corpus inspection and normalization commands."""
 
 import re
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Annotated
 
@@ -8,13 +9,15 @@ import typer
 from pydantic import JsonValue, ValidationError
 
 from .. import atomic_io
+from ..annotation_sidecar import Annotation, Retraction, read_sidecar
+from ..annotation_state import annotation_states, inspect_annotations
 from ..canonical import digest_bytes
 from ..cli_contract import CliResult, Code, ContractError, Diagnostic, run_contract
-from ..corpus_io import write_corpus
+from ..corpus_io import CorpusFinding, read_corpus, write_corpus
 from ..corpus_manifest import Approvals, materialize, read_optional
-from ..corpus_model import CorpusDescriptor, encode_ref_component, passage_hash
+from ..corpus_model import CorpusDescriptor, CorpusPassage, CorpusRecord, encode_ref_component, passage_hash
 from ..corpus_text import build_corpus, parse_template, read_lines
-from ..corpus_validation import validate_corpus
+from ..corpus_validation import validate_corpus, validate_records
 from ..profile_setup import encode_unsafe_controls
 from ..usfx_adapter import build_usfx
 
@@ -38,15 +41,97 @@ def _render_text(result: CliResult) -> None:
 @app.command()
 def validate(
     corpus: Annotated[str, typer.Argument(help="Normalized corpus JSONL file.")],
+    annotations: Annotated[Path | None, typer.Option(help="Check annotation anchors.")] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Emit the versioned result envelope.")] = False,
 ) -> None:
     """Validate record schemas, ordering, identity and canonical passage content."""
 
     def body() -> tuple[JsonValue, list[Diagnostic]]:
+        if annotations is not None:
+            result, diagnostics = inspect_annotations(Path(corpus), annotations, check=True)
+            return {"counts": result["counts"]}, diagnostics
         counts, diagnostics = validate_corpus(corpus)
         return {"counts": dict(counts)}, diagnostics
 
     run_contract("corpus validate", json_output, body, render_text=_render_text)
+
+
+@app.command()
+def show(
+    corpus: Annotated[Path, typer.Argument(help="Normalized corpus JSONL.")],
+    passage: Annotated[list[str] | None, typer.Option("--passage", help="Select IDs in corpus order.")] = None,
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 20,
+    annotations: Annotated[Path | None, typer.Option()] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Show a bounded read-only view with only current, live annotations."""
+
+    def body() -> tuple[JsonValue, list[Diagnostic]]:
+        hashes: dict[str, str] = {}
+        selected: list[CorpusPassage] = []
+        requested = set(passage or [])
+        matched = 0
+
+        def records() -> Iterable[CorpusRecord | CorpusFinding]:
+            nonlocal matched
+            for row in read_corpus(corpus):
+                if isinstance(row, CorpusPassage):
+                    hashes[row.passage_id] = row.passage_hash
+                    if not requested or row.passage_id in requested:
+                        matched += 1
+                        if len(selected) < limit:
+                            selected.append(row)
+                yield row
+
+        _, diagnostics = validate_records(records(), path=str(corpus))
+        if diagnostics:
+            return None, [
+                Diagnostic(code=Code.INVALID_CORPUS, message="Cannot show an invalid corpus", path=str(corpus)),
+                *diagnostics,
+            ]
+        rows = (
+            []
+            if annotations is None
+            else [row for row in read_sidecar(annotations) if isinstance(row, Annotation | Retraction)]
+        )
+        missing = requested - hashes.keys()
+        if missing:
+            return None, [
+                Diagnostic(code=Code.UNKNOWN_PASSAGE, message=f"Unknown passage: {ref}", path=str(corpus), ref=ref)
+                for ref in sorted(missing)
+            ]
+        states = annotation_states(hashes, rows)
+        by_passage: dict[str, list[JsonValue]] = {}
+        for row in rows:
+            state = states[row.annotation_id]
+            if (
+                isinstance(row, Annotation)
+                and state.state == "current"
+                and not state.superseded
+                and not state.retracted
+            ):
+                by_passage.setdefault(row.anchor.passage_id, []).append(
+                    {
+                        "annotation_id": row.annotation_id,
+                        "layer": row.layer,
+                        "value": row.value,
+                        "producer": row.producer.model_dump(mode="json"),
+                    }
+                )
+        return {
+            "passages": [
+                {
+                    "passage_id": row.passage_id,
+                    "citation": row.citation.model_dump(mode="json"),
+                    "text": row.text,
+                    "annotations": by_passage.get(row.passage_id, []),
+                }
+                for row in selected
+            ],
+            "truncated": matched > limit,
+        }, []
+
+    run_contract("corpus show", json_output, body)
 
 
 @app.command()

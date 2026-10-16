@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from latinitas_cards.annotation_sidecar import annotation_id
+from latinitas_cards.annotation_sidecar import Annotation, Retraction, annotation_id, append_records
 from latinitas_cards.atomic_io import writer_lock
 from latinitas_cards.canonical import canonical_json
 from latinitas_cards.cli import app
@@ -245,3 +245,217 @@ def test_invalid_explicit_timestamp_rejected_even_on_noop(tmp_path: Path) -> Non
     result = segment(output, "--timestamp", "2026-01-01")
     assert result.exit_code == 2 and result.diagnostics[0].code == "timestamp_required"
     assert output.read_bytes() == before
+
+
+def test_inspect_provenance_and_check_severity() -> None:
+    sidecar = FIXTURES / "annotations/wsl.annotations.jsonl"
+    corpus = FIXTURES / "corpus/wsl-three-edited.corpus.jsonl"
+    args = ["annotations", "inspect", str(sidecar), "--corpus", str(corpus), "--json"]
+    warning = CliRunner().invoke(app, args)
+    assert warning.exit_code == 0, warning.output
+    checked = CliRunner().invoke(app, [*args, "--check"])
+    assert checked.exit_code == 1, checked.output
+    report, check = json.loads(warning.stdout), json.loads(checked.stdout)
+    assert report["result"] == check["result"]
+    originals = [json.loads(line) for line in sidecar.read_text().splitlines()[1:]]
+    assert [row["annotation_id"] for row in report["result"]["annotations"]] == [
+        row["annotation_id"] for row in originals
+    ]
+    assert [row["state"] for row in report["result"]["annotations"]] == ["current", "stale", "current"] * 2
+    for row, original in zip(report["result"]["annotations"], originals, strict=True):
+        assert row == {
+            key: original[key] for key in ("annotation_id", "layer", "producer", "plan", "created", "input_hash")
+        } | {
+            "passage_id": original["anchor"]["passage_id"],
+            "source_sha256": "sha256:871786f7c9077bb41e8cd000abee5e76b6c1046a5bbc27c9db1f8af3a634fd2b",
+            "state": "stale" if original["anchor"]["passage_id"] == "wsl:poem.1.2" else "current",
+            "superseded": False,
+            "retracted": False,
+        }
+    refs = [originals[i]["annotation_id"] for i in (1, 4)]
+    assert report["diagnostics"] == [
+        {
+            "code": "stale",
+            "severity": "warning",
+            "ref": ref,
+            "path": str(sidecar),
+            "item": None,
+            "message": f"Annotation {ref} on passage wsl:poem.1.2: passage hash differs from the anchor",
+        }
+        for ref in refs
+    ]
+    assert check["diagnostics"] == [{**row, "severity": "error"} for row in report["diagnostics"]]
+    control = CliRunner().invoke(
+        app,
+        [
+            "annotations",
+            "inspect",
+            str(sidecar),
+            "--corpus",
+            str(FIXTURES / "corpus/wsl-three.corpus.jsonl"),
+            "--check",
+            "--json",
+        ],
+    )
+    assert control.exit_code == 0 and json.loads(control.stdout)["diagnostics"] == []
+
+
+@pytest.mark.parametrize(
+    ("source", "code", "line"),
+    [
+        ("wsl-three-edited", "stale", "2"),
+        ("wsl-two", "unmatched", "3"),
+        ("supersede", "orphaned", "1"),
+    ],
+)
+def test_real_anchor_workflow(tmp_path: Path, source: str, code: str, line: str) -> None:
+    corpus, sidecar = tmp_path / "corpus.jsonl", tmp_path / "annotations.jsonl"
+    normalize = [
+        "corpus",
+        "normalize",
+        str(FIXTURES / "corpus/text/wsl-three.txt"),
+        "--adapter",
+        "text",
+        "--citation-template",
+        "wsl:work.section.line",
+        "--corpus-id",
+        "wsl",
+        "--output",
+        str(corpus),
+        "--json",
+    ]
+    assert CliRunner().invoke(app, normalize).exit_code == 0
+    assert corpus.read_bytes() == (FIXTURES / "corpus/wsl-three.corpus.jsonl").read_bytes()
+    assert segment(sidecar, "--timestamp", STAMP, corpus=corpus).exit_code == 0
+    morphs = [
+        Annotation.model_validate_json(row)
+        for row in (FIXTURES / "annotations/wsl-morphology.jsonl").read_text().splitlines()
+    ]
+    append_records(sidecar, lambda _: morphs, [corpus])
+    assert sidecar.read_bytes() == (FIXTURES / "annotations/wsl.annotations.jsonl").read_bytes()
+    if source == "supersede":
+        replacement = Annotation.model_validate_json(
+            (FIXTURES / "annotations/wsl-superseded.annotations.jsonl").read_text().splitlines()[-1]
+        )
+        append_records(sidecar, lambda _: [replacement], [corpus])
+        assert sidecar.read_bytes() == (FIXTURES / "annotations/wsl-superseded.annotations.jsonl").read_bytes()
+    else:
+        normalize[2] = str(FIXTURES / f"corpus/text/{source}.txt")
+        assert CliRunner().invoke(app, normalize).exit_code == 0
+        if code == "stale":
+            assert corpus.read_bytes() == (FIXTURES / "corpus/wsl-three-edited.corpus.jsonl").read_bytes()
+    # Remove writer-created locks so the readers must prove they create none.
+    for lock in tmp_path.glob("*.lock"):
+        lock.unlink()
+    before = {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in tmp_path.iterdir()}
+    args = ["annotations", "inspect", str(sidecar), "--corpus", str(corpus), "--json"]
+    checked = CliRunner().invoke(app, [*args, "--check"])
+    assert checked.exit_code == 1, checked.output
+    report = json.loads(checked.stdout)
+    original = [json.loads(row) for row in sidecar.read_text().splitlines()[1:]]
+    affected = [
+        row
+        for row in original
+        if row["anchor"]["passage_id"] == f"wsl:poem.1.{line}" and (code != "orphaned" or row["layer"] == "morphology")
+    ]
+    messages = {
+        "stale": "passage hash differs from the anchor",
+        "unmatched": "anchored passage is missing",
+        "orphaned": "anchor segmentation is superseded, retracted, or unknown",
+    }
+    assert report["diagnostics"] == [
+        {
+            "code": code,
+            "severity": "error",
+            "path": str(sidecar),
+            "ref": row["annotation_id"],
+            "item": None,
+            "message": f"Annotation {row['annotation_id']} on passage wsl:poem.1.{line}: {messages[code]}",
+        }
+        for row in affected
+    ]
+    affected_ids = {row["annotation_id"] for row in affected}
+    assert all(
+        row["state"] == (code if row["annotation_id"] in affected_ids else "current")
+        for row in report["result"]["annotations"]
+    )
+    warning = CliRunner().invoke(app, args)
+    assert warning.exit_code == 0
+    assert json.loads(warning.stdout)["diagnostics"] == [
+        {**row, "severity": "warning"} for row in report["diagnostics"]
+    ]
+    validated = CliRunner().invoke(app, ["corpus", "validate", str(corpus), "--annotations", str(sidecar), "--json"])
+    assert validated.exit_code == 1
+    assert json.loads(validated.stdout)["diagnostics"] == report["diagnostics"]
+    shown = CliRunner().invoke(app, ["corpus", "show", str(corpus), "--annotations", str(sidecar), "--json"])
+    assert shown.exit_code == 0
+    visible = {row["passage_id"]: row["annotations"] for row in json.loads(shown.stdout)["result"]["passages"]}
+    if code == "orphaned":
+        assert [row["annotation_id"] for row in visible["wsl:poem.1.1"]] == [replacement.annotation_id]
+    elif code == "stale":
+        assert visible["wsl:poem.1.2"] == []
+    else:
+        assert "wsl:poem.1.3" not in visible
+    for number in {"1", "2", "3"} - {line}:
+        assert [row["annotation_id"] for row in visible[f"wsl:poem.1.{number}"]] == [
+            row["annotation_id"] for row in original if row["anchor"]["passage_id"] == f"wsl:poem.1.{number}"
+        ]
+    assert {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in tmp_path.iterdir()} == before
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "code"),
+    [
+        ("format", "other", "unsupported_format"),
+        ("version", 2, "unsupported_version"),
+        ("version", 0, "invalid_sidecar"),
+    ],
+)
+def test_read_commands_reject_sidecars_read_only(tmp_path: Path, field: str, value: str | int, code: str) -> None:
+    corpus = tmp_path / "corpus.jsonl"
+    corpus.write_bytes((FIXTURES / "corpus/wsl-three.corpus.jsonl").read_bytes())
+    sidecar = tmp_path / "annotations.jsonl"
+    sidecar.write_text(
+        canonical_json({"record": "header", "format": "latinitas-annotations", "version": 1, field: value}) + "\n"
+    )
+    before = {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in tmp_path.iterdir()}
+    for args in (
+        ["annotations", "inspect", str(sidecar), "--corpus", str(corpus)],
+        ["corpus", "validate", str(corpus), "--annotations", str(sidecar)],
+        ["corpus", "show", str(corpus), "--annotations", str(sidecar)],
+    ):
+        result = CliRunner().invoke(app, [*args, "--json"])
+        assert result.exit_code == 3, result.output
+        assert json.loads(result.stdout)["diagnostics"][0]["code"] == code
+    assert {path.name: (path.read_bytes(), path.stat().st_mtime_ns) for path in tmp_path.iterdir()} == before
+
+
+def test_inspect_and_show_retractions_and_safe_text(tmp_path: Path) -> None:
+    sidecar = tmp_path / "annotations.jsonl"
+    rows = [json.loads(line) for line in (FIXTURES / "annotations/wsl.annotations.jsonl").read_text().splitlines()]
+    target = rows[1]
+    retract = {key: value for key, value in target.items() if key != "value"}
+    retract.update(record="retraction", retracts=target["annotation_id"])
+    retract["annotation_id"] = annotation_id(retract)
+    sidecar.write_text("".join(canonical_json(row) + "\n" for row in rows))
+    append_records(sidecar, lambda _: [Retraction.model_validate(retract)], [])
+    # A control in provenance is legal JSON but must never reach the terminal literally.
+    rows[5]["created"] = STAMP
+    rows[5]["plan"] = "sha256:" + "a" * 64
+    rows[5]["producer"]["version"] = "fixture\x1b[31m"
+    rows[5]["annotation_id"] = annotation_id(rows[5])
+    sidecar.write_text("".join(canonical_json(row) + "\n" for row in [*rows, retract]))
+    corpus = FIXTURES / "corpus/wsl-three.corpus.jsonl"
+    inspected = CliRunner().invoke(
+        app, ["annotations", "inspect", str(sidecar), "--corpus", str(corpus), "--check", "--json"]
+    )
+    report = json.loads(inspected.stdout)
+    assert inspected.exit_code == 1
+    assert report["result"]["annotations"][0]["retracted"] is True
+    assert report["result"]["annotations"][3]["state"] == "orphaned"
+    assert report["result"]["annotations"][4]["plan"] == "sha256:" + "a" * 64
+    shown = CliRunner().invoke(app, ["corpus", "show", str(corpus), "--annotations", str(sidecar), "--json"])
+    assert shown.exit_code == 0
+    assert json.loads(shown.stdout)["result"]["passages"][0]["annotations"] == []
+    text = CliRunner().invoke(app, ["annotations", "inspect", str(sidecar), "--corpus", str(corpus)])
+    assert text.exit_code == 0 and "\x1b" not in text.output and "\\x1b" in text.output

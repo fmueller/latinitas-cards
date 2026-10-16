@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `annotations inspect` and `corpus validate --annotations` report outdated anchors;
+  `corpus show` provides bounded passage views with only current, live annotations.
 - `annotations segment` writes reproducible sentence/token sidecars, preserves
   existing proposals, and safely skips byte-identical reruns without a timestamp.
 - `cloze` reads normalized JSONL corpora with source citations and optional

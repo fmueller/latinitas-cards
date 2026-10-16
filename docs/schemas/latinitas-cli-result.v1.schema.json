@@ -37,6 +37,7 @@
         "invalid_record",
         "invalid_manifest",
         "invalid_sidecar",
+        "unknown_passage",
         "segmentation_differs",
         "invalid_approval",
         "retired_ref",

@@ -9,6 +9,7 @@ import typer
 from pydantic import JsonValue
 
 from ..annotation_sidecar import Annotation, Retraction, annotation_id, append_records, resolve_created
+from ..annotation_state import inspect_annotations
 from ..cli_contract import Code, Diagnostic, run_contract
 from ..corpus_io import CorpusFinding, read_corpus
 from ..corpus_model import CorpusPassage
@@ -116,3 +117,19 @@ def segment(
         return dict(counts), diagnostics
 
     run_contract("annotations segment", json_output, body)
+
+
+@app.command()
+def inspect(
+    sidecar: Annotated[Path, typer.Argument(help="Annotation sidecar JSONL.")],
+    corpus: Annotated[Path, typer.Option(help="Normalized corpus JSONL.")],
+    check: Annotated[bool, typer.Option()] = False,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """List provenance and anchor states without changing corpus or sidecar."""
+
+    def body() -> tuple[JsonValue, list[Diagnostic]]:
+        result, diagnostics = inspect_annotations(corpus, sidecar, check=check)
+        return {"annotations": result["annotations"]}, diagnostics
+
+    run_contract("annotations inspect", json_output, body)

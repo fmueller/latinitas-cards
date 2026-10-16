@@ -52,6 +52,7 @@ class Code(StrEnum):
     INVALID_RECORD = "invalid_record"
     INVALID_MANIFEST = "invalid_manifest"
     INVALID_SIDECAR = "invalid_sidecar"
+    UNKNOWN_PASSAGE = "unknown_passage"
     SEGMENTATION_DIFFERS = "segmentation_differs"
     INVALID_APPROVAL = "invalid_approval"
     RETIRED_REF = "retired_ref"
@@ -106,6 +107,7 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.INVALID_RECORD: DiagnosticCode(1, "Corpus record schema or order is invalid"),
     Code.INVALID_MANIFEST: DiagnosticCode(3, "Corpus manifest is invalid"),
     Code.INVALID_SIDECAR: DiagnosticCode(3, "Annotation sidecar is invalid"),
+    Code.UNKNOWN_PASSAGE: DiagnosticCode(3, "Requested passage is absent from the corpus"),
     Code.SEGMENTATION_DIFFERS: DiagnosticCode(0, "Current segmentation differs from recomputed value"),
     Code.INVALID_APPROVAL: DiagnosticCode(3, "Approval is invalid or contradictory"),
     Code.RETIRED_REF: DiagnosticCode(3, "Approval names a retired reference"),

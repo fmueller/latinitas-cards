@@ -88,6 +88,7 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `empty_passage` | 3 | Source passage has no canonical text |
 | `invalid_xml` | 3 | Source is not well-formed XML |
 | `unsafe_xml` | 3 | Source XML contains a forbidden declaration |
+| `unknown_passage` | 3 | Requested passage is absent from the corpus |
 
 ## Contract command matrix
 
@@ -101,6 +102,8 @@ executable cases together.
 | corpus validate | 0, 1, 3 |
 | corpus normalize | 0, 1, 2, 3, 4 |
 | annotations segment | 0, 2, 3, 4 |
+| annotations inspect | 0, 1, 3 |
+| corpus show | 0, 3 |
 
 `corpus validate CORPUS [--json]` streams the input without modifying it. Its
 result is `{"counts":{"header":1,"corpus":1,"work":N,"passage":M}}`;
@@ -119,8 +122,27 @@ Findings are retained in file order, including before a later JSON gate failure;
 exit 3 takes precedence over 1. Invalid prerequisites do not generate cascading
 derived-value findings. Diagnostics use the CORPUS argument as given for `path`,
 `passage_id` (or `native_ref` when the ID is unusable) for `ref`, and null `item`.
-Encoded references are compared verbatim, never decoded. Sidecar validation,
-`corpus show` and `corpus config` are not implemented by this command yet.
+Encoded references are compared verbatim, never decoded.
+
+With `--annotations SIDECAR`, validation also reports anchor findings in sidecar
+order: `stale`, `orphaned`, `unmatched` (1). `ref` is the annotation ID, `path`
+is SIDECAR, and the message names its passage. Unsupported sidecar formats or
+versions and invalid sidecar records exit 3; no lock is taken or created.
+
+`annotations inspect SIDECAR --corpus CORPUS [--check] [--json]` lists provenance
+and lifecycle flags in sidecar order. Anchor findings are warnings (0) unless
+`--check` promotes them to errors (1). Both modes report identical states.
+
+`corpus show CORPUS [--passage ID]... [--limit N] [--annotations SIDECAR] [--json]`
+returns `{"passages":[{"passage_id","citation","text","annotations"}],"truncated":bool}`.
+Each annotation has `annotation_id`, `layer`, `value`, `producer`; only current,
+non-superseded, non-retracted proposals are visible. Retraction events are not
+proposals. IDs select in corpus order, with duplicates collapsed. The default
+limit is 20, maximum 1000; 0 and 1001 are Click usage errors (2, no envelope).
+`truncated` means more matching passages exist, not merely more corpus passages.
+Unknown requested IDs exit 3 (`unknown_passage`), even beyond the selected page.
+All three readers leave bytes and mtimes unchanged and create no locks.
+`corpus config` and claim joins are not implemented here.
 
 `corpus normalize` accepts plain text or structural USFX and returns `{"review_items":[]}` on success.
 Unresolved ordinal assignments return `review_required` (1) with items containing
