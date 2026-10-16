@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T07:53:02Z"
+updated_at: "2026-10-16T08:11:54Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-111-verify-full-clementine-vulgate-normalization: Verify full Clementine Vulgate normalization against an independent oracle'
-last_verification_result: pass for T-110-preserve-supported-usfx-markup-and-notes-and at 2026-10-16T07:48:17Z
+next_action: 'Start task T-112-route-legacy-vulgate-commands-through-the-adapter: Route legacy Vulgate commands through the adapter and add cloze jsonl corpora'
+last_verification_result: pass for T-111-verify-full-clementine-vulgate-normalization at 2026-10-16T08:11:46Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-110-preserve-supported-usfx-markup-and-notes-and at 2026-10-16T07:48:17Z
+- pass for T-111-verify-full-clementine-vulgate-normalization at 2026-10-16T08:11:46Z
 
 ## Next Action
 
-- Start task T-111-verify-full-clementine-vulgate-normalization: Verify full Clementine Vulgate normalization against an independent oracle
+- Start task T-112-route-legacy-vulgate-commands-through-the-adapter: Route legacy Vulgate commands through the adapter and add cloze jsonl corpora
 
 ## Relevant Artifacts
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 17
+- todo: 16
 - in_progress: 0
-- completed: 110
+- completed: 111
 - blocked: 1
 - cancelled: 0

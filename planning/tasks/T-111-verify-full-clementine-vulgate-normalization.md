@@ -1,12 +1,12 @@
 ---
 id: T-111-verify-full-clementine-vulgate-normalization
 title: Verify full Clementine Vulgate normalization against an independent oracle
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#usfx-normalization
 dependencies:
     - T-110-preserve-supported-usfx-markup-and-notes-and
-updated_at: "2026-10-14T05:42:59Z"
+updated_at: "2026-10-16T08:11:54Z"
 ---
 
 # T-111-verify-full-clementine-vulgate-normalization Verify full Clementine Vulgate normalization against an independent oracle
@@ -71,3 +71,54 @@ defect in the reader, which is then fixed here with a focused regression fixture
   regression fixture in `tests/fixtures/corpus/usfx/` and keep the oracle unchanged.
 - Size guard: one test module, one digest file and the mutation-config assertions. File a
   follow-up rather than widen.
+
+## Execution Evidence
+
+- Accepted base: `origin/main` at `7a22673d4864f751bc2a1a51e613fa1b7e27dc49`;
+  v0.3.0 spec SHA-256 remained
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+  Validation and selector confirmed this task with no conflicting owner before start
+  at 2026-10-16T07:58:14Z.
+- Explicitly authorized size-guard exception: add the missing `vulgate-digest`
+  target to the existing fixture generator. The prescribed capture command rejected
+  that choice on the accepted base, so this small extension is necessary to follow
+  the Implementation Notes. Existing symlink/overwrite preflight and atomic output
+  conventions are preserved. No acceptance, spec, priority, dependency or gate changed.
+- Strict TDD: the new module initially failed twice: the five-verse generator test
+  raised argparse `SystemExit: 2` for the missing target; full acceptance passed the
+  regex/count/literal checks but failed on the absent digest. After implementation,
+  the generator regression passed; the prescribed regeneration command captured the
+  digest; both module tests passed. Generator regression uses only the small Genesis
+  fixture, not a second full-corpus normalization.
+- Output: 24,905,456 bytes, 35,809 passages, SHA-256
+  `cefcaa8f977df72acd71b76ace7a45ccbe8e81105dd56a86815964e531e0927d`.
+  Initial recorded normalization: 4.621132505 seconds (15-second CI budget,
+  60-second asserted ceiling). Source hash before/after matches the pinned value;
+  73 works, 1,334 chapters, independent IDs/per-book counts, GEN/REV literals,
+  first-five passage golden and full output validation pass. Adapter unchanged.
+- Initial exact ruff/mypy/pytest chain passed: 1,431 tests, one existing Pydantic
+  warning from the float-rejection test. Mutation environment probe skipped both
+  module tests; existing `data/` copy configuration was asserted, not changed.
+- Dedicated code-simplifier Task loaded the personal skill: no useful simplification;
+  scoped ruff and both tests passed. Separate parallel read-only code-reviewer Tasks
+  loaded General (ECC code-reviewer/common guidance), Python (ECC python-reviewer
+  and python-patterns), and Security (ECC security-reviewer/security-review guidance).
+  Security covers fixture-write safety; database/framework lanes do not apply.
+- Every lane reported verbatim: "No concrete task-relevant findings." Fresh
+  candidate-validation Task loaded code-reviewer, inspected the actual diff and
+  confirmed the conclusion; no candidate IDs, rejections, deduplication or deferred
+  findings. Focused tests, ruff and mypy passed in validation. No finding fixes needed.
+  One review/disposition cycle; fresh code-reviewer disposition verification confirmed
+  no unresolved or new task-relevant findings after inspecting final gate logs.
+- Final exact `uv run ruff check`, `uv run mypy`, `uv run pytest -v` chain passed:
+  140 source files type-checked, 1,431 tests passed in 91.42 seconds. `mise run check`
+  passed formatting, ruff, mypy, all 1,431 tests in 84.65 seconds, and commit-message,
+  push-message, author, mutation-results and mutation-configuration guards. Both full
+  runs reported only the existing float-rejection Pydantic warning. Taskrail verify
+  passed at 2026-10-16T08:11:46Z; complete at 2026-10-16T08:11:54Z. State validates;
+  observed next selector is T-112 (not started in this cycle).
+- Scope exclusions preserved: T-112 owns legacy integration; T-127 owns schema
+  exporter repair; future v0.8.0 T-128 remains unstarted with its prior disposition,
+  not implemented or reopened here. No follow-up needed for this task.
+- 2026-10-16T08:11:46Z: verification pass
+- 2026-10-16T08:11:54Z: Verified 2026-10-16T08:11:46Z after exact ruff/mypy/pytest and mise run check passed; independent General/Python/Security, fresh candidate and disposition checks found no concrete issues. Source and spec unchanged; authorized prescribed digest generator exception documented.

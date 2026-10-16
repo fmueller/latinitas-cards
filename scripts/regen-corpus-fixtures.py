@@ -3,6 +3,7 @@
 
 import argparse
 import copy
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -127,7 +128,9 @@ def invalid_files() -> dict[str, str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", choices=["valid", "invalid", "schemas", "usfx", "markup"], required=True)
+    parser.add_argument(
+        "--target", choices=["valid", "invalid", "schemas", "usfx", "markup", "vulgate-digest"], required=True
+    )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     if args.target == "schemas":
@@ -136,6 +139,8 @@ def main() -> None:
             for name, model in SCHEMAS.items()
             if name.startswith("latinitas-corpus")
         }
+    elif args.target == "vulgate-digest":
+        outputs = {FIXTURES / "usfx/vulgate.digest.json": ""}
     elif args.target == "markup":
         outputs = {}
         cases = {}
@@ -169,7 +174,29 @@ def main() -> None:
             parser.error(f"Refusing to overwrite {path}; use --force")
     for path, data in outputs.items():
         path.parent.mkdir(parents=True, exist_ok=True)
-        if args.target == "valid":
+        if args.target == "vulgate-digest":
+            source = ROOT / "data/lat-clementine.usfx.xml"
+            descriptor = CorpusDescriptor.model_validate_json(
+                (ROOT / "data/lat-clementine.descriptor.json").read_bytes()
+            )
+            records = build_usfx(source, "vulgata-clementina", "la", descriptor)
+            raw = "".join(
+                canonical_json(record.model_dump(mode="json", by_alias=True)) + "\n" for record in records
+            ).encode("utf-8")
+            data = (
+                json.dumps(
+                    {
+                        "sha256": hashlib.sha256(raw).hexdigest(),
+                        "bytes": len(raw),
+                        "passages": sum(record.record == "passage" for record in records),
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n"
+            )
+            atomic_replace(path, data.encode("utf-8"))
+        elif args.target == "valid":
             write_corpus(path, valid_records(path.stem), [])
         elif args.target == "usfx" and path.suffix == ".jsonl":
             descriptor = CorpusDescriptor.model_validate_json(
