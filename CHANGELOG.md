@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `annotations apply` rejects output and output-lock aliases to reserved writer
+  locks before creating files or reporting a held lock as busy.
 - Corpus claim readers retain live accepted or withheld reviews regardless of where
   stale copied bindings appear, while still ignoring genuine duplicate live reviews.
 - `corpus show`, `corpus validate` and `annotations inspect --claims` report

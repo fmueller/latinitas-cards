@@ -109,13 +109,16 @@ def apply_plan(
     claims = Path(f"{corpus}.claims.json")
     targets = [corpus, sidecar, claims]
     locks = [Path(f"{path.resolve()}.lock") for path in (corpus, sidecar)] + [Path(f"{claims}.lock")]
-    protected = [plan_path, corpus, claims, corpus.with_suffix(".manifest.json")]
+    manifest = corpus.with_suffix(".manifest.json")
+    protected = [plan_path, corpus, claims, manifest, Path(f"{manifest}.lock")]
     protected.extend(path for path in (policy_path, receipt_path) if path is not None)
-    reject_aliases(sidecar, [*protected, *locks])
+    reject_aliases(sidecar, [*protected, *locks, Path(f"{corpus}.lock")])
     for index, lock in enumerate(locks):
         reject_aliases(lock, [*protected, sidecar, *locks[:index]])
+        if index:
+            reject_aliases(lock, [Path(f"{corpus}.lock")])
     with writer_locks(targets, lock_paths=locks):
-        reject_aliases(sidecar, [*protected, *locks])
+        reject_aliases(sidecar, [*protected, *locks, Path(f"{corpus}.lock")])
         rows = list(read_corpus(corpus))
         _, findings = validate_records(iter(rows), path=str(corpus))
         if findings:

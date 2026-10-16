@@ -1,11 +1,11 @@
 ---
 id: T-133-reject-annotation-apply-aliases-to-reserved-writer
 title: Reject annotation apply aliases to reserved writer locks
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#sidecar-annotation-model
 dependencies: []
-updated_at: "2026-10-16T19:37:41Z"
+updated_at: "2026-10-16T20:07:57Z"
 ---
 
 # T-133-reject-annotation-apply-aliases-to-reserved-writer Reject annotation apply aliases to reserved writer locks
@@ -141,3 +141,134 @@ this standalone high-priority task records the new counterexample. T-113's
 general writer requirement overlaps; T-119's policy revalidation is unaffected.
 T-128 concerns future dense-markup retention, not alias protection. No task
 dependency or follow-up to T-124, release gate or spec change is requested.
+
+## Workflow-v3 execution audit
+
+### 1. Understand and establish ownership
+
+- Fetched origin/main before writes: HEAD and origin/main both
+  `86a833f4c6f3ec8f2b32102b9c9449108703a146`, containing tested revision
+  `a542fd09105b551b2f73199c85b1d0c1518e57f2`. No source-local transfer.
+- Spec SHA256 matched
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+  `mise exec -- taskrail validate` returned `state valid`; next --json
+  selected exactly this high-priority todo, with zero active tasks.
+- Started only this task through `mise exec -- taskrail start`.
+- Source-owner inspection covered apply's preflight and append, atomic_io's
+  alias/locking APIs, normalizer's default manifest/corpus locks, and claims'
+  exact logical lock spelling. Production changes stay in annotation_apply.py.
+  The claims lock must not follow the claims DATA symlink. The corpus lock
+  continues to follow corpus DATA; its separate logical spelling is reserved,
+  not an additional acquired lock. No lock redesign or custom manifest search.
+
+### 2. Public strict TDD
+
+- Added `test_apply_reserved_writer_alias` using the public Typer CLI, real
+  filesystem links and POSIX flock, independent of the round-4 harness.
+- Before production edits, ran
+  `uv run pytest tests/unit/annotation_apply_test.py -k reserved_writer_alias -q`:
+  **14 failed, 38 passed, 4 skipped, 58 deselected**. Failures were precisely
+  manifest/logical-corpus output hardlinks and output-lock symlink, hardlink,
+  chain, directory, absent-symlink and absent-chain aliases. Existing output
+  hardlinks returned 0; held output-lock aliases returned 4; absent aliases
+  returned 0. Both held and released calls execute before result assertions.
+- An initial test-harness iteration incorrectly derived the held logical lock
+  with writer_lock, which resolves DATA symlinks; corrected to flock the exact
+  reserved path before recording the decisive RED above. No product fix masked
+  that harness correction.
+- Minimal implementation adds the default manifest lock to protected inputs,
+  and checks sidecar plus non-corpus acquired locks against the logical corpus
+  lock. Existing checks cover resolved corpus and exact logical claims locks.
+  All preflight checks run before any writer lock can be created or held.
+- GREEN: `uv run pytest tests/unit/annotation_apply_test.py -q` returned
+  **110 passed, 4 skipped**. Four skips are impossible derived output-lock
+  direct spellings; direct output aliases remain covered.
+
+### Public outcome matrix and controls
+
+| Scenario | Before | After |
+| --- | --- | --- |
+| Existing output hardlink to manifest/logical corpus lock | 0, append | 3/alias, no write |
+| Existing output-lock link to those locks, held | 4/busy | 3/alias |
+| Same output-lock links released | 0, append | 3/alias |
+| Absent output-lock symlink/chain to those locks | 0, creates reserved lock | 3/alias, still absent |
+| Direct/symlink/chained/directory output aliases | already rejected | 3/alias |
+| Resolved corpus and exact logical claims aliases | already rejected | 3/alias |
+| Ordinary partial apply/receipt/retry/replan/no-op | existing controls | pass unchanged |
+| Policy/actor/denial/binding and busy controls | existing controls | pass unchanged |
+
+- Each new case snapshots all existing top-level file bytes, asserts the same
+  file set and bytes after rejection, and checks reserved inode preservation
+  or absence. Corpus and claims DATA are symlinked, independently exercising
+  logical/resolved paths. Held and released aliases both require 3/alias.
+- Additional hardlink/manifest control: real `corpus normalize` returns 4
+  before and after rejected apply while the exact reserved lock is held, then
+  0 after release. The existing exact logical claims-lock test remains green;
+  it returns 4/busy for ordinary apply with symlinked claims DATA and creates
+  no resolved-DATA claims lock. Existing per-lock exclusion/release tests pass.
+- No held reserved inode detachment, exclusion bypass or concurrent data
+  corruption is claimed. The defect is reserved-alias acceptance/creation.
+
+### 3–4. Checks and dedicated simplifier
+
+- Exact sequential chain: `uv run ruff check` → `uv run mypy` →
+  `uv run pytest -v`: **All checks passed!**, **Success: no issues found in
+  169 source files**, **2580 passed, 4 skipped, 1 warning** (186.66 seconds).
+- `mise run check`: exit 0, including format check, same full suite, and all
+  commit/push/author/mutation/distribution/publish-guard synthetic checks.
+  Suite runs were sequential, not concurrent. One existing Pydantic serializer
+  warning; no test failures or suppressed checks.
+- Dedicated Task loaded personal `code-simplifier`, inspected task-local diff
+  and reported no changes: separate logical/resolved checks preserve error
+  precedence; explicit evidence matrix should not be weakened. Targeted Ruff
+  format/lint and diff-whitespace checks passed. No suggestions rejected.
+
+### 5–6. Independent lanes, candidate validation, dispositions
+
+- Separate parallel read-only Tasks each loaded `code-reviewer` and the
+  reviewer-index mapping. General loaded ECC code-reviewer and common rules
+  (also Python guidance); Python independently loaded python-reviewer and
+  python-patterns; Security loaded security-reviewer and security-review;
+  Database/POSIX persistence loaded database-reviewer, postgres-patterns and
+  database-migrations, applying only relevant filesystem locking invariants.
+- Lane rationale: General mandatory; Python changed language; Security for
+  user-controlled filesystem aliases; Database for persistence/concurrency.
+  Three specialists meet the default budget. Framework, other-language and
+  ML/RAG/healthcare/network lanes omitted because no such behavior changes.
+- Every lane's verbatim conclusion: **“No concrete task-relevant findings.”**
+  Reviewers read actual diff and relevant callers/helpers/tests; they did not
+  duplicate suites while mise check was running. Runtime results were supplied
+  rather than independently rerun by those lanes.
+- Fresh read-only candidate-validation Task loaded `code-reviewer`, checked
+  the empty candidate set against code/acceptance, and returned:
+  **“Candidate validation: no contradiction found.”** No validated/rejected
+  candidate IDs, deduplications, deferred findings or finding-fix TDD needed.
+- Review cycle count: one. No additional adversarial round was launched.
+
+### 7–8. Final gates and delivery
+
+- Final exact Ruff → mypy → pytest chain passed again: **2580 passed,
+  4 skipped, 1 warning** (180.79 seconds), followed sequentially by a second
+  successful `mise run check`, including full suite and all policy guards.
+- A fresh read-only Task loaded `code-reviewer` disposition-verification mode,
+  inspected final diff, audit, acceptance and related contracts and returned:
+  **“Disposition-verification verdict: clean.”** It found no unresolved,
+  newly introduced or deferred task-relevant findings. It did not rerun suites;
+  runtime evidence came from the executed final gates above.
+- No taskrail verify/complete ran before these gates. Lifecycle and delivery
+  results follow below; the final remote commit is reported in the thread.
+- Unreleased changelog only; v0.3.0 candidate not recut. Segmentation and
+  claims production modules untouched, with their tests retained in full gate.
+  T-038 stays blocked; T-128 stays unstarted. No second task or follow-up
+  created, no spec/policy/release/infra changes. Overseer owns the final round
+  and must stop if it is not clean; this task does not authorize another loop.
+- `mise exec -- taskrail verify --result pass` and `complete` succeeded at
+  **2026-10-16T20:07:57Z**, followed by `validate`: **state valid**.
+  Status: **131 done, 0 active, 1 blocked, 1 todo**. Observed next --json:
+  **no active-spec eligible task**; T-128 is skipped as off-spec, not started.
+- Pre-delivery refetch still found origin/main at the accepted base; spec pin
+  remained unchanged. Hooks installed with `mise exec -- lefthook install`;
+  git identity verified as Felix Müller. Delivery is a focused non-force push
+  to origin/main; exact commit and post-push containment are in the callback.
+- 2026-10-16T20:07:57Z: verification pass
+- 2026-10-16T20:07:57Z: Completed one workflow-v3 cycle after final checks and clean independent disposition verification; no next task started.

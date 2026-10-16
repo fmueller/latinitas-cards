@@ -1,5 +1,6 @@
 """Atomic planned annotation application through the CLI."""
 
+import fcntl
 import json
 import os
 import select
@@ -326,6 +327,100 @@ def test_subprocess_path_environment_determinism(tmp_path: Path) -> None:
         outputs.append((output.read_bytes(), sidecar.read_bytes()))
     assert outputs[0] == outputs[1]
     assert str(tmp_path).encode() not in outputs[0][0]
+
+
+@pytest.mark.parametrize("reserved", ["manifest", "logical-corpus", "resolved-corpus", "logical-claims"])
+@pytest.mark.parametrize("location", ["output", "output-lock"])
+@pytest.mark.parametrize("kind", ["direct", "symlink", "hardlink", "chain", "directory", "absent", "absent-chain"])
+def test_apply_reserved_writer_alias(tmp_path: Path, reserved: str, location: str, kind: str) -> None:
+    if location == "output-lock" and kind == "direct":
+        pytest.skip("Output-lock spelling is derived from the sidecar")
+    corpus, sidecar, policy, plan = setup_plan(tmp_path)
+    real_corpus = tmp_path / "real.jsonl"
+    corpus.rename(real_corpus)
+    corpus.symlink_to(real_corpus)
+    claims = Path(f"{corpus}.claims.json")
+    claims_data = tmp_path / "claims-data.json"
+    claims_data.write_text('{"version":2,"decisions":[]}\n')
+    claims.symlink_to(claims_data)
+    protected = {
+        "manifest": Path(f"{corpus.with_suffix('.manifest.json')}.lock"),
+        "logical-corpus": Path(f"{corpus}.lock"),
+        "resolved-corpus": Path(f"{real_corpus}.lock"),
+        "logical-claims": Path(f"{claims}.lock"),
+    }[reserved]
+    absent = kind.startswith("absent")
+    if not absent:
+        protected.write_bytes(sidecar.read_bytes())
+    if location == "output":
+        sidecar.unlink()
+        alias = sidecar
+    else:
+        alias = Path(f"{sidecar}.lock")
+    if kind == "direct":
+        sidecar = protected
+    elif kind == "hardlink":
+        os.link(protected, alias)
+    elif kind == "directory":
+        directory = tmp_path / "linked-directory"
+        directory.symlink_to(tmp_path, target_is_directory=True)
+        alias.symlink_to(directory / protected.name)
+    elif kind in {"chain", "absent-chain"}:
+        intermediate = tmp_path / "intermediate"
+        intermediate.symlink_to(protected)
+        alias.symlink_to(intermediate)
+    else:
+        alias.symlink_to(protected)
+    before = {p: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
+    inode = protected.stat().st_ino if not absent else None
+    args = (
+        "apply",
+        str(plan),
+        "--corpus",
+        str(corpus),
+        "--sidecar",
+        str(sidecar),
+        "--policy",
+        str(policy),
+        "--timestamp",
+        TIMESTAMP,
+    )
+    if absent:
+        results = [invoke(*args)]
+    else:
+        with protected.open("ab") as held:
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if reserved == "manifest" and location == "output" and kind == "hardlink":
+                source = tmp_path / "latin.txt"
+                source.write_text("Puella rosas portat.\n")
+                normalize = [
+                    "corpus",
+                    "normalize",
+                    str(source),
+                    "--adapter",
+                    "text",
+                    "--corpus-id",
+                    "control",
+                    "--output",
+                    str(corpus),
+                    "--json",
+                ]
+                assert CliRunner().invoke(app, normalize).exit_code == 4
+            results = [invoke(*args)]
+            if reserved == "manifest" and location == "output" and kind == "hardlink":
+                assert CliRunner().invoke(app, normalize).exit_code == 4
+                source.unlink()
+        results.append(invoke(*args))
+    for result in results:
+        assert result["exit_code"] == 3 and result["diagnostics"][0]["code"] == "alias", result
+    assert {p: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()} == before
+    if absent:
+        assert not protected.exists()
+    else:
+        assert protected.stat().st_ino == inode
+    if reserved == "manifest" and location == "output" and kind == "hardlink":
+        source.write_text("Puella rosas portat.\n")
+        assert CliRunner().invoke(app, normalize).exit_code == 0
 
 
 @pytest.mark.parametrize("kind", ["symlink", "hardlink"])
