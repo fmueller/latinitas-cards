@@ -1,7 +1,9 @@
 """Real segment command, retry/timestamp and persistence contracts."""
 
+import fcntl
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -142,6 +144,88 @@ def test_alias_no_write(tmp_path: Path, kind: str) -> None:
     assert result.exit_code == 3 and result.diagnostics[0].code == "alias"
     assert all(path.read_bytes() == data for path, data in before.items())
     assert not output.exists() or output in before
+
+
+@pytest.mark.parametrize("kind", ["direct", "symlink", "hardlink"])
+@pytest.mark.parametrize("reserved", ["corpus", "claims", "symlinked-claims"])
+def test_segment_preserves_held_reserved_lock(tmp_path: Path, reserved: str, kind: str) -> None:
+    def run(*args: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, "-m", "latinitas_cards", *map(str, args), "--json"],
+            cwd=tmp_path,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+
+    source = tmp_path / "source.txt"
+    source.write_text("Mater filium amat.\n")
+    corpus = tmp_path / "corpus.jsonl"
+    normal = ("corpus", "normalize", source, "--adapter", "text", "--corpus-id", "lock-test", "--output", corpus)
+    assert run(*normal).returncode == 0
+    claims = Path(f"{corpus}.claims.json")
+    if reserved == "symlinked-claims":
+        decisions = tmp_path / "external.json"
+        decisions.write_text('{"version":2,"decisions":[]}')
+        claims.symlink_to(decisions)
+    lock = Path(f"{corpus if reserved == 'corpus' else claims}.lock")
+    seed = b'{"format":"latinitas-annotations","record":"header","version":1}\n'
+    lock.write_bytes(seed)
+    output = tmp_path / "alias.jsonl"
+    if kind == "direct":
+        output = lock
+    elif kind == "symlink":
+        output.symlink_to(lock)
+    else:
+        os.link(lock, output)
+    with lock.open("ab") as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        inode = os.fstat(held.fileno()).st_ino
+        if reserved == "corpus":
+            assert run(*normal).returncode == 4
+        result = run("annotations", "segment", corpus, "--output", output, "--timestamp", STAMP)
+        after = lock.read_bytes()
+        assert result.returncode == 3, result.stdout
+        assert json.loads(result.stdout)["diagnostics"][0]["code"] == "alias"
+        assert lock.stat().st_ino == inode and after == seed
+        assert output.stat().st_ino == inode
+        probe = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import fcntl,sys; fcntl.flock(open(sys.argv[1],'ab'),fcntl.LOCK_EX|fcntl.LOCK_NB)",
+                str(lock),
+            ],
+            cwd=tmp_path,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        assert probe.returncode == 1 and "BlockingIOError" in probe.stderr
+        if reserved == "corpus":
+            assert run(*normal).returncode == 4
+        assert (
+            run(
+                "annotations", "segment", corpus, "--output", tmp_path / "normal.jsonl", "--timestamp", STAMP
+            ).returncode
+            == 0
+        )
+        assert lock.stat().st_ino == inode and lock.read_bytes() == seed
+    assert not Path(f"{output.resolve()}.lock").exists()
+    if reserved == "symlinked-claims":
+        assert claims.is_symlink() and decisions.read_text() == '{"version":2,"decisions":[]}'
+        assert not Path(f"{decisions}.lock").exists()
+
+
+def test_segment_rejects_absent_logical_claims_lock(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus.jsonl"
+    corpus.write_bytes(CORPUS.read_bytes())
+    output = Path(f"{corpus}.claims.json.lock")
+    result = segment(output, "--timestamp", STAMP, corpus=corpus)
+    assert result.exit_code == 3 and result.diagnostics[0].code == "alias"
+    assert set(tmp_path.iterdir()) == {corpus}
 
 
 def test_replace_failure_keeps_previous_bytes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

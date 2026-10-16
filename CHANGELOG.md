@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- `annotations segment` rejects outputs aliasing corpus and claims locks, preserving
+  held writer locks and leaving ordinary sidecar output unchanged.
+
 ## [0.3.0] - 2026-10-16
 
 ### Added

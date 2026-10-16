@@ -157,7 +157,16 @@ def segment(
                 yield Annotation.model_validate(raw)
 
         counts["appended"] = append_records(
-            target, additions, [corpus, Path(f"{corpus}.claims.json"), corpus.with_suffix(".manifest.json")]
+            target,
+            additions,
+            [
+                corpus,
+                Path(f"{corpus}.claims.json"),
+                corpus.with_suffix(".manifest.json"),
+                Path(f"{corpus}.lock"),
+                Path(f"{corpus.resolve()}.lock"),
+                Path(f"{corpus}.claims.json.lock"),
+            ],
         )
         return dict(counts), diagnostics
 

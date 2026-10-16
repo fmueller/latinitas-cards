@@ -35,36 +35,51 @@ import json, pathlib, subprocess, tempfile
 
 with tempfile.TemporaryDirectory() as temporary:
     d = pathlib.Path(temporary)
-    (d / 'source.txt').write_text('Mater filium amat.\n')
+    (d / "source.txt").write_text("Mater filium amat.\n")
+
     def run(*args):
-        p = subprocess.run(['latinitas-cards', *args, '--json'], cwd=d,
-            stdin=subprocess.DEVNULL, capture_output=True,
-            text=True, timeout=30)
+        p = subprocess.run(
+            ["latinitas-cards", *args, "--json"],
+            cwd=d,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
         print(p.returncode, p.stdout)
         return json.loads(p.stdout)
-    run('corpus', 'normalize', 'source.txt', '--adapter', 'text',
-        '--corpus-id', 'probe', '--output', 'corpus.jsonl')
-    run('annotations', 'segment', 'corpus.jsonl', '--output', 'sidecar.jsonl',
-        '--timestamp', '2026-01-02T03:04:05Z')
-    report = run('claims', 'list', 'corpus.jsonl',
-                 '--annotations', 'sidecar.jsonl')
-    run('claims', 'record', 'corpus.jsonl', '--annotations', 'sidecar.jsonl',
-        '--fingerprint', report['claims'][0]['fingerprint'],
-        '--status', 'accepted', '--reviewer', 'Tester', '--reason', 'Checked')
+
+    run("corpus", "normalize", "source.txt", "--adapter", "text", "--corpus-id", "probe", "--output", "corpus.jsonl")
+    run("annotations", "segment", "corpus.jsonl", "--output", "sidecar.jsonl", "--timestamp", "2026-01-02T03:04:05Z")
+    report = run("claims", "list", "corpus.jsonl", "--annotations", "sidecar.jsonl")
+    run(
+        "claims",
+        "record",
+        "corpus.jsonl",
+        "--annotations",
+        "sidecar.jsonl",
+        "--fingerprint",
+        report["claims"][0]["fingerprint"],
+        "--status",
+        "accepted",
+        "--reviewer",
+        "Tester",
+        "--reason",
+        "Checked",
+    )
     commands = [
-        ['corpus', 'show', 'corpus.jsonl', '--annotations', 'sidecar.jsonl'],
-        ['corpus', 'validate', 'corpus.jsonl', '--annotations', 'sidecar.jsonl'],
-        ['annotations', 'inspect', 'sidecar.jsonl', '--corpus', 'corpus.jsonl',
-         '--check'],
+        ["corpus", "show", "corpus.jsonl", "--annotations", "sidecar.jsonl"],
+        ["corpus", "validate", "corpus.jsonl", "--annotations", "sidecar.jsonl"],
+        ["annotations", "inspect", "sidecar.jsonl", "--corpus", "corpus.jsonl", "--check"],
     ]
     for command in commands:
-        run(*command, '--claims', 'corpus.jsonl.claims.json')
-    path = d / 'corpus.jsonl.claims.json'
+        run(*command, "--claims", "corpus.jsonl.claims.json")
+    path = d / "corpus.jsonl.claims.json"
     stored = json.loads(path.read_text())
-    stored['decisions'].append(stored['decisions'][0])
+    stored["decisions"].append(stored["decisions"][0])
     path.write_text(json.dumps(stored))
     for command in commands:
-        run(*command, '--claims', 'corpus.jsonl.claims.json')
+        run(*command, "--claims", "corpus.jsonl.claims.json")
 ```
 
 Actual: single-decision controls exit 0/0/0; duplicate input returns 70/70/70,

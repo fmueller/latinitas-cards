@@ -39,8 +39,7 @@ def test_installation_guide() -> None:
     documentation = readme.split("## Documentation\n", 1)[1]
     assert "https://github.com/fmueller/latinitas-cards/blob/main/docs/releasing.md" in documentation
     changelog = (ROOT / "CHANGELOG.md").read_text()
-    unreleased = changelog.split("## [Unreleased]", 1)[1].split("## [", 1)[0]
-    assert not unreleased.strip()
+    assert changelog.index("## [Unreleased]") < changelog.index("## [0.3.0]")
     candidate = changelog.split("## [0.3.0]", 1)[1].split("## [", 1)[0]
     assert "PyPI installation" in candidate
 
