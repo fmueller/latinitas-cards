@@ -3,9 +3,9 @@ id: T-128-bound-dense-usfx-markup-retention-without-dropping
 title: Bound dense USFX markup retention without dropping required source metadata
 status: todo
 priority: medium
-spec_ref: specs/v0.8.0.md#performance-and-accessibility-hardening
+spec_ref: specs/v0.8.0.md#bounded-memory-dense-usfx-markup-retention
 dependencies: []
-updated_at: "2026-10-16T07:43:29Z"
+updated_at: "2026-10-16T07:52:40Z"
 ---
 
 # T-128-bound-dense-usfx-markup-retention-without-dropping Bound dense USFX markup retention without dropping required source metadata
@@ -13,10 +13,17 @@ updated_at: "2026-10-16T07:43:29Z"
 ## Description
 
 Future-hardening follow-up from the T-110 disposition-verification review (S-2),
-under `specs/v0.8.0.md#performance-and-accessibility-hardening`.
-Retaining one Pydantic markup model per
-source element still permits large memory amplification after sparse span
-mapping removed the independent per-character allocation problem.
+under `specs/v0.8.0.md#bounded-memory-dense-usfx-markup-retention`.
+Retaining one Pydantic markup model per source element still permits large
+memory amplification after sparse span mapping removed the independent
+per-character allocation problem. Bound the complete normalization path from
+passage construction through validation, serialization, and publication;
+parser-only allocation reductions do not satisfy this follow-up.
+
+v0.8.0 already owns bounded-memory performance hardening. v0.4.0 introduces
+corpus features and v0.9.0 validates release contracts, so neither is the
+implementation home for this task. Keep v0.3.0 active and unchanged; this task
+must not alter its priorities, dependencies, acceptance, or release gates.
 
 The 2026-10-16 reproduction used 50,000 empty `<w/>` elements and one text
 character: 200,053 source bytes, 50,000 preserved entries, and 51,961,856 bytes
@@ -27,17 +34,39 @@ It is future hardening, not a T-110 completion gate and not a fixed issue.
 
 ## Acceptance
 
-- Establish a memory-bounded compact or spooled retention/materialization path
-  for dense supported and allowed-unknown markup, preserving every required
-  element, attribute and canonical span without changing text or hashes.
-- Add subprocess regression coverage for dense markup and meaningful metadata,
-  not only a large passage with a single entry; record before/after memory
-  evidence and verify the complete observable output.
-- Preserve preflight validation and no target writes on input error. Account
-  for the existing builder, validation and atomic-writer boundaries before
-  changing their interfaces; retain the legacy projection and goldens.
-- Do not add arbitrary element-count limits or amend the pinned spec. If
-  bounding retention requires a contract decision, stop for maintainer review.
+- Before implementation, commit the spec-required benchmark protocol and
+  numerical budgets for absolute peak RSS, baseline-adjusted RSS growth,
+  elapsed time, and temporary disk use on a named reference environment.
+  Record versions, fresh-process baselines, repeated-run variation, units,
+  and fixture sizes. Budgets are prerequisites, not measurements already
+  established by S-2. Reproduce the baseline on the accepted implementation.
+- Meet a documented end-to-end memory envelope through final publication,
+  including builder, validation and canonical-writer peaks. At fixed text
+  and depth, working memory stays within a fixed budget as metadata counts
+  grow; separately account for text, depth, indexes and bounded buffers.
+  Compact/spooled representations are options, not a mandated design;
+  reducing only the per-entry constant does not establish bounded retention.
+- Run fresh-process before/after resource and correctness checks at 5,000,
+  50,000 and 500,000 entries where supported input limits permit. Cover empty
+  elements, meaningful nonempty `w` attributes/text, nested `wj`, flattened
+  notes/headings, and allowed-unknown metadata. Exercise one dense passage,
+  many passages, long sparse-markup text, and the bundled Clementine control.
+  Distinguish fixed-text cardinality from growing meaningful payload lanes.
+- Preserve all required entries, order, attributes, canonical spans and text,
+  note/heading attachments, identity, hashes, accepted aliases, deterministic
+  output, and legacy projection goldens. Check independent counts and literal
+  values/spans alongside canonical-byte comparisons and corpus validation.
+- Document and test supported boundaries on both sides of the 64 MiB input
+  and depth-64 limits, plus declared spool/disk boundaries. Do not silently
+  cap elements, drop metadata, or reject previously valid dense inputs.
+  Any compatibility restriction needs an explicit spec decision and
+  maintainer review; do not amend the pinned active spec.
+- Preserve diagnostics, exit codes, preflight validation and failure/no-write
+  semantics for late malformed/unknown XML, validation failures, exhausted
+  temporary storage, and interruption. Existing destinations remain unchanged
+  on failure and partial output is never published. Verify temporary-file
+  cleanup/recovery, including abrupt interruption, without weakening source
+  immutability or atomic publication.
 - Pass the mandatory ruff/mypy/pytest chain and `mise run check`, dedicated
   simplification, independent General and Security review, finding disposition
   and fresh disposition verification before completing this future task.
@@ -50,13 +79,16 @@ It is future hardening, not a T-110 completion gate and not a fixed issue.
   v0.8.0 heading, superseding its initial active-v0.3.0 blocker interpretation.
   Taskrail v0.4.0 has no cancellation command; no status or dependency was
   hand-edited. This off-spec todo task was never started.
+- Refined future acceptance and repointed through `taskrail task repoint` at
+  2026-10-16T07:52:40Z to the dedicated dense-retention heading. Taskrail
+  validated the reference; the generated STATE change only refreshes its
+  timestamp. This is planning, not implementation verification or completion.
 
 ## Implementation Notes
 
 - Existing task dependencies and priorities were not edited.
-- Future-spec planning is owned by
-  https://ampcode.com/threads/T-01a143a7-979b-72d9-95b6-d8d6cd94b6c2.
-  That thread will refine this draft acceptance and repoint this same task ID
-  to its drafted `bounded-memory-dense-usfx-markup-retention` subheading only
-  after that heading is delivered. Do not allocate a duplicate follow-up.
+- This task preserves the original T-128 ID and S-2 evidence; it supersedes
+  the initial active-release blocker interpretation, not the observed risk.
+  Resource budgets/reference environment and representation design remain
+  explicit future decisions. No implementation is claimed by this refinement.
 - T-127 already owns the registered schema exporter repair; do not duplicate it.
