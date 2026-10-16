@@ -99,13 +99,13 @@ def apply_plan(
         raise ContractError(Code.ALIAS, "Sidecar must not be a lock or manifest", path=str(sidecar))
     claims = Path(f"{corpus}.claims.json")
     targets = [corpus, sidecar, claims]
-    locks = [Path(f"{path.resolve()}.lock") for path in targets]
+    locks = [Path(f"{path.resolve()}.lock") for path in (corpus, sidecar)] + [Path(f"{claims}.lock")]
     protected = [plan_path, corpus, claims, corpus.with_suffix(".manifest.json")]
     protected.extend(path for path in (policy_path, receipt_path) if path is not None)
     reject_aliases(sidecar, [*protected, *locks])
     for index, lock in enumerate(locks):
         reject_aliases(lock, [*protected, sidecar, *locks[:index]])
-    with writer_locks(targets):
+    with writer_locks(targets, lock_paths=locks):
         reject_aliases(sidecar, [*protected, *locks])
         rows = list(read_corpus(corpus))
         _, findings = validate_records(iter(rows), path=str(corpus))

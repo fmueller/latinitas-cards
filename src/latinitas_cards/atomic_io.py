@@ -27,12 +27,20 @@ def reject_aliases(output: Path, protected: Iterable[Path]) -> None:
 
 
 @contextmanager
-def writer_locks(paths: Iterable[Path]) -> Iterator[None]:
-    """Hold all target locks in lexical resolved-path order; never remove lock files."""
+def writer_locks(paths: Iterable[Path], *, lock_paths: Iterable[Path] | None = None) -> Iterator[None]:
+    """Hold persistent locks in resolved target order.
+
+    Explicit lock paths support writers whose lock name follows the logical data
+    path rather than a symlink's data target. They must cover every target.
+    """
     targets = list(paths)
     with _filesystem(targets[0] if targets else Path(".")), ExitStack() as stack:
         resolved = sorted({path.resolve() for path in targets})
-        locks = [Path(f"{path}.lock") for path in resolved]
+        locks = (
+            [Path(f"{path}.lock") for path in resolved]
+            if lock_paths is None
+            else sorted({path.resolve() for path in lock_paths}, key=lambda path: str(path).removesuffix(".lock"))
+        )
         for target in resolved:
             reject_aliases(target, locks)
         for index, lock in enumerate(locks):

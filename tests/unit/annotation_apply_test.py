@@ -743,3 +743,32 @@ def test_renormalized_source_header_drift(tmp_path: Path) -> None:
     result = invoke("apply", str(plan), *args, "--timestamp", TIMESTAMP)
     assert result["exit_code"] == 4 and result["diagnostics"][0]["code"] == "binding_drift", result
     assert sidecar.read_bytes() == before
+
+
+def test_exact_claims_lock_when_decisions_are_symlinked(tmp_path: Path) -> None:
+    import fcntl
+
+    corpus, sidecar, policy, plan = setup_plan(tmp_path)
+    decisions = tmp_path / "external-decisions.json"
+    decisions.write_text('{"version":2,"decisions":[]}')
+    claims = Path(f"{corpus}.claims.json")
+    claims.symlink_to(decisions)
+    before = sidecar.read_bytes()
+    # Match record_corpus_batch's exact lock path, not the resolved data target.
+    with Path(f"{claims}.lock").open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = invoke(
+            "apply",
+            str(plan),
+            "--corpus",
+            str(corpus),
+            "--sidecar",
+            str(sidecar),
+            "--policy",
+            str(policy),
+            "--timestamp",
+            TIMESTAMP,
+        )
+        assert result["exit_code"] == 4 and result["diagnostics"][0]["code"] == "busy", result
+    assert sidecar.read_bytes() == before
+    assert not Path(f"{decisions}.lock").exists()

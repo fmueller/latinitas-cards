@@ -7,7 +7,7 @@ spec_ref: specs/v0.3.0.md#agent-ready-cli-contract
 dependencies:
     - T-117-plan-annotation-patches-against-policy-and-approve
     - T-115-record-corpus-claim-decisions-through-claim
-updated_at: "2026-10-16T11:44:17Z"
+updated_at: "2026-10-16T11:54:42Z"
 ---
 
 # T-118-apply-planned-annotation-operations-atomically Apply planned annotation operations atomically with idempotent reruns and busy locks
@@ -168,11 +168,11 @@ plus the cross-command actor/invalid matrix; it is not merely a test-only follow
 - General: “No concrete task-relevant findings.” Fresh disposition verifier
   loaded code-reviewer and General/Python/Security guidance, verified both fixes
   and DB-1 rejection, ran 111 planner/apply tests, and reported “New findings: None.”
-  One review/fix/recheck cycle; no deferred validated findings.
+  First-cycle verification; no deferred validated findings at that point.
 
-### Gates and real CLI flow
+### First-cycle gates and real CLI flow
 
-- Final `uv run ruff check` → `uv run mypy` → `uv run pytest -v` passed:
+- First-cycle `uv run ruff check` → `uv run mypy` → `uv run pytest -v` passed:
   2,377 tests, one existing Pydantic serialization warning. `mise run check`
   independently passed all gates: 373 files formatted, 161 mypy source files,
   2,377 tests, commit/push/author and mutation policy guard suites. The first full
@@ -194,3 +194,38 @@ plus the cross-command actor/invalid matrix; it is not merely a test-only follow
   gate were not changed. Hooks installed under the maintainer identity.
 - 2026-10-16T11:44:08Z: verification pass
 - 2026-10-16T11:44:17Z: Verified 2026-10-16T11:44:08Z after workflow-v3 simplification, independent lanes, fresh candidate/disposition verification and all mandatory gates; T119 remains the safety-revalidation follow-up.
+
+### Second-cycle exact claims-lock correction
+
+- A final integration source check found the legacy claims writer derives its
+  lock from the logical claims path, whereas writer_locks normally resolves the
+  data symlink first. The initial pre-push was already running and completed;
+  the correction is a second focused commit, not a rewrite of published history.
+- Regression `test_exact_claims_lock_when_decisions_are_symlinked` held the real
+  legacy flock and initially failed: apply returned 0 instead of busy/4. The
+  correction lets the same shared primitive take explicit lock paths; apply
+  supplies resolved corpus/sidecar locks and the exact logical claims lock.
+  Default callers are unchanged. The regression now passes without sidecar
+  changes or a redundant lock beside the symlinked data target.
+- Separate second-cycle General, Security and filesystem persistence/concurrency
+  code-reviewer Tasks loaded their mapped guidance and each reported
+  “No concrete task-relevant findings.” Fresh candidate validation independently
+  validated the discovered defect and its correction, with this explanation:
+  “With the claims data path symlinked, deriving its lock from the resolved target
+  would miss the logical `<corpus>.claims.json.lock` used by `record_corpus_batch`.”
+  Disposition: fixed with the failing/passing regression above. All 93 focused
+  apply/atomic-I/O/claims tests, ruff and mypy passed. This is cycle two of two.
+- Fresh second-cycle disposition verifier loaded General/Python/Security and
+  Database/filesystem guidance and companions, independently ran 93 focused tests,
+  confirmed the exact-lock correction, both prior SEC fixes and DB-1 rejection,
+  and reported “No concrete task-relevant findings.” No unresolved findings remain.
+- Final full `uv run ruff check` → `uv run mypy` → `uv run pytest -v` passed
+  2,378 tests (one existing warning). Final `mise run check` independently passed
+  2,378 tests, formatting, types, and every commit/push/author/mutation guard suite.
+  Spec hash stayed pinned; fetched origin/main matched the initial delivered
+  T-118 commit before the focused correction. Next selector remains T-119;
+  no second task was started and no follow-up task was created.
+- 2026-10-16T11:54:42Z: verification pass
+- T-118 remains completed from 11:44:17Z and was reverified at 11:54:42Z after
+  cycle two. A repeated complete request was refused as non-transitionable
+  because the task was already completed; no status fields were hand-edited.

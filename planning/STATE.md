@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T11:44:17Z"
+updated_at: "2026-10-16T11:55:13Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -9,7 +9,7 @@ status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
 next_action: 'Start task T-119-enforce-destructive-conflicting-and-actor-rules: Enforce destructive, conflicting and actor rules across plan, approve and apply'
-last_verification_result: pass for T-118-apply-planned-annotation-operations-atomically at 2026-10-16T11:44:08Z
+last_verification_result: pass for T-118-apply-planned-annotation-operations-atomically at 2026-10-16T11:54:42Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,7 +35,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-118-apply-planned-annotation-operations-atomically at 2026-10-16T11:44:08Z
+- pass for T-118-apply-planned-annotation-operations-atomically at 2026-10-16T11:54:42Z
 
 ## Next Action
 
