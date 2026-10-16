@@ -1,13 +1,13 @@
 ---
 id: T-121-complete-package-metadata-notices-and-distribution
 title: Complete package metadata, notices and distribution and install check scripts
-status: in_progress
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies:
     - T-109-normalize-usfx-sources-into-the-corpus-model-with
     - T-103-define-the-cli-result-envelope-exit-codes
-updated_at: "2026-10-16T13:03:42Z"
+updated_at: "2026-10-16T13:23:39Z"
 ---
 
 # T-121-complete-package-metadata-notices-and-distribution Complete package metadata, notices and distribution and install check scripts
@@ -240,3 +240,25 @@ Synthetic metadata/content is independently authored, not produced by the inspec
 - T127 exporter remains todo/unfixed; T128 future v0.8 memory remains excluded
   and unstarted; T038 stays blocked/excluded. T122 release workflow, T123 docs
   and T124 version bump retain their own scope. No additional follow-up created.
+- 2026-10-16T13:23:39Z: verification pass
+- 2026-10-16T13:23:39Z: Implementation 81921a6307ae75214328ca47076c0949a9218b84 passed committed exact ruff/mypy/pytest chain at 2026-10-16T13:23:27Z; full mise check and independent review/disposition verification passed. Built and freshly installed wheel/sdist offline after prescribed cache fallback. CI acceptance is maintainer T038, not claimed here.
+
+### 8. Finalize
+
+- Reviewed implementation commit: `81921a6307ae75214328ca47076c0949a9218b84`.
+  Repeated the exact ruff → mypy → pytest chain on this committed candidate:
+  exit 0 at 2026-10-16T13:23:27Z; 2450 passed, one existing warning, 105.29 seconds.
+  No product changes followed these checks; the final commit only records lifecycle
+  and audit state. Commit hooks passed under Felix Müller's identity, no trailers.
+- Rechecked pin, valid state and sole T121 active ownership before verify/complete.
+  `mise exec -- taskrail verify ... --result pass` recorded pass at
+  2026-10-16T13:23:39Z; then `complete` recorded completed at that timestamp.
+  Final `validate`: state valid. No manual STATE.md edits.
+- Final snapshot: 121 done, zero active, one blocked, six todo. Read-only next
+  observed `T-122-add-the-tag-only-trusted-publishing-release`, todo and unstarted.
+  T127/T128 still todo; T038 still blocked. Existing single orphan signal remains
+  unchanged, not repaired or used to bypass selection.
+- Pre-delivery fetch still found `origin/main` at the accepted cumulative base
+  `e83c2f13c39844f6f5ceca83f4985dc3805e442c`, an ancestor of this candidate.
+  Authorized delivery is a non-force push to origin/main; remote containment and
+  the delivered lifecycle/audit revision are reported in the completion callback.
