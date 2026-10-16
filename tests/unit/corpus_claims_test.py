@@ -82,6 +82,20 @@ def test_deck_commands_reject_v2_without_export(tmp_path: Path, family: str, mon
     assert result.exit_code != 0 and "unsupported_version" in result.output, result.output
 
 
+def test_deeply_nested_v1_retains_legacy_diagnostics(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    shutil.copytree(FIXTURES / "goldens/claims-v1/principal-parts", tmp_path, dirs_exist_ok=True)
+    monkeypatch.chdir(tmp_path)
+    payload = '{"version":1,"decisions":' + "[" * 100_000 + "0" + "]" * 100_000 + "}"
+    sidecar = tmp_path / "source.csv.claims.json"
+    sidecar.write_text(payload)
+    result = RUNNER.invoke(app, ["claims", "list", "source.csv", "--profile", "profile.json", "--json"])
+    assert result.exit_code == 1, result.output
+    report = json.loads(result.output)
+    assert set(report) == {"diagnostics"}
+    assert report["diagnostics"][0]["code"] == "invalid"
+    assert sidecar.read_text() == payload
+
+
 def test_corpus_fingerprint_literal() -> None:
     from latinitas_cards.corpus_claims import corpus_claim_fingerprint
 

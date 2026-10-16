@@ -120,7 +120,10 @@ def load_sidecar(path: Path) -> Sidecar:
     if not path.exists():
         return Sidecar()
     payload = path.read_text(encoding="utf-8")
-    raw = json.loads(payload)
+    try:
+        raw = json.loads(payload)
+    except RecursionError as error:
+        raise ValueError("deck decision JSON is nested too deeply") from error
     if isinstance(raw, dict) and "version" in raw and raw["version"] != 1:
         raise UnsupportedVersion("unsupported_version: deck claims require version 1")
     return Sidecar.model_validate_json(payload)

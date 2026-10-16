@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T10:15:00Z"
+updated_at: "2026-10-16T10:22:25Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -9,7 +9,7 @@ status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
 next_action: 'Start task T-116-define-the-versioned-automation-policy-file-and: Define the versioned automation policy file and routing truth table'
-last_verification_result: pass for T-115-record-corpus-claim-decisions-through-claim at 2026-10-16T10:14:14Z
+last_verification_result: pass for T-115-record-corpus-claim-decisions-through-claim at 2026-10-16T10:21:55Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,7 +35,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-115-record-corpus-claim-decisions-through-claim at 2026-10-16T10:14:14Z
+- pass for T-115-record-corpus-claim-decisions-through-claim at 2026-10-16T10:21:55Z
 
 ## Next Action
 

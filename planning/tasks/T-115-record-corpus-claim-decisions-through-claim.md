@@ -8,7 +8,7 @@ dependencies:
     - T-113-define-annotation-sidecar-records-and-the
     - T-102-capture-characterization-goldens-for-legacy
     - T-114-report-stale-orphaned-and-unmatched-annotations-in
-updated_at: "2026-10-16T10:14:54Z"
+updated_at: "2026-10-16T10:21:55Z"
 ---
 
 # T-115-record-corpus-claim-decisions-through-claim Record corpus claim decisions through claim sidecar version 2
@@ -142,6 +142,33 @@ Validated finding, verbatim:
 > Failure/impact: A malformed persisted file can make `claims list`, `record`, or `inspect` fail with an uncaught exception rather than a controlled `invalid` response.
 > Recommended direction: Treat `RecursionError` from decoding/validation as malformed input and test that deeply nested decision JSON returns the legacy diagnostic shape without modifying the file.
 
+### Final compatibility recheck (cycle 2)
+
+- After initial completion, final self-check identified the mirrored deck version-
+  probe regression. A fresh Python code-reviewer candidate validator (python-reviewer
+  plus python-patterns) independently reproduced it and validated SEC-002:
+  "The new deck-side version probe in load_sidecar can raise uncaught RecursionError
+  for deeply nested v1 JSON before Pydantic validation, regressing legacy invalid
+  diagnostics on deck claims commands."
+- Disposition: FIXED. The original direct Pydantic loader returned ValidationError
+  for this input; the new version probe now converts RecursionError to ValueError,
+  preserving legacy invalid diagnostics/exit 1. No v1 serializer, fingerprints,
+  exports, decision model or batch decoder changes. Public CLI regression test:
+  `uv run pytest tests/unit/corpus_claims_test.py -k deeply_nested_v1 -q`
+  failed with empty diagnostic output before the fix, then passed after the fix.
+- Fresh final disposition-verification Task loaded code-reviewer, General/Python/
+  Security guidance and python-patterns/security-review companions. It verified
+  SEC-001 and SEC-002 resolved, independently ran all 25 corpus-claims test cases,
+  and reported "No concrete task-relevant findings." Two total review/fix/recheck
+  cycles; no unresolved/deferred findings or new follow-ups.
+- Superseding final checks: focused corpus/v1 goldens 29 passed (6.36s);
+  `uv run ruff check` passed; `uv run mypy` passed (150 files);
+  `uv run pytest -v`: 1,589 passed, one existing warning, 95.99s;
+  `mise run check`: all gates passed, 1,589 tests in 97.05s.
+- Supplemental Taskrail verification at 2026-10-16T10:21:55Z passed after those
+  gates and fresh review. T-115 remains completed; no second task was started.
+  This supersedes the earlier 1,588-test evidence and one-cycle count above.
+
 ## Implementation Notes
 
 - New `corpus_claims.py` builds corpus claims from the corpus reader `corpus_io` (T-104)
@@ -166,3 +193,4 @@ Validated finding, verbatim:
   `claim_sidecar.py` and `commands/claims.py`; file a follow-up for anything wider.
 - 2026-10-16T10:14:14Z: verification pass
 - 2026-10-16T10:14:54Z: Reviewed corpus claims v2; verification 2026-10-16T10:14:14Z passed after ruff/mypy/1588 tests, mise check and fresh disposition verification. Legacy v1 bytes/exports preserved; SEC-001 fixed; no deferred findings.
+- 2026-10-16T10:21:55Z: verification pass
