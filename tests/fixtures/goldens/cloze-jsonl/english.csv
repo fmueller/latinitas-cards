@@ -1,0 +1,5 @@
+form,CorpusCloze,difficulty_score,difficulty_label,translation_en
+Deus,In principio creavit {{c1::Deus}} cælum et terram. <span style='color:#888'>(poem-a.é.1)</span>,13.70,hard,English 1
+amat,Māter fīlium {{c1::amat}}. <span style='color:#888'>(poem-a.é.2)</span>,13.10,hard,English 2
+cano,arma : virum {{c1::cano}} <span style='color:#888'>(poem-b.é.3)</span>,12.50,hard,English 3
+amo,,,,

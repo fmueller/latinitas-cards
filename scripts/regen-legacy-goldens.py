@@ -82,10 +82,11 @@ def invoke(argv: list[str], work: Path, expected: int = 0) -> bytes:
     return stdout
 
 
-def legacy_case(case: dict[str, Any], *, capture: bool) -> None:
-    with tempfile.TemporaryDirectory(prefix="lg", dir="/tmp") as directory:
-        work = Path(directory)
-        shutil.copytree(LEGACY / "inputs", work, dirs_exist_ok=True)
+def legacy_case(case: dict[str, Any], *, capture: bool, directory: Path | None = None) -> None:
+    directory = directory or LEGACY
+    with tempfile.TemporaryDirectory(prefix="lg", dir="/tmp") as temporary:
+        work = Path(temporary)
+        shutil.copytree(directory / "inputs", work, dirs_exist_ok=True)
         if case.get("apkg"):
             sys.path.insert(0, str(ROOT / "tests/unit"))
             from cli_test import _create_colpkg_with_anki2
@@ -96,7 +97,7 @@ def legacy_case(case: dict[str, Any], *, capture: bool) -> None:
         before = {str(p.relative_to(work)): p.read_bytes() for p in work.rglob("*") if p.is_file()}
         argv = [a.replace("{FIX}", str(work)).replace("{TMP}", str(work)) for a in case["argv"]]
         stdout = invoke(argv, work, case["exit_code"])
-        compare(LEGACY / case["stdout"], stdout, capture)
+        compare(directory / case["stdout"], stdout, capture)
         for output, golden in case["outputs"].items():
             actual = (work / output).read_bytes()
             if case.get("apkg"):
@@ -113,7 +114,7 @@ def legacy_case(case: dict[str, Any], *, capture: bool) -> None:
                         "rows": len(list(csv.reader(io.StringIO(actual.decode())))) - 1,
                     }
                 )
-            compare(LEGACY / golden, actual, capture)
+            compare(directory / golden, actual, capture)
         after = {str(p.relative_to(work)): p.read_bytes() for p in work.rglob("*") if p.is_file()}
         changed = {p for p in before.keys() | after.keys() if before.get(p) != after.get(p)}
         assert changed <= set(case["outputs"]) | set(case["exclusions"]), ("unexpected writes", case["name"], changed)

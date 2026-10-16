@@ -1,0 +1,5 @@
+form,CorpusCloze,difficulty_score,difficulty_label,translation_en,translation_de
+Deus,In principio creavit {{c1::Deus}} cælum et terram. <span style='color:#888'>(poem-a.é.1)</span>,13.70,hard,English 1,Deutsch 1
+amat,Māter fīlium {{c1::amat}}. <span style='color:#888'>(poem-a.é.2)</span>,13.10,hard,English 2,Deutsch 2
+cano,arma : virum {{c1::cano}} <span style='color:#888'>(poem-b.é.3)</span>,12.50,hard,English 3,Deutsch 3
+amo,verbum {{c1::amo}}. titulus <span style='color:#888'>(AAA 1:1)</span><br><br>{{c1::amo}} amo sum. nota verbum est. <span style='color:#888'>(ZZZ 2:1)</span>,5.05,easy,,

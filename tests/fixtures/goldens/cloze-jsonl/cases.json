@@ -1,0 +1,25 @@
+[
+  {
+    "name": "auto",
+    "argv": ["cloze", "--input", "{FIX}/forms.csv", "--output", "{TMP}/out.csv", "--corpus", "{FIX}/corpus.jsonl"],
+    "exit_code": 0, "stdout": "auto.stdout", "outputs": {"out.csv": "auto.csv"}, "exclusions": {}
+  },
+  {
+    "name": "english",
+    "argv": ["cloze", "--input", "{FIX}/forms.csv", "--output", "{TMP}/out.csv", "--corpus", "{FIX}/corpus.jsonl", "--translation-lang", "en"],
+    "exit_code": 0, "stdout": "english.stdout", "outputs": {"out.csv": "english.csv"}, "exclusions": {}
+  },
+  {
+    "name": "include",
+    "argv": ["cloze", "--input", "{FIX}/forms.csv", "--output", "{TMP}/out.csv", "--corpus", "{FIX}/corpus.jsonl", "--parallel-mode", "include"],
+    "exit_code": 0, "stdout": "include.stdout", "outputs": {"out.csv": "include.csv"}, "exclusions": {}
+  },
+  {
+    "name": "mixed",
+    "argv": ["cloze", "--input", "{FIX}/forms.csv", "--output", "{TMP}/out.csv", "--corpus", "{FIX}/sample.usfx.xml", "--corpus", "{FIX}/corpus.jsonl", "--parallel-mode", "include"],
+    "exit_code": 0, "stdout": "mixed.stdout", "outputs": {"out.csv": "mixed.csv"}, "exclusions": {}
+  },
+  {"name": "preview-help", "argv": ["preview", "--help"], "exit_code": 0, "stdout": "preview-help.stdout", "outputs": {}, "exclusions": {}},
+  {"name": "generate-help", "argv": ["generate", "--help"], "exit_code": 0, "stdout": "generate-help.stdout", "outputs": {}, "exclusions": {}},
+  {"name": "validate-help", "argv": ["validate", "--help"], "exit_code": 0, "stdout": "validate-help.stdout", "outputs": {}, "exclusions": {}}
+]

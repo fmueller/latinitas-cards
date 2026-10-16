@@ -129,7 +129,9 @@ def invalid_files() -> dict[str, str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--target", choices=["valid", "invalid", "schemas", "usfx", "markup", "vulgate-digest"], required=True
+        "--target",
+        choices=["valid", "invalid", "schemas", "usfx", "markup", "vulgate-digest", "cloze-jsonl"],
+        required=True,
     )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
@@ -139,6 +141,8 @@ def main() -> None:
             for name, model in SCHEMAS.items()
             if name.startswith("latinitas-corpus")
         }
+    elif args.target == "cloze-jsonl":
+        outputs = {ROOT / "tests/fixtures/goldens/cloze-jsonl/inputs/corpus.jsonl": ""}
     elif args.target == "vulgate-digest":
         outputs = {FIXTURES / "usfx/vulgate.digest.json": ""}
     elif args.target == "markup":
@@ -196,6 +200,17 @@ def main() -> None:
                 + "\n"
             )
             atomic_replace(path, data.encode("utf-8"))
+        elif args.target == "cloze-jsonl":
+            records = valid_records("wsl")
+            for index, record in enumerate(records):
+                if isinstance(record, CorpusPassage):
+                    raw = record.model_dump()
+                    raw["translations"] = [
+                        {"language": "en", "text": f"English {record.order}", "provenance": "fixture"},
+                        {"language": "de", "text": f"Deutsch {record.order}", "provenance": "fixture"},
+                    ]
+                    records[index] = CorpusPassage.model_validate(raw)
+            write_corpus(path, records, [])
         elif args.target == "valid":
             write_corpus(path, valid_records(path.stem), [])
         elif args.target == "usfx" and path.suffix == ".jsonl":

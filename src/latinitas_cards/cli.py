@@ -10,7 +10,6 @@ import sys
 import tempfile
 import time
 import unicodedata
-import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from pathlib import Path
@@ -27,6 +26,8 @@ from rich.text import Text
 
 from . import usfx_adapter
 from .annotation import analyze_cltk_word
+from .cli_contract import ContractError
+from .corpus_cloze import load_jsonl_corpus
 from .profile_setup import safe_source_value
 from .usfx_adapter import normalize_latin as normalize_latin
 
@@ -210,7 +211,10 @@ def generate_clozes_for_word(
             else:
                 cloze, n = cloze_once(verse_text, patt)
             if n > 0:
-                if {"book", "chapter", "verse"}.issubset(df.columns):
+                if "display_ref" in df.columns and pd.notna(df.at[idx, "display_ref"]):
+                    ref = html.escape(str(df.at[idx, "display_ref"]))
+                    cloze = html.escape(cloze)
+                elif {"book", "chapter", "verse"}.issubset(df.columns):
                     ref = f"{df.at[idx, 'book']} {df.at[idx, 'chapter']}:{df.at[idx, 'verse']}"
                 elif "ref" in df.columns:
                     ref = str(df.at[idx, "ref"])
@@ -252,7 +256,9 @@ def collect_cloze_matches(
             cloze, n = cloze_once(verse_text, patt)
         if n <= 0:
             continue
-        if {"book", "chapter", "verse"}.issubset(df.columns):
+        if "display_ref" in df.columns and pd.notna(df.at[idx, "display_ref"]):
+            ref = str(df.at[idx, "display_ref"])
+        elif {"book", "chapter", "verse"}.issubset(df.columns):
             ref = f"{df.at[idx, 'book']} {df.at[idx, 'chapter']}:{df.at[idx, 'verse']}"
         elif "ref" in df.columns:
             ref = str(df.at[idx, "ref"])
@@ -263,8 +269,13 @@ def collect_cloze_matches(
             "ref": ref,
             "sentence_norm": verse_norm,
         }
+        if "display_ref" in df.columns and pd.notna(df.at[idx, "display_ref"]):
+            # Preserve the raw citation for consumers; only HTML rendering
+            # uses this escaped representation. Legacy formats stay unchanged.
+            row["ref_html"] = html.escape(ref)
+            row["cloze"] = html.escape(cloze)
         for column in translation_columns:
-            if column in df.columns:
+            if column in df.columns and ("display_ref" not in df.columns or pd.notna(df.at[idx, column])):
                 row[column] = str(df.at[idx, column])
         matches.append(row)
         seen.add(int(idx))
@@ -475,7 +486,11 @@ def _update_apkg_with_cloze(
     overwrite: bool = True,
 ) -> None:
     with stderr_console.status("Loading corpus XML..."):
-        bible_df = usfx_adapter.legacy_projection(usfx_path)
+        try:
+            bible_df = usfx_adapter.legacy_projection(usfx_path)
+        except ContractError as error:
+            stderr_console.print(f"{error.diagnostic.code}: {error.diagnostic.message}")
+            raise typer.Exit(3) from error
         bucket = build_bucket_index(bible_df)
     info(f"Loaded corpus: {usfx_path}")
 
@@ -797,6 +812,8 @@ def load_corpora(
                 chosen_format = "usfx"
             elif path.suffix.lower() in {".csv", ".tsv"}:
                 chosen_format = "csv"
+            elif path.suffix.lower() == ".jsonl":
+                chosen_format = "jsonl"
             else:
                 chosen_format = "txt"
         if chosen_format == "usfx":
@@ -808,10 +825,19 @@ def load_corpora(
             frames.append(_parse_parallel_csv_corpus(path, latin_column=latin_column))
         elif chosen_format == "txt":
             frames.append(_parse_text_corpus(path))
+        elif chosen_format == "jsonl":
+            frames.append(load_jsonl_corpus(path))
         else:
             raise ValueError(f"Unsupported corpus format: {chosen_format}")
     if not frames:
         raise ValueError("No corpus files provided.")
+    if any("display_ref" in frame for frame in frames):
+        # Missing JSONL reference-number columns must not promote legacy ints
+        # to floats (and change e.g. GEN 2:7 to GEN 2.0:7.0).
+        for frame in frames:
+            for column in ("chapter", "verse"):
+                if column in frame:
+                    frame[column] = frame[column].astype(object)
     merged = pd.concat(frames, ignore_index=True)
     if "text_norm" not in merged.columns:
         merged["text_norm"] = merged["text"].astype(str).apply(normalize_latin)
@@ -1371,7 +1397,11 @@ def update_csv_with_cloze(
         return
 
     with stderr_console.status("Loading USFX corpus..."):
-        bible_df = usfx_adapter.legacy_projection(usfx_path)
+        try:
+            bible_df = usfx_adapter.legacy_projection(usfx_path)
+        except ContractError as error:
+            stderr_console.print(f"{error.diagnostic.code}: {error.diagnostic.message}")
+            raise typer.Exit(3) from error
         bucket = build_bucket_index(bible_df)
     info(f"Loaded USFX corpus: {usfx_path}")
 
@@ -1797,7 +1827,11 @@ def preview_impl(
     if usfx is None:
         raise typer.BadParameter("--usfx is required unless --profile is provided.")
     with stderr_console.status("Loading USFX corpus..."):
-        bible_df = usfx_adapter.legacy_projection(usfx)
+        try:
+            bible_df = usfx_adapter.legacy_projection(usfx)
+        except ContractError as error:
+            stderr_console.print(f"{error.diagnostic.code}: {error.diagnostic.message}")
+            raise typer.Exit(3) from error
         bucket = build_bucket_index(bible_df)
     info(f"Loaded USFX corpus: {usfx}")
 
@@ -2093,7 +2127,7 @@ def cloze_impl(
     cloze_column: Annotated[str, typer.Option(help="Output column for generated clozes")] = "CorpusCloze",
     corpus_format: Annotated[
         str,
-        typer.Option(help="Corpus format: auto, usfx, txt, csv"),
+        typer.Option(help="Corpus format: auto, usfx, txt, csv, jsonl"),
     ] = "auto",
     latin_column: Annotated[
         str,
@@ -2131,7 +2165,11 @@ def cloze_impl(
     if form_column not in df.columns:
         raise KeyError(f"Form column '{form_column}' not found. Available: {list(df.columns)}")
 
-    corpus_df = load_corpora(corpus, corpus_format=corpus_format, latin_column=latin_column)
+    try:
+        corpus_df = load_corpora(corpus, corpus_format=corpus_format, latin_column=latin_column)
+    except ContractError as error:
+        stderr_console.print(f"{error.diagnostic.code}: {error.diagnostic.message}")
+        raise typer.Exit(3) from error
     bucket = build_bucket_index(corpus_df)
     freq = _build_word_frequency(corpus_df)
     translation_columns = _resolve_parallel_columns(
@@ -2162,7 +2200,7 @@ def cloze_impl(
                 translation_values[column].append("")
             continue
 
-        rendered = [f"{m['cloze']} <span style='color:#888'>({m['ref']})</span>" for m in matches]
+        rendered = [f"{m['cloze']} <span style='color:#888'>({m.get('ref_html', m['ref'])})</span>" for m in matches]
         cloze_values.append(joiner.join(rendered))
 
         scores = [score_cloze_difficulty(normalize_latin(form), m["sentence_norm"], freq)[0] for m in matches]
@@ -2268,7 +2306,10 @@ def validate_impl(
                     "details": f"Parsed {verses_count} verses with non-empty text.",
                 }
             )
-    except (ET.ParseError, ValueError) as exc:
+    except ContractError as error:
+        stderr_console.print(f"{error.diagnostic.code}: {error.diagnostic.message}")
+        raise typer.Exit(3) from error
+    except ValueError as exc:
         all_ok = False
         checks.append(
             {

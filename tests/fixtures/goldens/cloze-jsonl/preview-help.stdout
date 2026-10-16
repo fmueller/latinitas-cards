@@ -1,0 +1,41 @@
+                                                                                                                        
+ Usage: python -m latinitas_cards preview [OPTIONS]                                                                     
+                                                                                                                        
+ Preview principal-part cards with --profile, or experimental USFX clozes, without writing output.                      
+                                                                                                                        
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *  --input                          <path>  Path to Anki CSV export or .apkg file [required]                         │
+│    --usfx                           <path>  Experimental Latin USFX XML corpus for clozes; not used with --profile   │
+│    --anki-front                     <str>   Name of the 'Front' field to match notes for updates [default: Front]    │
+│    --max-examples                   <int>   Max cloze examples per word [default: 2]                                 │
+│    --joiner                         <str>   HTML separator for multiple examples [default: <br><br>]                 │
+│    --stopwords                      <path>  Optional path to a stopwords file (one word per line)                    │
+│    --word-forms                     <path>  Optional path to lemma→forms mapping file (CSV-like:                     │
+│                                             lemma,form1,form2,...)                                                   │
+│    --lemmas                         <path>  Optional path to lemma/form groups (comma or whitespace separated)       │
+│    --ignore-pattern                 <str>   Regex pattern(s) for normalized front values to ignore; can be repeated  │
+│    --multi-cloze-per-verse                  Cloze every matching occurrence in a verse instead of just the first one │
+│    --limit                          <int>   Max number of preview rows to print [default: 5]                         │
+│    --profile                        <path>  Confirmed profile for principal-part preview; omit for the experimental  │
+│                                             USFX path                                                                │
+│    --manifest                       <path>  CSV identity manifest path; defaults to <input>.latinitas.json for       │
+│                                             manifest profiles                                                        │
+│    --target-deck                    <str>   Explicit target deck/subdeck override                                    │
+│    --generated-note-type            <str>   Explicit generated note type override                                    │
+│    --tag                            <str>   Explicit generated tag override; repeatable                              │
+│    --terminology                    <str>   Profile terminology override: latin or user (German)                     │
+│    --recipe                         <str>   Explicit confirmed recipe override; repeatable                           │
+│    --approve-reuse                  <str>   Approve ID reuse as ROW=SOURCE_ID for an ID-less CSV; repeatable         │
+│    --approve-allocation             <int>   Approve new manifest identity allocation for a zero-based CSV row;       │
+│                                             repeatable                                                               │
+│    --approve-removal                <str>   Approve removal of a manifest source identity; repeatable                │
+│    --approve-scope                          Rejected for read-only preview: scope approval commits state with        │
+│                                             generate only                                                            │
+│    --approve-fresh-import                   Rejected for read-only preview: fresh-import approval commits state with │
+│                                             generate only                                                            │
+│    --legacy-note-type               <str>   Declare a legacy note type from your destination inventory; repeatable.  │
+│                                             The preview is rejected when the profile's generated note type matches   │
+│                                             one                                                                      │
+│    --help                   -h              Show this message and exit.                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+

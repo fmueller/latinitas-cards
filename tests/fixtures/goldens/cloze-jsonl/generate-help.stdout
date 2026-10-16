@@ -1,0 +1,56 @@
+                                                                                                                        
+ Usage: python -m latinitas_cards generate [OPTIONS]                                                                    
+                                                                                                                        
+ Export principal-part CSV with --profile, or generate experimental USFX clozes.                                        
+                                                                                                                        
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *  --input                                     <path>  Path to Anki CSV export or .apkg file [required]              │
+│ *  --output                                    <path>  Path for the updated CSV output [required]                    │
+│    --usfx                                      <path>  Experimental Latin USFX XML corpus for clozes; not used with  │
+│                                                        --profile                                                     │
+│    --anki-front                                <str>   Name of the 'Front' field to match notes for updates          │
+│                                                        [default: Front]                                              │
+│    --new-field                                 <str>   Name of the field to write cloze examples into                │
+│                                                        [default: VulgataCloze]                                       │
+│    --max-examples                              <int>   Max cloze examples per word [default: 2]                      │
+│    --joiner                                    <str>   HTML separator for multiple examples [default: <br><br>]      │
+│    --stopwords                                 <path>  Optional path to a stopwords file (one word per line)         │
+│    --word-forms                                <path>  Optional path to lemma→forms mapping file (CSV-like:          │
+│                                                        lemma,form1,form2,...)                                        │
+│    --lemmas                                    <path>  Optional path to lemma/form groups (comma or whitespace       │
+│                                                        separated)                                                    │
+│    --ignore-pattern                            <str>   Regex pattern(s) for normalized front values to ignore; can   │
+│                                                        be repeated                                                   │
+│    --multi-cloze-per-verse                             Cloze every matching occurrence in a verse instead of just    │
+│                                                        the first one                                                 │
+│    --append                     --no-append            Append to existing values instead of overwriting              │
+│                                                        [default: no-append]                                          │
+│    --profile                                   <path>  Confirmed profile for principal-part preview/export; omit for │
+│                                                        the experimental USFX path                                    │
+│    --manifest                                  <path>  CSV identity manifest path; defaults to                       │
+│                                                        <input>.latinitas.json for manifest profiles                  │
+│    --target-deck                               <str>   Explicit target deck/subdeck override                         │
+│    --generated-note-type                       <str>   Explicit generated note type override                         │
+│    --tag                                       <str>   Explicit generated tag override; repeatable                   │
+│    --terminology                               <str>   Profile terminology override: latin or user (German)          │
+│    --recipe                                    <str>   Explicit confirmed recipe override; repeatable                │
+│    --approve-reuse                             <str>   Approve ID reuse as ROW=SOURCE_ID for an ID-less CSV;         │
+│                                                        repeatable                                                    │
+│    --approve-allocation                        <int>   Approve new manifest identity allocation for a zero-based CSV │
+│                                                        row; repeatable                                               │
+│    --approve-removal                           <str>   Approve removal of a manifest source identity; repeatable     │
+│    --approve-scope                                     Approve allocating and committing a unique CSV source scope   │
+│                                                        with this export (first export, fresh start after lost state, │
+│                                                        or legacy unscoped manifest migration)                        │
+│    --approve-fresh-import                              Explicitly confirm a fresh import when the prior-export       │
+│                                                        card-evidence checkpoint is missing, corrupt, or              │
+│                                                        incompatible; replaces retained card-evidence state. New      │
+│                                                        scheduling, not a scheduling migration; without it the        │
+│                                                        checkpoint stays review-only                                  │
+│    --legacy-note-type                          <str>   Declare a legacy note type from your destination inventory;   │
+│                                                        repeatable. The export is rejected when the profile's         │
+│                                                        generated note type matches one                               │
+│    --preview-limit                             <int>   Max representative principal-part notes to print [default: 5] │
+│    --help                   -h                         Show this message and exit.                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+

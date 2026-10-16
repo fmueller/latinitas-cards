@@ -1,0 +1,12 @@
+                                                                                                                        
+ Usage: python -m latinitas_cards validate [OPTIONS]                                                                    
+                                                                                                                        
+ Validate USFX parsing integrity and required input columns.                                                            
+                                                                                                                        
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *  --input               <path>  Path to Anki CSV export or .apkg file [required]                                    │
+│ *  --usfx                <path>  Path to Latin USFX XML corpus (e.g., lat-clementine.usfx.xml) [required]            │
+│    --anki-front          <str>   Name of the 'Front' field expected in the input file [default: Front]               │
+│    --help        -h              Show this message and exit.                                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+

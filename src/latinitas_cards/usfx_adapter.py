@@ -3,7 +3,6 @@
 import hashlib
 import re
 import unicodedata
-import xml.etree.ElementTree as ET
 from array import array
 from bisect import bisect_left, bisect_right
 from collections import Counter, deque
@@ -46,9 +45,6 @@ def normalize_latin(s: str) -> str:
 
 
 def legacy_projection(path: Path) -> pd.DataFrame:
-    tree = ET.parse(path)
-    root = tree.getroot()
-
     rows: list[dict[str, object]] = []
 
     current_book: str | None = None
@@ -78,59 +74,44 @@ def legacy_projection(path: Path) -> pd.DataFrame:
         buffer = []
         current_verse = None
 
-    # We need to walk in document order and grab text residing outside tags too.
-    # xml.etree doesn't give easy "between siblings" text via iter(), so we do a manual stack walk
-    # capturing both .text and .tail relative to verse boundaries.
-    stack: list[tuple[ET.Element, int]] = [(root, 0)]
-    while stack:
-        node, state = stack.pop()
-
-        # On first visit, process start of node, then push children, then mark to process tail after children
-        if state == 0:
-            tag = node.tag.lower()
-
+    # Coalesce parser chunks into ElementTree-style .text/.tail fragments before
+    # joining with spaces. Closing </v> does not end a legacy verse; <ve> does,
+    # after its initial text but before any children.
+    initial_tag: str | None = None
+    text: list[str] = []
+    try:
+        for kind, value, attrs in _EventReader(path, legacy=True):
+            if kind == "text":
+                text.append(value)
+                continue
+            if current_verse is not None and initial_tag not in ("book", "b", "c", "chapter"):
+                buffer.append("".join(text))
+            text = []
+            if initial_tag == "ve":
+                flush()
+            initial_tag = None
+            if kind != "start":
+                continue
+            tag = value.lower()
+            initial_tag = tag
             if tag in ("book", "b"):
                 flush()
-                current_book = node.attrib.get("id") or node.attrib.get("code") or node.attrib.get("n") or current_book
-
+                current_book = attrs.get("id") or attrs.get("code") or attrs.get("n") or current_book
             elif tag in ("c", "chapter"):
                 flush()
-                ch_val = node.attrib.get("id") or node.attrib.get("n") or ""
-                m = number_re.search(ch_val)
+                m = number_re.search(attrs.get("id") or attrs.get("n") or "")
                 current_chapter = int(m.group()) if m else current_chapter
-
             elif tag in ("v", "verse"):
-                # Start a new verse; if one is open, flush it first
                 flush()
-                v_val = node.attrib.get("id") or node.attrib.get("n") or ""
-                m = number_re.search(v_val)
+                m = number_re.search(attrs.get("id") or attrs.get("n") or "")
                 current_verse = int(m.group()) if m else 0
-                # Initial text inside <v>...</v> if any
-                if node.text and current_verse is not None:
-                    buffer.append(node.text)
-
-            elif tag == "ve":
-                # Verse end; include any text in <ve> (rare) then flush
-                if node.text and current_verse is not None:
-                    buffer.append(node.text)
-                flush()
-
-            else:
-                # Normal node text inside an open verse
-                if node.text and current_verse is not None:
-                    buffer.append(node.text)
-
-            # push a marker to process tail after children
-            stack.append((node, 1))
-            # push children in reverse to simulate pre-order traversal
-            children = list(node)
-            for child in reversed(children):
-                stack.append((child, 0))
-
-        else:
-            # state == 1: process tail text after closing this node
-            if node.tail and current_verse is not None:
-                buffer.append(node.tail)
+    except ContractError as error:
+        if error.diagnostic.code != Code.INVALID_XML:
+            raise
+        cause = error.__cause__
+        if isinstance(cause, expat.ExpatError):
+            raise ValueError(f"{expat.ErrorString(cause.code)}: line {cause.lineno}, column {cause.offset}") from error
+        raise ValueError(error.diagnostic.message) from error
 
     # End of document: flush any open verse
     flush()
@@ -146,8 +127,9 @@ def legacy_projection(path: Path) -> pd.DataFrame:
 class _EventReader:
     """Chunk-fed expat events; no tree, source mutation or entity resolution."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, legacy: bool = False) -> None:
         self.path = path
+        self.legacy = legacy
         self.source: CorpusSource | None = None
 
     def __iter__(self) -> Iterator[tuple[str, str, dict[str, str]]]:
@@ -155,7 +137,9 @@ class _EventReader:
         if self.path.stat().st_size > limit:
             raise ContractError(Code.INPUT_TOO_LARGE, "XML input exceeds 64 MiB")
         events: deque[tuple[str, str, dict[str, str]]] = deque()
-        parser = expat.ParserCreate()
+        # ElementTree expands namespace names; the strict adapter retains its
+        # existing raw-name policy. Legacy matching must not strip namespaces.
+        parser = expat.ParserCreate(namespace_separator="}" if self.legacy else None)
         depth = 0
 
         def start(name: str, attrs: dict[str, str]) -> None:
@@ -163,6 +147,9 @@ class _EventReader:
             depth += 1
             if depth > 64:
                 raise ContractError(Code.DEPTH_EXCEEDED, "XML element depth exceeds 64")
+            if self.legacy:
+                name = "{" + name if "}" in name else name
+                attrs = {("{" + key if "}" in key else key): value for key, value in attrs.items()}
             events.append(("start", name, attrs))
 
         parser.StartElementHandler = start

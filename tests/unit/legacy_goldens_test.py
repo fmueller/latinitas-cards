@@ -11,13 +11,14 @@ ROOT = Path(__file__).resolve().parents[2]
 GOLDENS = ROOT / "tests/fixtures/goldens"
 
 
-def test_legacy_characterization_goldens() -> None:
+@pytest.mark.parametrize("manifest", sorted(GOLDENS.glob("*/cases.json")), ids=lambda path: path.parent.name)
+def test_legacy_characterization_goldens(manifest: Path) -> None:
     harness = runpy.run_path(str(ROOT / "scripts/regen-legacy-goldens.py"))
-    cases = json.loads((GOLDENS / "legacy-vulgate/cases.json").read_bytes())
+    cases = json.loads(manifest.read_bytes())
     for case in cases:
         if case.get("full_vulgate") and os.environ.get("MUTANT_UNDER_TEST"):
             continue
-        harness["legacy_case"](case, capture=False)
+        harness["legacy_case"](case, capture=False, directory=manifest.parent)
 
 
 def test_legacy_audit_rejects_existing_input_overwrite(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

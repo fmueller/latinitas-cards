@@ -6,12 +6,19 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- `cloze` reads normalized JSONL corpora with source citations and optional
+  language-selected translations, including alongside XML, text and CSV inputs.
 - `corpus normalize --adapter usfx` preserves markup, notes and headings in citable
   JSONL, rejects unsafe/oversized/deep XML, and can retain unknown markup with a warning.
 - `corpus normalize --adapter text` creates validated JSONL with stable reviewed
   passage refs or labeled citations, and safely resumes interrupted manifest writes.
 - `corpus validate CORPUS [--json]` checks normalized corpus records, identities,
   ordering and canonical text without modifying the input, reporting all findings.
+
+### Changed
+
+- Legacy Vulgate commands reject XML with DTDs/entities, over 64 MiB of input,
+  or element depth above 64, without writing output.
 
 ## [0.2.1] - 2026-10-14
 
