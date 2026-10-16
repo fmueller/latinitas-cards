@@ -1,15 +1,15 @@
 ---
 schema_version: 1
-updated_at: "2026-10-16T12:36:53Z"
+updated_at: "2026-10-16T12:58:19Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
-current_task: T-120-report-effective-configuration-and-guarantee-no
-current_task_title: Report effective configuration and guarantee no hidden prompts across the CLI
-status_summary: in_progress
+current_task: ""
+current_task_title: ""
+status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: Implement T-120-report-effective-configuration-and-guarantee-no and run targeted tests
-last_verification_result: pass for T-119-enforce-destructive-conflicting-and-actor-rules at 2026-10-16T12:29:50Z
+next_action: 'Start task T-121-complete-package-metadata-notices-and-distribution: Complete package metadata, notices and distribution and install check scripts'
+last_verification_result: pass for T-120-report-effective-configuration-and-guarantee-no at 2026-10-16T12:58:19Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -23,12 +23,11 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: `T-120-report-effective-configuration-and-guarantee-no`
-- Title: Report effective configuration and guarantee no hidden prompts across the CLI
+- Task: none
 
 ## Status
 
-- in_progress
+- blocked
 
 ## Blockers
 
@@ -36,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-119-enforce-destructive-conflicting-and-actor-rules at 2026-10-16T12:29:50Z
+- pass for T-120-report-effective-configuration-and-guarantee-no at 2026-10-16T12:58:19Z
 
 ## Next Action
 
-- Implement T-120-report-effective-configuration-and-guarantee-no and run targeted tests
+- Start task T-121-complete-package-metadata-notices-and-distribution: Complete package metadata, notices and distribution and install check scripts
 
 ## Relevant Artifacts
 
@@ -53,7 +52,7 @@ continuation_notes:
 ## Task Counts
 
 - todo: 7
-- in_progress: 1
-- completed: 119
+- in_progress: 0
+- completed: 120
 - blocked: 1
 - cancelled: 0

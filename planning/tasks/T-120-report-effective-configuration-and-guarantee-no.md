@@ -1,12 +1,12 @@
 ---
 id: T-120-report-effective-configuration-and-guarantee-no
 title: Report effective configuration and guarantee no hidden prompts across the CLI
-status: in_progress
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#agent-ready-cli-contract
 dependencies:
     - T-118-apply-planned-annotation-operations-atomically
-updated_at: "2026-10-16T12:36:53Z"
+updated_at: "2026-10-16T12:58:19Z"
 ---
 
 # T-120-report-effective-configuration-and-guarantee-no Report effective configuration and guarantee no hidden prompts across the CLI
@@ -144,3 +144,27 @@ Other legacy commands keep their exit semantics and output.
 - Scope: two focused production modules, thin config callback, guarded setup
   sites, reduced cli.py, tests, fixture and user docs. T038 stays blocked;
   T127 exporter remains unfixed/todo; T128 remains excluded/unstarted.
+- 2026-10-16T12:58:19Z: verification pass
+- Final tested implementation revision:
+  `13c65c6120317a7fddebadb5d7eafbe3255d8d84`. Exact final chain passed:
+  uv run ruff check; uv run mypy (166 files); uv run pytest -v (2445 passed,
+  one existing corpus_io serializer warning, 114.45s). mise run check also
+  passed: formatting (378 files), mypy, 2445 tests (111.80s), commit/push
+  message, author, mutation-result and mutation-configuration guard suites.
+- Scratch no-stdin negative control used the same failing-on-read stream:
+  input() failed with AssertionError as intended. No scratch files retained.
+- Fresh final disposition-verification Task loaded personal code-reviewer,
+  routing plus General/Python/Security references, inspected the committed
+  diff and acceptance, checked whitespace and reran 105 focused tests.
+  Verbatim: "No concrete task-relevant findings." Empty disposition verified;
+  no unresolved/new issues, no deferrals. This preceded lifecycle finalization.
+- Taskrail chronology: start at 12:36:53Z, verify pass and complete at
+  12:58:19Z on 2026-10-16, only after final checks and disposition verification.
+  Validate passed before and after. Status: 120 done, 0 active, 1 blocked,
+  7 todo; observed next T-121-complete-package-metadata-notices-and-distribution
+  only, not started. Existing orphan/drift signal remains outside this task.
+- Delivery preparation: hooks installed before first commit, Felix Müller
+  identity and no attribution trailers. Commit-msg rejected a long body line;
+  it was wrapped and all hooks passed. Final pre-push fetch still found
+  origin/main at the accepted base, an ancestor of the tested implementation.
+  Finalization changes only planning metadata/evidence, not tested code.
