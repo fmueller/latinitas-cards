@@ -62,6 +62,7 @@ def normalize(
     approve_reuse: Annotated[list[str] | None, typer.Option("--approve-reuse")] = None,
     approve_allocation: Annotated[list[int] | None, typer.Option("--approve-allocation")] = None,
     approve_removal: Annotated[list[str] | None, typer.Option("--approve-removal")] = None,
+    allow_unknown: Annotated[bool, typer.Option("--allow-unknown")] = False,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
     """Normalize text with stable reviewed ordinal refs, or explicit source labels."""
@@ -83,13 +84,18 @@ def normalize(
                 raise ContractError(Code.USAGE_ERROR, "USFX cannot use templates, manifests or approvals")
             try:
                 usfx_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes()) if descriptor else None
-                records = build_usfx(source, corpus_id, language, usfx_descriptor)
+                diagnostics: list[Diagnostic] = []
+                records = build_usfx(
+                    source, corpus_id, language, usfx_descriptor, allow_unknown=allow_unknown, diagnostics=diagnostics
+                )
                 write_corpus(output, records, [source, *([descriptor] if descriptor else [])])
             except ValidationError as error:
                 raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
             except OSError as error:
                 raise ContractError(Code.UNREADABLE, str(error)) from error
-            return {"review_items": []}, []
+            return {"review_items": []}, diagnostics
+        if allow_unknown:
+            raise ContractError(Code.USAGE_ERROR, "--allow-unknown requires the USFX adapter")
         if template and (manifest is not None or approve_reuse or approve_allocation or approve_removal):
             raise ContractError(Code.USAGE_ERROR, "Templates cannot use manifests or approvals")
         approvals = Approvals.parse(approve_reuse or [], approve_allocation or [], approve_removal or [])

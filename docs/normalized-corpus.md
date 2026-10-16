@@ -109,7 +109,8 @@ uv run latinitas-cards corpus normalize tests/fixtures/corpus/usfx/gen-1-1-5.usf
 ```
 
 The supported subset is `usfx`, `book@id` (container or empty milestone), `h`
-(work title), `c@id|n`, `v@id|n` (milestone or container), and `ve`. Root attributes
+(work title), `c@id|n`, `v@id|n` (milestone or container), `ve`, transparent `p`/`q`,
+and `wj`/`w` inline markup. Root attributes
 are ignored; `id` wins over `n`. Milestone verses must end with `ve`; container
 verses may have a trailing `ve`. Works retain first-appearance order and passages
 retain document order, not book-ID sort. Character data joins without inserted
@@ -126,14 +127,27 @@ for the declared Clementine provenance and pending maintainer confirmation.
 This adapter writes only the corpus, using the shared locked atomic writer and
 alias checks. `--manifest`, approvals and citation templates are usage errors
 (2). Duplicate references, empty passages, invalid structure, malformed XML and
-DOCTYPE declarations fail with exit 3 and leave the output unchanged. Unknown
-elements produce one diagnostic with every name and count, also with exit 3.
-Notes, headings other than `h`, and `p`/`q`/`wj`/`w` markup are **not supported
-yet**; there is no `--allow-unknown` option. Full size/depth and entity hardening
-are pending; do not treat this structural subset as a resource-bounded XML
-ingestor. Legacy Vulgate commands retain their existing parsing and outputs.
+unsafe XML fail with exit 3 and leave the output unchanged. Unknown elements
+produce one diagnostic with every name and count, also with exit 3; explicit
+`--allow-unknown` retains their text (and therefore its hash), attributes and spans
+in `source_extra`, with the same diagnostic as a warning on stderr in text mode.
+`source_markup` retains `wj`/`w` attributes and code-point spans into canonical
+text. Spans exclude surrounding whitespace; a boundary inside an NFC-composed
+code point includes that indivisible code point.
+
+Notes (`f`, `x`, `fe`) and headings (`s`) flatten their descendants in document
+order, canonicalize their text, and do not enter passage text or hashes. Notes
+inside a verse attach there; headings and notes outside a verse attach to the next
+passage in the same work, or fail `invalid_structure` if none exists.
+The strict expat reader rejects DTD/entity declarations and external references,
+disables parameter-entity parsing, checks 64 MiB at stat and while streaming, and
+rejects element depth above 64, including note descendants. No XML dependency is added.
+Legacy Vulgate commands retain their existing parsing and outputs; their hardening
+is pending and they are not yet resource-bounded XML ingestors.
 
 The GEN 1:1–5 fixture and expected JSONL are committed. Regenerate deliberately
 with `uv run python scripts/regen-corpus-fixtures.py --target usfx --force`;
 tests never regenerate snapshots. The fixture is the bundled source's exact
 prefix through GEN 1:5's `ve`, followed by `</book></usfx>` and a newline.
+Synthetic markup snapshots and rejection expectations are regenerated separately
+with `uv run python scripts/regen-corpus-fixtures.py --target markup --force`.

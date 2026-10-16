@@ -145,7 +145,8 @@ def test_usfx_literal_wire_records() -> None:
 def test_writer_rejects_float_without_replacing(tmp_path: Path) -> None:
     records = list(read_corpus(FIXTURES / "valid/ordinal.jsonl"))
     passage = next(r for r in records if isinstance(r, CorpusPassage))
-    passage.source_extra = {"nested": [1.25]}
+    # Deliberately corrupt a typed model to test the serializer's final float gate.
+    object.__setattr__(passage, "source_extra", {"nested": [1.25]})
     target = tmp_path / "out.jsonl"
     target.write_bytes(b"previous")
     with pytest.raises(ValueError, match="floats"):

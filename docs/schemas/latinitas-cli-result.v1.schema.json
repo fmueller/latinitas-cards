@@ -21,6 +21,8 @@
         "alias",
         "usage_error",
         "unknown_element",
+        "input_too_large",
+        "depth_exceeded",
         "already_applied",
         "invalid_corpus",
         "invalid_corpus_id",

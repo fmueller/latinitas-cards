@@ -19,7 +19,8 @@
   },
   "float.jsonl": {
     "codes": [
-      "float_value"
+      "float_value",
+      "invalid_record"
     ],
     "exit": 1
   },

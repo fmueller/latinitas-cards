@@ -36,6 +36,8 @@ class Code(StrEnum):
     ALIAS = "alias"
     USAGE_ERROR = "usage_error"
     UNKNOWN_ELEMENT = "unknown_element"
+    INPUT_TOO_LARGE = "input_too_large"
+    DEPTH_EXCEEDED = "depth_exceeded"
     ALREADY_APPLIED = "already_applied"
     INVALID_CORPUS = "invalid_corpus"
     INVALID_CORPUS_ID = "invalid_corpus_id"
@@ -86,6 +88,8 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.ALIAS: DiagnosticCode(3, "Output aliases a protected path"),
     Code.USAGE_ERROR: DiagnosticCode(2, "Callback arguments are incompatible"),
     Code.UNKNOWN_ELEMENT: DiagnosticCode(3, "Source contains unknown elements"),
+    Code.INPUT_TOO_LARGE: DiagnosticCode(3, "XML input exceeds 64 MiB"),
+    Code.DEPTH_EXCEEDED: DiagnosticCode(3, "XML element depth exceeds 64"),
     Code.ALREADY_APPLIED: DiagnosticCode(0, "Operation was already applied"),
     Code.INVALID_CORPUS: DiagnosticCode(3, "Consumer rejected an invalid corpus"),
     Code.INVALID_CORPUS_ID: DiagnosticCode(1, "Corpus ID is malformed"),

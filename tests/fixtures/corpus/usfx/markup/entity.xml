@@ -1,0 +1,1 @@
+<!DOCTYPE usfx [<!ENTITY secret "ENTITY_SECRET">]><usfx>&secret;</usfx>

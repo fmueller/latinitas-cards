@@ -195,3 +195,22 @@ def test_language_tags(tag: str) -> None:
 def test_invalid_language_tags(tag: str) -> None:
     with pytest.raises(ValidationError):
         CorpusHeader.model_validate({**header_data(), "language": tag})
+
+
+@pytest.mark.parametrize(
+    "field,item",
+    [
+        ("notes", {"kind": "other", "text": "note"}),
+        ("notes", {"kind": "f"}),
+        ("headings", {"text": "heading", "extra": "no"}),
+        ("headings", "heading"),
+        ("source_markup", {"element": "w", "attributes": {"s": 1}, "span": [0, 1]}),
+        ("source_markup", {"element": "w", "attributes": {}, "span": [0, 1, 2]}),
+        ("source_extra", {"element": "zz", "attributes": {}, "span": [-1, 1]}),
+        ("source_extra", {"element": "zz", "attributes": {}, "span": [2, 1]}),
+        ("source_extra", {"element": "zz", "attributes": {}, "span": [0, 1.0]}),
+    ],
+)
+def test_passage_metadata_item_shapes(field: str, item: object) -> None:
+    with pytest.raises(ValidationError):
+        CorpusPassage.model_validate({**passage_data(), field: [item]})

@@ -62,6 +62,8 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `alias` | 3 | Output aliases a protected path |
 | `usage_error` | 2 | Callback arguments are incompatible |
 | `unknown_element` | 3 | Source contains unknown elements |
+| `input_too_large` | 3 | XML input exceeds 64 MiB |
+| `depth_exceeded` | 3 | XML element depth exceeds 64 |
 | `already_applied` | 0 | Operation was already applied |
 | `invalid_corpus` | 3 | Consumer rejected an invalid corpus |
 | `invalid_corpus_id` | 1 | Corpus ID is malformed |

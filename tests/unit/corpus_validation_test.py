@@ -176,7 +176,28 @@ def test_float_does_not_hide_independent_schema_errors(tmp_path: Path) -> None:
     write(path, records)
     result = invoke(path)
     assert result.exit_code == 1, result.output
-    assert [d["code"] for d in json.loads(result.stdout)["diagnostics"]] == ["float_value", "invalid_citation"]
+    # source_extra is now a typed list, so this old free-form object is also a shape error.
+    assert [d["code"] for d in json.loads(result.stdout)["diagnostics"]] == [
+        "float_value",
+        "invalid_citation",
+        "invalid_record",
+    ]
+
+
+@pytest.mark.parametrize("field", ["source_markup", "source_extra"])
+@pytest.mark.parametrize("outside", [False, True])
+def test_markup_spans_must_be_within_canonical_text(tmp_path: Path, field: str, outside: bool) -> None:
+    records = rows()
+    length = len(records[3]["text"])
+    records[3][field] = [{"element": "w", "attributes": {}, "span": [length, length + int(outside)]}]
+    path = tmp_path / "spans.jsonl"
+    write(path, records)
+    result = invoke(path)
+    assert result.exit_code == (1 if outside else 0), result.output
+    diagnostics = json.loads(result.stdout)["diagnostics"]
+    assert [d["code"] for d in diagnostics] == (["invalid_record"] if outside else [])
+    if outside:
+        assert field in diagnostics[0]["message"]
 
 
 @pytest.mark.parametrize("field", ["refs", "text", "notes", "source_extra"])

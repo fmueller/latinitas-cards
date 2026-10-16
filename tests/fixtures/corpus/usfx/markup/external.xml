@@ -1,0 +1,1 @@
+<!DOCTYPE usfx [<!ENTITY secret SYSTEM "file:///etc/passwd">]><usfx>&secret;</usfx>

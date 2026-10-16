@@ -9,13 +9,13 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,
     RootModel,
+    ValidationInfo,
     field_validator,
     model_validator,
 )
 
-from .canonical import canonical_json, digest, digest_bytes
+from .canonical import digest, digest_bytes
 
 type CorpusId = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9-]{1,62}$")]
 type NativeRef = Annotated[str, Field(pattern=r"^(?:[A-Za-z0-9._-]|%[0-9A-F]{2})+$")]
@@ -196,6 +196,27 @@ class CorpusTranslation(CorpusModel):
     provenance: str
 
 
+class CorpusNote(CorpusModel):
+    kind: Literal["f", "x", "fe"]
+    text: str
+
+
+class CorpusHeading(CorpusModel):
+    text: str
+
+
+class CorpusMarkup(CorpusModel):
+    element: str
+    attributes: dict[str, str]
+    span: Annotated[list[Annotated[int, Field(ge=0)]], Field(min_length=2, max_length=2)]
+
+    @model_validator(mode="after")
+    def ordered_span(self) -> Self:
+        if self.span[1] < self.span[0]:
+            raise ValueError("span end precedes start")
+        return self
+
+
 class CorpusPassage(CorpusModel):
     record: Literal["passage"] = "passage"
     passage_id: str
@@ -207,10 +228,18 @@ class CorpusPassage(CorpusModel):
     norm: str
     passage_hash: Sha256
     translations: list[CorpusTranslation] | None = None
-    notes: list[str] | None = None
-    headings: list[str] | None = None
-    source_markup: str | None = None
-    source_extra: dict[str, JsonValue] | None = None
+    notes: list[CorpusNote] | None = None
+    headings: list[CorpusHeading] | None = None
+    source_markup: list[CorpusMarkup] | None = None
+    source_extra: list[CorpusMarkup] | None = None
+
+    @field_validator("source_markup", "source_extra")
+    @classmethod
+    def bounded_spans(cls, value: list[CorpusMarkup] | None, info: ValidationInfo) -> list[CorpusMarkup] | None:
+        text = info.data.get("text")
+        if isinstance(text, str) and value and any(entry.span[1] > len(text) for entry in value):
+            raise ValueError("markup span exceeds canonical text length")
+        return value
 
     @model_validator(mode="after")
     def identity(self) -> Self:
@@ -224,12 +253,6 @@ class CorpusPassage(CorpusModel):
         ):
             raise ValueError("passage_id must be corpus_id:native_ref, NFC, at most 256 UTF-8 bytes")
         return self
-
-    @field_validator("source_extra")
-    @classmethod
-    def no_floats(cls, value: dict[str, JsonValue] | None) -> dict[str, JsonValue] | None:
-        canonical_json(value)
-        return value
 
 
 type CorpusRecord = Annotated[CorpusHeader | CorpusMetadata | CorpusWork | CorpusPassage, Field(discriminator="record")]

@@ -157,9 +157,56 @@
       "title": "CorpusHeader",
       "type": "object"
     },
+    "CorpusHeading": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "CorpusHeading",
+      "type": "object"
+    },
     "CorpusId": {
       "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
       "type": "string"
+    },
+    "CorpusMarkup": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Attributes",
+          "type": "object"
+        },
+        "element": {
+          "title": "Element",
+          "type": "string"
+        },
+        "span": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Span",
+          "type": "array"
+        }
+      },
+      "required": [
+        "element",
+        "attributes",
+        "span"
+      ],
+      "title": "CorpusMarkup",
+      "type": "object"
     },
     "CorpusMetadata": {
       "additionalProperties": false,
@@ -216,6 +263,30 @@
       "title": "CorpusMetadata",
       "type": "object"
     },
+    "CorpusNote": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "f",
+            "x",
+            "fe"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "text"
+      ],
+      "title": "CorpusNote",
+      "type": "object"
+    },
     "CorpusPassage": {
       "additionalProperties": false,
       "properties": {
@@ -226,7 +297,7 @@
           "anyOf": [
             {
               "items": {
-                "type": "string"
+                "$ref": "#/$defs/CorpusHeading"
               },
               "type": "array"
             },
@@ -248,7 +319,7 @@
           "anyOf": [
             {
               "items": {
-                "type": "string"
+                "$ref": "#/$defs/CorpusNote"
               },
               "type": "array"
             },
@@ -278,10 +349,10 @@
         "source_extra": {
           "anyOf": [
             {
-              "additionalProperties": {
-                "$ref": "#/$defs/JsonValue"
+              "items": {
+                "$ref": "#/$defs/CorpusMarkup"
               },
-              "type": "object"
+              "type": "array"
             },
             {
               "type": "null"
@@ -293,7 +364,10 @@
         "source_markup": {
           "anyOf": [
             {
-              "type": "string"
+              "items": {
+                "$ref": "#/$defs/CorpusMarkup"
+              },
+              "type": "array"
             },
             {
               "type": "null"
@@ -450,7 +524,6 @@
       "title": "CorpusWork",
       "type": "object"
     },
-    "JsonValue": {},
     "LanguageTag": {
       "pattern": "^(?:(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4}|[A-Za-z]{5,8})(?:-[A-Za-z]{4})?(?:-(?:[A-Za-z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(?:-[0-9A-WY-Za-wy-z](?:-[A-Za-z0-9]{2,8})+)*(?:-[xX](?:-[A-Za-z0-9]{1,8})+)?|[xX](?:-[A-Za-z0-9]{1,8})+|[eE][nN]-[gG][bB]-[oO][eE][dD]|[iI]-[aA][mM][iI]|[iI]-[bB][nN][nN]|[iI]-[dD][eE][fF][aA][uU][lL][tT]|[iI]-[eE][nN][oO][cC][hH][iI][aA][nN]|[iI]-[hH][aA][kK]|[iI]-[kK][lL][iI][nN][gG][oO][nN]|[iI]-[lL][uU][xX]|[iI]-[mM][iI][nN][gG][oO]|[iI]-[nN][aA][vV][aA][jJ][oO]|[iI]-[pP][wW][nN]|[iI]-[tT][aA][oO]|[iI]-[tT][aA][yY]|[iI]-[tT][sS][uU]|[sS][gG][nN]-[bB][eE]-[fF][rR]|[sS][gG][nN]-[bB][eE]-[nN][lL]|[sS][gG][nN]-[cC][hH]-[dD][eE]|[aA][rR][tT]-[lL][oO][jJ][bB][aA][nN]|[cC][eE][lL]-[gG][aA][uU][lL][iI][sS][hH]|[nN][oO]-[bB][oO][kK]|[nN][oO]-[nN][yY][nN]|[zZ][hH]-[gG][uU][oO][yY][uU]|[zZ][hH]-[hH][aA][kK][kK][aA]|[zZ][hH]-[mM][iI][nN]|[zZ][hH]-[mM][iI][nN]-[nN][aA][nN]|[zZ][hH]-[xX][iI][aA][nN][gG])$",
       "type": "string"

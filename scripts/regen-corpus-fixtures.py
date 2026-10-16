@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from latinitas_cards.atomic_io import atomic_replace
-from latinitas_cards.canonical import digest_bytes
+from latinitas_cards.canonical import canonical_json, digest_bytes
+from latinitas_cards.cli_contract import ContractError
 from latinitas_cards.corpus_io import write_corpus
 from latinitas_cards.corpus_model import (
     CorpusDescriptor,
@@ -89,7 +90,8 @@ def invalid_files() -> dict[str, str]:
         files[f"{name}.jsonl"] = "".join(
             json.dumps(row, sort_keys=True, ensure_ascii=False, separators=(",", ":")) + "\n" for row in rows
         )
-        cases[f"{name}.jsonl"] = {"exit": 1, "codes": [code]}
+        # The old free-form source_extra float example also violates its typed item shape.
+        cases[f"{name}.jsonl"] = {"exit": 1, "codes": [code, "invalid_record"] if name == "float" else [code]}
 
     for name, field, value, code in [
         ("non-nfc", "text", "Māter fīlium amat.", "non_nfc_text"),
@@ -125,7 +127,7 @@ def invalid_files() -> dict[str, str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", choices=["valid", "invalid", "schemas", "usfx"], required=True)
+    parser.add_argument("--target", choices=["valid", "invalid", "schemas", "usfx", "markup"], required=True)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     if args.target == "schemas":
@@ -134,6 +136,21 @@ def main() -> None:
             for name, model in SCHEMAS.items()
             if name.startswith("latinitas-corpus")
         }
+    elif args.target == "markup":
+        outputs = {}
+        cases = {}
+        for source in sorted((FIXTURES / "usfx/markup").glob("*.xml")):
+            for allow in [False, True] if source.stem == "unknown" else [False]:
+                key = source.stem + ("-allowed" if allow else "")
+                try:
+                    records = build_usfx(source, "test-corpus", "la", None, allow_unknown=allow)
+                    outputs[source.with_name(f"{key}.expected.jsonl")] = "".join(
+                        canonical_json(record.model_dump(mode="json", by_alias=True)) + "\n" for record in records
+                    )
+                    cases[key] = {"exit": 0}
+                except ContractError as error:
+                    cases[key] = {"exit": error.exit_code, "code": error.diagnostic.code}
+        outputs[FIXTURES / "usfx/markup/cases.json"] = json.dumps(cases, indent=2, sort_keys=True) + "\n"
     elif args.target == "invalid":
         outputs = {FIXTURES / "invalid" / name: data for name, data in invalid_files().items()}
     elif args.target == "usfx":

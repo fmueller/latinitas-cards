@@ -103,12 +103,12 @@ def test_rejected_fixtures(tmp_path: Path, fixture: str, code: str) -> None:
 
 def test_unknown_counts_and_doctype(tmp_path: Path) -> None:
     source, output = tmp_path / "input.xml", tmp_path / "out"
-    source.write_text("<usfx><p/><w/><p><f/></p><w/></usfx>")
+    source.write_text("<usfx><zz/><foo/><zz><bar/></zz><foo/></usfx>")
     result = normalize(source, output)
     assert result.exit_code == 3, result.output
     diagnostic = json.loads(result.stdout)["diagnostics"][0]
     assert diagnostic["code"] == "unknown_element"
-    assert diagnostic["message"] == "Unknown elements: f=1, p=2, w=2"
+    assert diagnostic["message"] == "Unknown elements: bar=1, foo=2, zz=2"
     source.write_text('<!DOCTYPE usfx [<!ENTITY secret SYSTEM "file:///etc/passwd">]><usfx>&secret;</usfx>')
     result = normalize(source, output)
     assert result.exit_code == 3, result.output

@@ -1,0 +1,31 @@
+{
+  "container": {
+    "exit": 0
+  },
+  "dtd": {
+    "code": "unsafe_xml",
+    "exit": 3
+  },
+  "duplicate": {
+    "code": "duplicate_source_ref",
+    "exit": 3
+  },
+  "entity": {
+    "code": "unsafe_xml",
+    "exit": 3
+  },
+  "external": {
+    "code": "unsafe_xml",
+    "exit": 3
+  },
+  "milestone": {
+    "exit": 0
+  },
+  "unknown": {
+    "code": "unknown_element",
+    "exit": 3
+  },
+  "unknown-allowed": {
+    "exit": 0
+  }
+}
