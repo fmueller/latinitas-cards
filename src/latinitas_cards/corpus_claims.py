@@ -96,7 +96,8 @@ def _resolve(
         row = current.get(entry.base_fingerprint)
         if row is None or entry.binding != _binding(row):
             diagnostics.append(Diagnostic("stale", "Stale or unmatched decision ignored", index))
-        elif entry.base_fingerprint in seen:
+            continue
+        if entry.base_fingerprint in seen:
             diagnostics.append(Diagnostic("conflict", "Duplicate decisions ignored", index))
             decisions.pop(entry.base_fingerprint, None)
         else:

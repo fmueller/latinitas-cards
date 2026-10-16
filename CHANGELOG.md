@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- Corpus claim readers retain live accepted or withheld reviews regardless of where
+  stale copied bindings appear, while still ignoring genuine duplicate live reviews.
 - `corpus show`, `corpus validate` and `annotations inspect --claims` report
   duplicate review decisions instead of internal errors, leaving those claims open.
 - `annotations segment` rejects outputs aliasing corpus, claims and default manifest

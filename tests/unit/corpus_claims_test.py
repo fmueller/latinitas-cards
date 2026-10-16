@@ -3,6 +3,8 @@
 import hashlib
 import json
 import shutil
+from copy import deepcopy
+from itertools import permutations
 from pathlib import Path
 
 import pytest
@@ -273,6 +275,77 @@ def test_duplicate_claim_view_join(
             row = next(a for a in rows if a["annotation_id"] == claim["annotation_id"])
             assert row["review_status"] == ("open" if duplicate else "accepted")
         assert before == {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()}
+
+
+@pytest.mark.parametrize("command", ["list", "claims-inspect", "show", "inspect", "inspect-check", "validate"])
+@pytest.mark.parametrize("status", ["accepted", "withheld"])
+def test_stale_copied_bindings_do_not_reserve_live_fingerprints(
+    command: str, status: str, corpus_review: tuple[Path, Path], tmp_path: Path
+) -> None:
+    corpus, sidecar = corpus_review
+    claim = json.loads(invoke("list", corpus, sidecar).output)["claims"][0]
+    assert (
+        invoke(
+            "record",
+            corpus,
+            sidecar,
+            "--fingerprint",
+            claim["fingerprint"],
+            "--status",
+            status,
+            "--reviewer",
+            "R",
+            "--reason",
+            "Checked",
+        ).exit_code
+        == 0
+    )
+    path = sidecar_path(corpus)
+    Path(f"{path}.lock").unlink()
+    live = json.loads(path.read_text())["decisions"][0]
+    stale = deepcopy(live)
+    stale["binding"]["passage_hash"] = "sha256:" + "0" * 64
+    opposite = deepcopy(live)
+    opposite["decision"]["status"] = "withheld" if status == "accepted" else "accepted"
+    if command in {"list", "claims-inspect"}:
+        args = ["claims", "list" if command == "list" else "inspect", str(corpus), "--annotations", str(sidecar)]
+    elif command.startswith("inspect"):
+        args = ["annotations", "inspect", str(sidecar), "--corpus", str(corpus), "--claims", str(path)]
+    else:
+        args = ["corpus", command, str(corpus), "--annotations", str(sidecar), "--claims", str(path)]
+    if command in {"claims-inspect", "inspect-check"}:
+        args.append("--check")
+    # Asymmetric stale/live bindings share a fingerprint. Exercise every placement,
+    # including a third live entry so a duplicate cannot accidentally become live again.
+    for entries in ([live], [stale, live], [stale, stale, live], [stale, live, live], [stale, live, opposite, live]):
+        for ordered in permutations(entries):
+            path.write_text(json.dumps({"version": 2, "decisions": ordered}))
+            before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()}
+            result = RUNNER.invoke(app, [*args, "--json"])
+            live_count = sum(entry["binding"] == live["binding"] for entry in ordered)
+            duplicate = live_count > 1
+            stale_count = len(ordered) - live_count
+            checked = command in {"claims-inspect", "inspect-check", "validate"}
+            expected_exit = (1 if command == "claims-inspect" else 3) if duplicate else int(bool(stale_count))
+            assert result.exit_code == (expected_exit if checked else 0), result.output
+            report = json.loads(result.output)
+            codes = [d["code"] for d in report["diagnostics"]]
+            conflict_code = "conflict" if command in {"list", "claims-inspect"} else "invalid_input"
+            assert codes.count(conflict_code) == max(0, live_count - 1)
+            assert codes.count("stale") == (0 if command == "show" else stale_count)
+            assert len(codes) == max(0, live_count - 1) + (0 if command == "show" else stale_count)
+            if command != "validate":
+                if command in {"list", "claims-inspect"}:
+                    rows = report["claims"]
+                elif command == "show":
+                    rows = [a for p in report["result"]["passages"] for a in p["annotations"]]
+                else:
+                    rows = report["result"]["annotations"]
+                row = next(a for a in rows if a["annotation_id"] == claim["annotation_id"])
+                assert row["review_status"] == ("open" if duplicate else status)
+                if command in {"list", "claims-inspect"}:
+                    assert row["fingerprint"] == claim["fingerprint"]
+            assert before == {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.iterdir()}
 
 
 @pytest.mark.parametrize("command", ["show", "inspect", "validate"])

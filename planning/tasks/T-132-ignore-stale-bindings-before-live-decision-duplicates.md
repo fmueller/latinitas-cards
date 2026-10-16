@@ -1,11 +1,11 @@
 ---
 id: T-132-ignore-stale-bindings-before-live-decision-duplicates
 title: Ignore stale copied bindings before detecting duplicate live corpus decisions
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#sidecar-annotation-model
 dependencies: []
-updated_at: "2026-10-16T18:28:15Z"
+updated_at: "2026-10-16T18:57:25Z"
 ---
 
 # T-132-ignore-stale-bindings-before-live-decision-duplicates Ignore stale copied bindings before detecting duplicate live corpus decisions
@@ -171,3 +171,110 @@ every fingerprint to `seen` after either stale rejection or live resolution.
 A later live entry takes the duplicate branch; reversing the entries leaves
 the resolved live decision intact. Keep the fix scoped to decision resolution
 and its public observable contract.
+
+## Execution Audit — 2026-10-16
+
+### Task Outcome
+
+| Status | Outcome | User/Product Impact |
+| --- | --- | --- |
+| Completed after all review and validation gates | Stale bindings no longer reserve live fingerprints | Legitimate accepted and withheld reviews survive either order; real live duplicates remain open |
+
+### Base, Pin and Ownership
+
+- Fetched `origin/main`; clean HEAD and remote both matched accepted cumulative
+  base `152606f18462f37f868df0fa1b49a7e9d192f00f`, containing tested product
+  `cf62913bd15a52d8a6951c09d53dfe74f508bea1`. No source-local-main transfer.
+- Spec SHA256 matched
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+- `mise exec -- taskrail validate`: `state valid`. `next --json`: sole
+  candidate T-132, high/todo, no dependencies, active spec, zero active tasks.
+  `start` at 18:38:10Z made only T-132 active. No second task was started.
+- Installed Lefthook before committing; checked Felix Müller maintainer identity.
+
+### What Changed
+
+| Area | Change | Contract served |
+| --- | --- | --- |
+| Shared corpus decision resolver | Continue after stale rejection, before live duplicate tracking | All reader consumers agree; stale entries cannot suppress a later live decision |
+| Public CLI regression | One parameterized permutation matrix for six reader forms and two statuses | Ordering, real duplicate suppression, diagnostics, exit precedence and read-only behavior |
+| Changelog | Fix bullet under Unreleased only | Explain the observable correction without recutting 0.3.0 |
+
+### Public Reproduction and Read-Only Proof
+
+Independently ran the self-contained task reproduction as subprocesses on the
+accepted base before editing production, then again after the fix. Each run
+normalized a fresh disposable two-passage corpus and segmented it through the CLI.
+The following command order is show / ordinary inspect / validate / checked inspect:
+
+| Input | Before | After | Target status after |
+| --- | --- | --- | --- |
+| Single accepted control | 0/0/0/0 | 0/0/0/0 | accepted |
+| Stale then live | 0/0/3/3; false invalid_input; open | 0/0/1/1; stale only, show silent | accepted |
+| Live then stale | 0/0/1/1 | 0/0/1/1 | accepted |
+| Two identical live | 0/0/3/3 | 0/0/3/3 | open |
+
+Both subprocess runs passed every per-input byte-hash/mtime snapshot check. The
+kept regression performs 468 public CLI reads: accepted/withheld, legacy claims
+list/checked inspect and joined readers, single control, every permutation of
+stale+live, two stale+live, stale+two identical live, stale+three live with an
+opposed status. Every read asserts exact directory membership, file bytes and
+nanosecond mtimes after deleting the setup writer lock; no reader lock appears.
+Two or more live entries stay open, including after a third live entry, and real
+duplicate exit 3 dominates stale exit 1 in joined checked readers. Legacy checked
+claims inspect retains its established exit 1. The original T-130 regression passes.
+
+### Workflow Evidence
+
+| Step | Evidence | Result |
+| --- | --- | --- |
+| 1 Understand | Read resolver, schema, CLI consumers, spec and reviewed-claim contract; inspected plan/apply | Shared resolver owns view decisions; plan/apply deliberately counts stale annotation-id decisions for safety and remains unchanged |
+| 2 Strict TDD | `uv run pytest -q tests/unit/corpus_claims_test.py -k stale_copied --tb=short` before fix | 12 failed, 53 deselected; false duplicate diagnostic and checked 3 instead of 1 |
+| 2 Green | Minimal production continue; `uv run pytest -q tests/unit/corpus_claims_test.py` | 65 passed |
+| 3 Initial checks | Exact `uv run ruff check` → `uv run mypy` → `uv run pytest -v` | All passed; 169 source files; 2528 tests, one existing Pydantic serializer warning |
+| 4 Simplify | Dedicated Task loaded personal code-simplifier and workflow-v3 reference | No edits recommended; minimal control flow retained; claims 65 passed |
+| 5 Independent review | Separate parallel General, Python, Security Tasks, each loading personal code-reviewer and mapped references | All returned the verbatim no-findings conclusion below |
+| 5 Candidate validation | Fresh read-only code-reviewer Task in candidate-validation mode | Empty candidate set confirmed; no IDs to reject or deduplicate |
+| 6 Dispositions | No concrete findings | No fixes, deferrals or finding-fix TDD required |
+| 7 Recheck | Exact mandatory chain rerun after review | Ruff passed; mypy 169 clean; pytest 2528 passed, one existing warning |
+| 7 Full gate | Sequential `mise run check` | Exit 0; 387 formatted files, mypy 169 clean, 2528 tests; all commit/push/author/mutation/distribution/publish-guard synthetic checks passed |
+| 7 Fresh final verifier | New read-only Task loaded code-reviewer in disposition-verification mode and mapped references | No unresolved or newly introduced issues; no review blocker |
+| 8 Finalize | `mise exec -- taskrail verify ... --result pass` then `complete`, at 2026-10-16T18:57:25Z | State valid; T-132 completed, 130 done, zero active, T-038 blocked, T-128 todo |
+
+Observed next after completion: `no active-spec eligible task`, empty candidates;
+Taskrail warns that future-spec T-128 is skipped. Neither T-128 nor any second task
+was started. `STATE.md` was changed only through Taskrail. Final spec pin unchanged.
+
+### Review Findings and Reference Loads
+
+All three lanes independently returned: **No concrete task-relevant findings.**
+Fresh candidate validation confirmed the empty set. No finding was omitted,
+paraphrased, fixed or deferred; one review cycle, no finding-fix cycle needed.
+The fresh final disposition verifier also returned verbatim:
+**No concrete task-relevant findings.** Its scoped `git diff --check` passed;
+it inspected the audit and existing check evidence without rerunning full suites.
+
+- General loaded reviewer-index and `ecc/agents/code-reviewer.md` (no mapped
+  companions); claims 65 passed and scoped diff whitespace check passed.
+- Python loaded reviewer-index, `ecc/agents/python-reviewer.md`, python-patterns,
+  coding-standards and common testing/performance/code-review rules; claims 65
+  and legacy goldens/review commands 33 passed; scoped whitespace check passed.
+- Security loaded reviewer-index, `ecc/agents/security-reviewer.md`, security-review,
+  common security/code-review rules and packaged cloud reference (not applicable);
+  claims 65 passed; record and plan/apply blast radius inspected.
+- Lane selection: General mandatory, Python changed language, Security persisted
+  input/review integrity. Database omitted: no SQL, schema, lock or persistence
+  mechanics changed. FastAPI omitted: no web framework or Pydantic schema change.
+  No UI, ML, RAG, infrastructure or other specialist trigger; within lane budget.
+
+### Scope and Limits
+
+- Fingerprint identity, version checks, v1 goldens and writer rejection remain
+  unchanged. Stale diagnostics still block recording; this fix is not a repair
+  writer or automatic acceptance. No policy/apply/authentication redesign.
+- T-129/T-131 lock protections untouched. T-130 remains completed, not reopened;
+  no T-124 dependency. T-038 remains maintainer-blocked; future-spec T-128 unstarted.
+- No release, tag, publication, deployment, manual workflow, secret/provider,
+  environment, infrastructure, spec, priority, dependency or acceptance-gate changes.
+- Rounds 1/2/3 remain consumed NOT CLEAN; round 4 is exclusively overseer-owned.
+- 2026-10-16T18:57:25Z: verification pass
