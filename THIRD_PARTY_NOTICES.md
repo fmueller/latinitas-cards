@@ -1,8 +1,8 @@
 # Third-Party Notices
 
 Latinitas Cards (`latinitas-cards`) is licensed under GPL-3.0-or-later. This notice is
-scoped to the supported `uv.lock` maintained on 2026-10-17: 93 `[[package]]` records, including
-the project itself, or 92 third-party package records (91 normalized names because CPU and
+scoped to the supported `uv.lock` maintained on 2026-10-17: 92 `[[package]]` records, including
+the project itself, or 91 third-party package records (90 normalized names because CPU and
 PyPI CUDA builds are separate `torch` records). The complete version-by-version inventory
 and evidence are in [the dependency-license audit](docs/license-compatibility-audit.md).
 The [historical audit](docs/license-compatibility-audit-2026-09-25.md) preserves the
@@ -13,7 +13,7 @@ original candidate evidence; maintenance does not retroactively change release a
 The default runtime resolves these direct packages from `uv.lock`:
 
 - `pydantic` 2.14.1 — MIT
-- `pandas` 2.3.3 — BSD-3-Clause
+- `pandas` 3.0.6 — BSD-3-Clause
 - `rich` 15.0.0 — MIT
 - `click` 8.5.0 — BSD-3-Clause
 - `typer` 0.27.3 — MIT

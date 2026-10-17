@@ -389,7 +389,7 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v030() -> Non
     assert "T-014" in release
     t014_front_matter = T014_TASK.read_text(encoding="utf-8").split("---", 2)[1]
     assert re.search(r"^status: (?:in_progress|completed)$", t014_front_matter, flags=re.MULTILINE)
-    assert "93 package records" in audit
+    assert "92 package records" in audit
     assert "2.14.1+cpu" in audit
     assert "LicenseRef-NVIDIA-Proprietary" in audit
     assert "poetry.lock" in release
@@ -406,7 +406,7 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v030() -> Non
         (package["name"], package["version"]) for package in lock["package"] if package["name"] != "latinitas-cards"
     }
     audit_rows = _audit_rows(audit)
-    assert len(audit_rows) == len(lock_inventory) == 92
+    assert len(audit_rows) == len(lock_inventory) == 91
     assert Counter((name, version) for name, version, _scope in audit_rows) == Counter(lock_inventory)
 
     expected_scopes: dict[tuple[str, str], set[str]] = {}
