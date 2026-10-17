@@ -1,11 +1,11 @@
 ---
 id: T-138-reconcile-dependabot-maintenance-batch
 title: Reconcile Dependabot maintenance batch and packaging inventories
-status: in_progress
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies: []
-updated_at: "2026-10-17T10:03:55Z"
+updated_at: "2026-10-17T12:33:35Z"
 ---
 
 # T-138-reconcile-dependabot-maintenance-batch Reconcile Dependabot maintenance batch and packaging inventories
@@ -191,3 +191,27 @@ T-121's historical inventory or authorization to publish a release.
 - Fresh disposition verifier returned "No concrete task-relevant findings."
   No findings were deferred; hosted exact-head and resulting-main CI still
   gate delivery. Taskrail finalization waits for all five accepted deliveries.
+
+### PR #63 delivery and batch acceptance
+
+- Updated head ee61b1a55dd004e20377ad8d999426a31ef54fc8 passed all nine
+  checks: Build 39032134728 and CodeQL 39032132246. Pre-push full pytest
+  also passed (2625 passed, 7 skipped, one expected warning, 270.54 seconds).
+- Fresh reconciliation found the unchanged accepted base ca002099, clean
+  mergeability, all checks successful, and no new reviews/comments. Rebase
+  merge delivered f05ec069baa16dba180ce5bf889080543c467228. Fetched main
+  includes the prior accepted base and exactly matches the tested PR tree.
+- Resulting-main Build 39032499688 and CodeQL 39032499654 passed; the
+  dependency-graph update also passed. All five PRs are merged, each with
+  exact-head and resulting-main CI accepted before the next delivery.
+- Final open Dependabot inventory is empty. Historical audit and active spec
+  checksums remain unchanged. No checks bypassed, NLP defaults added, release
+  triggered, publication attempted, or settings/protection changed.
+- GitHub's push banner still reported one high advisory (#144). This batch
+  does not claim a clean vulnerability scan or resolve unrelated advisories.
+  T-038 remains maintainer-blocked; T-128 remains outside this active spec.
+- Final lifecycle delivery is documentation/state only, with no change to the
+  accepted runtime tree. Exact lifecycle-head CI must still pass after push;
+  final ownership handoff to the coordinator follows that confirmation.
+- 2026-10-17T12:33:35Z: verification pass
+- 2026-10-17T12:33:35Z: Verified five sequential Dependabot deliveries and current audit compatibility; no publication. Verification run 2026-10-17; final lifecycle-head CI still monitored.
