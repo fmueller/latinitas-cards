@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-17T08:17:37Z"
+updated_at: "2026-10-17T08:37:32Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
-current_task: ""
-current_task_title: ""
-status_summary: blocked
+current_task: T-135-correct-obsolete-legacy-usfx-hardening
+current_task_title: Correct obsolete legacy USFX hardening documentation
+status_summary: in_progress
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-135-correct-obsolete-legacy-usfx-hardening: Correct obsolete legacy USFX hardening documentation'
+next_action: Continue task T-135-correct-obsolete-legacy-usfx-hardening
 last_verification_result: pass for T-134-reject-apply-aliases-to-resolved-default-manifest at 2026-10-17T08:17:28Z
 relevant_artifacts: []
 continuation_notes:
@@ -23,11 +23,12 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: none
+- Task: `T-135-correct-obsolete-legacy-usfx-hardening`
+- Title: Correct obsolete legacy USFX hardening documentation
 
 ## Status
 
-- blocked
+- in_progress
 
 ## Blockers
 
@@ -39,7 +40,7 @@ continuation_notes:
 
 ## Next Action
 
-- Start task T-135-correct-obsolete-legacy-usfx-hardening: Correct obsolete legacy USFX hardening documentation
+- Continue task T-135-correct-obsolete-legacy-usfx-hardening
 
 ## Relevant Artifacts
 
@@ -51,8 +52,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 3
-- in_progress: 0
+- todo: 2
+- in_progress: 1
 - completed: 132
 - blocked: 1
 - cancelled: 0

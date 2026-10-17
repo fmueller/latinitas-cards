@@ -142,8 +142,10 @@ passage in the same work, or fail `invalid_structure` if none exists.
 The strict expat reader rejects DTD/entity declarations and external references,
 disables parameter-entity parsing, checks 64 MiB at stat and while streaming, and
 rejects element depth above 64, including note descendants. No XML dependency is added.
-Legacy Vulgate commands retain their existing parsing and outputs; their hardening
-is pending and they are not yet resource-bounded XML ingestors.
+For accepted inputs, legacy Vulgate commands (`preview --usfx`, `generate --usfx`,
+and `cloze` with USFX) retain their existing projection and outputs. They reject
+DTD/entity declarations and external entities, inputs over 64 MiB, and element depth over
+64; these limits do not bound total memory.
 
 The GEN 1:1–5 fixture and expected JSONL are committed. Regenerate deliberately
 with `uv run python scripts/regen-corpus-fixtures.py --target usfx --force`;
