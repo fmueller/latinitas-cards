@@ -64,3 +64,30 @@ T-121's historical inventory or authorization to publish a release.
   (278.10 seconds), format, message/author, mutation, 54 distribution cases,
   and publication guards. `taskrail validate` reports state valid.
 - Batch remains active; verify/complete wait for all PR dispositions and CI.
+
+### PR #65 delivery / PR #72 preparation
+
+- PR #65 head 84be9f46df32283f016bb8f0b13eb2abf5115794 passed all nine
+  checks: Build 39024505482 and CodeQL 39024504561. Fresh reviews/comments
+  had no blockers; exact-head rebase merge delivered
+  48110d41b4b6453aad1f612a49289bd0214c084a, whose tree matches that head.
+  Previous accepted main remains an ancestor. Resulting-main Build
+  39025008366 and CodeQL 39025007978 passed before any PR #72 writes.
+- PR #72 original head 822d966841a7549f818842957df4d76bc6c6046e rebased
+  cleanly onto that accepted main. Scope: two release download v4 -> v8
+  references; uploader remains v4, name/path remain dist/dist/. No source,
+  dependency, test, trigger, permission, publication, or install-contract edits.
+- Exact upstream action metadata confirms v8 uses Node24, default digest
+  mismatch error, and default decompression enabled. The v4 uploader produces
+  archived artifacts with digests; hosted ubuntu-latest supports the runner.
+  Consumer-first compatibility is based on upstream API/source review, not an
+  executed release workflow; no publication workflow is triggered for testing.
+- Action-only validation: release_workflow_test.py 2 passed; actual publication
+  guard and its adversarial synthetic suite passed. Existing acceptance tests
+  are retained unchanged; no artificial version-string regression test added.
+- Dedicated simplifier made no edits. General and Security review each returned
+  "No concrete task-relevant findings." Candidate validation found no lost
+  candidates; no dispositions. Fresh disposition verifier returned the same
+  no-findings conclusion after focused tests/guards passed again. Language,
+  database, and ML lanes omitted: only action references and task notes change.
+- Exact-head hosted Build/CodeQL and resulting-main CI remain delivery gates.
