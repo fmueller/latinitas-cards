@@ -1,10 +1,12 @@
 # Third-Party Notices
 
 Latinitas Cards (`latinitas-cards`) is licensed under GPL-3.0-or-later. This notice is
-scoped to the exact `uv.lock` resolved on 2026-09-25: 93 `[[package]]` records, including
+scoped to the supported `uv.lock` maintained on 2026-10-17: 93 `[[package]]` records, including
 the project itself, or 92 third-party package records (91 normalized names because CPU and
 PyPI CUDA builds are separate `torch` records). The complete version-by-version inventory
 and evidence are in [the dependency-license audit](docs/license-compatibility-audit.md).
+The [historical audit](docs/license-compatibility-audit-2026-09-25.md) preserves the
+original candidate evidence; maintenance does not retroactively change release acceptance.
 
 ## Stable runtime dependencies
 

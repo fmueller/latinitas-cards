@@ -45,9 +45,17 @@ def test_package_metadata_preserves_install_contract() -> None:
         extra: ["cltk[stanza] (>=2.5.1,<3.0.0)", "torch>=2.9"] for extra in ("annotate", "annotate-gpu")
     }
     inventory = tomllib.loads((ROOT / "uv.lock").read_text())["package"]
+    # T-138 maintenance inventory; the pre-maintenance lock fingerprint was
+    # 901378ad9589536b0c6c4a1f916e3f750e6b236354e2bbf7113b96c4997e1385.
     assert hashlib.sha256(json.dumps(inventory, sort_keys=True).encode()).hexdigest() == (
-        "901378ad9589536b0c6c4a1f916e3f750e6b236354e2bbf7113b96c4997e1385"
+        "9a16b0beef85c9d01e16347d8e4f3b3c8679077450db6347037b4bf03ecf2780"
     )
+    historical_audit = ROOT / "docs/license-compatibility-audit-2026-09-25.md"
+    assert hashlib.sha256(historical_audit.read_bytes()).hexdigest() == (
+        "1ab38cb0f042aefcfef1d63efb4fa47689c92b64ee044e1ddd8baaaa110de137"
+    )
+    current_audit = (ROOT / "docs/license-compatibility-audit.md").read_text()
+    assert "[historical snapshot](license-compatibility-audit-2026-09-25.md)" in current_audit
 
 
 def relative_links(markdown: str) -> list[str]:

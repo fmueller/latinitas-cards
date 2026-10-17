@@ -6,7 +6,10 @@ compatibility opinion.
 
 ## Snapshot and method
 
-- Version snapshot: `v0.1.0` candidate preparation on 2026-09-25.
+- Current supported inventory: T-138 maintenance on 2026-10-17, starting with
+  urllib3 2.8.0 in PR #65. This does not revise prior release acceptance evidence.
+  The byte-for-byte [historical snapshot](license-compatibility-audit-2026-09-25.md)
+  preserves the original `v0.1.0` candidate inventory and audit conclusions.
 - Dependency source of truth: `uv.lock`, which currently has 93 package records (`[[package]]`),
   including the editable `latinitas-cards` project record and 92 third-party package
   records. The third-party records have 91 normalized names because `torch` has separate
@@ -135,7 +138,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `tzdata` | `2025.2` | main, dev, annotate, annotate-gpu | Apache-2.0; wheel `LICENSE` and `licenses/LICENSE_APACHE` |
 | `udapi` | `0.5.2` | annotate, annotate-gpu | GPL-3.0-or-later; wheel `LICENSE` |
 | `udtools` | `0.2.8` | annotate, annotate-gpu | GPL-2.0-or-later; wheel `LICENSE.txt` |
-| `urllib3` | `2.7.0` | annotate, annotate-gpu | MIT; wheel `LICENSE.txt` |
+| `urllib3` | `2.8.0` | annotate, annotate-gpu | MIT; exact wheel PEP 658 metadata declares `License-Expression: MIT` and `License-File: LICENSE.txt` |
 | `zstandard` | `0.25.0` | main, dev, annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE` |
 
 ## Source links and obligations
