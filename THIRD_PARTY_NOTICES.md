@@ -12,11 +12,11 @@ original candidate evidence; maintenance does not retroactively change release a
 
 The default runtime resolves these direct packages from `uv.lock`:
 
-- `pydantic` 2.13.5 — MIT
+- `pydantic` 2.14.1 — MIT
 - `pandas` 2.3.3 — BSD-3-Clause
 - `rich` 15.0.0 — MIT
-- `click` 8.4.2 — BSD-3-Clause
-- `typer` 0.27.2 — MIT
+- `click` 8.5.0 — BSD-3-Clause
+- `typer` 0.27.3 — MIT
 - `zstandard` 0.25.0 — BSD-3-Clause
 
 Their transitive runtime packages and the development group are recorded individually in
@@ -26,9 +26,9 @@ environments, not additional stable runtime promises.
 ## Optional experimental annotation dependencies
 
 The `annotate` extra is CPU-only on non-macOS platforms and resolves `cltk` 2.5.1 with its
-`stanza` extra, `stanza` 1.14.0, and PyTorch `2.14.0+cpu` from the PyTorch CPU index. The
-macOS marker uses PyPI PyTorch `2.14.0`. The `annotate-gpu` extra resolves PyPI PyTorch
-`2.14.0` and the following CUDA-related records; it conflicts with the CPU extra:
+`stanza` extra, `stanza` 1.14.0, and PyTorch `2.14.1+cpu` from the PyTorch CPU index. The
+macOS marker uses PyPI PyTorch `2.14.1`. The `annotate-gpu` extra resolves PyPI PyTorch
+`2.14.1` and the following CUDA-related records; it conflicts with the CPU extra:
 
 - `cuda-bindings` 13.4.1
 - `cuda-pathfinder` 1.8.1

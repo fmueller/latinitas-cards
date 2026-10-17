@@ -390,14 +390,14 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v030() -> Non
     t014_front_matter = T014_TASK.read_text(encoding="utf-8").split("---", 2)[1]
     assert re.search(r"^status: (?:in_progress|completed)$", t014_front_matter, flags=re.MULTILINE)
     assert "93 package records" in audit
-    assert "2.14.0+cpu" in audit
+    assert "2.14.1+cpu" in audit
     assert "LicenseRef-NVIDIA-Proprietary" in audit
     assert "poetry.lock" in release
     assert "GitPython" in release
     assert "GitPython" not in notices
     assert "`cltk` 2.5.1" in notices
     assert "`stanza` 1.14.0" in notices
-    assert "PyTorch `2.14.0+cpu`" in notices
+    assert "PyTorch `2.14.1+cpu`" in notices
     for package in GPU_PACKAGES:
         version = next(item["version"] for item in lock["package"] if item["name"] == package)
         assert f"`{package}` {version}" in notices

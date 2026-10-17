@@ -118,3 +118,40 @@ T-121's historical inventory or authorization to publish a release.
   hosted CI. Language/database/ML lanes omitted: no such contracts change.
 - Repeated focused checks passed; `mise exec -- taskrail validate` reports
   state valid. Hosted exact-head and resulting-main CI still gate delivery.
+
+### PR #71 delivery / PR #70 preparation
+
+- PR #71 head 79515ac1ba728536b4774e64a0a5f867b8e0fb28 passed all nine
+  checks: Build 39027779787, CodeQL 39027776660. Fresh reconciliation showed
+  unchanged clean base/head, no comments or reviews. Rebase merge delivered
+  1ba40e38bb0ceebded6d109783c0c4bf468aeb29; accepted base ancestor and tree
+  equality verified, including mutation v7.0.2. Resulting-main Build
+  39028216714 and CodeQL 39028216576 passed before PR #70 writes.
+- PR #70 original head 8228d562f4e7d7e36ddbf769586040993d70ec17 rebased
+  cleanly onto that accepted main, preserving accepted urllib3 2.8.0.
+- Actual version changes: click 8.4.2 -> 8.5.0; pydantic 2.13.5 -> 2.14.1;
+  core 2.46.5 -> 2.50.1; typer 0.27.2 -> 0.27.3; torch 2.14.0 -> 2.14.1
+  (PyPI and CPU); mypy 2.3.1 -> 2.4.0; librt 0.15.0 -> 0.16.0; ruff
+  0.16.8 -> 0.17.0; pandas-stubs 3.0.0.260204 -> 3.0.5.260914;
+  typing-extensions 4.15.0 -> 4.16.0; typing-inspection 0.4.2 -> 0.4.4.
+  Click upper bound becomes 8.6 and Ruff upper bound 0.18; no extra churn.
+- RED: existing packaging and release audit tests failed on supported Click
+  bounds and the 12 changed audit records. GREEN: after exact current audit,
+  notices, and fingerprint maintenance, all 6 focused tests pass. Historical
+  audit checksum and prior release evidence are unchanged; no checks removed.
+- Fetched exact updated wheel PEP 658 metadata, including PyTorch CPU-index
+  metadata, without installing NLP. Python ranges accept 3.13/3.14; license
+  expressions/files retain the documented terms, including composite PyTorch
+  and unresolved NVIDIA obligations. Default six packages and extra boundaries
+  unchanged; 93 total / 92 third-party records remain.
+- Dedicated simplifier made no edits. Independent General, Python, Security
+  each returned "No concrete task-relevant findings." Candidate validation
+  confirmed zero candidates; no fix/deferral dispositions. Fresh final verifier
+  returned the same no-findings conclusion. Database/framework/ML lanes omitted:
+  no corresponding implementation or contract changes, only dependency versions.
+- Final exact chain passed: ruff; mypy (169 source files); pytest (2625 passed,
+  7 skipped, 1 expected serializer warning, 273.95 seconds). Historical audit
+  and active-spec checksums independently rechecked unchanged.
+- Sequential `mise run check` passed, including a 271.94-second full suite,
+  format/type/lint checks, all policy/mutation guards, 54 distribution cases,
+  and publication synthetic guards. Taskrail state validates with T-138 active.
