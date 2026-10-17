@@ -6,8 +6,10 @@ compatibility opinion.
 
 ## Snapshot and method
 
-- Current supported inventory: T-138 maintenance on 2026-10-17, starting with
-  urllib3 2.8.0 in PR #65. This does not revise prior release acceptance evidence.
+- Current supported inventory: T-138 maintenance on 2026-10-17, including
+  urllib3 2.8.0 (PR #65) and the grouped updates in PR #70. Exact updated wheel
+  PEP 658 metadata was checked for Python requirements and license fields on
+  PyPI and the CPU index. This does not revise prior release acceptance evidence.
   The byte-for-byte [historical snapshot](license-compatibility-audit-2026-09-25.md)
   preserves the original `v0.1.0` candidate inventory and audit conclusions.
 - Dependency source of truth: `uv.lock`, which currently has 93 package records (`[[package]]`),
@@ -54,7 +56,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `ast-serialize` | `0.11.2` | dev | MIT; wheel `LICENSE` and `crates/LICENSE` |
 | `certifi` | `2026.1.4` | annotate, annotate-gpu | MPL-2.0; wheel `LICENSE` |
 | `charset-normalizer` | `3.4.4` | annotate, annotate-gpu | MIT; wheel `LICENSE` |
-| `click` | `8.4.2` | main, dev, annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.txt` |
+| `click` | `8.5.0` | main, dev, annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.txt` |
 | `cltk` | `2.5.1` | annotate, annotate-gpu | MIT; upstream [CLTK license](https://github.com/cltk/cltk/blob/master/LICENSE), wheel ships `LICENSE` |
 | `colorama` | `0.4.6` | main, dev, annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.txt`, metadata expression unstated |
 | `coverage` | `7.16.1` | dev | Apache-2.0; wheel `LICENSE.txt` and `NOTICE.txt` |
@@ -73,7 +75,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `iniconfig` | `2.1.0` | dev | MIT; wheel `LICENSE` |
 | `jinja2` | `3.1.6` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.txt`, metadata expression unstated |
 | `libcst` | `1.9.0` | dev | MIT with identified PSF-2.0 and Apache-2.0 portions; wheel license text |
-| `librt` | `0.15.0` | dev | MIT; wheel `LICENSE` |
+| `librt` | `0.16.0` | dev | MIT; wheel `LICENSE` |
 | `linkify-it-py` | `2.2.0` | dev | MIT; wheel `LICENSE` |
 | `markdown-it-py` | `4.0.0` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` and `LICENSE.markdown-it`, metadata expression unstated |
 | `markupsafe` | `3.0.3` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.txt` |
@@ -81,7 +83,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `mdurl` | `0.1.2` | main, dev, annotate, annotate-gpu | MIT; upstream project license, artifact metadata omits a license field |
 | `mpmath` | `1.3.0` | annotate, annotate-gpu | BSD; wheel `LICENSE` |
 | `mutmut` | `3.8.0` | dev | BSD-3-Clause; wheel `LICENSE` |
-| `mypy` | `2.3.1` | dev | MIT; wheel `LICENSE` plus typeshed license notices |
+| `mypy` | `2.4.0` | dev | MIT; wheel `LICENSE` plus typeshed license notices |
 | `mypy-extensions` | `1.1.0` | dev | MIT; wheel `LICENSE` |
 | `networkx` | `3.6.1` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.txt` |
 | `numpy` | `2.5.3` | main, dev, annotate, annotate-gpu | BSD-3-Clause, 0BSD, MIT, Zlib, CC0-1.0; wheel license files |
@@ -102,13 +104,13 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `nvidia-nvtx` | `13.0.85` | annotate-gpu | Apache-2.0; wheel `License.txt` |
 | `packaging` | `25.0` | dev, annotate, annotate-gpu | Apache-2.0 OR BSD-2-Clause; wheel `LICENSE`, `LICENSE.APACHE`, and `LICENSE.BSD` |
 | `pandas` | `2.3.3` | main, dev, annotate, annotate-gpu | BSD-3-Clause; pandas upstream license, artifact expression unstated |
-| `pandas-stubs` | `3.0.0.260204` | dev | BSD-3-Clause; wheel `LICENSE` |
+| `pandas-stubs` | `3.0.5.260914` | dev | BSD-3-Clause; wheel `LICENSE` |
 | `pathspec` | `1.1.1` | dev | MPL-2.0; wheel `LICENSE`, metadata expression unstated |
 | `platformdirs` | `4.11.8` | dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
 | `pluggy` | `1.6.0` | dev | MIT; wheel `LICENSE` |
 | `protobuf` | `6.33.5` | annotate, annotate-gpu | 3-Clause BSD; upstream package metadata |
-| `pydantic` | `2.13.5` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
-| `pydantic-core` | `2.46.5` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
+| `pydantic` | `2.14.1` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
+| `pydantic-core` | `2.50.1` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
 | `pygments` | `2.21.0` | main, dev, annotate, annotate-gpu | BSD-2-Clause; wheel `AUTHORS` and `LICENSE` |
 | `pytest` | `9.1.1` | dev | MIT; wheel `LICENSE` |
 | `python-dateutil` | `2.9.0.post0` | main, dev, annotate, annotate-gpu | Dual Apache-2.0 or BSD-3-Clause; wheel `LICENSE` |
@@ -119,7 +121,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `regex` | `2026.2.19` | annotate, annotate-gpu | Apache-2.0 AND CNRI-Python; wheel `LICENSE.txt` |
 | `requests` | `2.33.0` | annotate, annotate-gpu | Apache-2.0; wheel `LICENSE` and `NOTICE` |
 | `rich` | `15.0.0` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
-| `ruff` | `0.16.8` | dev | MIT; wheel `LICENSE` |
+| `ruff` | `0.17.0` | dev | MIT; wheel `LICENSE` |
 | `setproctitle` | `1.3.7` | dev | BSD-3-Clause; wheel `LICENSE` |
 | `setuptools` | `84.0.0` | annotate, annotate-gpu | MIT; wheel `LICENSE` |
 | `shellingham` | `1.5.4` | main, dev, annotate, annotate-gpu | ISC; wheel `LICENSE` |
@@ -128,13 +130,13 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `sympy` | `1.14.0` | annotate, annotate-gpu | BSD; wheel `LICENSE` |
 | `termcolor` | `3.3.0` | annotate, annotate-gpu | MIT; wheel `COPYING.txt` |
 | `textual` | `8.2.8` | dev | MIT; wheel `LICENSE` |
-| `torch` | `2.14.0` | annotate-gpu and macOS annotate | Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT; wheel license files, upstream [PyTorch license](https://github.com/pytorch/pytorch/blob/main/LICENSE) |
-| `torch` | `2.14.0+cpu` | non-macOS annotate | Same PyTorch composite expression; CPU-index wheel license files |
+| `torch` | `2.14.1` | annotate-gpu and macOS annotate | Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT; wheel license files, upstream [PyTorch license](https://github.com/pytorch/pytorch/blob/main/LICENSE) |
+| `torch` | `2.14.1+cpu` | non-macOS annotate | Same PyTorch composite expression; CPU-index wheel license files |
 | `tqdm` | `4.67.3` | annotate, annotate-gpu | MPL-2.0 AND MIT; wheel `LICENCE` |
 | `triton` | `3.8.0` | annotate-gpu | MIT; wheel `LICENSE` |
-| `typer` | `0.27.2` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
-| `typing-extensions` | `4.15.0` | main, dev, annotate, annotate-gpu | PSF-2.0; wheel `LICENSE` |
-| `typing-inspection` | `0.4.2` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
+| `typer` | `0.27.3` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
+| `typing-extensions` | `4.16.0` | main, dev, annotate, annotate-gpu | PSF-2.0; wheel `LICENSE` |
+| `typing-inspection` | `0.4.4` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
 | `tzdata` | `2025.2` | main, dev, annotate, annotate-gpu | Apache-2.0; wheel `LICENSE` and `licenses/LICENSE_APACHE` |
 | `udapi` | `0.5.2` | annotate, annotate-gpu | GPL-3.0-or-later; wheel `LICENSE` |
 | `udtools` | `0.2.8` | annotate, annotate-gpu | GPL-2.0-or-later; wheel `LICENSE.txt` |
@@ -146,7 +148,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 - [CLTK license](https://github.com/cltk/cltk/blob/master/LICENSE) — MIT.
 - [Stanza license](https://github.com/stanfordnlp/stanza/blob/main/LICENSE) — Apache-2.0.
 - [PyTorch license](https://github.com/pytorch/pytorch/blob/main/LICENSE) and [PyTorch
-  package page](https://pypi.org/project/torch/2.14.0/) — composite expression and bundled
+  package page](https://pypi.org/project/torch/2.14.1/) — composite expression and bundled
   third-party license files.
 - [NVIDIA CUDA license/EULA materials](https://docs.nvidia.com/cuda/eula/index.html) and
   the exact NVIDIA wheel `License.txt` files — proprietary terms apply to the runtime

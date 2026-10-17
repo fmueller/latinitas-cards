@@ -37,7 +37,7 @@ def test_package_metadata_preserves_install_contract() -> None:
         "pydantic (>=2.11.9,<3.0.0)",
         "pandas (>=2.3.3,<3.0.0)",
         "rich>=13.9.4,<16.0.0",
-        "click>=8.1,<8.5",
+        "click>=8.1,<8.6",
         "typer>=0.19.2,<0.28.0",
         "zstandard (>=0.25.0,<0.26.0)",
     ]
@@ -48,7 +48,7 @@ def test_package_metadata_preserves_install_contract() -> None:
     # T-138 maintenance inventory; the pre-maintenance lock fingerprint was
     # 901378ad9589536b0c6c4a1f916e3f750e6b236354e2bbf7113b96c4997e1385.
     assert hashlib.sha256(json.dumps(inventory, sort_keys=True).encode()).hexdigest() == (
-        "9a16b0beef85c9d01e16347d8e4f3b3c8679077450db6347037b4bf03ecf2780"
+        "ada62a4899ca232abfaa7085db2d99cfc917b2b3292716a0a2e04eab07363c84"
     )
     historical_audit = ROOT / "docs/license-compatibility-audit-2026-09-25.md"
     assert hashlib.sha256(historical_audit.read_bytes()).hexdigest() == (
