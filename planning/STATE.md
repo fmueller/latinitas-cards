@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-17T12:33:35Z"
+updated_at: "2026-10-17T13:45:57Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: Resolve blocker on T-038-publish-releases-on-pypi
+next_action: 'Start task T-139-reject-multiline-publishing-capabilities-in: Reject multiline publishing capabilities in workflow guard'
 last_verification_result: pass for T-138-reconcile-dependabot-maintenance-batch at 2026-10-17T12:33:35Z
 relevant_artifacts: []
 continuation_notes:
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- Resolve blocker on T-038-publish-releases-on-pypi
+- Start task T-139-reject-multiline-publishing-capabilities-in: Reject multiline publishing capabilities in workflow guard
 
 ## Relevant Artifacts
 
@@ -51,7 +51,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 3
 - in_progress: 0
 - completed: 136
 - blocked: 1
