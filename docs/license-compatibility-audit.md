@@ -7,14 +7,15 @@ compatibility opinion.
 ## Snapshot and method
 
 - Current supported inventory: T-138 maintenance on 2026-10-17, including
-  urllib3 2.8.0 (PR #65) and the grouped updates in PR #70. Exact updated wheel
+  urllib3 2.8.0 (PR #65), the grouped updates in PR #70, and pandas 3.0.6
+  (PR #63). Exact updated wheel
   PEP 658 metadata was checked for Python requirements and license fields on
   PyPI and the CPU index. This does not revise prior release acceptance evidence.
   The byte-for-byte [historical snapshot](license-compatibility-audit-2026-09-25.md)
   preserves the original `v0.1.0` candidate inventory and audit conclusions.
-- Dependency source of truth: `uv.lock`, which currently has 93 package records (`[[package]]`),
-  including the editable `latinitas-cards` project record and 92 third-party package
-  records. The third-party records have 91 normalized names because `torch` has separate
+- Dependency source of truth: `uv.lock`, which currently has 92 package records (`[[package]]`),
+  including the editable `latinitas-cards` project record and 91 third-party package
+  records. The third-party records have 90 normalized names because `torch` has separate
   CPU-index and PyPI records.
 - Resolution scopes were checked with locked, non-installing exports for the default
   runtime (`main`), `dev`, `annotate`, and `annotate-gpu`. The CPU and GPU extras conflict
@@ -103,7 +104,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `nvidia-nvshmem-cu13` | `3.4.5` | annotate-gpu | `LicenseRef-NVIDIA-Proprietary`; wheel `License.txt` |
 | `nvidia-nvtx` | `13.0.85` | annotate-gpu | Apache-2.0; wheel `License.txt` |
 | `packaging` | `25.0` | dev, annotate, annotate-gpu | Apache-2.0 OR BSD-2-Clause; wheel `LICENSE`, `LICENSE.APACHE`, and `LICENSE.BSD` |
-| `pandas` | `2.3.3` | main, dev, annotate, annotate-gpu | BSD-3-Clause; pandas upstream license, artifact expression unstated |
+| `pandas` | `3.0.6` | main, dev, annotate, annotate-gpu | BSD-3-Clause; [upstream license](https://github.com/pandas-dev/pandas/blob/v3.0.6/LICENSE), artifact expression unstated |
 | `pandas-stubs` | `3.0.5.260914` | dev | BSD-3-Clause; wheel `LICENSE` |
 | `pathspec` | `1.1.1` | dev | MPL-2.0; wheel `LICENSE`, metadata expression unstated |
 | `platformdirs` | `4.11.8` | dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
@@ -115,7 +116,6 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `pytest` | `9.1.1` | dev | MIT; wheel `LICENSE` |
 | `python-dateutil` | `2.9.0.post0` | main, dev, annotate, annotate-gpu | Dual Apache-2.0 or BSD-3-Clause; wheel `LICENSE` |
 | `python-dotenv` | `1.2.3` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE` |
-| `pytz` | `2025.2` | main, dev, annotate, annotate-gpu | MIT; wheel `LICENSE.txt` |
 | `pyyaml` | `6.0.3` | dev, annotate, annotate-gpu | MIT; wheel `LICENSE` |
 | `pyyaml-ft` | `8.0.0` | dev | MIT; wheel `LICENSE` |
 | `regex` | `2026.2.19` | annotate, annotate-gpu | Apache-2.0 AND CNRI-Python; wheel `LICENSE.txt` |

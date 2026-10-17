@@ -715,7 +715,10 @@ def test_inspect_lists_notetype_and_fields(tmp_path: Path) -> None:
 
 def test_split_command_writes_csv_rows(tmp_path: Path) -> None:
     csv_path = tmp_path / "input.csv"
-    csv_path.write_text('Latein,Konstruktion_Hinweise\namo,"amo, amas, amat"\n', encoding="utf-8")
+    csv_path.write_text(
+        'Latein,Konstruktion_Hinweise,English,Literal,Empty\nmāter,"amō, amās",love,NA,\nfīlius,"sum, es",be,NULL,\n',
+        encoding="utf-8",
+    )
     out_path = tmp_path / "split.csv"
     runner = CliRunner()
     result = runner.invoke(
@@ -733,10 +736,16 @@ def test_split_command_writes_csv_rows(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code == 0
-    out_text = out_path.read_text(encoding="utf-8")
-    assert "form" in out_text
-    assert "amo" in out_text
-    assert "amas" in out_text
+    import csv
+
+    with out_path.open(newline="", encoding="utf-8") as output:
+        rows = list(csv.DictReader(output))
+    assert [(row["form"], row["Latein"], row["English"], row["Literal"], row["Empty"]) for row in rows] == [
+        ("amo", "māter", "love", "NA", ""),
+        ("amas", "māter", "love", "NA", ""),
+        ("sum", "fīlius", "be", "NULL", ""),
+        ("es", "fīlius", "be", "NULL", ""),
+    ]
 
 
 def test_split_overwrites_source_field_by_default(tmp_path: Path) -> None:

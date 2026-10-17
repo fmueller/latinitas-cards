@@ -155,3 +155,39 @@ T-121's historical inventory or authorization to publish a release.
 - Sequential `mise run check` passed, including a 271.94-second full suite,
   format/type/lint checks, all policy/mutation guards, 54 distribution cases,
   and publication synthetic guards. Taskrail state validates with T-138 active.
+
+### PR #70 delivery / PR #63 preparation
+
+- PR #70 head b2830ac2fe9de7c53cba9ed758412eda1b55c657 passed all nine
+  checks: Build 39029742139 and CodeQL 39029740123. Fresh reconciliation
+  preceded rebase merge to ca0020995a3f22b607a71381169968b5f6f573c1;
+  ancestry and tree equality verified. Resulting-main Build 39030222702 and
+  CodeQL 39030222426 passed before PR #63 writes.
+- Dependabot automatically rebased PR #63 to head
+  cc16efd28386f5259ce41d6ef1ca816a3e870e59 on that accepted main. No local
+  rebase conflict. Only pandas 2.3.3 -> 3.0.6 and pytz removal change the lock;
+  the pandas bound remains >=2.3.3 and now permits <4.0.0.
+- RED: existing packaging and current-audit tests failed on stale bound,
+  inventory fingerprint, counts, and pandas/pytz rows. Reconciled the current
+  audit/notices and exact assertions: 92 total / 91 third-party records,
+  90 normalized third-party names. Historical audit and spec hashes unchanged.
+- Checked exact pandas 3.0.6 wheel metadata (Python >=3.11; cp313/cp314
+  artifacts available); upstream v3.0.6 LICENSE confirms BSD-3-Clause while
+  artifact license expression remains unstated. No NLP dependency added to
+  defaults, no optional model installed, no runtime implementation changed.
+- Strengthened the existing public split CSV test with asymmetric two-row
+  expansion, NA/NULL/empty values and carried Unicode. Deliberately removing
+  keep_default_na=False at runtime produced the expected failure: NA/empty
+  became nan. Restored ordinary runtime passes. All 57 focused CLI,
+  packaging, and release-candidate tests pass; uv lock --check also passes.
+- Dedicated simplifier made no edits. Independent General, Python, Security
+  each returned "No concrete task-relevant findings." Fresh candidate
+  validation confirmed zero candidates and no dispositions. Database/framework/
+  ML lanes omitted: no corresponding implementation or contract changes.
+- Final exact chain passed: ruff; mypy (169 source files); pytest (2625 passed,
+  7 skipped, one expected serializer warning, 273.06 seconds). Sequential
+  `mise run check` passed, including full pytest in 271.99 seconds, formatting,
+  type/lint checks and distribution/policy/publication synthetic guards.
+- Fresh disposition verifier returned "No concrete task-relevant findings."
+  No findings were deferred; hosted exact-head and resulting-main CI still
+  gate delivery. Taskrail finalization waits for all five accepted deliveries.
