@@ -91,3 +91,30 @@ T-121's historical inventory or authorization to publish a release.
   no-findings conclusion after focused tests/guards passed again. Language,
   database, and ML lanes omitted: only action references and task notes change.
 - Exact-head hosted Build/CodeQL and resulting-main CI remain delivery gates.
+
+### PR #72 delivery / PR #71 preparation
+
+- PR #72 head cb0b524d08af4013727287e3b4e6ad938a567fab passed all nine
+  checks: Build 39026068284, CodeQL 39026066584. Fresh head/base/reviews
+  were unchanged and clean. Rebase merge delivered
+  a2cae54233a4f2d93cd7b060615dfe62cfcd5aff; accepted base is an ancestor
+  and tree exactly matches the validated head. Resulting-main Build
+  39026560552 and CodeQL 39026560719 passed before PR #71 writes.
+- PR #71 original head 245bc82a40ba69a12a8b183a0c11d548503dd9a0 rebased
+  cleanly onto accepted main a2cae54233a4f2d93cd7b060615dfe62cfcd5aff.
+- Rejected incidental mutation workflow v7.0.2 -> floating v7 change. A
+  temporary byte-exact-to-main assertion failed before correction, then passed
+  after restoring the existing pin. No new permanent version-string test.
+- Final workflow scope is release producer upload v4 -> v7, paired with the
+  already accepted download v8 consumers. Exact upstream action metadata
+  confirms archive defaults true and Node24. Directory upload/name/dist paths,
+  hash validation, tag-only release, publish environment/OIDC remain unchanged.
+- Action-only checks: release workflow 2 passed; actual/synthetic publication
+  guards and mutation configuration checks passed. No release run was invoked.
+- Dedicated simplifier made no edits. Independent General and Security each
+  returned "No concrete task-relevant findings." Candidate validation found
+  zero candidates; no dispositions. Fresh final verifier returned the same
+  no-findings conclusion, noting the pin correction must be committed before
+  hosted CI. Language/database/ML lanes omitted: no such contracts change.
+- Repeated focused checks passed; `mise exec -- taskrail validate` reports
+  state valid. Hosted exact-head and resulting-main CI still gate delivery.
