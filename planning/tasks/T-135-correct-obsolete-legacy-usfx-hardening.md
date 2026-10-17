@@ -1,11 +1,11 @@
 ---
 id: T-135-correct-obsolete-legacy-usfx-hardening
 title: Correct obsolete legacy USFX hardening documentation
-status: in_progress
+status: completed
 priority: high
 spec_ref: specs/v0.3.0.md#usfx-normalization
 dependencies: []
-updated_at: "2026-10-17T08:24:59Z"
+updated_at: "2026-10-17T08:37:57Z"
 ---
 
 # T-135-correct-obsolete-legacy-usfx-hardening Correct obsolete legacy USFX hardening documentation
@@ -193,3 +193,5 @@ cloze dtd: exit 3; unsafe_xml; output sentinel preserved
   the actual diff or surrounding source, spec, and tests.`; `No finding IDs,
   fixes, or deferrals.` It relied on the parent's full-suite results, not a new
   suite run. One task-local review/disposition cycle; no outstanding findings.
+- 2026-10-17T08:37:50Z: verification pass
+- 2026-10-17T08:37:57Z: Verified pass at 2026-10-17T08:37:50Z after all gates and fresh final disposition verification. Tested candidate fa8a9926bca3d01801232dd57bcfae33b3721abe; only documentation and workflow audit changed. No runtime or total-memory/HTML safety claim; T136 observed next only, not started.

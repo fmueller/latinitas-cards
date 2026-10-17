@@ -1,15 +1,15 @@
 ---
 schema_version: 1
-updated_at: "2026-10-17T08:37:32Z"
+updated_at: "2026-10-17T08:37:57Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
-current_task: T-135-correct-obsolete-legacy-usfx-hardening
-current_task_title: Correct obsolete legacy USFX hardening documentation
-status_summary: in_progress
+current_task: ""
+current_task_title: ""
+status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: Continue task T-135-correct-obsolete-legacy-usfx-hardening
-last_verification_result: pass for T-134-reject-apply-aliases-to-resolved-default-manifest at 2026-10-17T08:17:28Z
+next_action: 'Start task T-136-reject-segment-aliases-to-resolved-default: Reject segment aliases to resolved default-manifest DATA locks'
+last_verification_result: pass for T-135-correct-obsolete-legacy-usfx-hardening at 2026-10-17T08:37:50Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -23,12 +23,11 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: `T-135-correct-obsolete-legacy-usfx-hardening`
-- Title: Correct obsolete legacy USFX hardening documentation
+- Task: none
 
 ## Status
 
-- in_progress
+- blocked
 
 ## Blockers
 
@@ -36,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-134-reject-apply-aliases-to-resolved-default-manifest at 2026-10-17T08:17:28Z
+- pass for T-135-correct-obsolete-legacy-usfx-hardening at 2026-10-17T08:37:50Z
 
 ## Next Action
 
-- Continue task T-135-correct-obsolete-legacy-usfx-hardening
+- Start task T-136-reject-segment-aliases-to-resolved-default: Reject segment aliases to resolved default-manifest DATA locks
 
 ## Relevant Artifacts
 
@@ -53,7 +52,7 @@ continuation_notes:
 ## Task Counts
 
 - todo: 2
-- in_progress: 1
-- completed: 132
+- in_progress: 0
+- completed: 133
 - blocked: 1
 - cancelled: 0
