@@ -1,11 +1,13 @@
 """No hidden prompts, including prompts introduced by future commands."""
 
 import ast
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
+import click
 import pytest
 from typer._click.core import Command
 from typer.core import TyperGroup, TyperOption
@@ -111,8 +113,9 @@ def test_click_options_never_prompt() -> None:
     walk(get_command(app))
 
 
+@pytest.mark.parametrize("color", [False, True], ids=["plain", "colored"])
 @pytest.mark.parametrize("choice,confirm", [(False, False), (True, False), (False, True), (True, True)])
-def test_setup_devnull(tmp_path: Path, choice: bool, confirm: bool) -> None:
+def test_setup_devnull(tmp_path: Path, choice: bool, confirm: bool, color: bool) -> None:
     source = tmp_path / "source.csv"
     profile = tmp_path / "profile.json"
     source.write_text(
@@ -126,6 +129,11 @@ def test_setup_devnull(tmp_path: Path, choice: bool, confirm: bool) -> None:
         args += ["--confirm"]
         if choice:
             args += ["--lexical-entry-field", "Lemma", "--principal-parts-field", "Forms"]
+    env = os.environ.copy()
+    for name in ("NO_COLOR", "FORCE_COLOR", "CLICOLOR", "CLICOLOR_FORCE"):
+        env.pop(name, None)
+    env.update(TERM="xterm" if color else "dumb", GITHUB_ACTIONS="true")
+    env["FORCE_COLOR" if color else "NO_COLOR"] = "1"
     started = time.monotonic()
     result = subprocess.run(
         [sys.executable, "-m", "latinitas_cards", *args],
@@ -133,6 +141,7 @@ def test_setup_devnull(tmp_path: Path, choice: bool, confirm: bool) -> None:
         capture_output=True,
         text=True,
         timeout=20,
+        env=env,
     )
     print(
         f"setup choice={choice} confirm={confirm}: exit={result.returncode}, seconds={time.monotonic() - started:.3f}"
@@ -141,10 +150,12 @@ def test_setup_devnull(tmp_path: Path, choice: bool, confirm: bool) -> None:
     assert profile.exists() == confirm
     assert source.read_bytes() == before
     if not confirm:
-        assert "prompt_required" in result.stderr
-        assert "--confirm" in result.stderr
+        diagnostic = click.unstyle(result.stderr)
+        assert (result.stderr != diagnostic) == color
+        assert "prompt_required" in diagnostic
+        assert "--confirm" in diagnostic
         for flag in ["--lexical-entry-field", "--principal-parts-field"] if choice else ["--non-interactive"]:
-            assert flag in result.stderr
+            assert flag in diagnostic
 
 
 def test_cloze_devnull(tmp_path: Path) -> None:
