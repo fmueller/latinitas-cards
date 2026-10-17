@@ -329,7 +329,9 @@ def test_subprocess_path_environment_determinism(tmp_path: Path) -> None:
     assert str(tmp_path).encode() not in outputs[0][0]
 
 
-@pytest.mark.parametrize("reserved", ["manifest", "logical-corpus", "resolved-corpus", "logical-claims"])
+@pytest.mark.parametrize(
+    "reserved", ["manifest", "resolved-manifest", "logical-corpus", "resolved-corpus", "logical-claims"]
+)
 @pytest.mark.parametrize("location", ["output", "output-lock"])
 @pytest.mark.parametrize("kind", ["direct", "symlink", "hardlink", "chain", "directory", "absent", "absent-chain"])
 def test_apply_reserved_writer_alias(tmp_path: Path, reserved: str, location: str, kind: str) -> None:
@@ -343,8 +345,13 @@ def test_apply_reserved_writer_alias(tmp_path: Path, reserved: str, location: st
     claims_data = tmp_path / "claims-data.json"
     claims_data.write_text('{"version":2,"decisions":[]}\n')
     claims.symlink_to(claims_data)
+    manifest_data = tmp_path / "manifest-storage.json"
+    if reserved == "resolved-manifest":
+        manifest_data.write_text("{}\n")
+        corpus.with_suffix(".manifest.json").symlink_to(manifest_data)
     protected = {
         "manifest": Path(f"{corpus.with_suffix('.manifest.json')}.lock"),
+        "resolved-manifest": Path(f"{manifest_data}.lock"),
         "logical-corpus": Path(f"{corpus}.lock"),
         "resolved-corpus": Path(f"{real_corpus}.lock"),
         "logical-claims": Path(f"{claims}.lock"),
@@ -373,6 +380,9 @@ def test_apply_reserved_writer_alias(tmp_path: Path, reserved: str, location: st
         alias.symlink_to(protected)
     before = {p: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
     inode = protected.stat().st_ino if not absent else None
+    normalize_held_hardlink = (
+        reserved in {"manifest", "resolved-manifest"} and location == "output" and kind == "hardlink"
+    )
     args = (
         "apply",
         str(plan),
@@ -390,7 +400,7 @@ def test_apply_reserved_writer_alias(tmp_path: Path, reserved: str, location: st
     else:
         with protected.open("ab") as held:
             fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            if reserved == "manifest" and location == "output" and kind == "hardlink":
+            if normalize_held_hardlink:
                 source = tmp_path / "latin.txt"
                 source.write_text("Puella rosas portat.\n")
                 normalize = [
@@ -407,7 +417,7 @@ def test_apply_reserved_writer_alias(tmp_path: Path, reserved: str, location: st
                 ]
                 assert CliRunner().invoke(app, normalize).exit_code == 4
             results = [invoke(*args)]
-            if reserved == "manifest" and location == "output" and kind == "hardlink":
+            if normalize_held_hardlink:
                 assert CliRunner().invoke(app, normalize).exit_code == 4
                 source.unlink()
         results.append(invoke(*args))
@@ -418,7 +428,9 @@ def test_apply_reserved_writer_alias(tmp_path: Path, reserved: str, location: st
         assert not protected.exists()
     else:
         assert protected.stat().st_ino == inode
-    if reserved == "manifest" and location == "output" and kind == "hardlink":
+    if normalize_held_hardlink:
+        if reserved == "resolved-manifest":
+            manifest_data.unlink()
         source.write_text("Puella rosas portat.\n")
         assert CliRunner().invoke(app, normalize).exit_code == 0
 

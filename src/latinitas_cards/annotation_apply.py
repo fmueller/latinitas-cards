@@ -110,7 +110,7 @@ def apply_plan(
     targets = [corpus, sidecar, claims]
     locks = [Path(f"{path.resolve()}.lock") for path in (corpus, sidecar)] + [Path(f"{claims}.lock")]
     manifest = corpus.with_suffix(".manifest.json")
-    protected = [plan_path, corpus, claims, manifest, Path(f"{manifest}.lock")]
+    protected = [plan_path, corpus, claims, manifest, Path(f"{manifest}.lock"), Path(f"{manifest.resolve()}.lock")]
     protected.extend(path for path in (policy_path, receipt_path) if path is not None)
     reject_aliases(sidecar, [*protected, *locks, Path(f"{corpus}.lock")])
     for index, lock in enumerate(locks):
