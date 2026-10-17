@@ -21,6 +21,95 @@ CORPUS = FIXTURES / "corpus/valid/ordinal.jsonl"
 STAMP = "2026-01-01T00:00:00Z"
 
 
+@pytest.mark.parametrize("state", ["held", "released", "absent"])
+@pytest.mark.parametrize("location", ["output", "output-lock"])
+@pytest.mark.parametrize("kind", ["direct", "symlink", "hardlink", "chained", "directory"])
+def test_segment_resolved_default_manifest_lock(tmp_path: Path, state: str, location: str, kind: str) -> None:
+    if state == "absent" and kind == "hardlink":
+        pytest.skip("Hardlinks require an existing inode")
+    source = tmp_path / "source.txt"
+    source.write_text("Canis currit.\nFemina librum legit.\n")
+    corpus = tmp_path / "corpus.jsonl"
+    normalize = [
+        "corpus",
+        "normalize",
+        str(source),
+        "--adapter",
+        "text",
+        "--corpus-id",
+        "segment",
+        "--output",
+        str(corpus),
+        "--json",
+    ]
+
+    def invoke(args: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, "-m", "latinitas_cards", *args],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+    assert invoke(normalize).returncode == 0
+    manifest = corpus.with_suffix(".manifest.json")
+    data = tmp_path / "manifest-data.json"
+    manifest.rename(data)
+    manifest.symlink_to(data.name)
+    assert invoke(normalize).returncode == 0  # Supported default-manifest DATA symlink.
+    reserved = Path(f"{data}.lock")
+    control = tmp_path / "control.jsonl"
+    segment_args = ["annotations", "segment", str(corpus), "--timestamp", STAMP, "--json", "--output"]
+    control_result = invoke([*segment_args, str(control)])
+    assert control_result.returncode == 0
+    assert json.loads(control_result.stdout)["result"] == {"appended": 2, "skipped": 0}
+    seed = control.read_bytes().splitlines(keepends=True)[0]
+    if state == "absent":
+        reserved.unlink()
+    else:
+        reserved.write_bytes(seed)  # Valid header makes accidental output appends observable.
+    output = tmp_path / "side.jsonl"
+    alias = output if location == "output" else Path(f"{output}.lock")
+    if kind == "direct":
+        output = reserved if location == "output" else data
+    elif kind == "hardlink":
+        os.link(reserved, alias)
+    elif kind == "chained":
+        hop = tmp_path / "hop"
+        hop.symlink_to(reserved.name)
+        alias.symlink_to(hop.name)
+    elif kind == "directory":
+        directory = tmp_path / "linked-directory"
+        directory.symlink_to(tmp_path, target_is_directory=True)
+        alias.symlink_to(directory / reserved.name)
+    else:
+        alias.symlink_to(reserved.name)
+
+    before = {p: (p.read_bytes(), p.stat().st_ino) for p in tmp_path.iterdir() if p.is_file()}
+    links = {p: os.readlink(p) for p in tmp_path.iterdir() if p.is_symlink()}
+    entries = set(tmp_path.iterdir())
+    with reserved.open("ab") if state == "held" else open(os.devnull, "ab") as held:
+        if state == "held":
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            assert invoke(normalize).returncode == 4
+        result = invoke([*segment_args, str(output)])
+        if state == "held":
+            assert invoke(normalize).returncode == 4
+            # Unrelated sidecars still work while the manifest writer is excluded.
+            ordinary = invoke([*segment_args, str(control)])
+            assert ordinary.returncode == 0
+            assert json.loads(ordinary.stdout)["result"] == {"appended": 0, "skipped": 2}
+    assert result.returncode == 3 and json.loads(result.stdout)["diagnostics"][0]["code"] == "alias"
+    assert set(tmp_path.iterdir()) == entries
+    assert {p: (p.read_bytes(), p.stat().st_ino) for p in tmp_path.iterdir() if p.is_file()} == before
+    assert {p: os.readlink(p) for p in tmp_path.iterdir() if p.is_symlink()} == links
+    if state == "absent":
+        assert not reserved.exists()
+    assert invoke(normalize).returncode == 0  # Release really restores normalizer access.
+
+
 def segment(output: Path, *extra: str, corpus: Path = CORPUS) -> CliResult:
     result = CliRunner().invoke(app, ["annotations", "segment", str(corpus), "--output", str(output), *extra, "--json"])
     assert result.stdout.count("\n") == 1, result.output
