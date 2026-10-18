@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-18T20:07:06Z"
+updated_at: "2026-10-18T20:34:36Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: No active-spec task is ready
+next_action: 'Start task T-143-reject-equivalent-pypi-environment-forms-outside: Reject equivalent PyPI environment forms outside release workflow'
 last_verification_result: pass for T-142-reject-literal-block-oidc-write-in-workflow-guard at 2026-10-18T20:07:05Z
 relevant_artifacts: []
 continuation_notes:
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- No active-spec task is ready
+- Start task T-143-reject-equivalent-pypi-environment-forms-outside: Reject equivalent PyPI environment forms outside release workflow
 
 ## Relevant Artifacts
 
@@ -51,7 +51,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 2
 - in_progress: 0
 - completed: 140
 - blocked: 1
