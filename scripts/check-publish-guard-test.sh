@@ -31,6 +31,24 @@ for entry in 'build.yml|id-token: write' 'mutation.yml|pypa/gh-action-pypi-publi
   printf '\n%s\n' "${entry#*|}" >> "$temporary/workflows/$file"
   reject "$file" "${entry#*|}"
 done
+for scalar in '>' '>-' '>+'; do
+  fresh
+  printf 'jobs:\n  probe:\n    steps:\n      - run: %s\n          uv\n          publish\n' "$scalar" > "$temporary/workflows/extra.yaml"
+  reject extra.yaml "folded uv publish ($scalar)"
+done
+for value in write '"write"' "'write'"; do
+  fresh
+  printf 'jobs:\n  probe:\n    permissions:\n      id-token:\n        %s\n    steps:\n      - run: echo harmless\n' "$value" > "$temporary/workflows/extra.yaml"
+  reject extra.yaml "multiline id-token $value"
+done
+for comment in '' ' # OIDC permission'; do
+  fresh
+  printf 'jobs:\n  probe:\n    permissions:\n      id-token:%s\n\n        # document the OIDC permission\n        write\n    steps:\n      - run: echo harmless\n' "$comment" > "$temporary/workflows/extra.yaml"
+  reject extra.yaml 'multiline id-token with comments and blank line'
+done
+fresh
+printf 'jobs:\n  probe:\n    permissions:\n      id-token:\n        read\n    steps:\n      - run: >-\n          echo\n          harmless\n' > "$temporary/workflows/extra.yaml"
+bash "$root/scripts/check-publish-guard.sh" "$temporary/workflows"
 for trigger in workflow_dispatch schedule release pull_request branches; do
   fresh
   sed -i "/^on:/a\  $trigger:" "$temporary/workflows/release.yml"

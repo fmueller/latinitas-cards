@@ -6,7 +6,34 @@ shopt -s nullglob
 files=("$directory"/*.yml "$directory"/*.yaml)
 for file in "${files[@]}"; do
   if [[ $(basename "$file") != release.yml ]]; then
-    if grep -En "id-token[\"']?[[:space:]]*:[[:space:]]*[\"']?write|pypa/gh-action-pypi-publish|twine[[:space:]]+upload|uv[[:space:]]+publish|environment[\"']?[[:space:]]*:[[:space:]]*[\"']?pypi" "$file"; then
+    # Also scan folded scalars and continued permission/environment values.
+    # This is a bounded lexical check, not YAML or shell semantic analysis.
+    if awk '
+      {
+        print
+        if (pending && continued && $0 ~ /^[[:space:]]*(#.*)?$/) next
+        indent = match($0, /[^ ]/) - 1
+        if (pending && (indent <= base || $0 ~ /^[[:space:]]*$/)) {
+          print pending
+          pending = ""
+        }
+        if (pending) {
+          value = $0
+          sub(/^[[:space:]]+/, "", value)
+          pending = pending " " value
+          next
+        }
+        if ($0 ~ /:[[:space:]]*>[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
+            $0 ~ /(id-token|environment)["\047]?[[:space:]]*:[[:space:]]*(#.*)?$/) {
+          pending = $0
+          continued = ($0 !~ /:[[:space:]]*>/)
+          if (continued) sub(/[[:space:]]*#.*$/, "", pending)
+          sub(/>[+1-9-]*([[:space:]]+#.*)?[[:space:]]*$/, "", pending)
+          base = indent
+        }
+      }
+      END { if (pending) print pending }
+    ' "$file" | grep -En "id-token[\"']?[[:space:]]*:[[:space:]]*[\"']?write|pypa/gh-action-pypi-publish|twine[[:space:]]+upload|uv[[:space:]]+publish|environment[\"']?[[:space:]]*:[[:space:]]*[\"']?pypi"; then
       printf 'publish guard failed: %s: publishing capability outside release.yml\n' "$file" >&2
       exit 1
     fi
