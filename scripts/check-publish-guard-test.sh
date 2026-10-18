@@ -57,6 +57,33 @@ done
 fresh
 sed -i '/^  build:/a\    permissions:\n      id-token: write' "$temporary/workflows/release.yml"
 reject release.yml 'build OIDC permission'
+for scope in root build publish after-publish; do
+  for value in write '"write"' "'write'" '>\n        write' '>- # folded\n        write' '>+\n        write' read; do
+    fresh
+    case "$scope" in
+      root) anchor='^permissions:$'; indent='  ' ;;
+      build) anchor='^  build:$'; indent='      ' ;;
+      publish) anchor='^      id-token: write$'; indent='      ' ;;
+      after-publish) anchor='^  verify-pypi:$'; indent='      ' ;;
+    esac
+    # Insert text only; never execute a workflow or any of its steps.
+    permission="${indent}id-token: # permission comment\n\n${indent}  # value comment\n${indent}  ${value}"
+    if [[ "$scope" != root && "$scope" != publish ]]; then
+      permission="    permissions:\n${permission}"
+    fi
+    if [[ "$scope" == publish ]]; then
+      sed -i "/$anchor/c\\${permission}" "$temporary/workflows/release.yml"
+    else
+      sed -i "/$anchor/a\\${permission}" "$temporary/workflows/release.yml"
+    fi
+    if [[ "$scope" == publish || "$value" == read ]]; then
+      bash "$root/scripts/check-publish-guard.sh" "$temporary/workflows"
+    else
+      reject release.yml "$scope multiline OIDC permission ($value)"
+      grep -F 'id-token: write outside publish' "$temporary/output" >/dev/null || fail 'missing scope diagnostic'
+    fi
+  done
+done
 fresh
 sed -i 's/^permissions:$/permissions: {id-token: write}/; /^  contents: read$/d' "$temporary/workflows/release.yml"
 reject release.yml 'inline top-level OIDC permission'

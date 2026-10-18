@@ -44,6 +44,18 @@ for file in "${files[@]}"; do
         bad = 1
       }
       /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+      {
+        indent = match($0, /[^ ]/) - 1
+        if (pending && indent <= base) pending = 0
+        if (pending && $0 ~ /^[[:space:]]*["\047]?write/) {
+          if (!allowed) fail("id-token: write outside publish")
+        }
+        if ($0 ~ /id-token["\047]?[[:space:]]*:[[:space:]]*(>[-+1-9]*)?([[:space:]]+#.*)?[[:space:]]*$/) {
+          pending = 1
+          base = indent
+          allowed = (jobs && job == "  publish:")
+        }
+      }
       /^[^ ]/ {
         trigger = ($0 == "on:")
         jobs = ($0 == "jobs:")
