@@ -6,14 +6,14 @@ shopt -s nullglob
 files=("$directory"/*.yml "$directory"/*.yaml)
 for file in "${files[@]}"; do
   if [[ $(basename "$file") != release.yml ]]; then
-    # Also scan folded scalars and continued permission/environment values.
+    # Also scan folded scalars, literal permissions and continued values.
     # This is a bounded lexical check, not YAML or shell semantic analysis.
     if awk '
       {
         print
-        if (pending && continued && $0 ~ /^[[:space:]]*(#.*)?$/) next
+        if (pending && ($0 ~ /^[[:space:]]*$/ || (continued && $0 ~ /^[[:space:]]*#/))) next
         indent = match($0, /[^ ]/) - 1
-        if (pending && (indent <= base || $0 ~ /^[[:space:]]*$/)) {
+        if (pending && indent <= base) {
           print pending
           pending = ""
         }
@@ -24,11 +24,12 @@ for file in "${files[@]}"; do
           next
         }
         if ($0 ~ /:[[:space:]]*>[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
+            $0 ~ /id-token["\047]?[[:space:]]*:[[:space:]]*\|[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
             $0 ~ /(id-token|environment)["\047]?[[:space:]]*:[[:space:]]*(#.*)?$/) {
           pending = $0
-          continued = ($0 !~ /:[[:space:]]*>/)
+          continued = ($0 !~ /:[[:space:]]*[>|]/)
           if (continued) sub(/[[:space:]]*#.*$/, "", pending)
-          sub(/>[+1-9-]*([[:space:]]+#.*)?[[:space:]]*$/, "", pending)
+          sub(/[>|][+1-9-]*([[:space:]]+#.*)?[[:space:]]*$/, "", pending)
           base = indent
         }
       }
@@ -50,7 +51,7 @@ for file in "${files[@]}"; do
         if (pending && $0 ~ /^[[:space:]]*["\047]?write/) {
           if (!allowed) fail("id-token: write outside publish")
         }
-        if ($0 ~ /id-token["\047]?[[:space:]]*:[[:space:]]*(>[-+1-9]*)?([[:space:]]+#.*)?[[:space:]]*$/) {
+        if ($0 ~ /id-token["\047]?[[:space:]]*:[[:space:]]*([>|][-+1-9]*)?([[:space:]]+#.*)?[[:space:]]*$/) {
           pending = 1
           base = indent
           allowed = (jobs && job == "  publish:")

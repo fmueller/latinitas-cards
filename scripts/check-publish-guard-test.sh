@@ -57,6 +57,38 @@ done
 fresh
 sed -i '/^  build:/a\    permissions:\n      id-token: write' "$temporary/workflows/release.yml"
 reject release.yml 'build OIDC permission'
+for scalar in '|' '|-' '|+' '|2' '|2-' '|-2' '|2+' '|+2'; do
+  for scope in root build publish after-publish nonrelease; do
+    for value in write read; do
+      fresh
+      file=release.yml
+      case "$scope" in
+        root) anchor='^permissions:$'; indent='  ' ;;
+        build) anchor='^  build:$'; indent='      ' ;;
+        publish) anchor='^      id-token: write$'; indent='      ' ;;
+        after-publish) anchor='^  verify-pypi:$'; indent='      ' ;;
+        nonrelease) file=extra.yaml; indent='      ' ;;
+      esac
+      permission="${indent}id-token: $scalar # literal permission\n${indent}  $value"
+      if [[ "$scope" == nonrelease ]]; then
+        printf 'jobs:\n  probe:\n    permissions:\n%b\n    steps:\n      - run: echo harmless\n' "$permission" > "$temporary/workflows/$file"
+      elif [[ "$scope" == publish ]]; then
+        sed -i "/$anchor/c\\${permission}" "$temporary/workflows/$file"
+      else
+        [[ "$scope" == root ]] || permission="    permissions:\n${permission}"
+        sed -i "/$anchor/a\\${permission}" "$temporary/workflows/$file"
+      fi
+      if [[ "$scope" == publish || "$value" == read ]]; then
+        bash "$root/scripts/check-publish-guard.sh" "$temporary/workflows"
+      else
+        reject "$file" "$scope literal OIDC permission ($scalar)"
+        diagnostic='id-token: write outside publish'
+        [[ "$scope" != nonrelease ]] || diagnostic='publishing capability outside release.yml'
+        grep -F "$diagnostic" "$temporary/output" >/dev/null || fail 'missing literal scope diagnostic'
+      fi
+    done
+  done
+done
 for scope in root build publish after-publish; do
   for value in write '"write"' "'write'" '>\n        write' '>- # folded\n        write' '>+\n        write' read; do
     fresh

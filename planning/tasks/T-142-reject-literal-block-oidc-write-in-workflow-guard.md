@@ -1,11 +1,11 @@
 ---
 id: T-142-reject-literal-block-oidc-write-in-workflow-guard
 title: Reject literal-block OIDC write in workflow guard
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies: []
-updated_at: "2026-10-18T14:19:53Z"
+updated_at: "2026-10-18T20:07:05Z"
 ---
 
 # T-142-reject-literal-block-oidc-write-in-workflow-guard Reject literal-block OIDC write in workflow guard
@@ -108,3 +108,31 @@ requiring any workflow execution or adding a parser to product dependencies.
 
 Findings-only filing from final authorized round 8. No implementation, task
 start, further round, release, tag, publication or deployment was performed.
+
+Subsequently authorized T-142 implementation cycle:
+
+- Extended both existing scalar scanners to recognize literal OIDC permission
+  headers, including chomping and explicit indentation in either order.
+  Blank scalar lines no longer terminate non-release accumulation. No workflow,
+  trigger, permission gate, spec or dependency was changed.
+- Added an 80-case inert literal header/scope/value matrix. Literal read and
+  publish-job write remain allowed; forbidden write reports the workflow and
+  scope. Existing direct, continued, folded and strict-trigger controls pass.
+  Removed leading blank lines from this matrix so strip forms exercise exactly
+  `write`; the strengthened suite still fails against the original scanner.
+- Strict RED: original scanner exits 1 from the suite with `FAIL: accepted
+  unsafe release.yml: root literal OIDC permission (|)`. GREEN: updated scanner
+  reports `publish guard synthetic checks passed`. Additional temporary probes
+  passed 162 cases covering indentation 1–9, both modifier orders and EOF.
+- Dedicated Task loaded code-simplifier and removed one redundant blank-line
+  condition; focused checks passed after inspection. Separate parallel Tasks
+  loaded code-reviewer for General and Security. Both returned verbatim:
+  `No concrete task-relevant findings.` A fresh candidate-validation Task
+  confirmed both conclusions; no candidates or dispositions were omitted.
+  General covers shell/awk correctness; Security covers the guard boundary.
+  Python/framework/database lanes are not materially affected.
+- This remains bounded lexical inspection, not universal YAML/shell analysis.
+  Fixtures never execute workflow steps, publish, or request OIDC. T-038,
+  T-128, advisory 144 and the prior adversarial-round outcomes are unchanged.
+- 2026-10-18T20:07:05Z: verification pass
+- 2026-10-18T20:07:05Z: Implemented and independently reviewed literal-block permission checks; all final local gates passed. See verification run timestamp. Hosted exact-head CI remains a delivery gate; no release authorization or security clearance.
