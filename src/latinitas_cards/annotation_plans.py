@@ -384,7 +384,16 @@ def create_plan(
         "operations": [row.model_dump(mode="json") for row in operations],
     }
     document = AnnotationPlan.model_validate({**raw, "plan_id": digest(raw)})
-    protected = [patch_path, corpus, sidecar, Path(f"{corpus}.claims.json"), corpus.with_suffix(".manifest.json")]
+    manifest = corpus.with_suffix(".manifest.json")
+    protected = [
+        patch_path,
+        corpus,
+        sidecar,
+        Path(f"{corpus}.claims.json"),
+        manifest,
+        Path(f"{manifest}.lock"),
+        Path(f"{manifest.resolve()}.lock"),
+    ]
     if policy_path is not None:
         protected.append(policy_path)
     created = write_document(output, document.model_dump(mode="json"), protected)

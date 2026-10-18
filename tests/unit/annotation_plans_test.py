@@ -1,6 +1,9 @@
 """Planning and explicit approval through the real contract CLI."""
 
+import fcntl
 import json
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -304,6 +307,96 @@ def test_patch_envelope_rejection(tmp_path: Path, change: dict[str, Any]) -> Non
     output = tmp_path / "plan.json"
     result = invoke("plan", str(patch), "--corpus", str(CORPUS), "--sidecar", str(SIDECAR), "--output", str(output))
     assert result["exit_code"] == 3 and not output.exists()
+
+
+@pytest.mark.parametrize("target", ["output", "lock"])
+@pytest.mark.parametrize("shape", ["hardlink", "symlink", "chain", "dangling"])
+def test_plan_nested_manifest_lock_reservation(tmp_path: Path, target: str, shape: str) -> None:
+    def run(*args: str | Path) -> dict[str, Any]:
+        result = subprocess.run(
+            [sys.executable, "-m", "latinitas_cards", *map(str, args), "--json"],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        envelope: dict[str, Any] = json.loads(result.stdout)
+        assert result.returncode == envelope["exit_code"], result.stderr
+        return envelope
+
+    source, corpus, sidecar = (tmp_path / name for name in ("source.txt", "corpus.jsonl", "side.jsonl"))
+    source.write_text("Mater filium amat.\nPuer librum legit.\n")
+    normalize = ("corpus", "normalize", source, "--adapter", "text", "--corpus-id", "probe", "--output", corpus)
+    assert run(*normalize)["exit_code"] == 0
+    storage = tmp_path / "storage"
+    storage.mkdir()
+    manifest, data = corpus.with_suffix(".manifest.json"), storage / "data.json"
+    manifest.rename(data)
+    manifest.symlink_to(data)
+    assert run(*normalize)["exit_code"] == 0
+    reserved = Path(f"{data}.lock")
+    passage = next(row for row in map(json.loads, corpus.read_text().splitlines()) if row["record"] == "passage")
+    patch = tmp_path / "patch.json"
+    patch.write_text(
+        json.dumps(
+            {
+                "format": "latinitas-annotation-patch",
+                "version": 1,
+                "operations": [
+                    {
+                        "operation": "add",
+                        "layer": "translation",
+                        "anchor": {key: passage[key] for key in ("passage_id", "passage_hash")},
+                        "value": {"language": "en", "text": "mother"},
+                        "producer": {"kind": "agent", "name": "fixture", "version": "1"},
+                        "created": "2026-01-02T03:04:05Z",
+                    }
+                ],
+            }
+        )
+    )
+    output = tmp_path / "selected-plan.json"
+    alias = output if target == "output" else Path(f"{output}.lock")
+    if shape == "hardlink":
+        alias.hardlink_to(reserved)
+    elif shape == "chain":
+        intermediate = tmp_path / "intermediate"
+        intermediate.symlink_to(reserved)
+        alias.symlink_to(intermediate)
+    else:
+        if shape == "dangling":
+            reserved.unlink()
+        alias.symlink_to(reserved)
+    args = ("annotations", "plan", patch, "--corpus", corpus, "--sidecar", sidecar, "--output", output)
+
+    def reject() -> None:
+        result = run(*args)
+        assert result["exit_code"] == 3 and result["diagnostics"][0]["code"] == "alias", result
+        assert not output.exists() if target == "lock" else output.samefile(reserved)
+
+    if shape == "dangling":
+        result = run(*args)
+        assert result["exit_code"] == 3 and result["diagnostics"][0]["code"] == "alias", result
+        assert not reserved.exists() and not output.exists()
+    with reserved.open("ab") as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        before = reserved.stat().st_ino, reserved.read_bytes(), data.read_bytes(), corpus.read_bytes()
+        assert run(*normalize)["exit_code"] == 4
+        reject()
+        assert run(*normalize)["exit_code"] == 4
+    reject()
+    assert (reserved.stat().st_ino, reserved.read_bytes(), data.read_bytes(), corpus.read_bytes()) == before
+    assert run(*normalize)["exit_code"] == 0
+    independent = tmp_path / "independent.json"
+    assert run(*args, "--output", independent)["exit_code"] == 0
+    plan_bytes = independent.read_bytes()
+    assert run(*args, "--output", independent)["exit_code"] == 0
+    assert independent.read_bytes() == plan_bytes
+    apply = ("annotations", "apply", independent, "--corpus", corpus, "--sidecar", sidecar)
+    assert run(*apply)["exit_code"] == 0
+    sidecar_bytes = sidecar.read_bytes()
+    assert run(*apply)["exit_code"] == 0
+    assert sidecar.read_bytes() == sidecar_bytes
 
 
 def test_target_states_duplicate_and_supersede(tmp_path: Path) -> None:

@@ -1,11 +1,11 @@
 ---
 id: T-140-reject-plan-lock-hardlinks-to-nested-default
 title: Reject plan lock hardlinks to nested default-manifest DATA reservations
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#policy-gated-agent-automation
 dependencies: []
-updated_at: "2026-10-17T13:18:18Z"
+updated_at: "2026-10-18T12:16:51Z"
 ---
 
 # T-140-reject-plan-lock-hardlinks-to-nested-default Reject plan lock hardlinks to nested default-manifest DATA reservations
@@ -109,3 +109,49 @@ for locks but does not include the known manifest's resolved DATA lock when
 it resides elsewhere. Follow the explicit known default-manifest identity;
 avoid relying on an ambient-directory scan for that reservation.
 Findings-only filing; no task start, fixes, dependency or gate changes.
+
+### Implementation and review evidence
+
+- Verified accepted remote base `3cb266e2d3645aa2d05b02fc274864da1116c82b`,
+  valid Taskrail state and sole eligible T-140 before starting. The active
+  v0.3.0 spec SHA256 remains
+  `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+- Root cause confirmed through the public subprocess CLI: the protected
+  manifest identity did not explicitly include its resolved DATA lock;
+  ambient directory scans missed nested storage. Added logical and resolved
+  default-manifest lock paths to the plan's protected set, following apply's
+  existing pattern. No custom-manifest discovery or lock primitive changes.
+- Strict RED: `uv run pytest -q tests/unit/annotation_plans_test.py -k
+  nested_manifest_lock_reservation` returned 2 failed, 6 passed: direct
+  hardlink reported `exists`, held output-lock hardlink reported `busy`.
+  GREEN: the same command returned 8 passed. Real subprocess cases cover
+  output/output-lock hardlinks, symlinks, chains and dangling targets, held
+  and released rejection, reservation inode/bytes, normalizer exclusion and
+  recovery, independent planning, identical plan retries and apply no-op retries.
+- Initial exact `uv run ruff check` then `uv run mypy` then
+  `uv run pytest -v` passed: 169 source files type-checked; 2633 tests
+  passed, 7 skipped, 1 warning (386.99 seconds).
+- Dedicated Task loaded `code-simplifier`: no changes recommended.
+- Parallel independent read-only Tasks loaded `code-reviewer` in General,
+  Python and Security lanes, including their routed ECC reviewer/companions.
+  Python covered pathlib/fcntl locking and filesystem data integrity; Security
+  covered alias trust boundaries and corruption risk. No database persistence,
+  SQL, framework or other language changes warranted another specialist lane.
+  Each lane's verbatim conclusion: "No concrete task-relevant findings."
+- Fresh candidate-validation Task loaded `code-reviewer`, inspected the actual
+  diff and acceptance, and returned: "No concrete task-relevant findings."
+  Validated/rejected/deduplicated IDs: none; no finding dispositions required.
+- Sequential `mise run check` passed, including format checking, full pytest
+  (2633 passed, 7 skipped, 1 warning; 378.48 seconds) and all policy guards.
+  A fresh disposition-verification Task loaded `code-reviewer`, inspected the
+  diff and logs, and returned: "No unresolved or newly introduced task-relevant
+  issues." One review cycle; no fixes or deferrals.
+- The final exact ruff/mypy/pytest chain passed: 169 source files type-checked;
+  2633 passed, 7 skipped, 1 warning (375.67 seconds). Re-fetched remote main
+  still matched the accepted base; Taskrail validated and selected only active
+  T-140 before verification/completion. The spec hash remained unchanged.
+- This task does not clear advisory 144 or complete adversarial round 6's
+  missing apply matrix. Round 6 remains NOT CLEAN/INCOMPLETE; no round 7 was
+  started. T-038 stays maintainer-blocked and T-128 stays excluded for v0.8.0.
+- 2026-10-18T12:16:51Z: verification pass
+- 2026-10-18T12:16:51Z: Reviewed minimal known-manifest reservation fix; final mandatory checks and sequential mise gate passed. See verification run timestamp and implementation evidence; hosted CI still required before lease release.

@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `annotations plan` rejects output and output-lock hardlinks to nested default
+  manifest locks as aliases, even while the normalizer holds the reservation.
 - `annotations apply` rejects output and output-lock aliases to reserved writer
   locks, including symlinked default-manifest DATA locks, before creating files
   or reporting a held lock as busy.
