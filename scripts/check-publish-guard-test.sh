@@ -23,6 +23,36 @@ reject() {
 }
 fresh
 bash "$root/scripts/check-publish-guard.sh" "$temporary/workflows"
+for representation in direct continued folded '|-' '|2-' '|-2' block block-bare flow flow-bare flow-multiline; do
+  for name in pypi staging; do
+    case "$representation" in
+      direct) environment="    environment: $name" ;;
+      continued) environment="    environment:\n      $name" ;;
+      folded) environment="    environment: >-\n      $name" ;;
+      '|'*) environment="    environment: $representation\n      $name" ;;
+      block) environment="    environment: # deployment target\n      url: https://example.invalid\n      'name': '$name'" ;;
+      block-bare) environment="    environment:\n      name: $name" ;;
+      flow) environment="    environment: {url: https://example.invalid, \"name\": \"$name\"}" ;;
+      flow-bare) environment="    environment: {name: $name}" ;;
+      flow-multiline) environment="    environment: {url: https://example.invalid,\n      name: $name}" ;;
+    esac
+    for scope in nonrelease publish; do
+      fresh
+      if [[ "$scope" == nonrelease ]]; then
+        printf 'name: Inert environment fixture\non: push\njobs:\n  probe:\n    runs-on: ubuntu-latest\n%b\n    steps:\n      - run: echo inert\n' "$environment" > "$temporary/workflows/extra.yaml"
+      else
+        sed -i '/^    environment: pypi$/d' "$temporary/workflows/release.yml"
+        sed -i "/^  publish:$/a\\$environment" "$temporary/workflows/release.yml"
+      fi
+      if [[ "$scope" == nonrelease && "$name" == pypi ]]; then
+        reject extra.yaml "$representation pypi environment"
+        grep -F 'publishing capability outside release.yml' "$temporary/output" >/dev/null || fail 'missing capability diagnostic'
+      else
+        bash "$root/scripts/check-publish-guard.sh" "$temporary/workflows"
+      fi
+    done
+  done
+done
 for entry in 'build.yml|id-token: write' 'mutation.yml|pypa/gh-action-pypi-publish@bad' \
   'extra.yml|twine upload dist/*' 'extra.yaml|uv publish' 'extra.yaml|environment: pypi' \
   'build.yml|permissions: {"id-token": "write"}' "extra.yaml|permissions: {'id-token': 'write'}"; do

@@ -6,7 +6,7 @@ shopt -s nullglob
 files=("$directory"/*.yml "$directory"/*.yaml)
 for file in "${files[@]}"; do
   if [[ $(basename "$file") != release.yml ]]; then
-    # Also scan folded scalars, literal permissions and continued values.
+    # Also scan folded/literal scalars, environment objects and continued values.
     # This is a bounded lexical check, not YAML or shell semantic analysis.
     if awk '
       {
@@ -20,11 +20,16 @@ for file in "${files[@]}"; do
         if (pending) {
           value = $0
           sub(/^[[:space:]]+/, "", value)
+          if (pending ~ /environment["\047]?[[:space:]]*:/ && value ~ /^["\047]?name["\047]?[[:space:]]*:/) {
+            sub(/^["\047]?name["\047]?[[:space:]]*:/, "environment:", value)
+            print value
+          }
           pending = pending " " value
           next
         }
         if ($0 ~ /:[[:space:]]*>[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
-            $0 ~ /id-token["\047]?[[:space:]]*:[[:space:]]*\|[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
+            $0 ~ /(id-token|environment)["\047]?[[:space:]]*:[[:space:]]*\|[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
+            $0 ~ /environment["\047]?[[:space:]]*:[[:space:]]*\{[^}]*$/ ||
             $0 ~ /(id-token|environment)["\047]?[[:space:]]*:[[:space:]]*(#.*)?$/) {
           pending = $0
           continued = ($0 !~ /:[[:space:]]*[>|]/)
@@ -34,7 +39,7 @@ for file in "${files[@]}"; do
         }
       }
       END { if (pending) print pending }
-    ' "$file" | grep -En "id-token[\"']?[[:space:]]*:[[:space:]]*[\"']?write|pypa/gh-action-pypi-publish|twine[[:space:]]+upload|uv[[:space:]]+publish|environment[\"']?[[:space:]]*:[[:space:]]*[\"']?pypi"; then
+    ' "$file" | grep -En "id-token[\"']?[[:space:]]*:[[:space:]]*[\"']?write|pypa/gh-action-pypi-publish|twine[[:space:]]+upload|uv[[:space:]]+publish|environment[\"']?[[:space:]]*:[[:space:]]*(\{[^}]*[\"']?name[\"']?[[:space:]]*:[[:space:]]*)?[\"']?pypi"; then
       printf 'publish guard failed: %s: publishing capability outside release.yml\n' "$file" >&2
       exit 1
     fi

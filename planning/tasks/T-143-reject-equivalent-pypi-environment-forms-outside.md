@@ -1,11 +1,11 @@
 ---
 id: T-143-reject-equivalent-pypi-environment-forms-outside
 title: Reject equivalent PyPI environment forms outside release workflow
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies: []
-updated_at: "2026-10-18T20:28:39Z"
+updated_at: "2026-10-18T21:19:04Z"
 ---
 
 # T-143-reject-equivalent-pypi-environment-forms-outside Reject equivalent PyPI environment forms outside release workflow
@@ -103,5 +103,49 @@ https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-synt
 
 ## Implementation Notes
 
-Findings-only round 9 filing. Unstarted; no product fix or workflow change.
-Coordinator decides any subsequent fix and whether to use authorized round 10.
+Implemented under the separately authorized single-task lease on cumulative
+base 53dd4a59c72d36412ae2869a625cb41d3cf6f974, containing accepted T-142.
+The v0.3.0 spec SHA256 remains
+fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704.
+
+The existing non-release scanner now normalizes literal environment scalars
+and block-object names and recognizes inline/multiline flow-object names.
+The regression matrix covers 11 representations, two names (pypi/staging),
+and two scopes (non-release/publish). Existing OIDC and tag controls remain.
+No workflow, gate, spec, dependency, or runtime YAML parser changed.
+
+Strict TDD: the expanded guard suite first failed with
+`FAIL: accepted unsafe extra.yaml: |- pypi environment`; a separate
+multiline-flow case then failed with
+`FAIL: accepted unsafe extra.yaml: flow-multiline pypi environment`.
+Both passed after minimal source changes. The final inert suite passes
+179 scanner cases, including 44 new matrix cases. No fixture steps execute.
+
+Dedicated code-simplifier Task loaded its skill and made no changes.
+Separate parallel General and Security code-reviewer Tasks loaded their
+mapped reviewers; both returned "No concrete task-relevant findings."
+General loaded common review/testing/security guidance; Security loaded
+security-review and cloud-infrastructure-security guidance. No language or
+framework lane is triggered by this shell-only change; database, network,
+ML, and other specialist domains are unaffected. A fresh candidate validator
+confirmed "Candidate outcome: empty set validated." There are no findings
+to fix, reject, deduplicate, or defer. A fresh final disposition verifier
+confirmed no unresolved or newly introduced task-relevant issues after one
+review cycle.
+
+Initial exact ruff/mypy/pytest chain passed (2633 passed, 7 skipped,
+390.47 seconds). Final exact `uv run ruff check`, `uv run mypy`,
+`uv run pytest -v` passed (169 source files; 2633 passed, 7 skipped,
+386.15 seconds). Sequential `mise run check` passed, including its full
+pytest run (2633 passed, 7 skipped, 381.64 seconds), packaging and shell
+guard suites. Final direct guard, synthetic guard suite, and
+`git diff --check` passed; the final verifier reran the focused suite.
+
+This remains a bounded local lexical guard, not universal YAML/shell
+analysis or evidence of a Trusted Publisher/approval bypass. No release,
+publication, deployment, manual hosted workflow trigger, next task, or
+round-10 investigation was performed. T-038 remains maintainer-blocked;
+T-128 and advisory 144 are outside this task. Hosted exact-head acceptance
+and remote delivery are reported separately after push.
+- 2026-10-18T21:19:04Z: verification pass
+- 2026-10-18T21:19:04Z: Implemented bounded environment representation normalization after one reviewed cycle; final ruff/mypy/pytest and mise check passed. Exact-head hosted CI acceptance follows authorized push.
