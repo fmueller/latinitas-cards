@@ -23,7 +23,10 @@ reject() {
 }
 fresh
 bash "$root/scripts/check-publish-guard.sh" "$temporary/workflows"
-for representation in direct continued folded '|-' '|2-' '|-2' block block-bare flow flow-bare flow-multiline; do
+for representation in direct continued folded '|-' '|2-' '|-2' block block-bare flow flow-bare flow-multiline \
+  object-continued-first object-continued-last object-folded-first object-folded-last \
+  object-literal-first object-literal-last object-indent-first object-indent-last \
+  object-chomp-first object-chomp-last; do
   for name in pypi staging; do
     case "$representation" in
       direct) environment="    environment: $name" ;;
@@ -35,6 +38,21 @@ for representation in direct continued folded '|-' '|2-' '|-2' block block-bare 
       flow) environment="    environment: {url: https://example.invalid, \"name\": \"$name\"}" ;;
       flow-bare) environment="    environment: {name: $name}" ;;
       flow-multiline) environment="    environment: {url: https://example.invalid,\n      name: $name}" ;;
+      object-*)
+        case "$representation" in
+          object-continued-*) scalar='# deployment target\n\n        # name follows' ;;
+          object-folded-*) scalar='>- # deployment target' ;;
+          object-literal-*) scalar='|- # deployment target' ;;
+          object-indent-*) scalar='|2-' ;;
+          object-chomp-*) scalar='>-2' ;;
+        esac
+        child="      'name': $scalar\n        $name"
+        if [[ "$representation" == *-first ]]; then
+          environment="    environment:\n$child\n      url: https://example.invalid"
+        else
+          environment="    environment:\n      url: https://example.invalid\n$child"
+        fi
+        ;;
     esac
     for scope in nonrelease publish; do
       fresh

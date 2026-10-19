@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-19T18:18:58Z"
+updated_at: "2026-10-19T21:35:32Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: 'Start task T-144-reject-multiline-environment-object-names-in-non: Reject multiline environment object names in non-release guard'
-last_verification_result: pass for T-143-reject-equivalent-pypi-environment-forms-outside at 2026-10-18T21:19:04Z
+next_action: Resolve blocker on T-038-publish-releases-on-pypi
+last_verification_result: pass for T-144-reject-multiline-environment-object-names-in-non at 2026-10-19T21:35:32Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-143-reject-equivalent-pypi-environment-forms-outside at 2026-10-18T21:19:04Z
+- pass for T-144-reject-multiline-environment-object-names-in-non at 2026-10-19T21:35:32Z
 
 ## Next Action
 
-- Start task T-144-reject-multiline-environment-object-names-in-non: Reject multiline environment object names in non-release guard
+- Resolve blocker on T-038-publish-releases-on-pypi
 
 ## Relevant Artifacts
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 1
 - in_progress: 0
-- completed: 141
+- completed: 142
 - blocked: 1
 - cancelled: 0

@@ -1,11 +1,11 @@
 ---
 id: T-144-reject-multiline-environment-object-names-in-non
 title: Reject multiline environment object names in non-release guard
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies: []
-updated_at: "2026-10-19T18:11:51Z"
+updated_at: "2026-10-19T21:35:32Z"
 ---
 
 # T-144-reject-multiline-environment-object-names-in-non Reject multiline environment object names in non-release guard
@@ -108,6 +108,69 @@ Reference: https://docs.github.com/en/actions/reference/workflows-and-actions/wo
 
 ## Implementation Notes
 
-Finding only; unstarted and unfixed. Final authorized adversarial round
-10 is NOT CLEAN. Further implementation or another round requires a new
-user decision through the coordinator; round 11 is not authorized.
+The coordinator subsequently authorized this one-task implementation and
+focused delivery to main. Round 10 remains COMPLETE NOT CLEAN; this fix
+does not reset its result or execute round 11. The coordinator retains
+ownership of the separately authorized round 11 after accepted delivery.
+
+### Workflow-v3 evidence
+
+1. Understand: fetched base `4db2b0230708be810128efb231e41fcbae05d96d`
+   contains accepted T143 `80a05ac6488bd500d5c9da2ecdf85a2d4373b818`.
+   Taskrail validation passed and its sole candidate was T144 before start.
+   The active spec remains v0.3.0, SHA-256
+   `fa3cd4c7ba93cdda1780f75d047372b0211c63adc22e68cd71c51d90b125b704`.
+   The nonrelease scanner owns this bounded lexical contract. Nested name
+   headers were emitted but not passed through its scalar normalization.
+2. RED: `bash scripts/check-publish-guard-test.sh` exited 1 before the
+   scanner change: `FAIL: accepted unsafe extra.yaml:
+   object-continued-first pypi environment`.
+   GREEN: the same command passed after routing object name headers into
+   the existing scalar normalization path. The 40 added cases cover five
+   scalar forms, both key orders, pypi/staging and nonrelease/publish scope.
+   The suite now has 219 guard cases; all prior controls remain unchanged.
+3. Initial checks: `uv run ruff check` passed; `uv run mypy` reported
+   `Success: no issues found in 169 source files`; `uv run pytest -v`
+   reported `2633 passed, 7 skipped, 1 warning in 480.30s`.
+4. A dedicated Task loaded `code-simplifier`, inspected the scripts and
+   returned: `No changes made.` It independently reran the inert guard
+   suite successfully. No simplification suggestions were rejected.
+5. Separate parallel read-only Tasks loaded `code-reviewer` for General
+   and Security. General used the ECC code reviewer; Security used the
+   ECC security reviewer, security-review reference, cloud-infrastructure
+   companion and common security rules. Both returned verbatim:
+   `No concrete task-relevant findings.` General covers the shell/AWK
+   correctness and regression contract; Security covers its input-scanning
+   trust boundary. No Python/framework/database/network runtime changed,
+   so no additional materially triggered specialist lane was identified.
+   A fresh candidate-validation Task loaded `code-reviewer`, inspected the
+   diff, reran the inert guard suite and returned verbatim:
+   `The candidate list was empty and remains empty.`
+6. Dispositions: no candidates, validated findings, rejected candidates,
+   deferrals or fixes required. The finding list is empty, not omitted.
+7. Fresh final checks: the exact `uv run ruff check` -> `uv run mypy` ->
+   `uv run pytest -v` chain passed (2633 passed, 7 skipped, 1 warning in
+   453.72s). Then sequential `mise run check` passed, including formatting,
+   mypy, pytest (2633 passed, 7 skipped, 1 warning in 439.60s) and all
+   configured shell guard suites. Separate final synthetic guard and
+   actual-workflow guard runs passed. No full suites overlapped.
+   A fresh read-only Task loaded `code-reviewer` in disposition-verification
+   mode and returned verbatim: `Approve — no unresolved or newly introduced
+   task-relevant issues.` It reran both guards and `git diff --check`, all
+   exit 0. One review cycle; no fixes required.
+8. Taskrail verification passed at `2026-10-19T21:35:32Z`; completion at
+   the same timestamp followed all review and local checks. Before these
+   lifecycle writes, validation, the pinned spec hash and unchanged fetched
+   origin/main base were rechecked. Hosted exact-head CI acceptance remains
+   a delivery handoff condition, not a claim made by local verification.
+
+### Scope and limits
+
+Only the local scanner and inert text-fixture tests change. Workflow,
+release gate, dependency, spec and actual publishing behavior are untouched.
+No fixture steps, OIDC, publication, release, tag, deployment or manually
+triggered hosted workflow execute. This is no broad security clearance,
+universal YAML/shell semantic guarantee or Trusted Publisher bypass claim.
+T038 stays maintainer-blocked; T128 and advisory 144 remain outside scope.
+- 2026-10-19T21:35:32Z: verification pass
+- 2026-10-19T21:35:32Z: Reviewed and locally verified T144 only; focused main delivery authorized, exact-head hosted CI acceptance remains pending.

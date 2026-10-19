@@ -21,11 +21,15 @@ for file in "${files[@]}"; do
           value = $0
           sub(/^[[:space:]]+/, "", value)
           if (pending ~ /environment["\047]?[[:space:]]*:/ && value ~ /^["\047]?name["\047]?[[:space:]]*:/) {
+            # Reuse scalar normalization for an environment object name.
             sub(/^["\047]?name["\047]?[[:space:]]*:/, "environment:", value)
             print value
+            pending = ""
+            $0 = value
+          } else {
+            pending = pending " " value
+            next
           }
-          pending = pending " " value
-          next
         }
         if ($0 ~ /:[[:space:]]*>[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
             $0 ~ /(id-token|environment)["\047]?[[:space:]]*:[[:space:]]*\|[-+1-9]*([[:space:]]+#.*)?[[:space:]]*$/ ||
