@@ -45,10 +45,14 @@ def test_package_metadata_preserves_install_contract() -> None:
         extra: ["cltk[stanza] (>=2.5.1,<3.0.0)", "torch>=2.9"] for extra in ("annotate", "annotate-gpu")
     }
     inventory = tomllib.loads((ROOT / "uv.lock").read_text())["package"]
+    # GHSA-27vj-qcqg-25rc: optional NLP dependencies must not lock vulnerable fsspec.
+    fsspec = next(package for package in inventory if package["name"] == "fsspec")
+    assert tuple(map(int, fsspec["version"].split("."))) >= (2026, 6, 0)
     # T-138 maintenance inventory; the pre-maintenance lock fingerprint was
     # 901378ad9589536b0c6c4a1f916e3f750e6b236354e2bbf7113b96c4997e1385.
+    # Refreshed for the fsspec-only advisory 144 patch.
     assert hashlib.sha256(json.dumps(inventory, sort_keys=True).encode()).hexdigest() == (
-        "df2004ae605d96626097ff3a291073c4a183a9f95c0cb4b6d2b402879c01d873"
+        "d2f396d51040ce937fe1953eea8ae85c7bfe18fd629f53d3df9bcb722ce74a56"
     )
     historical_audit = ROOT / "docs/license-compatibility-audit-2026-09-25.md"
     assert hashlib.sha256(historical_audit.read_bytes()).hexdigest() == (

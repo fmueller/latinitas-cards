@@ -13,6 +13,11 @@ compatibility opinion.
   PyPI and the CPU index. This does not revise prior release acceptance evidence.
   The byte-for-byte [historical snapshot](license-compatibility-audit-2026-09-25.md)
   preserves the original `v0.1.0` candidate inventory and audit conclusions.
+- Advisory 144 maintenance on 2026-10-20 updates only `fsspec` from 2026.2.0
+  to 2026.6.0 for GHSA-27vj-qcqg-25rc. Exact wheel PEP 658 metadata declares
+  Python >=3.10, `License-Expression: BSD-3-Clause`, and `License-File: LICENSE`.
+  Locked exports still include it only in `annotate` and `annotate-gpu`, not
+  the default runtime or dev scope; no optional NLP stack was installed.
 - Dependency source of truth: `uv.lock`, which currently has 92 package records (`[[package]]`),
   including the editable `latinitas-cards` project record and 91 third-party package
   records. The third-party records have 90 normalized names because `torch` has separate
@@ -66,7 +71,7 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
 | `cuda-toolkit` | `13.0.3.0` | annotate-gpu | **Unresolved:** exact wheel core metadata declares no license or license file |
 | `emoji` | `2.15.0` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.txt`, metadata expression unstated |
 | `filelock` | `3.24.3` | annotate, annotate-gpu | MIT; wheel `LICENSE` |
-| `fsspec` | `2026.2.0` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE` |
+| `fsspec` | `2026.6.0` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE` |
 | `h11` | `0.16.0` | annotate, annotate-gpu | MIT; wheel `LICENSE.txt` |
 | `hf-xet` | `1.6.0` | annotate, annotate-gpu | Apache-2.0; wheel `LICENSE` |
 | `httpcore` | `1.0.9` | annotate, annotate-gpu | BSD-3-Clause; wheel `LICENSE.md` |
