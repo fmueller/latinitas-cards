@@ -9,6 +9,7 @@ from pathlib import Path
 
 import click
 import pytest
+from source_guard_helpers import active_source_tree
 from typer._click.core import Command
 from typer.core import TyperGroup, TyperOption
 from typer.main import get_command
@@ -24,8 +25,8 @@ def test_interactive_requires_both_ttys(monkeypatch: pytest.MonkeyPatch, stdin_t
     assert interaction._is_interactive() == (stdin_tty and stdout_tty)
 
 
-def prompt_calls(source: str) -> tuple[int, list[int]]:
-    tree = ast.parse(source)
+def prompt_calls(source: str, *, module: str = "") -> tuple[int, list[int]]:
+    tree = active_source_tree(source, module=module)
     parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
     calls = 0
     unguarded = []
@@ -85,7 +86,8 @@ def test_all_prompts_are_guarded() -> None:
     total = 0
     violations = {}
     for path in Path("src").rglob("*.py"):
-        count, lines = prompt_calls(path.read_text())
+        module = ".".join(path.relative_to("src").with_suffix("").parts)
+        count, lines = prompt_calls(path.read_text(), module=module)
         total += count
         if lines:
             violations[str(path)] = lines
@@ -98,6 +100,26 @@ def test_scanner_negative_control() -> None:
     assert prompt_calls("typer.prompt('unsafe')\ninput('unsafe')") == (2, [1, 2])
     assert prompt_calls("if interaction._is_interactive():\n    click.confirm('safe')") == (1, [])
     assert prompt_calls("def f():\n    if not _is_interactive():\n        raise ValueError()\n    input()") == (1, [])
+
+
+@pytest.mark.parametrize("definition", ["def", "async def"])
+def test_prompt_guard_ignores_inactive_mutant_bodies(monkeypatch: pytest.MonkeyPatch, definition: str) -> None:
+    source = (
+        f"{definition} x_prompt__mutmut_orig():\n"
+        "    if _is_interactive():\n"
+        "        input('safe')\n"
+        f"{definition} x_prompt__mutmut_1():\n"
+        "    input('unsafe')\n"
+    )
+    monkeypatch.setenv("MUTANT_UNDER_TEST", "stats")
+    assert prompt_calls(source) == (1, [])
+    assert prompt_calls(source.replace("if _is_interactive():", "if False:")) == (1, [3])
+    monkeypatch.setenv("MUTANT_UNDER_TEST", "other.x_prompt__mutmut_1")
+    assert prompt_calls(source, module="example") == (1, [])
+    monkeypatch.setenv("MUTANT_UNDER_TEST", "example.x_prompt__mutmut_1")
+    assert prompt_calls(source, module="example") == (2, [5])
+    monkeypatch.delenv("MUTANT_UNDER_TEST")
+    assert prompt_calls(source) == (2, [5])
 
 
 def test_click_options_never_prompt() -> None:

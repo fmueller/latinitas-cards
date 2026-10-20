@@ -4,6 +4,7 @@ import ast
 from pathlib import Path
 
 import pytest
+from source_guard_helpers import active_source_tree
 
 from latinitas_cards.cli_contract import DIAGNOSTIC_CODES, Code
 
@@ -19,9 +20,9 @@ def test_registry_matches_documentation() -> None:
     assert len(meanings) == len(set(meanings))
 
 
-def literal_contract_codes(source: str, *, contract_module: bool = False) -> list[int]:
+def literal_contract_codes(source: str, *, contract_module: bool = False, module: str = "") -> list[int]:
     """Check contract constructors, without changing legacy Diagnostic APIs."""
-    tree = ast.parse(source)
+    tree = active_source_tree(source, module=module)
     names = {"Diagnostic", "ContractError"}
     constructors = set(names) if contract_module else set()
     for node in ast.walk(tree):
@@ -64,9 +65,31 @@ def test_literal_code_guard_negative_controls(source: str) -> None:
     assert literal_contract_codes(source) == [2]
 
 
+def test_literal_code_guard_ignores_inactive_mutant_bodies(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = (
+        "from x.cli_contract import Diagnostic\n"
+        "def x_result__mutmut_orig():\n"
+        "    return Diagnostic(code=Code.BUSY)\n"
+        "def x_result__mutmut_1():\n"
+        "    return Diagnostic(code='busy')\n"
+    )
+    monkeypatch.setenv("MUTANT_UNDER_TEST", "stats")
+    assert literal_contract_codes(source) == []
+    assert literal_contract_codes(source.replace("Code.BUSY", "'busy'")) == [3]
+    monkeypatch.setenv("MUTANT_UNDER_TEST", "other.x_result__mutmut_1")
+    assert literal_contract_codes(source, module="example") == []
+    monkeypatch.setenv("MUTANT_UNDER_TEST", "example.x_result__mutmut_1")
+    assert literal_contract_codes(source, module="example") == [5]
+    monkeypatch.delenv("MUTANT_UNDER_TEST")
+    assert literal_contract_codes(source) == [5]
+
+
 def test_contract_codes_are_enum_members() -> None:
     for path in (ROOT / "src/latinitas_cards").rglob("*.py"):
-        assert not literal_contract_codes(path.read_text(), contract_module=path.name == "cli_contract.py"), path
+        module = ".".join(path.relative_to(ROOT / "src").with_suffix("").parts)
+        assert not literal_contract_codes(
+            path.read_text(), contract_module=path.name == "cli_contract.py", module=module
+        ), path
 
 
 def test_strict_envelope() -> None:

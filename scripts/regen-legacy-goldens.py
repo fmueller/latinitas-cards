@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
 
@@ -53,23 +54,26 @@ def invoke(argv: list[str], work: Path, expected: int = 0) -> bytes:
         "PYTHONHASHSEED": "0",
         "PYTHONIOENCODING": "utf-8",
     }
-    if "MUTANT_UNDER_TEST" in os.environ:
-        env["MUTANT_UNDER_TEST"] = os.environ["MUTANT_UNDER_TEST"]
-        # mutmut changes the parent sys.path, which a new interpreter cannot
-        # inherit. Expose that checkout's package through the disposable cwd;
-        # retain the exact -m invocation and fixed environment contract.
-        package = work / "latinitas_cards"
-        if not package.exists():
-            package.symlink_to(ROOT / "src/latinitas_cards", target_is_directory=True)
-    result = subprocess.run(
-        [sys.executable, "-m", "latinitas_cards", *argv],
-        cwd=work,
-        env=env,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-    )
-    assert result.returncode == expected, (argv, result.returncode, result.stdout.decode())
+    with ExitStack() as cleanup:
+        if "MUTANT_UNDER_TEST" in os.environ:
+            env["MUTANT_UNDER_TEST"] = os.environ["MUTANT_UNDER_TEST"]
+            # A fresh interpreter inherits neither the parent's sys.path nor
+            # mutmut's loaded config. Stats trampolines need both in this cwd.
+            package = work / "latinitas_cards"
+            if not package.exists():
+                package.symlink_to(ROOT / "src/latinitas_cards", target_is_directory=True)
+            config = work / "pyproject.toml"
+            if not config.exists():
+                config.symlink_to(ROOT / "pyproject.toml")
+                cleanup.callback(config.unlink)
+        result = subprocess.run(
+            [sys.executable, "-m", "latinitas_cards", *argv],
+            cwd=work,
+            env=env,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+        )
+    assert result.returncode == expected, (argv, result.returncode, result.stdout.decode(), result.stderr.decode())
     stdout = result.stdout
     for path in {str(work), str(work.resolve())}:
         raw = path.encode()

@@ -49,17 +49,32 @@ def test_legacy_audit_rejects_existing_input_overwrite(tmp_path: Path, monkeypat
         )
 
 
-def test_subprocess_uses_mutation_sandbox_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("mutant", ["stats", "latinitas_cards.sentinel__mutmut_1"])
+def test_subprocess_uses_mutation_sandbox_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutant: str) -> None:
     harness = runpy.run_path(str(ROOT / "scripts/regen-legacy-goldens.py"))
     package = tmp_path / "mutants/src/latinitas_cards"
     package.mkdir(parents=True)
     (package / "__init__.py").write_text("")
-    (package / "__main__.py").write_text('print("mutation sandbox sentinel")\n')
+    (package / "__main__.py").write_text(
+        "import os\n"
+        "if os.environ['MUTANT_UNDER_TEST'] == 'stats':\n"
+        "    from mutmut.stats import record_trampoline_hit\n"
+        "    record_trampoline_hit('latinitas_cards.sentinel')\n"
+        "print(os.environ['MUTANT_UNDER_TEST'])\n"
+        "import sys\n"
+        "if '--fail' in sys.argv:\n"
+        "    sys.exit('sentinel child failure')\n"
+    )
+    (tmp_path / "mutants/pyproject.toml").write_text('[tool.mutmut]\nsource_paths = ["src/latinitas_cards"]\n')
     work = tmp_path / "work"
     work.mkdir()
-    monkeypatch.setenv("MUTANT_UNDER_TEST", "latinitas_cards.sentinel__mutmut_1")
+    monkeypatch.setenv("MUTANT_UNDER_TEST", mutant)
     monkeypatch.setitem(harness["invoke"].__globals__, "ROOT", tmp_path / "mutants")
-    assert harness["invoke"](["--help"], work) == b"mutation sandbox sentinel\n"
+    assert harness["invoke"](["--help"], work) == (mutant + "\n").encode()
+    assert not (work / "pyproject.toml").exists()
+    with pytest.raises(AssertionError, match="sentinel child failure"):
+        harness["invoke"](["--fail"], work)
+    assert not (work / "pyproject.toml").exists()
 
 
 @pytest.mark.parametrize("flag", [[], ["--i-know-this-rewrites-characterization-goldens"]])
