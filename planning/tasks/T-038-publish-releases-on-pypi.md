@@ -124,3 +124,16 @@ cites no Anki or Mobile evidence.
   `release_candidate_test.py` assertion in the evidence commit.
 - Do not activate another spec or start v0.4.0 work in this task.
 - 2026-10-14T05:43:05Z: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed
+- 2026-10-20: maintainer Felix Müller approved the license audit and its declared
+  corpus provenance for release preparation; recorded in
+  `docs/license-compatibility-audit.md`. This is maintainer acceptance, not an
+  independent upstream derivation check or publication authorization. T-038
+  remains blocked pending the other release prerequisites and explicit release
+  authorization; no tag, publication or environment change was performed.
+- 2026-10-20: the maintainer reported completing the PyPI Trusted Publisher and
+  GitHub environment setup described in `docs/releasing.md`. PyPI account
+  configuration is maintainer-reported, not independently authenticated here.
+  Read-only GitHub API checks confirmed environment `pypi`, required reviewer
+  `fmueller`, self-review permitted, administrator bypass disabled, and exactly
+  one deployment policy: tag `v*`, with no branch policy. These prerequisite
+  confirmations do not authorize tagging, deployment approval or publication.

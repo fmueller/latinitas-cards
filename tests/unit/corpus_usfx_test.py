@@ -210,6 +210,7 @@ def test_provenance_audit() -> None:
         "eBible.org",
         "https://ebible.org/find/details.php?id=latVUC",
         "Public Domain",
-        "maintainer confirmation pending",
+        "2026-10-20, maintainer Felix Müller approved",
+        "It does not authorize publication or unblock the maintainer release gate.",
     ):
         assert literal in audit

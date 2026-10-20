@@ -168,8 +168,13 @@ The repository-only `data/lat-clementine.usfx.xml` has SHA-256
 Its descriptor, `data/lat-clementine.descriptor.json`, records edition
 "Biblia Sacra Vulgata Clementina", publisher "eBible.org", URL
 <https://ebible.org/find/details.php?id=latVUC>, and license "Public Domain".
-These are declared provenance values, **maintainer confirmation pending**:
-the release gate must confirm the values and whether this bundled file derives
-from the eBible.org latVUC file. The normalization fixture is an exact byte
+On 2026-10-20, maintainer Felix Müller approved this license audit and its
+declared corpus provenance for release preparation. This records maintainer
+acceptance, not an independent verification of derivation from the eBible.org
+latVUC file or blanket approval of dependency licenses and redistribution terms.
+The separate release prerequisite asking whether the bundled XML derives from
+the eBible.org latVUC file still awaits an explicit maintainer answer.
+It does not authorize publication or unblock the maintainer release gate.
+The normalization fixture is an exact byte
 prefix through GEN 1:5, closed with `</book></usfx>` and a newline. Neither the
 bundled corpus nor its fixture is shipped as an installed runtime resource.
