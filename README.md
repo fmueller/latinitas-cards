@@ -9,9 +9,10 @@ CSV export into repeatable principal-part study cards. It inspects a source, sav
 confirmed profile, previews generated cards, and writes a deterministic UTF-8 Anki
 text-import CSV without modifying the source.
 
-> **Current release:** [v0.3.0](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md) candidate, not published.
-> The last published release is v0.2.1. Tagging and PyPI publication require the maintainer gate;
-> see [release readiness and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md).
+> **Current release:** [v0.3.0](https://github.com/fmueller/latinitas-cards/releases/tag/v0.3.0),
+> available on [PyPI](https://pypi.org/project/latinitas-cards/0.3.0/).
+> See [release readiness and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)
+> for the verified publication evidence and compatibility boundaries.
 
 ## Workflow
 
@@ -51,11 +52,10 @@ Anki setup details.
 **Prerequisites:** Python 3.13 or 3.14. Linux and macOS are supported; Windows is not supported.
 The default install needs no CLTK, Stanza or PyTorch.
 
-### PyPI installation (planned)
+### PyPI installation
 
-PyPI releases start with v0.3.0. These commands become available
-only after the future v0.3.0 maintainer release gate publishes the package;
-they are not a claim of current PyPI availability. Choose one isolated install:
+[Latinitas Cards 0.3.0 is published on PyPI](https://pypi.org/project/latinitas-cards/0.3.0/).
+Choose one isolated install:
 
 ```bash
 uv tool install latinitas-cards
@@ -81,9 +81,8 @@ your own USFX path and optionally `--descriptor FILE` for corpus metadata.
 ### Git development checkout
 
 The development checkout remains available with [uv](https://docs.astral.sh/uv/).
-The tagged-checkout command below is reserved for the maintainer-created v0.3.0
-tag, which does not exist yet. For the candidate, check out the reviewed candidate
-commit instead; v0.2.1 remains the published tagged checkout.
+The command below checks out the published v0.3.0 tag. To work on the latest
+development version instead, clone without `--branch v0.3.0`.
 
 ```bash
 git clone --branch v0.3.0 --depth 1 https://github.com/fmueller/latinitas-cards.git
@@ -102,8 +101,8 @@ For a checkout, the CPU extra installs CLTK 2, Stanza and CPU-only PyTorch:
 uv sync --locked --extra annotate
 ```
 
-uv's CPU torch index and extra conflict do not transfer to pip. After PyPI publication,
-use this CPU-extra command inside the activated venv on Linux:
+uv's CPU torch index and extra conflict do not transfer to pip. Use this CPU-extra
+command inside the activated venv on Linux:
 
 ```bash
 pip install 'latinitas-cards[annotate]' --extra-index-url https://download.pytorch.org/whl/cpu
@@ -116,8 +115,8 @@ resolution; use only trusted indexes and review the resolved packages.
 
 > [!WARNING]
 > **Highly experimental:** `uv sync --locked --extra annotate-gpu` selects CUDA
-> PyTorch instead on compatible Linux/NVIDIA systems. After publication, the pip
-> equivalent is `pip install 'latinitas-cards[annotate-gpu]'` in a separate venv,
+> PyTorch instead on compatible Linux/NVIDIA systems. The pip equivalent is
+> `pip install 'latinitas-cards[annotate-gpu]'` in a separate venv,
 > without the CPU index. It needs a matching NVIDIA driver and is not tested in CI.
 > This is not a claim of verified macOS GPU or Windows support. Core deck-first
 > workflows do not require CLTK, Stanza, PyTorch, or network access.
@@ -354,7 +353,7 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 - [v0.1.1 release readiness and limitations](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.1.1.md)
 - [v0.2.0 release readiness and limitations](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.0.md)
 - [v0.2.1 release readiness, accepted Linux native evidence and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.2.1.md)
-- [v0.3.0 candidate readiness, offline walkthrough and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)
+- [v0.3.0 publication evidence, offline walkthrough and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)
 - [Authored note JSONL import format](https://github.com/fmueller/latinitas-cards/blob/main/docs/authored-note-import.md)
 - [Stable generated-note identity](https://github.com/fmueller/latinitas-cards/blob/main/docs/stable-generated-note-identity.md)
 - [Principal-part parser support matrix](https://github.com/fmueller/latinitas-cards/blob/main/docs/principal-part-parsing.md)

@@ -21,8 +21,8 @@ def test_installation_guide() -> None:
         "pip install --upgrade latinitas-cards",
         "Python 3.13 or 3.14",
         "Linux and macOS are supported; Windows is not supported",
-        "only after the future v0.3.0 maintainer release gate",
-        "PyPI releases start with v0.3.0",
+        "https://pypi.org/project/latinitas-cards/0.3.0/",
+        "### PyPI installation\n",
         "development checkout",
         "git clone --branch v0.3.0 --depth 1 https://github.com/fmueller/latinitas-cards.git",
         "default install needs no CLTK, Stanza or PyTorch",
@@ -36,6 +36,15 @@ def test_installation_guide() -> None:
         "--descriptor FILE",
     ):
         assert required in installation, required
+    for obsolete in (
+        "candidate, not published",
+        "last published release is v0.2.1",
+        "does not exist yet",
+        "(planned)",
+        "After publication",
+    ):
+        assert obsolete not in readme, obsolete
+    assert "https://github.com/fmueller/latinitas-cards/releases/tag/v0.3.0" in readme
     documentation = readme.split("## Documentation\n", 1)[1]
     assert "https://github.com/fmueller/latinitas-cards/blob/main/docs/releasing.md" in documentation
     changelog = (ROOT / "CHANGELOG.md").read_text()
