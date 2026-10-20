@@ -177,8 +177,9 @@ On 2026-10-20, maintainer Felix Müller approved this license audit and its
 declared corpus provenance for release preparation. This records maintainer
 acceptance, not an independent verification of derivation from the eBible.org
 latVUC file or blanket approval of dependency licenses and redistribution terms.
-The separate release prerequisite asking whether the bundled XML derives from
-the eBible.org latVUC file still awaits an explicit maintainer answer.
+On 2026-10-20, maintainer Felix Müller explicitly confirmed that the bundled
+XML derives from the eBible.org latVUC file. This records the maintainer's
+answer, not an independent byte comparison against the upstream file.
 It does not authorize publication or unblock the maintainer release gate.
 The normalization fixture is an exact byte
 prefix through GEN 1:5, closed with `</book></usfx>` and a newline. Neither the

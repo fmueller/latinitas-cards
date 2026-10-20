@@ -122,7 +122,8 @@ The `usfx/1` header hashes and counts raw source bytes; the source is never
 rewritten. No descriptor is selected implicitly, even for the bundled source.
 With no `--descriptor`, provenance fields are null. See the
 [provenance audit](license-compatibility-audit.md#bundled-corpus-provenance)
-for the declared Clementine provenance and pending maintainer confirmation.
+for the declared Clementine provenance, dated maintainer confirmation and
+remaining verification limits.
 
 This adapter writes only the corpus, using the shared locked atomic writer and
 alias checks. `--manifest`, approvals and citation templates are usage errors

@@ -137,3 +137,15 @@ cites no Anki or Mobile evidence.
   `fmueller`, self-review permitted, administrator bypass disabled, and exactly
   one deployment policy: tag `v*`, with no branch policy. These prerequisite
   confirmations do not authorize tagging, deployment approval or publication.
+- 2026-10-20: maintainer Felix Müller explicitly confirmed that the bundled
+  `data/lat-clementine.usfx.xml` derives from the eBible.org latVUC file.
+  Recorded in `docs/license-compatibility-audit.md` as maintainer confirmation,
+  not an independent upstream byte comparison or blanket license assurance.
+  T-038 remains blocked; this partial prerequisite confirmation does not
+  authorize tagging, deployment approval or publication.
+- Documentation review G-1, validated and fixed: "docs/normalized-corpus.md
+  still presents maintainer confirmation of the bundled corpus provenance as
+  pending, contradicting the current provenance audit." Its current link text
+  now points to dated confirmation and verification limits. A scratch check
+  failed before the correction and passed afterward; the existing provenance
+  and packaging metadata tests passed (4 tests). Historical audit unchanged.
