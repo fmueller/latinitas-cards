@@ -13,12 +13,12 @@ This repository uses versioned specs under `specs/`.
   and grammar practice, shared claim decisions, terminology, form translations and
   automatic appearance. v0.2.1 is released.
 - `specs/v0.3.0.md` is the active implementation spec, activated through Taskrail;
-  it is not yet released. It adds a normalized JSONL corpus model with USFX and plain-text adapters,
+  v0.3.0 is released. It adds a normalized JSONL corpus model with USFX and plain-text adapters,
   annotation sidecars, an agent-ready CLI contract, policy-gated sidecar writes and PyPI
   publishing. The loop follows its Fixed Contracts and exclusions without changing
-  Anki-facing output or reopening v0.2.x native acceptance gates. T-038 stays blocked
-  as the maintainer-only release gate; only the maintainer unblocks it after all other
-  v0.3.0 tasks are complete and authorizes release publication.
+  Anki-facing output or reopening v0.2.x native acceptance gates. The maintainer
+  authorized the T-038 release gate after all other v0.3.0 tasks completed; its
+  publication evidence is recorded in `docs/release-v0.3.0.md`.
 - `specs/v0.4.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
   preserve the agreed progression through corpus-first generation, grammar/syntax study,
   optional direct Anki integration, reproducible projects, CLI/migration hardening,

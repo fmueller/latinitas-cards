@@ -1,7 +1,7 @@
 ---
 id: T-038-publish-releases-on-pypi
 title: Publish v0.3.0 tag, GitHub release and PyPI distributions (maintainer gate)
-status: blocked
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#pypi-publishing
 dependencies:
@@ -50,7 +50,7 @@ dependencies:
     - T-145-patch-optional-fsspec-dependency-for-advisory-144
     - T-146-keep-characterization-subprocesses-runnable-during
     - T-147-inspect-only-active-code-in-mutation-cli-contract
-updated_at: "2026-10-14T05:43:05Z"
+updated_at: "2026-10-20T21:28:43Z"
 ---
 
 # T-038-publish-releases-on-pypi Publish v0.3.0 tag, GitHub release and PyPI distributions (maintainer gate)
@@ -190,3 +190,44 @@ cites no Anki or Mobile evidence.
   findings or deferrals remained. Follow-up Ruff, mypy, the targeted metadata
   test, diff checking and Taskrail validation passed. T-038 is not verified
   or completed by these preparation checks; publication evidence is absent.
+- 2026-10-20T21:06:26Z: 2026-10-20: maintainer explicitly authorized unblocking T038, one annotated v0.3.0 tag on exact green candidate 8bc83324e9911a1c404ae24aad1c726d37e39af0, tag push and GitHub release after PyPI verification; protected environment approval remains personal. Build 39496370685 and CodeQL 39496370618 all successful.
+- Publication executed under that approval: annotated tag object
+  a63f80e52d0888212e7c533003c285956599bb9d peels to the unchanged accepted
+  candidate 8bc83324e9911a1c404ae24aad1c726d37e39af0. Release run
+  https://github.com/fmueller/latinitas-cards/actions/runs/39497660383
+  passed build, verify on Python 3.13 and 3.14, publish and verify-pypi.
+  The approval API records maintainer fmueller approving environment pypi.
+  The exact-version PyPI install/help and absence-of-NLP assertions passed.
+  Independently compared every build-artifact filename and SHA-256 with
+  https://pypi.org/pypi/latinitas-cards/0.3.0/json: both files match, no extras.
+  Wheel latinitas_cards-0.3.0-py3-none-any.whl:
+  9b3fe37f367001b4327f815a66ff4675a73af021d59f53a5cd26769d70779dd5.
+  Source latinitas_cards-0.3.0.tar.gz:
+  03bf9413d6bddefe88fbc17496338f9ca133ced56d3763c8ee099082af87d238.
+  Non-draft, non-prerelease GitHub release published at 2026-10-20T21:10:26Z:
+  https://github.com/fmueller/latinitas-cards/releases/tag/v0.3.0;
+  PyPI version https://pypi.org/project/latinitas-cards/0.3.0/.
+  Follow-up evidence lives on main without moving the tag. Current spec
+  contents are unchanged; only the spec index's release status is updated.
+  Full mutation efficacy, optional NLP runtime and new native Anki testing
+  remain unclaimed. Closure awaits final local checks and independent review.
+- Evidence review: dedicated code-simplifier made no changes. General review
+  reported "No concrete task-relevant findings." Security proposed S-1:
+  "The generated Taskrail state’s next action is stale and does not describe
+  the remaining work." Fresh candidate validation rejected S-1: the generic
+  active-task next action is the expected transient output of taskrail start,
+  not a defect; verification/completion must wait for final checks and review
+  and will regenerate state. No hand edit of STATE is permitted or needed.
+  No validated findings or deferrals remained after candidate validation.
+- Final closure checks passed in sequence: Ruff, mypy and full pytest
+  (2637 passed, 7 skipped, one existing warning, 451.48 seconds), followed
+  by mise run check including full pytest (same totals, 459.24 seconds),
+  formatting, packaging and all configured shell policy suites. Subsequent
+  metadata regression test passed; diff checking and Taskrail validation
+  passed. Fresh disposition verification reported "No concrete task-relevant
+  findings." S-1 remained rejected as expected transient active state; no
+  validated issues or deferrals remained. Only now is the Taskrail
+  verification/completion lifecycle run. The spec SHA-256 and remote tag
+  object/peeled commit were rechecked unchanged before closure.
+- 2026-10-20T21:28:43Z: verification pass
+- 2026-10-20T21:28:43Z: Published v0.3.0 to PyPI and GitHub under explicit maintainer authorization and personal protected-environment approval; publication/hash/install evidence and final review/checks recorded, tag unchanged.

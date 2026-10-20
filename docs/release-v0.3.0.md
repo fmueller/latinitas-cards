@@ -1,11 +1,45 @@
-# v0.3.0 candidate readiness — 2026-10-20
+# v0.3.0 release evidence — 2026-10-20
 
-Prepared version: `0.3.0`; intended tag: `v0.3.0`. **Candidate, not published.**
-T-038 alone authorizes maintainer tagging, GitHub release and PyPI publication;
-this record claims none of them. The date is the candidate date (Europe/Zagreb).
-The package CI job on the final candidate remains the binding publication check.
+**Published:** [GitHub release](https://github.com/fmueller/latinitas-cards/releases/tag/v0.3.0)
+and [PyPI 0.3.0](https://pypi.org/project/latinitas-cards/0.3.0/).
+The maintainer explicitly authorized T-038 publication on 2026-10-20 and personally
+approved the protected `pypi` deployment as `fmueller`.
 
-## Current release preparation — 2026-10-20
+## Publication verification
+
+- Tagged candidate:
+  [`8bc8332`](https://github.com/fmueller/latinitas-cards/commit/8bc83324e9911a1c404ae24aad1c726d37e39af0).
+  Its [Build](https://github.com/fmueller/latinitas-cards/actions/runs/39496370685)
+  and [CodeQL](https://github.com/fmueller/latinitas-cards/actions/runs/39496370618)
+  passed all eight checks before tagging.
+- Exactly one annotated `v0.3.0` tag was created under Felix Müller's maintainer
+  identity. Remote tag object: `a63f80e52d0888212e7c533003c285956599bb9d`;
+  peeled commit: `8bc83324e9911a1c404ae24aad1c726d37e39af0`. The tag was not moved.
+- [Release workflow](https://github.com/fmueller/latinitas-cards/actions/runs/39497660383),
+  attempt 1: `build`, `verify (3.13)`, `verify (3.14)`, `publish` and `verify-pypi`
+  all succeeded. The approval API records `fmueller` approving environment `pypi`.
+  Trusted Publishing uploaded the verified build artifacts without rebuilding.
+- `verify-pypi` installed exactly `latinitas-cards==0.3.0` from PyPI, ran CLI help,
+  and asserted CLTK, Stanza and Torch were absent. The GitHub release was published
+  only afterward at 2026-10-20T21:10:26Z, non-draft and non-prerelease.
+- Independently downloaded the run's `dist` artifact and compared every filename
+  and SHA-256 with the versioned PyPI JSON response. Both files matched exactly;
+  neither the build artifact nor the PyPI response contained additional files.
+
+| File | Build and PyPI SHA-256 (identical) |
+| --- | --- |
+| `latinitas_cards-0.3.0-py3-none-any.whl` | `9b3fe37f367001b4327f815a66ff4675a73af021d59f53a5cd26769d70779dd5` |
+| `latinitas_cards-0.3.0.tar.gz` | `03bf9413d6bddefe88fbc17496338f9ca133ced56d3763c8ee099082af87d238` |
+
+The tag points to the tested candidate, not this later evidence commit. Hash
+equality establishes file consistency, not a blanket security or license guarantee.
+No full mutation efficacy campaign, optional NLP runtime or new native Anki testing
+is claimed by this release. Existing platform and compatibility limits below remain.
+
+## Pre-publication preparation — 2026-10-20
+
+This section records the preparation before authorization and publication; its
+candidate checks and remote-absence observations are historical, not current state.
 
 The accepted implementation base is
 [`fca6842`](https://github.com/fmueller/latinitas-cards/commit/fca68427e41196e7650dfdca8f1a3b78c1455ba1).
@@ -25,8 +59,9 @@ PyPI version was found during preparation.
 Completed follow-ups through T-147 are included in T-038's prerequisites; T-128
 belongs to an inactive future spec. The full mutation campaign remains unverified:
 T-146/T-147 validated baseline collection and one selected mutant, not a full score.
-T-038 remains blocked pending explicit publication authorization. No tag, upload,
-deployment approval or GitHub release was performed by this preparation.
+At this stage T-038 remained blocked pending explicit publication authorization.
+No tag, upload, deployment approval or GitHub release was performed by preparation;
+the later authorization and publication are recorded above.
 
 The sections below retain the original 2026-10-16 walkthrough, its tested revision,
 and its historical limitations; they are not fresh executions on this candidate.

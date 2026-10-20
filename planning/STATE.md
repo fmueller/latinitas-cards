@@ -1,15 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-20T20:13:21Z"
+updated_at: "2026-10-20T21:28:43Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: ""
 current_task_title: ""
-status_summary: blocked
-blockers:
-    - 'T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed'
-next_action: Resolve blocker on T-038-publish-releases-on-pypi
-last_verification_result: pass for T-146-keep-characterization-subprocesses-runnable-during at 2026-10-20T20:13:21Z
+status_summary: idle
+blockers: []
+next_action: Select the next eligible task
+last_verification_result: pass for T-038-publish-releases-on-pypi at 2026-10-20T21:28:43Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -27,19 +26,19 @@ continuation_notes:
 
 ## Status
 
-- blocked
+- idle
 
 ## Blockers
 
-- T-038-publish-releases-on-pypi: maintainer release gate: needs PyPI Trusted Publisher, GitHub pypi environment approval and tag publication by the maintainer; unblock only when all other v0.3.0 tasks are completed
+- None
 
 ## Last Verification
 
-- pass for T-146-keep-characterization-subprocesses-runnable-during at 2026-10-20T20:13:21Z
+- pass for T-038-publish-releases-on-pypi at 2026-10-20T21:28:43Z
 
 ## Next Action
 
-- Resolve blocker on T-038-publish-releases-on-pypi
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -53,6 +52,6 @@ continuation_notes:
 
 - todo: 1
 - in_progress: 0
-- completed: 145
-- blocked: 1
+- completed: 146
+- blocked: 0
 - cancelled: 0
