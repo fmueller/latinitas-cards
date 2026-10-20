@@ -30,6 +30,26 @@ dependencies:
     - T-124-validate-integrated-v0-3-0-workflows-offline-and
     - T-125-join-corpus-claim-decisions-into-corpus-views
     - T-126-prepare-v0-3-0-orchestrated-loop
+    - T-127-repair-registered-schema-export-for-corpus-record
+    - T-129-reject-segmentation-outputs-aliasing-corpus-and
+    - T-130-report-duplicate-corpus-claim-decisions-without
+    - T-131-reject-segmentation-outputs-aliasing-the-default
+    - T-132-ignore-stale-bindings-before-live-decision-duplicates
+    - T-133-reject-annotation-apply-aliases-to-reserved-writer
+    - T-134-reject-apply-aliases-to-resolved-default-manifest
+    - T-135-correct-obsolete-legacy-usfx-hardening
+    - T-136-reject-segment-aliases-to-resolved-default
+    - T-137-verify-styled-noninteractive-setup-diagnostics
+    - T-138-reconcile-dependabot-maintenance-batch
+    - T-139-reject-multiline-publishing-capabilities-in
+    - T-140-reject-plan-lock-hardlinks-to-nested-default
+    - T-141-reject-multiline-oidc-write-outside-the-release
+    - T-142-reject-literal-block-oidc-write-in-workflow-guard
+    - T-143-reject-equivalent-pypi-environment-forms-outside
+    - T-144-reject-multiline-environment-object-names-in-non
+    - T-145-patch-optional-fsspec-dependency-for-advisory-144
+    - T-146-keep-characterization-subprocesses-runnable-during
+    - T-147-inspect-only-active-code-in-mutation-cli-contract
 updated_at: "2026-10-14T05:43:05Z"
 ---
 
@@ -149,3 +169,24 @@ cites no Anki or Mobile evidence.
   now points to dated confirmation and verification limits. A scratch check
   failed before the correction and passed afterward; the existing provenance
   and packaging metadata tests passed (4 tests). Historical audit unchanged.
+- 2026-10-20: resumed attended release preparation at the maintainer's request.
+  Added the completed active-spec follow-ups through T-147 as dependencies,
+  as required above; T-128 remains excluded future-spec work. Prepared the
+  changelog for 0.3.0 with the current date and all pending user-facing fixes.
+  The implementation base is fca68427e41196e7650dfdca8f1a3b78c1455ba1 with
+  successful Build 39491087705 and CodeQL 39491088352. The metadata commit
+  requires fresh exact-head CI before tagging. Read-only checks found no
+  v0.3.0 tag, GitHub release or PyPI version (PyPI returned 404 after a
+  transient 503); environment pypi still requires fmueller review and permits
+  only v* tags. No lifecycle transition or publication was performed;
+  explicit authorization to tag and publish remains required.
+- Preparation validation: the updated metadata test failed on the old
+  2026-10-16 changelog heading, then passed after the date update and folding
+  pending fixes into 0.3.0. Ruff, mypy and full pytest passed in sequence
+  (2637 passed, 7 skipped, one existing Pydantic warning, 454.33 seconds).
+  The dedicated code-simplifier made no changes. Independent General and
+  Security reviews, fresh candidate validation and fresh final disposition
+  verification each reported "No concrete task-relevant findings." No
+  findings or deferrals remained. Follow-up Ruff, mypy, the targeted metadata
+  test, diff checking and Taskrail validation passed. T-038 is not verified
+  or completed by these preparation checks; publication evidence is absent.

@@ -1,9 +1,35 @@
-# v0.3.0 candidate readiness — 2026-10-16
+# v0.3.0 candidate readiness — 2026-10-20
 
 Prepared version: `0.3.0`; intended tag: `v0.3.0`. **Candidate, not published.**
 T-038 alone authorizes maintainer tagging, GitHub release and PyPI publication;
 this record claims none of them. The date is the candidate date (Europe/Zagreb).
 The package CI job on the final candidate remains the binding publication check.
+
+## Current release preparation — 2026-10-20
+
+The accepted implementation base is
+[`fca6842`](https://github.com/fmueller/latinitas-cards/commit/fca68427e41196e7650dfdca8f1a3b78c1455ba1).
+Its [Build](https://github.com/fmueller/latinitas-cards/actions/runs/39491087705)
+and [CodeQL](https://github.com/fmueller/latinitas-cards/actions/runs/39491088352)
+checks passed. Release metadata changes require fresh checks on their own commit
+before tagging; these URLs do not verify a later candidate.
+
+The maintainer confirmed the PyPI Trusted Publisher setup, approved the license
+audit and confirmed eBible.org latVUC derivation on 2026-10-20; see the dated
+[audit and verification limits](license-compatibility-audit.md). Read-only GitHub
+API checks confirmed required reviewer `fmueller` and tag-only `v*` deployments for
+environment `pypi`. PyPI account configuration is maintainer-reported, not
+independently authenticated here. No existing `v0.3.0` tag, GitHub release or
+PyPI version was found during preparation.
+
+Completed follow-ups through T-147 are included in T-038's prerequisites; T-128
+belongs to an inactive future spec. The full mutation campaign remains unverified:
+T-146/T-147 validated baseline collection and one selected mutant, not a full score.
+T-038 remains blocked pending explicit publication authorization. No tag, upload,
+deployment approval or GitHub release was performed by this preparation.
+
+The sections below retain the original 2026-10-16 walkthrough, its tested revision,
+and its historical limitations; they are not fresh executions on this candidate.
 
 ## Scope and provenance
 
@@ -18,8 +44,9 @@ v0.3.0 adds normalized text/USFX corpora, reviewed stable identities, sentence/t
 sidecars, patch planning/explicit approval/policy-gated application, corpus claim
 decisions, read-only views and effective configuration, and agent-ready diagnostics.
 It preserves legacy Anki-facing output. The full Vulgate oracle is a byte-compatibility
-check, not a provenance/license approval: Vulgate provenance still requires the
-maintainer's confirmation. Bundled corpora are excluded from distributions.
+check, not a provenance/license approval: at the time of this walkthrough Vulgate
+provenance still required maintainer confirmation, now recorded above. Bundled
+corpora are excluded from distributions.
 
 ## Offline integrated walkthrough
 

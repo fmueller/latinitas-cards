@@ -4,6 +4,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-20
+
 ### Fixed
 
 - `annotations plan` rejects output and output-lock hardlinks to nested default
@@ -18,8 +20,6 @@ Notable user-facing changes to Latinitas Cards are documented here.
 - `annotations segment` rejects outputs aliasing corpus, claims and default manifest
   locks, including symlinked default-manifest DATA locks, before writing or reporting
   contention; ordinary sidecar output remains unchanged.
-
-## [0.3.0] - 2026-10-16
 
 ### Added
 
