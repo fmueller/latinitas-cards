@@ -22,6 +22,7 @@ grep -F 'bash scripts/check-mutation-config-test.sh' "$root/mise.toml" >/dev/nul
 
 workflow="$root/.github/workflows/mutation.yml"
 [ -f "$workflow" ] || fail 'mutation workflow is missing'
+grep -Eq '^    timeout-minutes: 120$' "$workflow" || fail 'mutation workflow must allow 120 minutes'
 grep -F 'schedule:' "$workflow" >/dev/null || fail 'weekly trigger is missing'
 grep -F 'workflow_dispatch:' "$workflow" >/dev/null || fail 'manual trigger is missing'
 if grep -Eq '^  (push|pull_request):' "$workflow"; then

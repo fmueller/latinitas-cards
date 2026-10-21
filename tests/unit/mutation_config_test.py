@@ -8,6 +8,13 @@ import pytest
 ROOT = Path(__file__).parents[2]
 
 
+def test_mutation_campaign_uses_covered_lines() -> None:
+    with (ROOT / "pyproject.toml").open("rb") as project_file:
+        project = tomllib.load(project_file)
+
+    assert project["tool"]["mutmut"].get("mutate_only_covered_lines") is True
+
+
 @pytest.mark.parametrize(
     "required",
     [

@@ -63,6 +63,12 @@ not execute mutants.
 
 `src/latinitas_cards/` is the mutation source. Pytest collection is constrained
 to `tests/` so the generated `mutants/` project cannot be collected recursively.
+Mutation generation is limited to lines exercised by the test suite through
+`mutate_only_covered_lines = true`. Uncovered lines are outside this report's
+denominator, not evidence of effective tests. Coverage exclusions also apply;
+do not add exclusions merely to improve the mutation score. No application
+modules or diagnostic strings are excluded from mutation generation.
+The CI job allows 120 minutes; a timeout still fails the completeness gate.
 Mutmut copies tests automatically; `tool.mutmut.also_copy` also includes the
 documentation, release metadata, the spec index, task notes, both mirrored
 extraction skill directories, and scripts used by repository-file tests

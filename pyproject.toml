@@ -84,6 +84,7 @@ testpaths = ["tests"]
 
 [tool.mutmut]
 source_paths = ["src/latinitas_cards/"]
+mutate_only_covered_lines = true
 # Repository-file assertions run from inside mutmut's sandbox too.
 also_copy = [
     "pyproject.toml",
