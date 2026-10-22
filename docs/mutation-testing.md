@@ -51,9 +51,23 @@ coverage map without discarding all cached mutant state.
 ## Automation and artifacts
 
 `.github/workflows/mutation.yml` runs Mondays at 03:00 UTC and on manual
-dispatch. It does not run for pushes or pull requests. The workflow uploads
-`mutation-results.txt` and `mutants/mutmut-cicd-stats.json` for 30 days and puts
-raw counts plus the per-module report in the job summary.
+dispatch. It does not run for pushes or pull requests. Four matrix jobs cover
+disjoint source-file shards. Files are sorted largest first (path breaks ties)
+and dealt round-robin so large modules land in different jobs. Newly added
+Python files are included automatically, including package initializers.
+
+Each disposable CI checkout adds its file list to mutmut's `only_mutate`
+configuration before generation. Other modules remain importable, and every
+shard still collects stats with the full test suite. Local full and differential
+commands are unchanged; do not run the configuration script in a working checkout
+unless you intend to restrict subsequent mutation commands to that shard.
+
+Each job uploads `mutation-scope.json`, `mutation-results.txt`, and
+`mutants/mutmut-cicd-stats.json` as `mutation-results-0` through
+`mutation-results-3` for 30 days. Counts and per-module summaries describe that
+shard only; sum raw counts across all four artifacts for campaign totals.
+Every shard must pass execution and result-completeness checks for the workflow
+to succeed. Failures do not cancel other shards, preserving their reports.
 
 The normal Build workflow runs only the fast shell regression tests for result
 parsing, differential selection, error propagation, and configuration. It does
@@ -67,8 +81,8 @@ Mutation generation is limited to lines exercised by the test suite through
 `mutate_only_covered_lines = true`. Uncovered lines are outside this report's
 denominator, not evidence of effective tests. Coverage exclusions also apply;
 do not add exclusions merely to improve the mutation score. No application
-modules or diagnostic strings are excluded from mutation generation.
-The CI job allows 120 minutes; a timeout still fails the completeness gate.
+modules or diagnostic strings are excluded from the combined campaign.
+Each CI shard allows 120 minutes; a timeout still fails the completeness gate.
 Mutmut copies tests automatically; `tool.mutmut.also_copy` also includes the
 documentation, release metadata, the spec index, task notes, both mirrored
 extraction skill directories, and scripts used by repository-file tests

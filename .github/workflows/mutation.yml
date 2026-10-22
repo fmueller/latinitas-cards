@@ -16,9 +16,13 @@ permissions:
 
 jobs:
   mutation-tests:
-    name: Mutation Baseline
+    name: Mutation Baseline (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -32,6 +36,11 @@ jobs:
           python-version-file: '.python-version'
       - name: Install dependencies
         run: uv sync --locked --dev
+
+      - name: Configure mutation shard
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: uv run python scripts/configure-mutation-shard.py "$SHARD" 4
 
       # Preserve results even when mutation execution itself fails. The final
       # step evaluates both command outcomes and report completeness.
@@ -50,9 +59,11 @@ jobs:
 
       - name: Summarize
         if: always()
+        env:
+          SHARD: ${{ matrix.shard }}
         run: |
           {
-            printf '## Mutation testing baseline\n\n'
+            printf '## Mutation testing baseline: shard %s of 0–3\n\n' "$SHARD"
             printf 'This workflow currently reports efficacy without enforcing a numerical floor.\n\n'
             if [ -f mutants/mutmut-cicd-stats.json ]; then
               printf '| Outcome | Count |\n| --- | ---: |\n'
@@ -73,8 +84,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.2
         with:
-          name: mutation-results
+          name: mutation-results-${{ matrix.shard }}
           path: |
+            mutation-scope.json
             mutation-results.txt
             mutants/mutmut-cicd-stats.json
           if-no-files-found: warn
