@@ -107,3 +107,46 @@ jobs:
             exit 1
           }
           bash scripts/check-mutation-results.sh < mutation-results.txt
+
+  mutation-overview:
+    name: Mutation overview (all shards)
+    needs: mutation-tests
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: '.python-version'
+      - name: Download shard results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: mutation-results-*
+          path: mutation-artifacts
+          merge-multiple: false
+      - name: Aggregate results
+        if: always()
+        env:
+          SHARD_RESULT: ${{ needs.mutation-tests.result }}
+        run: >-
+          python scripts/summarize-mutations.py mutation-artifacts
+          --shards 8 --shard-result "$SHARD_RESULT" --output mutation-summary
+      - name: Publish overview
+        if: always()
+        run: |
+          if [ -f mutation-summary/summary.md ]; then
+            cat mutation-summary/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '# Mutation testing overview\n\nReport generation failed; no overall score is available.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload overview
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: mutation-overview
+          path: mutation-summary/
+          if-no-files-found: warn
+          retention-days: 30

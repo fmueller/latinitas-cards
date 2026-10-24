@@ -38,6 +38,26 @@ grep -F 'uv run mutmut export-cicd-stats' "$workflow" >/dev/null || fail 'workfl
 grep -F 'bash scripts/check-mutation-results.sh' "$workflow" >/dev/null || fail 'workflow does not validate complete results'
 grep -F 'actions/upload-artifact@' "$workflow" >/dev/null || fail 'workflow does not preserve mutation artifacts'
 
+overview="$(awk '/^  mutation-overview:/ {capture=1; next} capture && /^  [^ ]/ {exit} capture {print}' "$workflow")"
+grep -Fxq '    needs: mutation-tests' <<< "$overview" || fail 'overview must wait for all shards'
+grep -Fxq '    if: always()' <<< "$overview" || fail 'overview must run after shard failure'
+grep -Fq 'merge-multiple: false' <<< "$overview" || fail 'overview must keep shard files separate'
+grep -Fq 'SHARD_RESULT: ${{ needs.mutation-tests.result }}' <<< "$overview" || fail 'overview must check shard outcomes'
+grep -Fq 'python scripts/summarize-mutations.py mutation-artifacts' <<< "$overview" || fail 'overview is missing'
+grep -Fq -- '--shards 8 --shard-result "$SHARD_RESULT" --output mutation-summary' <<< "$overview" || fail 'overview scope is wrong'
+grep -Fq 'cat mutation-summary/summary.md >> "$GITHUB_STEP_SUMMARY"' <<< "$overview" || fail 'overview is not published'
+for step in 'Aggregate results' 'Publish overview' 'Upload overview'; do
+  awk -v name="$step" '
+    $0 == "      - name: " name {found=1; next}
+    found && /^      - / {exit}
+    found && $0 == "        if: always()" {unconditional=1}
+    END {exit !unconditional}
+  ' <<< "$overview" || fail "$step must run after failure"
+done
+grep -Fxq '          name: mutation-overview' <<< "$overview" || fail 'overview artifact name is wrong'
+grep -Fxq '          path: mutation-summary/' <<< "$overview" || fail 'overview artifact path is wrong'
+grep -Fxq '          retention-days: 30' <<< "$overview" || fail 'overview must retain reports for 30 days'
+
 build_workflow="$root/.github/workflows/build.yml"
 grep -F 'bash scripts/check-mutation-results-test.sh' "$build_workflow" >/dev/null || fail 'result checks are absent from CI'
 grep -F 'bash scripts/check-mutation-config-test.sh' "$build_workflow" >/dev/null || fail 'configuration checks are absent from CI'

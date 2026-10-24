@@ -64,8 +64,25 @@ unless you intend to restrict subsequent mutation commands to that shard.
 
 Each job uploads `mutation-scope.json`, `mutation-results.txt`, and
 `mutants/mutmut-cicd-stats.json` as `mutation-results-0` through
-`mutation-results-7` for 30 days. Counts and per-module summaries describe that
-shard only; sum raw counts across all eight artifacts for campaign totals.
+`mutation-results-7` for 30 days. Counts and per-module summaries in those jobs
+describe that shard only.
+
+After all eight shards finish, **Mutation overview (all shards)** publishes the
+combined report in the workflow run's **Summary**. It shows overall outcome
+counts, the mutation score, and a per-shard table. The `mutation-overview`
+artifact contains the same Markdown report and machine-readable `summary.json`,
+also retained for 30 days.
+
+The overall score is `100 × (killed + timeout) / total`, calculated from summed
+counts, not an average of shard percentages. For example, the successful
+2026-10-24 campaign detected 18,846 of 24,501 mutants (76.92%): 18,840 killed,
+6 timed out, and 5,655 survived. This is not line coverage; uncovered source
+lines are outside the mutation denominator.
+
+The overview also runs after shard failures. Missing or malformed stats,
+unchecked or interrupted mutants, overlapping or missing source scopes, or a
+failed/cancelled shard campaign produce an incomplete report with partial
+counts and **no overall score**. The reporting job fails in those cases.
 Every shard must pass execution and result-completeness checks for the workflow
 to succeed. Failures do not cancel other shards, preserving their reports.
 
