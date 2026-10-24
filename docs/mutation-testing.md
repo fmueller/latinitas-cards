@@ -51,7 +51,7 @@ coverage map without discarding all cached mutant state.
 ## Automation and artifacts
 
 `.github/workflows/mutation.yml` runs Mondays at 03:00 UTC and on manual
-dispatch. It does not run for pushes or pull requests. Four matrix jobs cover
+dispatch. It does not run for pushes or pull requests. Eight matrix jobs cover
 disjoint source-file shards. Files are sorted largest first (path breaks ties)
 and dealt round-robin so large modules land in different jobs. Newly added
 Python files are included automatically, including package initializers.
@@ -64,8 +64,8 @@ unless you intend to restrict subsequent mutation commands to that shard.
 
 Each job uploads `mutation-scope.json`, `mutation-results.txt`, and
 `mutants/mutmut-cicd-stats.json` as `mutation-results-0` through
-`mutation-results-3` for 30 days. Counts and per-module summaries describe that
-shard only; sum raw counts across all four artifacts for campaign totals.
+`mutation-results-7` for 30 days. Counts and per-module summaries describe that
+shard only; sum raw counts across all eight artifacts for campaign totals.
 Every shard must pass execution and result-completeness checks for the workflow
 to succeed. Failures do not cancel other shards, preserving their reports.
 

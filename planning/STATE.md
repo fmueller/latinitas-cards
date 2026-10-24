@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-10-24T07:08:30Z"
+updated_at: "2026-10-24T07:36:02Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
 current_task: T-151-allow-routine-dependency-updates-without-freezing
 current_task_title: Allow routine dependency updates without freezing audit snapshots
 status_summary: in_progress
 blockers: []
-next_action: Implement T-151-allow-routine-dependency-updates-without-freezing and run targeted tests
-last_verification_result: pass for T-150-shard-the-complete-mutation-campaign-across-ci at 2026-10-22T06:49:21Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-152-expand-the-mutation-campaign-to-eight-ci-shards at 2026-10-24T07:36:02Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-150-shard-the-complete-mutation-campaign-across-ci at 2026-10-22T06:49:21Z
+- pass for T-152-expand-the-mutation-campaign-to-eight-ci-shards at 2026-10-24T07:36:02Z
 
 ## Next Action
 
-- Implement T-151-allow-routine-dependency-updates-without-freezing and run targeted tests
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -51,7 +51,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 1
+- todo: 2
 - in_progress: 1
 - completed: 149
 - blocked: 0

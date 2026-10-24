@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -40,7 +40,7 @@ jobs:
       - name: Configure mutation shard
         env:
           SHARD: ${{ matrix.shard }}
-        run: uv run python scripts/configure-mutation-shard.py "$SHARD" 4
+        run: uv run python scripts/configure-mutation-shard.py "$SHARD" 8
 
       # Preserve results even when mutation execution itself fails. The final
       # step evaluates both command outcomes and report completeness.
@@ -63,7 +63,7 @@ jobs:
           SHARD: ${{ matrix.shard }}
         run: |
           {
-            printf '## Mutation testing baseline: shard %s of 0–3\n\n' "$SHARD"
+            printf '## Mutation testing baseline: shard %s of 0–7\n\n' "$SHARD"
             printf 'This workflow currently reports efficacy without enforcing a numerical floor.\n\n'
             if [ -f mutants/mutmut-cicd-stats.json ]; then
               printf '| Outcome | Count |\n| --- | ---: |\n'

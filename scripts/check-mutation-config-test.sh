@@ -23,9 +23,9 @@ grep -F 'bash scripts/check-mutation-config-test.sh' "$root/mise.toml" >/dev/nul
 workflow="$root/.github/workflows/mutation.yml"
 [ -f "$workflow" ] || fail 'mutation workflow is missing'
 grep -Eq '^    timeout-minutes: 120$' "$workflow" || fail 'mutation workflow must allow 120 minutes'
-grep -F 'shard: [0, 1, 2, 3]' "$workflow" >/dev/null || fail 'mutation workflow must cover all four shards'
+grep -F 'shard: [0, 1, 2, 3, 4, 5, 6, 7]' "$workflow" >/dev/null || fail 'mutation workflow must cover all eight shards'
 grep -F 'fail-fast: false' "$workflow" >/dev/null || fail 'a failed shard must not cancel other results'
-grep -F 'scripts/configure-mutation-shard.py "$SHARD" 4' "$workflow" >/dev/null || fail 'shard configuration is missing'
+grep -F 'scripts/configure-mutation-shard.py "$SHARD" 8' "$workflow" >/dev/null || fail 'shard configuration is missing'
 grep -F 'name: mutation-results-${{ matrix.shard }}' "$workflow" >/dev/null || fail 'shard artifact names must be unique'
 grep -F 'mutation-scope.json' "$workflow" >/dev/null || fail 'shard scope is not preserved'
 grep -F 'schedule:' "$workflow" >/dev/null || fail 'weekly trigger is missing'
