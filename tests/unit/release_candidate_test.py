@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import sys
 import tomllib
-from collections import Counter
 from pathlib import Path
 
 from latinitas_cards.generation import SINGLE_LEXEME_OBJECT_KEY
@@ -61,26 +60,6 @@ EXPECTED_COLUMNS = (
     "RecognitionSupinePrompt",
     "RecognitionSupineAnswer",
 )
-GPU_PACKAGES = (
-    "cuda-bindings",
-    "cuda-pathfinder",
-    "cuda-toolkit",
-    "nvidia-cublas",
-    "nvidia-cuda-cupti",
-    "nvidia-cuda-nvrtc",
-    "nvidia-cuda-runtime",
-    "nvidia-cudnn-cu13",
-    "nvidia-cufft",
-    "nvidia-cufile",
-    "nvidia-curand",
-    "nvidia-cusolver",
-    "nvidia-cusparse",
-    "nvidia-cusparselt-cu13",
-    "nvidia-nccl-cu13",
-    "nvidia-nvjitlink",
-    "nvidia-nvshmem-cu13",
-    "nvidia-nvtx",
-)
 
 
 def _invoke(arguments: list[str]) -> subprocess.CompletedProcess[str]:
@@ -102,42 +81,6 @@ def _export_rows(path: Path) -> tuple[str, list[dict[str, str]]]:
     assert all(len(row) == len(header) for row in raw_rows)
     rows = [dict(zip(header, row, strict=True)) for row in raw_rows]
     return metadata, rows
-
-
-def _audit_rows(audit: str) -> list[tuple[str, str, str]]:
-    rows = []
-    for line in audit.splitlines():
-        if not line.startswith("| `"):
-            continue
-        cells = [cell.strip() for cell in line.strip("|").split("|")]
-        assert len(cells) == 4
-        rows.append((cells[0].strip("`"), cells[1].strip("`"), cells[2]))
-    return rows
-
-
-def _scope_tokens(scope: str) -> set[str]:
-    normalized = scope.replace("annotate-gpu", "")
-    return {
-        name
-        for name in ("main", "dev", "annotate", "annotate-gpu")
-        if (name == "annotate-gpu" and "annotate-gpu" in scope) or (name != "annotate-gpu" and name in normalized)
-    }
-
-
-def _locked_export_inventory(*options: str) -> set[tuple[str, str]]:
-    exported = subprocess.run(
-        ["uv", "export", "--locked", "--no-emit-project", "--format", "requirements-txt", *options],
-        cwd=ROOT,
-        capture_output=True,
-        check=True,
-        text=True,
-    )
-    inventory = set()
-    for line in exported.stdout.splitlines():
-        match = re.match(r"^([A-Za-z0-9_.-]+)==([^ ;\\]+)", line)
-        if match:
-            inventory.add((match.group(1).replace("_", "-"), match.group(2)))
-    return inventory
 
 
 def test_sanitized_fixture_runs_assisted_profile_preview_and_repeatable_cli_export(tmp_path: Path) -> None:
@@ -332,7 +275,7 @@ def test_release_candidate_managed_updates_preserve_user_owned_notes() -> None:
     assert changed.personal_notes == "Review this next week"
 
 
-def test_release_metadata_and_current_lock_audit_are_versioned_for_v030() -> None:
+def test_release_metadata_and_audit_snapshot_are_versioned_for_v030() -> None:
     with (ROOT / "pyproject.toml").open("rb") as project_file:
         project = tomllib.load(project_file)
     with (ROOT / "uv.lock").open("rb") as lock_file:
@@ -393,37 +336,7 @@ def test_release_metadata_and_current_lock_audit_are_versioned_for_v030() -> Non
     assert "T-014" in release
     t014_front_matter = T014_TASK.read_text(encoding="utf-8").split("---", 2)[1]
     assert re.search(r"^status: (?:in_progress|completed)$", t014_front_matter, flags=re.MULTILINE)
-    assert "92 package records" in audit
-    assert "2.14.1+cpu" in audit
     assert "LicenseRef-NVIDIA-Proprietary" in audit
     assert "poetry.lock" in release
     assert "GitPython" in release
     assert "GitPython" not in notices
-    assert "`cltk` 2.5.1" in notices
-    assert "`stanza` 1.14.0" in notices
-    assert "PyTorch `2.14.1+cpu`" in notices
-    for package in GPU_PACKAGES:
-        version = next(item["version"] for item in lock["package"] if item["name"] == package)
-        assert f"`{package}` {version}" in notices
-
-    lock_inventory = {
-        (package["name"], package["version"]) for package in lock["package"] if package["name"] != "latinitas-cards"
-    }
-    audit_rows = _audit_rows(audit)
-    assert len(audit_rows) == len(lock_inventory) == 91
-    assert Counter((name, version) for name, version, _scope in audit_rows) == Counter(lock_inventory)
-
-    expected_scopes: dict[tuple[str, str], set[str]] = {}
-    for scope, options in (
-        ("main", ("--no-dev",)),
-        ("dev", ("--group", "dev")),
-        ("annotate", ("--extra", "annotate", "--no-dev")),
-        ("annotate-gpu", ("--extra", "annotate-gpu", "--no-dev")),
-    ):
-        exported = _locked_export_inventory(*options)
-        assert exported
-        for exported_package in exported:
-            expected_scopes.setdefault(exported_package, set()).add(scope)
-
-    actual_scopes = {(name, version): _scope_tokens(scope) for name, version, scope in audit_rows}
-    assert actual_scopes == expected_scopes

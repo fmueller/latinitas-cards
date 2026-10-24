@@ -1,13 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-10-22T06:49:22Z"
+updated_at: "2026-10-24T07:08:30Z"
 active_spec_version: v0.3.0
 active_spec_path: specs/v0.3.0.md
-current_task: ""
-current_task_title: ""
-status_summary: idle
+current_task: T-151-allow-routine-dependency-updates-without-freezing
+current_task_title: Allow routine dependency updates without freezing audit snapshots
+status_summary: in_progress
 blockers: []
-next_action: Select the next eligible task
+next_action: Implement T-151-allow-routine-dependency-updates-without-freezing and run targeted tests
 last_verification_result: pass for T-150-shard-the-complete-mutation-campaign-across-ci at 2026-10-22T06:49:21Z
 relevant_artifacts: []
 continuation_notes:
@@ -22,11 +22,12 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: none
+- Task: `T-151-allow-routine-dependency-updates-without-freezing`
+- Title: Allow routine dependency updates without freezing audit snapshots
 
 ## Status
 
-- idle
+- in_progress
 
 ## Blockers
 
@@ -38,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Implement T-151-allow-routine-dependency-updates-without-freezing and run targeted tests
 
 ## Relevant Artifacts
 
@@ -51,7 +52,7 @@ continuation_notes:
 ## Task Counts
 
 - todo: 1
-- in_progress: 0
+- in_progress: 1
 - completed: 149
 - blocked: 0
 - cancelled: 0

@@ -6,7 +6,13 @@ compatibility opinion.
 
 ## Snapshot and method
 
-- Current supported inventory: T-138 maintenance on 2026-10-17, including
+This is a dated review, not a live mirror of `uv.lock`. Routine dependency updates
+may change versions and package counts without rewriting this evidence. Use
+`uv.lock` for the current inventory; review changed license metadata and distribution
+obligations when updating or redistributing dependencies. A passing Build does not
+certify license compatibility for versions added after this snapshot.
+
+- Reviewed inventory: T-138 maintenance on 2026-10-17, including
   urllib3 2.8.0 (PR #65), the grouped updates in PR #70, and pandas 3.0.6
   (PR #63). Exact updated wheel
   PEP 658 metadata was checked for Python requirements and license fields on
@@ -18,7 +24,7 @@ compatibility opinion.
   Python >=3.10, `License-Expression: BSD-3-Clause`, and `License-File: LICENSE`.
   Locked exports still include it only in `annotate` and `annotate-gpu`, not
   the default runtime or dev scope; no optional NLP stack was installed.
-- Dependency source of truth: `uv.lock`, which currently has 92 package records (`[[package]]`),
+- Dependency source of truth: `uv.lock`, which at review had 92 package records (`[[package]]`),
   including the editable `latinitas-cards` project record and 91 third-party package
   records. The third-party records have 90 normalized names because `torch` has separate
   CPU-index and PyPI records.
@@ -159,7 +165,9 @@ non-macOS where the lock markers select it; `annotate-gpu` means the PyPI CUDA b
   the exact NVIDIA wheel `License.txt` files — proprietary terms apply to the runtime
   artifacts identified above; the PyPI metadata is not treated as MIT/BSD.
 - The remaining rows cite the exact wheel license files or upstream project metadata in the
-  table. Re-run the locked exports and refresh this audit whenever `uv.lock` changes.
+  table. When `uv.lock` changes, review changed license metadata and redistribution
+  obligations. Record a new dated audit when that review changes the conclusions or
+  when preparing a distribution; routine version changes do not rewrite this snapshot.
 
 MIT/BSD/ISC/PSF/Apache/MPL notices still need to be preserved in redistributed artifacts;
 MPL and GPL-family packages carry their own source/notice obligations. The NVIDIA entries
