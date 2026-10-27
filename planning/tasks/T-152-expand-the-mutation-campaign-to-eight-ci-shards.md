@@ -1,11 +1,11 @@
 ---
 id: T-152-expand-the-mutation-campaign-to-eight-ci-shards
 title: Expand the mutation campaign to eight CI shards
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.3.0.md#agent-ready-cli-contract
 dependencies: []
-updated_at: "2026-10-24T07:36:02Z"
+updated_at: "2026-10-27T23:32:08Z"
 ---
 
 # T-152-expand-the-mutation-campaign-to-eight-ci-shards Expand the mutation campaign to eight CI shards
@@ -46,3 +46,5 @@ the 120-minute limit. Increase parallelism without changing mutation scope.
   active there, so Taskrail refused to start this task; its state is preserved.
   This task remains queued unless its normal lifecycle becomes available.
 - 2026-10-24T07:36:02Z: verification pass
+- 2026-10-27T23:32:07Z: verification pass
+- 2026-10-27T23:32:08Z: Implemented and verified in e249da5 while T-151 held the active slot; closed retroactively before activating v0.4.0. CI run 40076518340 ran all eight shards.
