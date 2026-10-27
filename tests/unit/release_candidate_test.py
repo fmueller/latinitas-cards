@@ -315,7 +315,8 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v030() -> None:
     assert "`specs/v0.2.0.md` defines the completed release spec" in spec_index
     assert "`specs/v0.2.1.md` defines the completed release spec" in spec_index
     assert "v0.2.1 is released" in spec_index
-    assert "`specs/v0.3.0.md` is the active implementation spec" in spec_index
+    assert "`specs/v0.3.0.md` defines the completed release spec" in spec_index
+    assert "`specs/v0.4.0.md` is the active implementation spec" in spec_index
     assert "v0.3.0 is released" in spec_index
     assert "it is not yet released" not in spec_index
     assert "**Published:**" in current_candidate

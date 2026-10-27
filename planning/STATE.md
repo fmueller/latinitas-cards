@@ -1,14 +1,15 @@
 ---
 schema_version: 1
-updated_at: "2026-10-24T11:11:15Z"
-active_spec_version: v0.3.0
-active_spec_path: specs/v0.3.0.md
+updated_at: "2026-10-27T23:32:08Z"
+active_spec_version: v0.4.0
+active_spec_path: specs/v0.4.0.md
 current_task: ""
 current_task_title: ""
-status_summary: idle
-blockers: []
-next_action: Select the next eligible task
-last_verification_result: pass for T-153-aggregate-mutation-shard-results-in-actions at 2026-10-24T11:11:15Z
+status_summary: blocked
+blockers:
+    - 'T-173-publish-v0-4-0-maintainer-release-gate: maintainer release gate'
+next_action: Resolve blocker on T-173-publish-v0-4-0-maintainer-release-gate
+last_verification_result: pass for T-152-expand-the-mutation-campaign-to-eight-ci-shards at 2026-10-27T23:32:07Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -18,7 +19,7 @@ continuation_notes:
 
 ## Active Spec
 
-- `specs/v0.3.0.md`
+- `specs/v0.4.0.md`
 
 ## Current Focus
 
@@ -26,19 +27,19 @@ continuation_notes:
 
 ## Status
 
-- idle
+- blocked
 
 ## Blockers
 
-- None
+- T-173-publish-v0-4-0-maintainer-release-gate: maintainer release gate
 
 ## Last Verification
 
-- pass for T-153-aggregate-mutation-shard-results-in-actions at 2026-10-24T11:11:15Z
+- pass for T-152-expand-the-mutation-campaign-to-eight-ci-shards at 2026-10-27T23:32:07Z
 
 ## Next Action
 
-- Select the next eligible task
+- Resolve blocker on T-173-publish-v0-4-0-maintainer-release-gate
 
 ## Relevant Artifacts
 
@@ -50,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 20
 - in_progress: 0
-- completed: 151
-- blocked: 0
+- completed: 152
+- blocked: 1
 - cancelled: 0
