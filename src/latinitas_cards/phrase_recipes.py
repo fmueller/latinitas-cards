@@ -201,12 +201,17 @@ def render_exercise(
     if any(set(r.features) != set(roles) for r in exercise.reference.readings):
         raise ValueError("Each contextual reading must describe exactly the phrase's constituent roles")
     settings = profile.morphology.terminology
+    language_tag = profile.language_tag
     prompt = str(candidate["text"])
     if exercise.recipe == "phrase_translation":
         prompt += "\nÜbersetze und vergleiche anschließend mit der Referenz."
     else:
         assert exercise.target is not None
-        distinction = "Analyse" if exercise.distinction == "analysis" else feature_name(exercise.distinction, settings)
+        distinction = (
+            "Analyse"
+            if exercise.distinction == "analysis"
+            else feature_name(exercise.distinction, settings, language_tag)
+        )
         prompt += f"\nBestimme {roles[exercise.target]} [{exercise.target}]: {distinction}."
     claim = reference_claim or contextual_claim(candidate, exercise, profile)
     assessment = assess_claim(claim, decision)
@@ -222,7 +227,8 @@ def render_exercise(
         if exercise.target:
             features = reading.features[exercise.target].model_dump(exclude_none=True)
             lines.extend(
-                f"{feature_name(f, settings)}: {feature_value(f, _CANONICAL[f][v], settings)}"
+                f"{feature_name(f, settings, language_tag)}: "
+                f"{feature_value(f, _CANONICAL[f][v], settings, language_tag)}"
                 for f, v in features.items()
             )
             lines.append(reading.contributions[exercise.target])

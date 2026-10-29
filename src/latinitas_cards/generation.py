@@ -395,6 +395,7 @@ def _render_note(
         meaning=meaning_text,
         comparison=comparison,
         morphology=profile.morphology,
+        language_tag=profile.language_tag,
     )
     return GeneratedNote.create(
         source_identity=source_identity.value,

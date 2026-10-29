@@ -76,9 +76,21 @@ def test_terminology_unknown_or_unversioned_settings_fail(setting: dict[str, obj
         DeckProfile.from_mapping(data)
 
 
-def test_terminology_user_language_fails_closed() -> None:
-    with pytest.raises(ProfileValidationError, match="Unsupported terminology user language"):
-        _profile().apply_overrides({"language_tag": "en", "morphology": {"terminology": {"language": "user"}}})
+@pytest.mark.parametrize("tag", ["fr", "la", "deu", "eng-US"])
+def test_terminology_user_language_fails_closed_naming_supported_tags(tag: str) -> None:
+    with pytest.raises(ProfileValidationError, match=r"Unsupported terminology user language.*\(de\).*\(en\)"):
+        _profile().apply_overrides({"language_tag": tag, "morphology": {"terminology": {"language": "user"}}})
+
+
+@pytest.mark.parametrize("tag", ["de", "de-CH", "en", "EN-gb"])
+def test_terminology_user_language_accepts_german_and_english(tag: str) -> None:
+    profile = _profile().apply_overrides({"language_tag": tag, "morphology": {"terminology": {"language": "user"}}})
+    assert (profile.language_tag, profile.morphology.terminology.language) == (tag, "user")
+
+
+def test_other_language_tags_keep_validating_with_latin_terminology() -> None:
+    profile = _profile().apply_overrides({"language_tag": "fr", "morphology": {"terminology": {"language": "latin"}}})
+    assert DeckProfile.from_mapping(profile.to_machine_readable()).language_tag == "fr"
 
 
 def test_profile_defaults_are_explicit_and_language_tags_are_not_implicit() -> None:

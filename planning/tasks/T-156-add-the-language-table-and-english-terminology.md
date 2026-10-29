@@ -1,12 +1,12 @@
 ---
 id: T-156-add-the-language-table-and-english-terminology
 title: Add the generated-content language table and English terminology
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#german-and-english-output
 dependencies:
     - T-154-capture-v0-4-0-characterization-goldens
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T03:46:56Z"
 ---
 
 # T-156-add-the-language-table-and-english-terminology Add the generated-content language table and English terminology
@@ -48,3 +48,5 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T03:46:51Z: verification pass
+- 2026-10-29T03:46:56Z: Verify run 2026-10-29T03:46:51Z. Left for T-157: front role labels (cards.role_display_label), fixed German card strings, and the --terminology help text 'user (German)' pinned by the cloze-jsonl help goldens.

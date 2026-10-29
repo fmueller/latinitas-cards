@@ -23,5 +23,5 @@ def upgrade(source: Path, output: Path) -> None:
             stream.write(profile.to_json())
     except (OSError, ValueError) as error:
         raise typer.BadParameter(str(error)) from error
-    typer.echo(terminology_report(profile.morphology.terminology))
+    typer.echo(terminology_report(profile.morphology.terminology, profile.language_tag))
     typer.echo("Profile upgraded; linguistic reviews unchanged. Changed answers need renewed managed payload approval.")

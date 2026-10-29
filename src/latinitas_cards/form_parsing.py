@@ -206,14 +206,15 @@ def generate_parsing(data: ParsingInput) -> tuple[ParsingResult, ...]:
                 skips.append(f"Required claim absent or withheld: {feature}")
         eligible = not skips
         settings = data.profile.morphology
+        terminology, language_tag = settings.terminology, data.profile.language_tag
         answer = (
             ""
             if not eligible
             else (
                 f'<section class="morphology-v1 morphology-{settings.theme} morphology-{settings.appearance}">'
                 + "<br>".join(
-                    f"{feature_name(feature, settings.terminology)}: "
-                    f"{_escape(feature_value(feature, next(iter(accepted[feature])), settings.terminology))}"
+                    f"{feature_name(feature, terminology, language_tag)}: "
+                    f"{_escape(feature_value(feature, next(iter(accepted[feature])), terminology, language_tag))}"
                     for feature in case.applicable_features
                     if feature in accepted
                 )

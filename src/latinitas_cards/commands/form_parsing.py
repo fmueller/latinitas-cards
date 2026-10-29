@@ -20,7 +20,9 @@ def _load(source: Path, terminology: str | None = None) -> ParsingInput:
         if terminology is not None:
             profile = data.profile.apply_overrides({"morphology": {"terminology": {"language": terminology}}})
             data = data.model_copy(update={"profile": profile})
-        typer.echo(terminology_report(data.profile.morphology.terminology, terminology), err=True)
+        typer.echo(
+            terminology_report(data.profile.morphology.terminology, data.profile.language_tag, terminology), err=True
+        )
         return data
     except (OSError, ValueError) as error:
         raise typer.BadParameter(str(error)) from error

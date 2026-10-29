@@ -4,6 +4,15 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Profiles with `user` terminology accept English (`en`) language tags and render
+  grammatical answer labels on principal-part, phrase and form-parsing cards in English.
+
+### Limitations
+
+- Other generated card text on English profiles is still German.
+
 ## [0.3.0] - 2026-10-20
 
 ### Fixed

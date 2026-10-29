@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from .identity import derive_card_semantic_key
 from .principal_parts import ParsedPrincipalParts, PrincipalPartValue
 from .principal_relationships import PrincipalPartComparison
-from .profile import MorphologySettings, TerminologySettings
+from .profile import DEFAULT_LANGUAGE_TAG, MorphologySettings, TerminologySettings
 from .profile_setup import encode_unsafe_controls
 from .terminology import role_label
 
@@ -135,7 +135,7 @@ def slot_for_recipe_role(recipe: str, role: str) -> CardSlot | None:
 def role_display_label(role: str) -> str:
     """Keep established front labels independent of answer terminology."""
 
-    return role_label(role, TerminologySettings(language="user"))
+    return role_label(role, TerminologySettings(language="user"), DEFAULT_LANGUAGE_TAG)
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,6 +193,7 @@ def render_cards(
     meaning: str = "",
     comparison: PrincipalPartComparison | None = None,
     morphology: MorphologySettings | None = None,
+    language_tag: str = DEFAULT_LANGUAGE_TAG,
 ) -> tuple[RenderedCard, ...]:
     """Render every registry slot of one learning object in registry order.
 
@@ -218,9 +219,9 @@ def render_cards(
             answer = target
         else:
             prompt = _recognition_prompt(parsed, part, gloss)
-            answer = _escape_text(role_label(slot.role, settings.terminology))
+            answer = _escape_text(role_label(slot.role, settings.terminology, language_tag))
         if comparison is not None:
-            answer += _render_comparison(comparison, slot.role, settings, parsed.lexical_entry)
+            answer += _render_comparison(comparison, slot.role, settings, language_tag, parsed.lexical_entry)
         cards.append(RenderedCard(slot=slot, eligible=True, guard=GUARD_VALUE, prompt=prompt, answer=answer))
     return tuple(cards)
 
@@ -238,14 +239,18 @@ def _render_segmentation(value: str) -> str:
 
 
 def _render_comparison(
-    comparison: PrincipalPartComparison, tested_role: str, settings: MorphologySettings, lemma: str
+    comparison: PrincipalPartComparison,
+    tested_role: str,
+    settings: MorphologySettings,
+    language_tag: str,
+    lemma: str,
 ) -> str:
     lines = []
     related = []
     focused = "Analyse zurückgehalten; einzelne Belege prüfen."
     for role in comparison.roles:
         available = role.status == "present"
-        label = _escape_text(role_label(role.role, settings.terminology))
+        label = _escape_text(role_label(role.role, settings.terminology, language_tag))
         value = (
             _escape_text(role.form or "")
             if available

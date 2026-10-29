@@ -73,6 +73,14 @@ def test_proposed_and_reviewed_references_and_terminology() -> None:
     assert "Kasus: Ablativ" in localized["answer"]
     assert localized["semantic_key"] == reviewed["semantic_key"]
     assert contextual_claim(phrase, selected, german).fingerprint == claim.fingerprint
+    english = profile.apply_overrides({"language_tag": "en", "morphology": {"terminology": {"language": "user"}}})
+    english_decision = review_claim(
+        contextual_claim(phrase, selected, english), status="accepted", reviewer="Latin teacher", reason="Checked"
+    )
+    english_card = render_exercise(phrase, selected, english, english_decision)
+    assert english_card["prompt"].endswith("[object]: Case.")
+    assert "Case: Ablative" in english_card["answer"] and "Number: Singular" in english_card["answer"]
+    assert english_card["semantic_key"] == reviewed["semantic_key"]
     stale = render_exercise(candidate("ad amico"), selected, profile, decision)
     assert stale["review_state"] == "withheld" and "Stale" in stale["reason"]
 

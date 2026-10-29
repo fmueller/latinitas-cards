@@ -435,8 +435,9 @@ class DeckProfile(_ProfileModel):
             raise ValueError(
                 "Legacy profile requires explicit terminology upgrade; run terminology upgrade SOURCE OUTPUT"
             )
-        if self.morphology.terminology.language == "user" and self.language_tag.lower().split("-")[0] != "de":
-            raise ValueError("Unsupported terminology user language; German (de) is required")
+        primary_subtag = self.language_tag.lower().split("-")[0]
+        if self.morphology.terminology.language == "user" and primary_subtag not in {"de", "en"}:
+            raise ValueError("Unsupported terminology user language; German (de) or English (en) is required")
         if self.source_identity.strategy == "source_id_field":
             mapped_fields = {
                 self.fields.lexical_entry_field,

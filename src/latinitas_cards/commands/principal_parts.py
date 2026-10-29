@@ -113,7 +113,7 @@ def render_principal_part_preview(
         typer.echo(safe_source_value(diagnostic, "claim review"))
     morphology = result.profile.morphology
     typer.echo(f"Morphology v{morphology.version}: {morphology.theme}/{morphology.appearance}/{morphology.comparison}")
-    typer.echo(terminology_report(morphology.terminology, terminology_override))
+    typer.echo(terminology_report(morphology.terminology, result.profile.language_tag, terminology_override))
     typer.echo(
         "Presentation changes require renewed payload approval, not linguistic review; "
         "linguistic changes also require renewed claim review. Use individually approved retained-slot updates "

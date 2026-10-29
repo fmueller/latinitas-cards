@@ -74,6 +74,44 @@ def test_principal_preview_reports_terminology_override(tmp_path: Path) -> None:
     assert "Structural creation/retirement and layout migration remain unsupported" in result.output
 
 
+def test_english_user_terminology_changes_only_labels(tmp_path: Path) -> None:
+    rows: dict[str, list[dict[str, str]]] = {}
+    source = tmp_path / "source.csv"
+    _write_source(source)
+    for tag in ("de", "en"):
+        profile_path = tmp_path / f"profile-{tag}.json"
+        profile = _profile().apply_overrides({"language_tag": tag, "morphology": {"terminology": {"language": "user"}}})
+        profile.save(profile_path)
+        if tag == "de":
+            _commit_scope_state(source, profile)
+        output = tmp_path / f"generated-{tag}.csv"
+        args = ["--input", str(source), "--profile", str(profile_path)]
+        preview = CliRunner().invoke(_command(), ["preview", *args])
+        generate = CliRunner().invoke(_command(), ["generate", *args, "--output", str(output)])
+        assert preview.exit_code == generate.exit_code == 0, preview.output + generate.output
+        assert f"Effective terminology v1: user ({tag}); override: none" in preview.output
+        lines = output.read_text(encoding="utf-8").splitlines()
+        columns = next(line for line in lines if line.startswith("#columns:")).removeprefix("#columns:").split(",")
+        rows[tag] = list(csv.DictReader(io.StringIO("\n".join(lines[6:])), fieldnames=columns))
+
+    german, english = rows["de"], rows["en"]
+    assert list(german[0]) == list(english[0])
+    assert [row["LatinitasID"] for row in german] == [row["LatinitasID"] for row in english]
+    expected = {
+        "RecognitionPresentAnswer": ("Präsens, 1. Person Singular", "Present, 1st person singular"),
+        "RecognitionInfinitiveAnswer": ("Infinitiv", "Present infinitive"),
+        "RecognitionPerfectAnswer": ("Perfekt, 1. Person Singular", "Perfect, 1st person singular"),
+    }
+    unchanged = [column for column in german[0] if column not in {"Profile", *expected}]
+    assert len(german) == len(english) == 1
+    assert [german[0][c] for c in unchanged] == [english[0][c] for c in unchanged]
+    for column, (german_label, english_label) in expected.items():
+        assert german[0][column].startswith(f"{german_label}<section")
+        assert english[0][column].startswith(f"{english_label}<section")
+        assert f"<strong>{english_label}:</strong>" in english[0][column]
+        assert f"<strong>{german_label}:</strong>" not in english[0][column]
+
+
 def test_profile_preview_requests_csv_scope_confirmation_without_minted_output(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     profile_path = tmp_path / "profile.json"

@@ -284,10 +284,11 @@ Paste the reference CSS into your note type by hand; see
 ### Grammatical terminology
 
 Principal-part answers and contextual form-parsing answers default to Latin terminology.
-To use German, add `"terminology": {"version": 1, "language": "user"}` inside
-`morphology`; `"language": "latin"` selects Latin. `user` uses the profile's
-`language_tag` and currently supports only German (`de`, including regional tags).
+To use the profile's language, add `"terminology": {"version": 1, "language": "user"}`
+inside `morphology`; `"language": "latin"` selects Latin. `user` uses the profile's
+`language_tag` and supports German (`de`) and English (`en`), including regional tags.
 Unknown settings, unsupported versions and unsupported user languages fail validation.
+Latin terminology works with any `language_tag`.
 
 Legacy profiles without terminology are rejected on ordinary load. Explicitly upgrade
 to Latin defaults with `latinitas-cards terminology upgrade old-profile.json new-profile.json`;

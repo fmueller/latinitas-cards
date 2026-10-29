@@ -135,6 +135,16 @@ def test_terminology_override_preserves_review_and_identity(tmp_path: Path) -> N
     assert result.exit_code == 0, result.output
     assert "Effective terminology v1: user (de); override: user" in result.stderr
     assert json.loads(result.stdout)[0]["answer"] == german["answer"]
+    english_profile = data.profile.apply_overrides(
+        {"language_tag": "en-GB", "morphology": {"terminology": {"language": "user"}}}
+    )
+    english_data = approve(data.model_copy(update={"profile": english_profile}), ("lemma", "case", "number"))
+    english = generate_parsing(english_data)[0]
+    assert english["answer"] == (
+        '<section class="morphology-v1 morphology-muted morphology-light">'
+        "Lemma: puella<br>Case: Nominative<br>Number: Plural</section>"
+    )
+    assert (english["latinitas_id"], english["semantic_key"]) == (latin["latinitas_id"], latin["semantic_key"])
 
 
 def test_controlled_terminology_all_features_and_reviewed_free_text() -> None:
