@@ -1,5 +1,6 @@
 import html
 import json
+import shutil
 from pathlib import Path
 from typing import Any, cast
 
@@ -203,6 +204,97 @@ def test_reviewed_form_translations(
     stale = invoke("inspect", str(source), "--profile", str(profile_path))
     assert stale["diagnostics"]
     assert all(translations[0] not in c["answer"] for c in stale["cards"])
+
+
+def test_language_switch_stales_reviews_and_english_needs_its_own(tmp_path: Path) -> None:
+    fixture = Path("tests/fixtures/goldens/v0-4-0/inputs/principal-parts/de-light-user")
+    shutil.copytree(fixture, tmp_path, dirs_exist_ok=True)
+    source, profile_path = tmp_path / "source.csv", tmp_path / "profile.json"
+    sidecar = Path(f"{source}.claims.json")
+    german_claims = invoke("list", str(source), "--profile", str(profile_path))["claims"]
+    german_translations = [
+        c["value"] for c in german_claims if c["kind"] == "translation" and c["status"] == "accepted"
+    ]
+    assert german_translations == ["ich liebe", "lieben", "ich habe geliebt", "um zu lieben"]
+    german = invoke("inspect", str(source), "--profile", str(profile_path), "--check")
+    # "lieben" is also the source gloss, which every language shows verbatim.
+    reviewed_only = [text for text in german_translations if text != "lieben"]
+    eligible = [card["semantic_key"] for card in german["cards"] if card["eligible"]]
+    assert len(eligible) == 8
+
+    def switch(tag: str, terminology: str = "user") -> None:
+        profile = json.loads(profile_path.read_text())
+        profile["language_tag"] = tag
+        profile["morphology"]["terminology"]["language"] = terminology
+        profile_path.write_text(json.dumps(profile))
+
+    # The unchanged fingerprint contract binds language_tag, so every reviewed claim goes stale.
+    switch("en")
+    english = invoke("inspect", str(source), "--profile", str(profile_path))
+    decisions = json.loads(sidecar.read_text())["decisions"]
+    assert [d["code"] for d in english["diagnostics"]] == ["stale"] * len(decisions) == ["stale"] * 16
+    assert [(c["identity"], c["semantic_key"], c["slot"]) for c in english["cards"]] == [
+        (c["identity"], c["semantic_key"], c["slot"]) for c in german["cards"]
+    ]
+    assert not any(card["eligible"] for card in english["cards"] if card["semantic_key"].endswith(":supine"))
+    claims = invoke("list", str(source), "--profile", str(profile_path))["claims"]
+    assert all(c["status"] != "accepted" and c["review_status"] == "open" for c in claims)
+    answered = [card for card in english["cards"] if card["answer"]]
+    assert answered
+    for card in answered:
+        assert all(text not in card["answer"] for text in reviewed_only)
+        assert "Stammformen" not in card["answer"] and "Compare principal parts" in card["answer"]
+
+    # English translations appear only after their own accepted decisions.
+    sidecar.rename(tmp_path / "german.claims.json")
+    evidence = [{"source": "Latin reviewer", "reference": "love", "version": "1", "text": "Checked form"}]
+    english_translations = ["I love", "to love", "I have loved", "to love (supine)"]
+    values = iter(english_translations)
+    batch = tmp_path / "english.json"
+    batch.write_text(
+        json.dumps(
+            [
+                decision(c)
+                | (
+                    {"value": next(values), "evidence": evidence, "selected_sense": "love"}
+                    if c["kind"] == "translation"
+                    else {}
+                )
+                for c in claims
+                if c["kind"] in {"label", "translation"}
+            ]
+        )
+    )
+    invoke("record", str(source), "--profile", str(profile_path), "--batch", str(batch))
+    assert all(
+        c["language"] == "en"
+        for c in invoke("list", str(source), "--profile", str(profile_path))["claims"]
+        if c["kind"] == "translation"
+    )
+    reviewed = invoke("inspect", str(source), "--profile", str(profile_path), "--check")
+    assert reviewed["diagnostics"] == []
+    assert [card["semantic_key"] for card in reviewed["cards"] if card["eligible"]] == eligible
+    assert all(
+        all(text in card["answer"] for text in english_translations)
+        and all(text not in card["answer"] for text in reviewed_only)
+        for card in reviewed["cards"]
+        if card["eligible"]
+    )
+
+    # Other tags render German but cannot assert a form translation.
+    sidecar.unlink()
+    switch("fr", "latin")
+    fresh = invoke("list", str(source), "--profile", str(profile_path))["claims"]
+    target = next(c for c in fresh if c["kind"] == "translation")
+    batch.write_text(
+        json.dumps([decision(target) | {"value": "j'aime", "evidence": evidence, "selected_sense": "love"}])
+    )
+    rejected = runner.invoke(
+        app, ["claims", "record", str(source), "--profile", str(profile_path), "--batch", str(batch), "--json"]
+    )
+    assert rejected.exit_code != 0
+    assert "German (de) or English (en)" in rejected.stdout
+    assert not sidecar.exists()
 
 
 def parsing_source(tmp_path: Path) -> Path:

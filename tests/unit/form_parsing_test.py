@@ -145,6 +145,8 @@ def test_terminology_override_preserves_review_and_identity(tmp_path: Path) -> N
         "Lemma: puella<br>Case: Nominative<br>Number: Plural</section>"
     )
     assert (english["latinitas_id"], english["semantic_key"]) == (latin["latinitas_id"], latin["semantic_key"])
+    # The Latin-first prompt is not localized.
+    assert english["prompt"] == latin["prompt"] and english["prompt"].endswith("<br>Formam resolve.")
 
 
 def test_controlled_terminology_all_features_and_reviewed_free_text() -> None:

@@ -15,6 +15,7 @@ from typing import Literal
 from .claim_review import ClaimAssessment, assess_claim
 from .principal_parts import ParsedPrincipalParts
 from .profile import DeckProfile
+from .terminology import card_text
 
 FOURTH_ROLES = ("perfect_passive_participle", "supine")
 
@@ -54,11 +55,12 @@ def compare_principal_parts(
     if len(fourth) > 1:
         raise ValueError("Explicitly resolve the profile's conflicting PPP and supine roles before generation")
     roles = ("present_1s", "present_infinitive", "perfect_1s", *(fourth or ("fourth_role",)))
+    language_tag = profile.language_tag
     result: list[RoleComparison] = []
     for role in roles:
         part = parsed.by_role.get(role)
         if part is None or part.is_omitted:
-            result.append(RoleComparison(role, None, "absent", "Nicht vorhanden; Quelle oder Rollenprofil prüfen."))
+            result.append(RoleComparison(role, None, "absent", card_text("role_absent", language_tag)))
             continue
         reviewed: list[ClaimAssessment] = []
         for item in assessments:
@@ -87,11 +89,11 @@ def compare_principal_parts(
         fourth_unreviewed = role in FOURTH_ROLES and accepted.get("label") != {role}
         blocked = part.unresolved or conflict or label_withheld or fourth_unreviewed
         if part.unresolved:
-            reason = "Unresolved source evidence; target withheld. Alternativen und Hinweise prüfen."
+            reason = card_text("role_unresolved", language_tag)
         elif blocked:
-            reason = "Linguistic review required; target withheld. Einzelne Rollenbelege ausdrücklich prüfen."
+            reason = card_text("role_review_required", language_tag)
         else:
-            reason = "Quellform im bestätigten Rollenprofil; Analyse benötigt gesonderte Prüfung."
+            reason = card_text("role_source_form", language_tag)
         segmentation = accepted.get("segmentation", set())
         explanation = accepted.get("explanation", set())
         translation = accepted.get("translation", set())

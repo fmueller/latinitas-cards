@@ -30,6 +30,7 @@ from .phrase_recipes import (
 from .profile import load_profile
 from .review_adapters import ReviewState, review_state
 from .review_inspection import ReviewWorkspace
+from .terminology import card_text
 
 
 def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dict[str, object], ReviewWorkspace]:
@@ -98,9 +99,10 @@ def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dic
         if not eligible and (combination.decision is not None or answer.decision is not None):
             result["review_state"] = "withheld"
             result["reason"] = "; ".join(reasons)
-            if result["answer"].startswith("Withheld: "):
+            withheld = card_text("withheld", profile.language_tag)
+            if result["answer"].startswith(withheld):
                 result["answer"] = result["answer"].split("\n", 1)[1]
-            result["answer"] = "Withheld: " + result["reason"] + "\n" + result["answer"]
+            result["answer"] = withheld + result["reason"] + "\n" + result["answer"]
             result["answer_html"] = render_phrase_text(result["answer"], profile)
         slot = next(t.slot for t in PHRASE_LAYOUT if t.slot.recipe == exercise.recipe)
         # Each target/distinction is a coherent exercise note; the canonical phrase

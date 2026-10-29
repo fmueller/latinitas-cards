@@ -1,8 +1,9 @@
 """Phrase recipe contract: explicit context, not inferred disambiguation."""
 
 import pytest
+from pydantic import ValidationError
 
-from latinitas_cards.claim_review import review_claim
+from latinitas_cards.claim_review import ReviewDecision, review_claim
 from latinitas_cards.phrase_recipes import (
     PHRASE_LAYOUT,
     PHRASE_LAYOUT_FIELDS,
@@ -54,7 +55,9 @@ def test_proposed_and_reviewed_references_and_terminology() -> None:
     phrase = candidate()
     proposed = render_exercise(phrase, selected, profile)
     assert proposed["review_state"] == "proposed"
-    assert "Proposed" in proposed["answer"]
+    assert proposed["answer"].startswith(
+        "Proposed reference — not asserted\nLesart 1: mit einem Freund / mit dem Freund\n"
+    )
     assert "amico" in proposed["prompt"] and "Casus" in proposed["prompt"]
     claim = contextual_claim(phrase, selected, profile)
     decision = review_claim(claim, status="accepted", reviewer="Latin teacher", reason="Checked context")
@@ -74,10 +77,7 @@ def test_proposed_and_reviewed_references_and_terminology() -> None:
     assert localized["semantic_key"] == reviewed["semantic_key"]
     assert contextual_claim(phrase, selected, german).fingerprint == claim.fingerprint
     english = profile.apply_overrides({"language_tag": "en", "morphology": {"terminology": {"language": "user"}}})
-    english_decision = review_claim(
-        contextual_claim(phrase, selected, english), status="accepted", reviewer="Latin teacher", reason="Checked"
-    )
-    english_card = render_exercise(phrase, selected, english, english_decision)
+    english_card = render_exercise(phrase, in_english(selected), english, accept(phrase, in_english(selected), english))
     assert english_card["prompt"].endswith("[object]: Case.")
     assert "Case: Ablative" in english_card["answer"] and "Number: Singular" in english_card["answer"]
     assert english_card["semantic_key"] == reviewed["semantic_key"]
@@ -93,6 +93,81 @@ def test_translation_is_latin_first_self_assessment_not_grading() -> None:
     assert "Selbsteinschätzung" in result["answer"]
     assert "mit einem Freund" in result["answer"]
     assert result["grading"] == "self-assessment"
+
+
+ENGLISH = PROFILE.apply_overrides({"language_tag": "en-US", "morphology": {"terminology": {"language": "user"}}})
+FRENCH_LATIN = PROFILE.apply_overrides({"language_tag": "fr", "morphology": {"terminology": {"language": "latin"}}})
+
+
+def accept(phrase: dict[str, object], selected: Exercise, profile: DeckProfile) -> ReviewDecision:
+    claim = contextual_claim(phrase, selected, profile)
+    return review_claim(claim, status="accepted", reviewer="Latin teacher", reason="Checked")
+
+
+def in_english(selected: Exercise) -> Exercise:
+    data = selected.reference.model_dump(mode="json")
+    data["language"] = "en"
+    data["readings"][0].update(
+        translations=["with a friend"],
+        contributions={"object": "Accompaniment; cum takes the ablative."},
+        explanation="The preposition cum governs the case here.",
+    )
+    return selected.model_copy(update={"reference": Reference.model_validate(data)})
+
+
+@pytest.mark.parametrize("recipe", ["phrase_translation", "phrase_recognition"])
+def test_english_cards_need_their_own_accepted_english_reference(recipe: str) -> None:
+    phrase = candidate()
+    german = exercise(recipe)
+    english = in_english(german)
+    # A German reference, even accepted under the English profile, never reaches an English card.
+    leaked = render_exercise(phrase, german, ENGLISH, accept(phrase, german, ENGLISH))
+    assert (leaked["review_state"], leaked["enabled"]) == ("withheld", "")
+    assert "'de'" in leaked["reason"] and "'en'" in leaked["reason"]
+    for text in ("Freund", "cum regiert", "Präposition"):
+        assert text not in leaked["answer"] + leaked["answer_html"]
+    proposed = render_exercise(phrase, english, ENGLISH)
+    assert (proposed["review_state"], proposed["enabled"]) == ("proposed", "")
+    assert proposed["answer"].startswith("Proposed reference — not asserted\nReading 1: with a friend\n")
+    assert (
+        contextual_claim(phrase, english, ENGLISH).fingerprint != contextual_claim(phrase, german, ENGLISH).fingerprint
+    )
+    reviewed = render_exercise(phrase, english, ENGLISH, accept(phrase, english, ENGLISH))
+    assert (reviewed["review_state"], reviewed["enabled"]) == ("reviewed", "1")
+    assert reviewed["semantic_key"] == german.semantic_key
+    assert reviewed["answer"].startswith("Reviewed reference\nReading 1: with a friend\n")
+    if recipe == "phrase_translation":
+        assert reviewed["prompt"] == "cum amico\nTranslate, then compare with the reference."
+        assert reviewed["answer"].endswith("\nSelf-assessment: compare the meaning, not the exact wording.")
+    else:
+        assert reviewed["prompt"] == "cum amico\nIdentify amico [object]: Case."
+        assert "\nCase: Ablative\nNumber: Singular\nGender: Masculine\n" in reviewed["answer"]
+    for text in ("Lesart", "Übersetze", "Bestimme", "Selbsteinschätzung"):
+        assert text not in reviewed["prompt"] + reviewed["answer"]
+    # An English reference never appears on a German card either.
+    swapped = render_exercise(phrase, english, PROFILE, accept(phrase, english, PROFILE))
+    assert swapped["answer"] == (
+        "Withheld: Reference language 'en' differs from card language 'de'\nProposed reference — not asserted\n"
+    )
+    # Tags other than en keep German, so a German reference stays valid on a French-tagged profile.
+    french = render_exercise(phrase, german, FRENCH_LATIN, accept(phrase, german, FRENCH_LATIN))
+    assert french["review_state"] == "reviewed" and "Lesart 1: mit einem Freund" in french["answer"]
+
+
+def test_english_analysis_prompt_and_latin_terminology() -> None:
+    selected = in_english(exercise(distinction="analysis"))
+    assert render_exercise(candidate(), selected, ENGLISH)["prompt"].endswith("[object]: Analysis.")
+    latin = ENGLISH.apply_overrides({"morphology": {"terminology": {"language": "latin"}}})
+    assert render_exercise(candidate(), in_english(exercise()), latin)["prompt"].endswith(
+        "Identify amico [object]: Casus."
+    )
+    assert render_exercise(candidate(), exercise(distinction="analysis"), PROFILE)["prompt"].endswith(": Analyse.")
+
+
+def test_reference_language_names_supported_tags() -> None:
+    data = exercise().reference.model_dump(mode="json") | {"language": "fr"}
+    with pytest.raises(ValidationError, match="'de' or 'en'"):
+        Reference.model_validate(data)
 
 
 def test_ambiguous_readings_retained_single_case_withheld() -> None:
@@ -115,6 +190,12 @@ def test_ambiguous_readings_retained_single_case_withheld() -> None:
     assert len(withheld["readings"]) == 3
     assert "nominativus" in withheld["answer"] and "accusativus" in withheld["answer"]
     assert withheld["enabled"] == ""
+    # A language mismatch adds its own reason without hiding the unresolved distinction.
+    both = render_exercise(phrase, selected, ENGLISH)
+    assert both["reason"] == (
+        "The tested distinction is unresolved in the supplied contextual readings. "
+        "Reference language 'de' differs from card language 'en'"
+    )
     alternatives = selected.model_copy(update={"distinction": "analysis"})
     claim = contextual_claim(phrase, alternatives, PROFILE)
     assert len(claim.alternatives) == 3

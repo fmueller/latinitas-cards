@@ -138,8 +138,9 @@ def authored_claim(
         return base
     if not evidence:
         raise ValueError("authored values require their own evidence")
-    if base.kind == "translation" and base.profile.language_tag.lower().split("-")[0] != "de":
-        raise ValueError("Reviewed form translations currently support German user language only")
+    # A form translation is in the profile's language, which therefore must be German or English.
+    if base.kind == "translation" and base.profile.language_tag.lower().split("-")[0] not in {"de", "en"}:
+        raise ValueError("Unsupported form translation language; German (de) or English (en) is required")
     return replace(
         base,
         value=value,

@@ -20,7 +20,7 @@ from .phrase_generation import SavedSelections, generate_proposals
 from .phrase_inputs import Features, Key, Model, PhraseWorkspace, canonical
 from .profile import DeckProfile
 from .reference_templates import REFERENCE_CARD_TEMPLATES, REFERENCE_NOTE_TYPE_FIELDS, ReferenceCardTemplate
-from .terminology import feature_name, feature_value
+from .terminology import card_language, card_text, feature_name, feature_value
 
 type Recipe = Literal["phrase_translation", "phrase_recognition"]
 type Distinction = Literal["meaning", "analysis", "case", "number", "gender", "person", "tense", "mood", "voice"]
@@ -106,7 +106,7 @@ class Reading(Model):
 
 
 class Reference(Model):
-    language: Literal["de"] = "de"
+    language: Literal["de", "en"] = "de"
     readings: tuple[Reading, ...] = Field(min_length=1, max_length=16)
     evidence: tuple[Evidence, ...] = Field(min_length=1, max_length=16)
 
@@ -202,17 +202,23 @@ def render_exercise(
         raise ValueError("Each contextual reading must describe exactly the phrase's constituent roles")
     settings = profile.morphology.terminology
     language_tag = profile.language_tag
-    prompt = str(candidate["text"])
+    prompt = str(candidate["text"]) + "\n"
     if exercise.recipe == "phrase_translation":
-        prompt += "\nÜbersetze und vergleiche anschließend mit der Referenz."
+        prompt += card_text("phrase_translation_prompt", language_tag)
     else:
         assert exercise.target is not None
         distinction = (
-            "Analyse"
+            card_text("analysis", language_tag)
             if exercise.distinction == "analysis"
             else feature_name(exercise.distinction, settings, language_tag)
         )
-        prompt += f"\nBestimme {roles[exercise.target]} [{exercise.target}]: {distinction}."
+        prompt += card_text(
+            "phrase_recognition_prompt",
+            language_tag,
+            form=roles[exercise.target],
+            target=exercise.target,
+            distinction=distinction,
+        )
     claim = reference_claim or contextual_claim(candidate, exercise, profile)
     assessment = assess_claim(claim, decision)
     state = "reviewed" if assessment.status == "accepted" else "proposed" if decision is None else "withheld"
@@ -221,9 +227,17 @@ def render_exercise(
         values = {getattr(r.features[exercise.target], exercise.distinction) for r in exercise.reference.readings}
         if None in values or len(values) != 1:
             state, reason = "withheld", "The tested distinction is unresolved in the supplied contextual readings."
+    # A reference in another language never reaches a card, even with an accepted decision.
+    language = card_language(language_tag)
+    mismatched = exercise.reference.language != language
+    if mismatched:
+        mismatch = f"Reference language {exercise.reference.language!r} differs from card language {language!r}"
+        # Keep an unresolved-distinction reason; a review decision's reason is superseded.
+        reason = f"{reason} {mismatch}" if state == "withheld" and reason != assessment.reason else mismatch
+        state = "withheld"
     lines = []
-    for index, reading in enumerate(exercise.reference.readings, 1):
-        lines.append(f"Lesart {index}: " + " / ".join(reading.translations))
+    for index, reading in enumerate(() if mismatched else exercise.reference.readings, 1):
+        lines.append(card_text("reading", language_tag, index=index) + " / ".join(reading.translations))
         if exercise.target:
             features = reading.features[exercise.target].model_dump(exclude_none=True)
             lines.extend(
@@ -233,13 +247,12 @@ def render_exercise(
             )
             lines.append(reading.contributions[exercise.target])
         lines.append(reading.explanation)
-    if exercise.recipe == "phrase_translation":
-        lines.append("Selbsteinschätzung: Vergleiche den Sinn, nicht den genauen Wortlaut.")
-    answer = (
-        ("Reviewed reference" if state == "reviewed" else "Proposed reference — not asserted") + "\n" + "\n".join(lines)
-    )
+    if exercise.recipe == "phrase_translation" and not mismatched:
+        lines.append(card_text("self_assessment", language_tag))
+    heading = card_text("reviewed_reference" if state == "reviewed" else "proposed_reference", language_tag)
+    answer = heading + "\n" + "\n".join(lines)
     if state == "withheld":
-        answer = "Withheld: " + reason + "\n" + answer
+        answer = card_text("withheld", language_tag) + reason + "\n" + answer
     return {
         "semantic_key": exercise.semantic_key,
         "candidate_key": exercise.candidate_key,

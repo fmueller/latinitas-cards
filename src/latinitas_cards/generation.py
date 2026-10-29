@@ -46,6 +46,7 @@ from .profile import DeckProfile, tag_character_violation
 from .profile_setup import encode_unsafe_controls
 from .source_extraction import SourceExtraction
 from .sources import CanonicalSourceRecord
+from .terminology import card_text
 
 GenerationSkipStatus = Literal["incomplete", "unsupported", "ambiguous", "identity_error", "collision"]
 
@@ -380,7 +381,7 @@ def _render_note(
             if parsed.evidence is not None
             else ""
         )
-        + _render_parts(parsed.parts, withheld)
+        + _render_parts(parsed.parts, withheld, profile.language_tag)
         + '<span hidden class="principal-part-review">'
         + _escape_text(
             json.dumps(asdict(comparison), ensure_ascii=False, default=lambda value: value.model_dump(mode="json"))
@@ -412,15 +413,15 @@ def _render_note(
     )
 
 
-def _render_parts(parts: Sequence[PrincipalPartValue], withheld: set[str]) -> str:
+def _render_parts(parts: Sequence[PrincipalPartValue], withheld: set[str], language_tag: str) -> str:
     lines = []
     for part in parts:
         value = "—" if part.is_omitted else _escape_normalized_lines(part.display or "")
         if part.unresolved:
-            value += " <em>(unresolved source evidence; target withheld)</em>"
+            value += f" <em>{card_text('part_unresolved', language_tag)}</em>"
         elif part.role in withheld:
-            value += " <em>(linguistic review required; target withheld)</em>"
-        lines.append(f"<strong>{_escape_text(role_display_label(part.role))}:</strong> {value}")
+            value += f" <em>{card_text('part_review_required', language_tag)}</em>"
+        lines.append(f"<strong>{_escape_text(role_display_label(part.role, language_tag))}:</strong> {value}")
     return "<br>".join(lines)
 
 

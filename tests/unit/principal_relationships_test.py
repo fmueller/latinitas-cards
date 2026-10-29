@@ -481,3 +481,113 @@ def test_review_without_any_extraction_snapshot_cannot_assert_a_split() -> None:
     result = compare_principal_parts(parsed, profile, (accepted,)).roles[2]
     assert result.segmentation is None
     assert result.claims[0].status == "withheld"
+
+
+_FIXED_TEXT = {
+    # Expected literals are copied from the pre-localization sources, never read from CARD_STRINGS.
+    "de": {
+        "parts": "<strong>Präsens, 1. Person Singular:</strong> amō<br><strong>Infinitiv:</strong> amāre<br>"
+        "<strong>Perfekt, 1. Person Singular:</strong> —<br>"
+        "<strong>Supinum:</strong> amātum | amatum <em>(unresolved source evidence; target withheld)</em>",
+        "prompt": "<strong>Präsens, 1. Person Singular:</strong> ____<br><strong>Infinitiv:</strong> amāre<br>"
+        "<strong>Perfekt, 1. Person Singular:</strong> —<br><strong>Supinum:</strong> — (unresolved source evidence)",
+        "answer": "Präsens, 1. Person Singular"
+        '<section class="morphology-v1 morphology-muted morphology-light">'
+        '<div>Lemma: <span class="morphology-lemma">amō</span></div>'
+        '<div class="tested-form-explanation">Analyse zurückgehalten; einzelne Belege prüfen.</div>'
+        '<div class="related-stems">Verwandte Stämme: Infinitiv: <span class="morphology-stem">amā-</span> | '
+        '<span class="morphology-ending">-re</span></div>'
+        '<section class="morphology-static"><h3>Stammformen vergleichen</h3>'
+        '<div class="morphology-role"><strong>Präsens, 1. Person Singular:</strong> amō · '
+        "Quellform im bestätigten Rollenprofil; Analyse benötigt gesonderte Prüfung.</div>"
+        '<div class="morphology-role"><strong>Infinitiv:</strong> amāre · '
+        '<span class="morphology-stem">amā-</span> | <span class="morphology-ending">-re</span></div>'
+        '<div class="morphology-role"><strong>Perfekt, 1. Person Singular:</strong> — (Nicht vorhanden) · '
+        "Nicht vorhanden; Quelle oder Rollenprofil prüfen.</div>"
+        '<div class="morphology-role"><strong>Supinum:</strong> — (Zurückgehalten) · '
+        "Unresolved source evidence; target withheld. Alternativen und Hinweise prüfen.</div></section></section>",
+    },
+    "en": {
+        "parts": "<strong>Present, 1st person singular:</strong> amō<br><strong>Present infinitive:</strong> amāre<br>"
+        "<strong>Perfect, 1st person singular:</strong> —<br>"
+        "<strong>Supine:</strong> amātum | amatum <em>(unresolved source evidence; target withheld)</em>",
+        "prompt": "<strong>Present, 1st person singular:</strong> ____<br>"
+        "<strong>Present infinitive:</strong> amāre<br>"
+        "<strong>Perfect, 1st person singular:</strong> —<br><strong>Supine:</strong> — (unresolved source evidence)",
+        "answer": "Present, 1st person singular"
+        '<section class="morphology-v1 morphology-muted morphology-light">'
+        '<div>Lemma: <span class="morphology-lemma">amō</span></div>'
+        '<div class="tested-form-explanation">Analysis withheld; check the individual evidence.</div>'
+        '<div class="related-stems">Related stems: Present infinitive: <span class="morphology-stem">amā-</span> | '
+        '<span class="morphology-ending">-re</span></div>'
+        '<section class="morphology-static"><h3>Compare principal parts</h3>'
+        '<div class="morphology-role"><strong>Present, 1st person singular:</strong> amō · '
+        "Source form in the confirmed role profile; analysis needs separate review.</div>"
+        '<div class="morphology-role"><strong>Present infinitive:</strong> amāre · '
+        '<span class="morphology-stem">amā-</span> | <span class="morphology-ending">-re</span></div>'
+        '<div class="morphology-role"><strong>Perfect, 1st person singular:</strong> — (Not present) · '
+        "Not present; check the source or role profile.</div>"
+        '<div class="morphology-role"><strong>Supine:</strong> — (Withheld) · '
+        "Unresolved source evidence; target withheld. Check alternatives and notes.</div></section></section>",
+    },
+}
+
+
+@pytest.mark.parametrize(("tag", "language"), [("de", "de"), ("fr", "de"), ("en", "en"), ("en-GB", "en")])
+def test_absent_unresolved_and_related_stem_text_follows_the_card_language(
+    tmp_path: Path, tag: str, language: str
+) -> None:
+    from latinitas_cards.preview_export import prepare_principal_part_export, write_principal_part_csv
+    from latinitas_cards.principal_parts import PrincipalPartParseSuccess, parse_principal_parts
+    from latinitas_cards.profile import SourceIdentityConfig
+    from latinitas_cards.sources import read_source_records
+
+    source = tmp_path / "source.csv"
+    source.write_text('ID,Lemma,Forms\na,amō,"amō, amāre, , amātum|amatum"\n', encoding="utf-8")
+    profile = DeckProfile.default(
+        note_type="Latin",
+        lexical_entry_field="Lemma",
+        principal_parts_field="Forms",
+        separators=(",",),
+        source_identity=SourceIdentityConfig(strategy="source_id_field", field="ID"),
+        principal_part_roles=("present_1s", "present_infinitive", "perfect_1s", "supine"),
+    ).apply_overrides(
+        {
+            "language_tag": tag,
+            "principal_parts": {"pipe_alternatives": True},
+            # fr cannot use user terminology; Latin answer labels are covered elsewhere.
+            "morphology": {"terminology": {"language": "user" if tag != "fr" else "latin"}},
+        }
+    )
+    initial = prepare_principal_part_export(source, profile, approve_new_scope=True)
+    write_principal_part_csv(initial, tmp_path / "bootstrap.csv")
+    parsed = parse_principal_parts(read_source_records(source, source_id_field="ID")[0], profile)
+    assert isinstance(parsed, PrincipalPartParseSuccess)
+    split = Claim(
+        initial.generation.notes[0].latinitas_id + ":present_infinitive",
+        "amāre",
+        "segmentation",
+        "amā- | -re",
+        "fixture/v1",
+        (Evidence("fixture", "authored split", "v1", "Synthetic independent judgment"),),
+        profile,
+        "v1",
+        extraction=parsed.evidence,
+    )
+    accepted = assess_claim(split, review_claim(split, status="accepted", reviewer="fixture", reason="Checked"))
+    note = prepare_principal_part_export(source, profile, claim_assessments=(accepted,)).generation.notes[0]
+    cards = {card.slot.semantic_key: card for card in note.cards}
+    expected = _FIXED_TEXT[language]
+    parts = note.content.principal_parts.split('<span hidden class="principal-part-review">')[0]
+    assert parts.split("</span>", 1)[1] == expected["parts"]
+    assert cards["principal_part_completion:present_1s"].prompt == expected["prompt"]
+    answer = cards["principal_part_recognition:present_1s"].answer
+    if tag == "fr":
+        # Latin terminology keeps Latin labels; every fixed string stays German.
+        for latin, german in (
+            ("Praesens, persona prima singularis", "Präsens, 1. Person Singular"),
+            ("Infinitivus praesentis", "Infinitiv"),
+            ("Perfectum, persona prima singularis", "Perfekt, 1. Person Singular"),
+        ):
+            answer = answer.replace(latin, german)
+    assert answer == expected["answer"]

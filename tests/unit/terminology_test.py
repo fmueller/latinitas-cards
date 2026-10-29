@@ -2,10 +2,12 @@ import pytest
 
 from latinitas_cards.profile import TerminologySettings
 from latinitas_cards.terminology import (
+    CARD_STRINGS,
     FEATURE_NAMES,
     FEATURE_VALUES,
     ROLE_LABELS,
     Labels,
+    card_text,
     feature_name,
     feature_value,
     role_label,
@@ -79,3 +81,26 @@ def test_terminology_report_names_the_effective_language(
     settings: TerminologySettings, tag: str, effective: str
 ) -> None:
     assert terminology_report(settings, tag, "user") == f"Effective terminology v1: {effective}; override: user"
+
+
+def test_every_fixed_card_string_has_german_and_english() -> None:
+    assert CARD_STRINGS
+    for key, texts in CARD_STRINGS.items():
+        assert set(texts) == {"de", "en"}, key
+        assert all(text.strip() for text in texts.values()), key
+
+
+@pytest.mark.parametrize(
+    ("tag", "expected"),
+    [
+        ("en", "Compare principal parts"),
+        ("EN-gb", "Compare principal parts"),
+        ("de", "Stammformen vergleichen"),
+        ("de-CH", "Stammformen vergleichen"),
+        # Any other primary subtag keeps the historical German text.
+        ("fr", "Stammformen vergleichen"),
+        ("eng", "Stammformen vergleichen"),
+    ],
+)
+def test_card_text_selects_english_only_for_primary_subtag_en(tag: str, expected: str) -> None:
+    assert card_text("compare_principal_parts", tag) == expected

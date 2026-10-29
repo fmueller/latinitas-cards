@@ -23,7 +23,7 @@ from .principal_parts import ParsedPrincipalParts, PrincipalPartValue
 from .principal_relationships import PrincipalPartComparison
 from .profile import DEFAULT_LANGUAGE_TAG, MorphologySettings, TerminologySettings
 from .profile_setup import encode_unsafe_controls
-from .terminology import role_label
+from .terminology import card_text, role_label
 
 TEMPLATE_REGISTRY_VERSION = 1
 
@@ -132,10 +132,10 @@ def slot_for_recipe_role(recipe: str, role: str) -> CardSlot | None:
     return slot_for_key(derive_card_semantic_key(recipe, role))
 
 
-def role_display_label(role: str) -> str:
-    """Keep established front labels independent of answer terminology."""
+def role_display_label(role: str, language_tag: str) -> str:
+    """Keep front labels in the card language, independent of answer terminology."""
 
-    return role_label(role, TerminologySettings(language="user"), DEFAULT_LANGUAGE_TAG)
+    return role_label(role, TerminologySettings(language="user"), language_tag)
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,7 +215,7 @@ def render_cards(
             continue
         target = _escape_text(part.display or "")
         if slot.recipe == COMPLETION_RECIPE:
-            prompt = _completion_prompt(parsed, part, gloss, withheld)
+            prompt = _completion_prompt(parsed, part, gloss, withheld, language_tag)
             answer = target
         else:
             prompt = _recognition_prompt(parsed, part, gloss)
@@ -247,14 +247,14 @@ def _render_comparison(
 ) -> str:
     lines = []
     related = []
-    focused = "Analyse zurückgehalten; einzelne Belege prüfen."
+    focused = card_text("analysis_withheld", language_tag)
     for role in comparison.roles:
         available = role.status == "present"
         label = _escape_text(role_label(role.role, settings.terminology, language_tag))
         value = (
             _escape_text(role.form or "")
             if available
-            else ("— (Nicht vorhanden)" if role.status == "absent" else "— (Zurückgehalten)")
+            else card_text("absent_value" if role.status == "absent" else "withheld_value", language_tag)
         )
         analysis = " · ".join(
             text
@@ -266,16 +266,17 @@ def _render_comparison(
             if text
         )
         if role.role == tested_role:
-            focused = analysis or "Analyse zurückgehalten; einzelne Belege prüfen."
+            focused = analysis or card_text("analysis_withheld", language_tag)
         elif available and role.segmentation:
             related.append(f"{label}: {_render_segmentation(role.segmentation)}")
         detail = f" · {analysis}" if analysis else f" · {_escape_text(role.reason)}"
         lines.append(f'<div class="morphology-role"><strong>{label}:</strong> {value}{detail}</div>')
     body = "".join(lines)
+    compare = card_text("compare_principal_parts", language_tag)
     further = (
-        "<details><summary>Stammformen vergleichen</summary>" + body + "</details>"
+        f"<details><summary>{compare}</summary>" + body + "</details>"
         if settings.comparison == "disclosure"
-        else '<section class="morphology-static"><h3>Stammformen vergleichen</h3>' + body + "</section>"
+        else f'<section class="morphology-static"><h3>{compare}</h3>' + body + "</section>"
     )
     appearance_class = "" if settings.appearance == "auto" else f" morphology-{settings.appearance}"
     return (
@@ -283,7 +284,11 @@ def _render_comparison(
         + f'<div>Lemma: <span class="morphology-lemma">{_escape_text(lemma)}</span></div>'
         + f'<div class="tested-form-explanation">{focused}</div>'
         + '<div class="related-stems">'
-        + ("Verwandte Stämme: " + " · ".join(related) if related else "Weitere Stämme: Analyse zurückgehalten.")
+        + (
+            card_text("related_stems", language_tag) + " · ".join(related)
+            if related
+            else card_text("other_stems_withheld", language_tag)
+        )
         + "</div>"
         + further
         + "</section>"
@@ -291,16 +296,20 @@ def _render_comparison(
 
 
 def _completion_prompt(
-    parsed: ParsedPrincipalParts, target: PrincipalPartValue, gloss: str, withheld_roles: Sequence[str]
+    parsed: ParsedPrincipalParts,
+    target: PrincipalPartValue,
+    gloss: str,
+    withheld_roles: Sequence[str],
+    language_tag: str,
 ) -> str:
     lines = []
     for part in parsed.parts:
         value = _BLANK_MARKER if part is target else ("—" if part.is_omitted else _escape_text(part.display or ""))
         if part.unresolved:
-            value = "— (unresolved source evidence)"
+            value = card_text("blank_unresolved", language_tag)
         elif part.role in withheld_roles:
-            value = "— (linguistic review required)"
-        lines.append(f"<strong>{_escape_text(role_display_label(part.role))}:</strong> {value}")
+            value = card_text("blank_review_required", language_tag)
+        lines.append(f"<strong>{_escape_text(role_display_label(part.role, language_tag))}:</strong> {value}")
     if gloss:
         lines.append(gloss)
     return "<br>".join(lines)

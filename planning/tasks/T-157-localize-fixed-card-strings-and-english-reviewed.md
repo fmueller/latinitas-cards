@@ -1,12 +1,12 @@
 ---
 id: T-157-localize-fixed-card-strings-and-english-reviewed
 title: Localize fixed card strings and support English reviewed translations
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#german-and-english-output
 dependencies:
     - T-156-add-the-language-table-and-english-terminology
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T05:58:55Z"
 ---
 
 # T-157-localize-fixed-card-strings-and-english-reviewed Localize fixed card strings and support English reviewed translations
@@ -51,3 +51,5 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T05:58:42Z: verification pass
+- 2026-10-29T05:58:55Z: Verify run 2026-10-29T05:58:42Z. Follow-up T-174 (blocked, maintainer decision) covers pre-existing generate --recipe claim staleness. preview/generate --terminology help remains 'user (German)', pinned by cloze-jsonl help goldens.

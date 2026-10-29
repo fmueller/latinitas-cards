@@ -148,7 +148,8 @@ source-role and export/checkpoint gates remain in force.
 
 `claims list source.csv --profile profile.json --json` includes an open
 `translation` claim for each present form/role. There is no automatic translation
-or acceptance. Supply a German form-appropriate value, its evidence, and an
+or acceptance. Supply a form-appropriate value in the profile's language (German or
+English), its evidence, and an
 explicit selected sense using the same individual review route:
 
 ```sh
@@ -172,9 +173,11 @@ does not confirm PPP versus supine: its canonical role label still needs review.
 Accepted translations appear for the tested form and in the four-role comparison
 on answers in both principal-part recipes. They are never added to fronts.
 The existing optional source meaning/gloss on prompts is unchanged. Withheld or
-open translations show no value. Latin/German grammatical terminology does not
-translate this content: it follows the profile's user language (German only now;
-other user languages reject authored form translations).
+open translations show no value. Grammatical terminology does not translate this
+content: it is in the profile's language, German or English. Profiles with other
+language tags reject authored form translations. Because the profile's `language_tag`
+binds every claim, switching a profile from German to English makes these decisions
+stale; English cards need their own accepted English translations.
 
 Form, role/profile, source meaning, selected sense, translation and evidence bind
 review. Source meaning edits invalidate translation decisions, not independent

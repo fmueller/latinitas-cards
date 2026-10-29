@@ -37,8 +37,8 @@ blocked plan requiring reviewed manual resolution, not CSV omission or automatic
 Profiles select recipes explicitly; the approved representative profile uses
 `principal_part_completion` and `principal_part_recognition`. It uses the semantic role
 `perfect_passive_participle` (PPP), not the legacy `supine` role. CLI controls and
-diagnostics are English; generated study content is German with the profile's explicit
-`language_tag` (default `de`).
+diagnostics are English; generated study content follows the profile's explicit
+`language_tag` (default `de`): English for primary subtag `en`, otherwise German.
 
 The profile workflow never mutates the source CSV/APKG/COLPKG. ID-less CSV sources
 require explicit identity reconciliation decisions on first use or when review items
@@ -301,12 +301,34 @@ Form-parsing reports go to stderr so stdout remains JSON.
 Controlled feature values (such as `nominativus` and `pluralis`) remain canonical
 in reviewed claims and display as `Kasus: Nominativ`, `Numerus: Plural` in German.
 Values outside the vocabulary still need explicit individual review and display
-verbatim, never machine-translated. Prompts and German explanatory prose are unchanged.
+verbatim, never machine-translated. Changing terminology does not change reviewed
+explanatory prose or translations.
 Changing terminology preserves claim fingerprints, linguistic reviews, identities and
 frozen card slots. Changed answer payloads require renewed managed approval, not renewed
 linguistic review. Separately approved retained-slot updates are available for current
 principal-part, parsing and phrase layouts. CSV installs no templates or CSS; old layout
 digests fail closed and need reviewed manual setup, never silent scheduled-template rebinding.
+
+### Card language
+
+Fixed card text follows the profile's `language_tag`. A primary subtag of `en` (such as
+`en-GB`) renders English phrase prompts and answers, principal-part front role labels,
+comparison and withheld text. Grammatical answer labels follow `terminology`: English in
+`user` mode, Latin in `latin` mode. Any other tag renders German exactly as before.
+Latin-first prompts such as `Formam resolve.` and reviewed free text are never translated.
+Note IDs, card keys, slots and CSV columns do not change with language.
+
+Write reviewed form translations and phrase references in the card language. Form
+translations require a profile tag with primary subtag `de` or `en`. A phrase reference
+declares `"language": "de"` (the default) or `"en"`, and only a reference matching the card
+language renders; another is withheld even when accepted. The tool trusts the declared
+language and does not detect it from the text.
+
+Claim fingerprints bind the whole deck profile except `morphology`, `language_tag`
+included. Switching a profile from `de` to `en` therefore makes every reviewed claim of that
+profile stale, not only translations. Archive the old sidecar and review each claim again,
+with English values, before cards become eligible. Applying the switch to imported notes
+is a managed retained-slot update with renewed approval.
 
 ## Experimental and planned capabilities
 

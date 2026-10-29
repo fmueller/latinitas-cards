@@ -97,12 +97,81 @@ ROLE_LABELS: dict[str, Labels] = {
 }
 
 
-def terminology_language(settings: TerminologySettings, language_tag: str) -> Language:
-    """Latin mode ignores the tag; a primary subtag of ``en`` selects English, any other German."""
+type CardLanguage = Literal["de", "en"]
 
-    if settings.language == "latin":
-        return "la"
+# Fixed generated-card text keyed by (string_key, language). German entries are the historical
+# strings, byte for byte. Latin-first prompts such as "Formam resolve." are not translated.
+CARD_STRINGS: dict[str, dict[CardLanguage, str]] = {
+    "absent_value": {"de": "— (Nicht vorhanden)", "en": "— (Not present)"},
+    "withheld_value": {"de": "— (Zurückgehalten)", "en": "— (Withheld)"},
+    "analysis_withheld": {
+        "de": "Analyse zurückgehalten; einzelne Belege prüfen.",
+        "en": "Analysis withheld; check the individual evidence.",
+    },
+    "related_stems": {"de": "Verwandte Stämme: ", "en": "Related stems: "},
+    "other_stems_withheld": {"de": "Weitere Stämme: Analyse zurückgehalten.", "en": "Other stems: analysis withheld."},
+    "compare_principal_parts": {"de": "Stammformen vergleichen", "en": "Compare principal parts"},
+    "role_absent": {
+        "de": "Nicht vorhanden; Quelle oder Rollenprofil prüfen.",
+        "en": "Not present; check the source or role profile.",
+    },
+    "role_unresolved": {
+        "de": "Unresolved source evidence; target withheld. Alternativen und Hinweise prüfen.",
+        "en": "Unresolved source evidence; target withheld. Check alternatives and notes.",
+    },
+    "role_review_required": {
+        "de": "Linguistic review required; target withheld. Einzelne Rollenbelege ausdrücklich prüfen.",
+        "en": "Linguistic review required; target withheld. Explicitly check each role's evidence.",
+    },
+    "role_source_form": {
+        "de": "Quellform im bestätigten Rollenprofil; Analyse benötigt gesonderte Prüfung.",
+        "en": "Source form in the confirmed role profile; analysis needs separate review.",
+    },
+    "blank_unresolved": {"de": "— (unresolved source evidence)", "en": "— (unresolved source evidence)"},
+    "blank_review_required": {"de": "— (linguistic review required)", "en": "— (linguistic review required)"},
+    "part_unresolved": {
+        "de": "(unresolved source evidence; target withheld)",
+        "en": "(unresolved source evidence; target withheld)",
+    },
+    "part_review_required": {
+        "de": "(linguistic review required; target withheld)",
+        "en": "(linguistic review required; target withheld)",
+    },
+    "phrase_translation_prompt": {
+        "de": "Übersetze und vergleiche anschließend mit der Referenz.",
+        "en": "Translate, then compare with the reference.",
+    },
+    "phrase_recognition_prompt": {
+        "de": "Bestimme {form} [{target}]: {distinction}.",
+        "en": "Identify {form} [{target}]: {distinction}.",
+    },
+    "analysis": {"de": "Analyse", "en": "Analysis"},
+    "reading": {"de": "Lesart {index}: ", "en": "Reading {index}: "},
+    "self_assessment": {
+        "de": "Selbsteinschätzung: Vergleiche den Sinn, nicht den genauen Wortlaut.",
+        "en": "Self-assessment: compare the meaning, not the exact wording.",
+    },
+    "reviewed_reference": {"de": "Reviewed reference", "en": "Reviewed reference"},
+    "proposed_reference": {"de": "Proposed reference — not asserted", "en": "Proposed reference — not asserted"},
+    "withheld": {"de": "Withheld: ", "en": "Withheld: "},
+}
+
+
+def card_language(language_tag: str) -> CardLanguage:
+    """A primary subtag of ``en`` selects English; any other renders German, exactly as before."""
+
     return "en" if language_tag.lower().split("-")[0] == "en" else "de"
+
+
+def card_text(key: str, language_tag: str, **values: object) -> str:
+    text = CARD_STRINGS[key][card_language(language_tag)]
+    return text.format(**values) if values else text
+
+
+def terminology_language(settings: TerminologySettings, language_tag: str) -> Language:
+    """Latin mode ignores the tag; otherwise the card language applies."""
+
+    return "la" if settings.language == "latin" else card_language(language_tag)
 
 
 def feature_name(feature: str, settings: TerminologySettings, language_tag: str) -> str:

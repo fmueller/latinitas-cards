@@ -31,7 +31,9 @@ def _load(source: Path, terminology: str | None = None) -> ParsingInput:
 @app.command()
 def preview(
     source: Path,
-    terminology: Annotated[str | None, typer.Option(help="Terminology override: latin or user (German)")] = None,
+    terminology: Annotated[
+        str | None, typer.Option(help="Terminology override: latin or user (profile language)")
+    ] = None,
 ) -> None:
     """Emit claim fingerprints, accepted claims, alternatives and eligibility skips."""
     import json
@@ -44,7 +46,9 @@ def preview(
 def export_csv(
     source: Path,
     output: Path,
-    terminology: Annotated[str | None, typer.Option(help="Terminology override: latin or user (German)")] = None,
+    terminology: Annotated[
+        str | None, typer.Option(help="Terminology override: latin or user (profile language)")
+    ] = None,
     approve_fresh_import: Annotated[
         bool,
         typer.Option(

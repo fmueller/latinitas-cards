@@ -8,10 +8,16 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 - Profiles with `user` terminology accept English (`en`) language tags and render
   grammatical answer labels on principal-part, phrase and form-parsing cards in English.
+- English profiles also render phrase prompts and answers, principal-part front labels
+  and comparison text in English. Latin-first prompts and other tags are unchanged.
+- Reviewed form translations and phrase references can be English. A phrase reference in
+  a language other than the card's is withheld, even when accepted.
 
 ### Limitations
 
-- Other generated card text on English profiles is still German.
+- Switching a profile's language tag makes all of its reviewed claims stale; review them
+  again in the new language.
+- `preview --help` and `generate --help` still describe `--terminology user` as German.
 
 ## [0.3.0] - 2026-10-20
 

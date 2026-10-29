@@ -17,7 +17,8 @@ Choose `phrase_translation` (target `null`, distinction `meaning`) or
 or one of `case`, `number`, `gender`, `person`, `tense`, `mood`, `voice`). There is
 no `both`/`all` shortcut. Each plan requires `version: 1`, `max_exercises` (1–1000)
 and an `exercises` list no longer than that limit. Each exercise has an authored
-German `reference` with `readings` and `evidence`; nothing guesses a translation.
+`reference` with `readings` and `evidence` in the card language: `"language": "de"`
+(the default) or `"en"`. Nothing guesses a translation.
 
 For a `cum amico` candidate whose sole constituent is `object`, an exercise is:
 
@@ -61,8 +62,11 @@ Preview labels unreviewed content **Proposed reference — not asserted** and sh
 withholding reasons. Preview automatically consumes the recipe plan's shared review
 sidecar. Eligibility requires reviewed lexical/pattern inputs, explicit combination
 correctness/naturalness approval, and a separately approved rendered reference.
-Latin (default) or German terminology comes from the profile; German prose and
-translations do not change. Translation is Latin-first self-assessment, never
+Latin (default) or user terminology comes from the profile. Fixed prompt and answer
+text is English when the profile's primary subtag is `en` and German otherwise; reviewed
+prose and translations do not change. A reference whose language differs from the card
+language is withheld even when accepted, so an English card needs its own accepted
+English reference. Translation is Latin-first self-assessment, never
 exact-string grading or German-to-Latin production. Targets and tested distinctions
 are persisted and hashed into semantic exercise identity; reference wording and
 terminology are not. Reference/content changes invalidate an existing review.
