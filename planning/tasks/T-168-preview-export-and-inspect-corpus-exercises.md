@@ -1,13 +1,13 @@
 ---
 id: T-168-preview-export-and-inspect-corpus-exercises
 title: Preview, export and inspect corpus exercises
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#context-and-translation-recipes
 dependencies:
     - T-164-render-the-corpus-v1-note-type-and-layout-content
     - T-166-rank-candidates-and-persist-sticky-selections
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T21:45:56Z"
 ---
 
 # T-168-preview-export-and-inspect-corpus-exercises Preview, export and inspect corpus exercises
@@ -51,4 +51,20 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 
 ## Verification Notes
 
-- Not started.
+- Built-in medium implementation with red/green public CLI regressions, including
+  corpus slots in `claims inspect` and nine review-finding regressions.
+- Dedicated simplification and independent high-risk conventional review completed;
+  all five findings were fixed and independently verified, with a fresh overall
+  outcome challenge returning HOLDS. No required finding was deferred.
+- Final mandatory chain passed: ruff, mypy, and pytest (3132 passed, 7 skipped;
+  one existing serializer warning). Formatting and Taskrail validation passed.
+- Independent integrated checkpoint passed 128 real CLI invocations, 727 assertions
+  and 85 read-only snapshots on reviewed candidate manifest SHA256
+  `7b29dff885dd8286a81a05853836e93406bcac788c46ac5d93ae797010b2f154`.
+  Subsequent changes are Taskrail lifecycle metadata and these verification notes.
+- Rendered and inspected all four recipes in de/en, light/dark/auto day/night.
+  Browser rendering is not native Anki acceptance; no interaction change needed a clip.
+- A directory-fsync failure after publication can leave a complete CSV while returning
+  `unreadable`; retry returns `exists`. No native/power-loss or release claim is made.
+- 2026-10-29T21:45:56Z: verification pass
+- 2026-10-29T21:45:56Z: Implementation, TDD, simplification, independent high-risk review, integrated CLI QA and mandatory validation complete; native Anki and publication remain maintainer-gated.

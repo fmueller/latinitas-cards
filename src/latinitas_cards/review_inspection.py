@@ -13,6 +13,7 @@ from pathlib import Path
 
 from .cards import TEMPLATE_REGISTRY, CardSlot
 from .claim_sidecar import Diagnostic, claim_report
+from .corpus_notes import CORPUS_SLOTS
 from .form_parsing import PARSING_SLOT, _escape, generate_parsing, parsing_export_answer
 from .html_text import generated_html_to_text
 from .managed_layouts import known_layouts
@@ -42,6 +43,9 @@ def card_report(
     if eligible and slot.recipe == "form_parsing":
         answer = re.sub(r'<span hidden class="parsing-review">.*?</span>', "", answer, flags=re.DOTALL)
         answer = prompt + "<hr>" + answer
+    elif eligible and fields.get("Note Schema") == "corpus-v1":
+        prompt = fields.get("Latin", "") + "<br>" + prompt
+        answer = prompt + "<hr>" + answer + "<br>" + fields.get("Passage", "") + "<br>" + fields.get("Citation", "")
     elif eligible:
         parts = re.sub(
             r'<span hidden class="(?:source-extraction|principal-part-review)">.*?</span>',
@@ -108,7 +112,7 @@ def workspace(source: Path, profile: Path | None) -> ReviewWorkspace:
 
 
 def read_export_csv(
-    path: Path, *, note_type: str | None = None, deck: str | None = None
+    path: Path, *, note_type: str | None = None, deck: str | None = None, strict_transport: bool = False
 ) -> tuple[Mapping[str, str], ...]:
     with path.open(encoding="utf-8-sig", newline="") as stream:
         text = stream.read()
@@ -132,6 +136,11 @@ def read_export_csv(
         or directives.get("#html") != "true"
     ):
         raise ValueError("unsupported CSV layout; expected documented Latinitas fields/directives")
+    if strict_transport and (
+        set(directives) != {"#separator", "#html", "#notetype", "#deck", "#tags column", "#columns"}
+        or directives.get("#tags column") != str(columns.index("Tags") + 1)
+    ):
+        raise ValueError("CSV transport directives differ from the export contract")
     records: list[Mapping[str, str]] = []
     try:
         for row in csv.reader(io.StringIO("".join(lines[index:])), delimiter=",", strict=True):
@@ -223,7 +232,7 @@ def inspect_artifact(path: Path) -> dict[str, object]:
             else:
                 for role in metadata["roles"]:
                     claims.extend(role["claims"])
-        for slot in slots:
+        for slot in CORPUS_SLOTS if fields.get("Note Schema") == "corpus-v1" else slots:
             cards.append(
                 card_report(fields, slot, claims, ["Artifact backing evidence is unverified without current source"])
             )

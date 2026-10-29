@@ -219,7 +219,51 @@ def select_case(tmp: Path, exit_code: int) -> list[str]:
     return args
 
 
+def corpus_output_case(tmp: Path, command: str, exit_code: int) -> list[str]:
+    from corpus_output_test import invoke, selected
+
+    facts = selected(tmp)
+    args = [
+        "corpus-cards",
+        command,
+        str(tmp / "profile.json"),
+        "--corpus",
+        str(facts.corpus),
+        "--selection",
+        str(tmp / "selection.json"),
+    ]
+    if command == "export":
+        args += ["--output", str(tmp / "cards.csv")]
+    if exit_code == 1:
+        if command == "inspect":
+            invoke(tmp, facts, "export", "--output", str(tmp / "cards.csv"))
+            args += ["--check", str(tmp / "cards.csv")]
+        if command == "preview":
+            from latinitas_cards.annotation_sidecar import Annotation, read_sidecar
+
+            row = next(
+                row for row in read_sidecar(facts.sidecar) if isinstance(row, Annotation) and row.layer == "morphology"
+            )
+            facts.retract(row)
+        else:
+            Path(f"{facts.corpus}.claims.json").unlink()
+    elif exit_code == 2:
+        args += ["--known-lemmas", str(tmp / "profile.json")]
+    elif exit_code == 3:
+        (tmp / "profile.json").unlink()
+    elif exit_code == 4:
+        from corpus_exercises_test import profile
+
+        (tmp / "profile.json").write_text(profile(profile_id="another").model_dump_json())
+    return args
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    **{
+        (f"corpus-cards {command}", code): partial(corpus_output_case, command=command, exit_code=code)
+        for command, codes in (("preview", (0, 1, 2, 3, 4)), ("export", (0, 1, 3, 4)), ("inspect", (0, 1, 3, 4)))
+        for code in codes
+    },
     **{("corpus-cards select", code): partial(select_case, exit_code=code) for code in (0, 1, 2, 3, 4)},
     **{
         ("annotations import-translations", code): partial(import_translations_case, exit_code=code)

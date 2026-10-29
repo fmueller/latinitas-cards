@@ -7,6 +7,7 @@ import typer
 from pydantic import JsonValue
 
 from ..cli_contract import Diagnostic, run_contract
+from ..corpus_output import export_corpus, inspect_corpus, preview_corpus
 from ..corpus_profile import load_corpus_profile, profile_digest
 from ..corpus_selection import select_corpus
 
@@ -58,3 +59,47 @@ def select(
             confirm_context=confirm_context or (),
         ),
     )
+
+
+@app.command()
+def preview(
+    profile: Annotated[Path, typer.Argument(help="Corpus-generation profile JSON file.")],
+    corpus: Annotated[list[Path], typer.Option("--corpus")],
+    selection: Annotated[Path, typer.Option()],
+    limit: Annotated[int, typer.Option(min=1, max=1000)] = 20,
+    known_lemmas: Annotated[Path | None, typer.Option()] = None,
+    known_lemmas_source: Annotated[Path | None, typer.Option()] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Show current selected exercises and their fact provenance without writing files."""
+    run_contract(
+        "corpus-cards preview",
+        json_output,
+        lambda: preview_corpus(
+            profile, corpus, selection, limit, known_profile=known_lemmas, known_source=known_lemmas_source
+        ),
+    )
+
+
+@app.command(name="export")
+def export_csv(
+    profile: Annotated[Path, typer.Argument(help="Corpus-generation profile JSON file.")],
+    corpus: Annotated[list[Path], typer.Option("--corpus")],
+    selection: Annotated[Path, typer.Option()],
+    output: Annotated[Path, typer.Option()],
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Create a new CSV of eligible selected exercises; never overwrite an existing file."""
+    run_contract("corpus-cards export", json_output, lambda: export_corpus(profile, corpus, selection, output))
+
+
+@app.command()
+def inspect(
+    profile: Annotated[Path, typer.Argument(help="Corpus-generation profile JSON file.")],
+    corpus: Annotated[list[Path], typer.Option("--corpus")],
+    selection: Annotated[Path, typer.Option()],
+    check: Annotated[Path | None, typer.Option(help="Compare a CSV with current reviewed fields.")] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Inspect selected exercises and optionally check an export, without writing files."""
+    run_contract("corpus-cards inspect", json_output, lambda: inspect_corpus(profile, corpus, selection, check))

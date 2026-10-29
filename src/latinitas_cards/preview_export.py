@@ -633,8 +633,24 @@ def write_principal_part_csv(
     commit_csv_artifacts(tuple((artifact.destination, artifact.payload) for artifact in artifacts))
 
 
-def commit_csv_artifacts(payloads: tuple[tuple[Path, bytes], ...]) -> None:
-    """Stage all payloads before replacement and restore originals on a failed commit."""
+def commit_csv_artifacts(payloads: tuple[tuple[Path, bytes], ...], *, create_only: bool = False) -> None:
+    """Stage before replacement, or atomically publish one initial CSV without clobbering."""
+    if create_only:
+        if len(payloads) != 1:
+            raise ValueError("Initial creation requires exactly one CSV artifact")
+        destination, payload = payloads[0]
+        staged = _stage_bytes(destination, payload)
+        try:
+            # A hard link publishes complete staged bytes only if the destination is still absent.
+            os.link(staged, destination)
+            directory = os.open(destination.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        finally:
+            _remove_temporary_path(staged)
+        return
     artifacts = [
         _CommitArtifact(destination=path, payload=payload, existed_before=path.exists()) for path, payload in payloads
     ]

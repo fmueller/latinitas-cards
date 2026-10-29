@@ -107,6 +107,8 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `profile_mismatch` | 3 | Corpora differ from the profile's corpus list |
 | `invalid_reading` | 3 | Reading range has unknown or reversed bounds |
 | `unknown_exercise` | 3 | Requested exercise is not available in the selection |
+| `nothing_to_export` | 1 | No eligible selected exercises to export |
+| `card_drift` | 1 | CSV differs from current reviewed exercises |
 | `unsupported_language` | 3 | Source language is unsupported |
 | `citation_mismatch` | 0 | Declared citation labels differ from the source structure |
 | `skipped_division` | 0 | Non-edition source division was skipped |
@@ -138,6 +140,9 @@ executable cases together.
 | policy validate | 0, 3 |
 | corpus-cards profile validate | 0, 3 |
 | corpus-cards select | 0, 1, 2, 3, 4 |
+| corpus-cards preview | 0, 1, 2, 3, 4 |
+| corpus-cards export | 0, 1, 3, 4 |
+| corpus-cards inspect | 0, 1, 3, 4 |
 
 `annotations approve` requires explicit `--operation` IDs (no approve-all).
 An auto ID is accepted as a no-op selection. Empty/blank `--review` or a malformed
@@ -339,8 +344,36 @@ last. The report is always replaced, but unchanged selection bytes are not repla
 and do not increment `runs`. Initial creation, even empty, counts as run 1.
 Report bytes are never read as state. A report left by
 a failed selection replacement may describe an uncommitted run: rerun `select` to
-recompute it from selection state. Deselect/restore and preview/export/inspect/plan
-commands are separate work; this command does not render or export a deck.
+recompute it from selection state. Selection does not render or export a deck;
+use the output commands below. Deselect/restore and managed plans are separate work.
+
+### Corpus exercise output
+
+`corpus-cards preview PROFILE --corpus FILE... --selection FILE [--limit N]`
+shows selected exercises as plain-text prompt, answer, Latin unit, full passage and citation,
+with eligibility, withholding reasons and each fact's claim status and producer.
+The default limit is 20; accepted limits are 1 through 1000. The paired
+`--known-lemmas PROFILE --known-lemmas-source SOURCE` options add matching target
+lemma deck identities as preview provenance only, never as card fields.
+As at selection, known lemmas affect the `max_unknown` filter. Export and inspect
+have no known-lemma options and evaluate that filter without a known-lemma source;
+preview without these flags is the corresponding export view.
+
+`corpus-cards export PROFILE --corpus FILE... --selection FILE --output CSV`
+creates an initial `corpus-v1` CSV containing only eligible selected exercises.
+Existing outputs, including byte-identical ones, exit 3 `exists`. No eligible
+exercise exits 1 `nothing_to_export`. CSV imports require the documented corpus
+note type and manual Anki import; this is not a managed update or retirement.
+
+`corpus-cards inspect PROFILE --corpus FILE... --selection FILE [--check CSV]`
+reports current selected exercises. A check compares current eligible identities,
+slots, transport directives and rendered fields, ignoring `Profile`, and exits 1 `card_drift` for
+unreviewed, stale or changed cards. Preview and inspect write no files or locks.
+An inaccessible check file exits 3 `unreadable`.
+Neither command fills budgets or changes selections. Missing targets and changed
+contexts stay selected but withheld as `target_missing` and `context_changed`.
+Another profile ID or target language exits 4 `binding_drift`; unlisted or missing
+corpora exit 3 `profile_mismatch`. Invalid reading bounds exit 3 `invalid_reading`.
 
 ### Legacy exceptions (not envelope commands)
 

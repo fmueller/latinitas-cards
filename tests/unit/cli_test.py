@@ -354,11 +354,11 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     commands.remove(policy)
     commands.extend(policy.commands.values())
     corpus_cards = cast(click.Group, click_app.commands["corpus-cards"])
-    assert set(corpus_cards.commands) == {"profile", "select"}
+    assert set(corpus_cards.commands) == {"profile", "select", "preview", "export", "inspect"}
     corpus_profile = cast(click.Group, corpus_cards.commands["profile"])
     assert set(corpus_profile.commands) == {"validate"}
     commands.remove(corpus_cards)
-    commands.append(corpus_cards.commands["select"])
+    commands.extend(command for name, command in corpus_cards.commands.items() if name != "profile")
     commands.extend(corpus_profile.commands.values())
     assert all(command.callback is not None for command in commands)
     command_modules = {command.name: command.callback.__module__ for command in commands}

@@ -81,6 +81,8 @@ class Code(StrEnum):
     PROFILE_MISMATCH = "profile_mismatch"
     INVALID_READING = "invalid_reading"
     UNKNOWN_EXERCISE = "unknown_exercise"
+    NOTHING_TO_EXPORT = "nothing_to_export"
+    CARD_DRIFT = "card_drift"
     UNSUPPORTED_LANGUAGE = "unsupported_language"
     CITATION_MISMATCH = "citation_mismatch"
     SKIPPED_DIVISION = "skipped_division"
@@ -170,6 +172,8 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.GAP_IN_TEXT: DiagnosticCode(0, "Source text has an editorial gap"),
     Code.UNMATCHED_TRANSLATION: DiagnosticCode(0, "Latin passage has no parallel translation"),
     Code.UNMATCHED_PARALLEL: DiagnosticCode(0, "Parallel passage has no Latin passage"),
+    Code.NOTHING_TO_EXPORT: DiagnosticCode(1, "No eligible selected exercises to export"),
+    Code.CARD_DRIFT: DiagnosticCode(1, "CSV differs from current reviewed exercises"),
 }
 
 
