@@ -1,13 +1,13 @@
 ---
 id: T-166-rank-candidates-and-persist-sticky-selections
 title: Rank candidates with latin-rank/1 and persist sticky selections with a candidate report
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#ranked-card-budgets
 dependencies:
     - T-163-derive-corpus-exercise-identities-and-candidates
     - T-165-read-known-lemmas-from-a-confirmed-deck-profile
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T20:43:33Z"
 ---
 
 # T-166-rank-candidates-and-persist-sticky-selections Rank candidates with latin-rank/1 and persist sticky selections with a candidate report
@@ -61,4 +61,21 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 
 ## Verification Notes
 
-- Not started.
+- 2026-10-29T20:42:26Z: verification pass
+- Reviewed implementation aggregate SHA-256:
+  `75d6854054b6fc457a4c86184bde11be094ef896758d6f3f2abda822f4122f7a`.
+- TDD covered initial command absence and review corrections (nine failing
+  regressions before fixes). Dedicated simplification and independent high-risk
+  conventional review, specialist challenges, and fresh adversarial verification
+  finished with approval and no unresolved required findings.
+- Final chain: `uv run ruff check`, `uv run mypy`, `uv run pytest -v` passed;
+  3106 tests passed, seven skipped. Formatting and diff whitespace checks passed.
+- Independent integrated QA on the exact aggregate passed 423 recorded checks
+  across 103 real CLI subprocesses, including hand-computed ranking, sticky
+  lifecycle, boundary budgets, bindings, reproducibility, locks, aliases,
+  captured-input provenance, package reading, and replacement failure recovery.
+- QA limits: installed C/C.utf8 locales, writer-seam fault injection rather than
+  physical power loss, no independent schema engine, non-exhaustive packages.
+  Deselect/restore producers and later preview/export/inspect/plan journeys are
+  not implemented or claimed here. No follow-ups or blockers remain for T-166.
+- 2026-10-29T20:43:33Z: Implemented and independently reviewed; verification passed 2026-10-29T20:42:26Z. Final validation chain and independent integrated acceptance QA passed.

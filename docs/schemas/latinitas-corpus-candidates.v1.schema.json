@@ -1,0 +1,407 @@
+{
+  "$defs": {
+    "CandidateEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "annotation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Annotation Id"
+        },
+        "contributions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Factors"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "eligible": {
+          "title": "Eligible",
+          "type": "boolean"
+        },
+        "factors": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Factors"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "latinitas_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latinitas Id"
+        },
+        "object_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Object Key"
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "enum": [
+                "kept",
+                "selected"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Reason"
+            }
+          ],
+          "title": "Outcome"
+        },
+        "passage_id": {
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "recipe": {
+          "$ref": "#/$defs/CorpusRecipe"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Target"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Unit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "object_key",
+        "latinitas_id",
+        "recipe",
+        "passage_id",
+        "unit",
+        "target",
+        "eligible",
+        "reasons",
+        "factors",
+        "contributions",
+        "score",
+        "outcome"
+      ],
+      "title": "CandidateEntry",
+      "type": "object"
+    },
+    "CorpusDigests": {
+      "additionalProperties": false,
+      "properties": {
+        "claims_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "header_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "sidecar_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "header_digest",
+        "sidecar_digest",
+        "claims_digest"
+      ],
+      "title": "CorpusDigests",
+      "type": "object"
+    },
+    "CorpusRecipe": {
+      "enum": [
+        "corpus_lexical_recognition",
+        "corpus_guided_analysis",
+        "corpus_phrase_translation",
+        "corpus_sentence_translation"
+      ],
+      "type": "string"
+    },
+    "Factors": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "title": "Coverage",
+          "type": "integer"
+        },
+        "length": {
+          "title": "Length",
+          "type": "integer"
+        },
+        "novelty": {
+          "title": "Novelty",
+          "type": "integer"
+        },
+        "reading": {
+          "title": "Reading",
+          "type": "integer"
+        },
+        "target": {
+          "title": "Target",
+          "type": "integer"
+        },
+        "unknown": {
+          "title": "Unknown",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "reading",
+        "target",
+        "novelty",
+        "length",
+        "unknown",
+        "coverage"
+      ],
+      "title": "Factors",
+      "type": "object"
+    },
+    "KnownDigests": {
+      "additionalProperties": false,
+      "properties": {
+        "profile_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "source_digest": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "required": [
+        "source_digest",
+        "profile_digest"
+      ],
+      "title": "KnownDigests",
+      "type": "object"
+    },
+    "Nonnegative": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "PassageUnit": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "passage",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "PassageUnit",
+      "type": "object"
+    },
+    "Reason": {
+      "enum": [
+        "filtered:fragment",
+        "filtered:length",
+        "filtered:unknown",
+        "filtered:reading",
+        "deselected",
+        "budget:recipe",
+        "budget:work",
+        "budget:run",
+        "near_duplicate",
+        "per_lemma",
+        "missing_fact",
+        "stale_fact",
+        "open_fact",
+        "withheld_fact",
+        "conflicting_facts",
+        "unsupported_morphology",
+        "wrong_language",
+        "no_features",
+        "invalid_span",
+        "target_missing",
+        "context_changed"
+      ],
+      "type": "string"
+    },
+    "SentenceUnit": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "$ref": "#/$defs/Nonnegative"
+        },
+        "kind": {
+          "const": "sentence",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "index"
+      ],
+      "title": "SentenceUnit",
+      "type": "object"
+    },
+    "Sha256": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "properties": {
+        "form": {
+          "minLength": 1,
+          "title": "Form",
+          "type": "string"
+        },
+        "occurrence": {
+          "$ref": "#/$defs/Nonnegative"
+        }
+      },
+      "required": [
+        "form",
+        "occurrence"
+      ],
+      "title": "Target",
+      "type": "object"
+    },
+    "Unit": {
+      "discriminator": {
+        "mapping": {
+          "passage": "#/$defs/PassageUnit",
+          "sentence": "#/$defs/SentenceUnit"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SentenceUnit"
+        },
+        {
+          "$ref": "#/$defs/PassageUnit"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/CandidateEntry"
+      },
+      "title": "Candidates",
+      "type": "array"
+    },
+    "corpora": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CorpusDigests"
+      },
+      "title": "Corpora",
+      "type": "object"
+    },
+    "format": {
+      "const": "latinitas-corpus-candidates",
+      "default": "latinitas-corpus-candidates",
+      "title": "Format",
+      "type": "string"
+    },
+    "known_lemmas": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/KnownDigests"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "profile_digest": {
+      "$ref": "#/$defs/Sha256"
+    },
+    "rule": {
+      "const": "latin-rank/1",
+      "default": "latin-rank/1",
+      "title": "Rule",
+      "type": "string"
+    },
+    "runs": {
+      "$ref": "#/$defs/Nonnegative"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "profile_digest",
+    "corpora",
+    "known_lemmas",
+    "runs",
+    "candidates"
+  ],
+  "title": "CandidatesReport",
+  "type": "object"
+}

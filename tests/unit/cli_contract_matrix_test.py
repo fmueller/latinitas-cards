@@ -185,7 +185,42 @@ def import_translations_case(tmp: Path, exit_code: int) -> list[str]:
     ]
 
 
+def select_case(tmp: Path, exit_code: int) -> list[str]:
+    from corpus_exercises_test import profile
+    from corpus_facts_test import Fixture, morph, text
+
+    facts = Fixture(tmp, ("Puer librum legit.",))
+    settings = tmp / "profile.json"
+    settings.write_text(profile().model_dump_json())
+    selection = tmp / "selection.json"
+    args = [
+        "corpus-cards",
+        "select",
+        str(settings),
+        "--corpus",
+        str(facts.corpus),
+        "--selection",
+        str(selection),
+        "--report",
+        str(tmp / "report.json"),
+    ]
+    if exit_code == 1:
+        row = facts.add(0, "morphology", morph("liber"), (5, 11))
+        gloss = facts.add(0, "translation", text("en", "book"), (5, 11))
+        facts.decide("accepted", row, gloss)
+        facts.retract(row)
+    elif exit_code == 2:
+        args += ["--known-lemmas", str(settings)]
+    elif exit_code == 3:
+        settings.unlink()
+    elif exit_code == 4:
+        assert CliRunner().invoke(real_app, args).exit_code == 0
+        settings.write_text(profile(profile_id="another").model_dump_json())
+    return args
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    **{("corpus-cards select", code): partial(select_case, exit_code=code) for code in (0, 1, 2, 3, 4)},
     **{
         ("annotations import-translations", code): partial(import_translations_case, exit_code=code)
         for code in (0, 2, 3, 4)

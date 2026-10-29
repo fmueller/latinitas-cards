@@ -105,6 +105,8 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `unknown_passage` | 3 | Requested passage is absent from the corpus |
 | `invalid_profile` | 3 | Corpus profile is invalid |
 | `profile_mismatch` | 3 | Corpora differ from the profile's corpus list |
+| `invalid_reading` | 3 | Reading range has unknown or reversed bounds |
+| `unknown_exercise` | 3 | Requested exercise is not available in the selection |
 | `unsupported_language` | 3 | Source language is unsupported |
 | `citation_mismatch` | 0 | Declared citation labels differ from the source structure |
 | `skipped_division` | 0 | Non-edition source division was skipped |
@@ -135,6 +137,7 @@ executable cases together.
 | corpus config | 0, 3 |
 | policy validate | 0, 3 |
 | corpus-cards profile validate | 0, 3 |
+| corpus-cards select | 0, 1, 2, 3, 4 |
 
 `annotations approve` requires explicit `--operation` IDs (no approve-all).
 An auto ID is accepted as a no-op selection. Empty/blank `--review` or a malformed
@@ -284,6 +287,60 @@ with plain text, and `--work` that is malformed or used without TEI return `usag
 Rejected input/approvals/aliases and expected filesystem failures return 3;
 lock contention and recovery binding drift return 4. Existing corpus files are
 atomically replaced, not treated as immutable artifacts (`exists` does not apply).
+
+### Ranked corpus selection
+
+`corpus-cards select PROFILE --corpus FILE... --selection FILE --report FILE`
+fills free recipe and work budgets with `latin-rank/1`; `per_run` counts only newly
+selected exercises. Existing selections, including ineligible ones, always stay
+and occupy recipe/work slots. The report lists all candidates with eligibility,
+reasons, factors, weighted contributions, scores and outcomes. Eligible candidates
+sort by descending score, corpus ID, passage order, sentence index (passage last),
+target word position (no target last), then LatinitasID. Ineligible identities sort
+last by LatinitasID, followed by invalid spans by annotation ID.
+
+Factors use accepted morphology, not surface-text guesses or annotation confidence.
+Known lemmas require both `--known-lemmas PROFILE --known-lemmas-source SOURCE`;
+they are read without writes. Without them every word is unknown and every lexical
+target is new. Single-word targets do not count toward unknown context words.
+Matching known/target lemmas strips a trailing ` (n)` homograph suffix; per-lemma
+exclusion keeps that suffix and folds only case/macrons, per `latin-fold/1`.
+Near duplicates use folded word-token **multisets** of units (phrase spans for
+phrase translation), with intersection/union at least 4/5.
+
+The closed outcome/withholding vocabulary in the selection/candidate schemas is:
+`kept`, `selected`; filters in precedence order `filtered:fragment`, `filtered:length`,
+`filtered:unknown`, `filtered:reading`; exclusions in precedence order `deselected`,
+`budget:recipe`, `budget:work`, `budget:run`, `near_duplicate`, `per_lemma`;
+fact reasons `missing_fact`, `stale_fact`, `open_fact`, `withheld_fact`,
+`conflicting_facts`, `unsupported_morphology`, `wrong_language`, `no_features`,
+`invalid_span`; selection reasons `target_missing`, `context_changed`.
+These are report values, not diagnostics. Deselection's human reason is free text.
+
+`--confirm-context ID` (repeatable) records a reviewed selected exercise's current
+digest; a missing/nonselected ID exits 3 (`unknown_exercise`). A changed context
+stays ineligible until confirmed. Confirmation never transfers identity to a new key.
+Selection binding compares the exact profile ID and target-language tag, not just
+its primary subtag (`binding_drift`, 4); exercise identity still uses only the
+lowercased primary subtag. Reading bounds are validated at use, inclusive by passage
+order within the specified work (`invalid_reading`, 3). Profile validation alone
+does not check those references. Stale claim decisions are reported with exit 1;
+the candidate report still records the safe current eligibility and selection.
+
+Selection inputs are captured in private temporary files before fact/known-lemma
+consumption. Report digests identify those captured bytes, not later edits to live
+inputs. This is snapshot provenance, not a promise that inputs remain unchanged
+until output commit. Temporary paths never enter the selection or report.
+Present selection documents require every envelope/state field and reject duplicate
+JSON keys (`invalid_input`, 3), rather than treating ambiguous state as empty.
+
+Both outputs are locked and staged with the writer rules below; selection replaces
+last. The report is always replaced, but unchanged selection bytes are not replaced
+and do not increment `runs`. Initial creation, even empty, counts as run 1.
+Report bytes are never read as state. A report left by
+a failed selection replacement may describe an uncommitted run: rerun `select` to
+recompute it from selection state. Deselect/restore and preview/export/inspect/plan
+commands are separate work; this command does not render or export a deck.
 
 ### Legacy exceptions (not envelope commands)
 

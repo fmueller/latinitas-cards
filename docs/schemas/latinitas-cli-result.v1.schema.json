@@ -64,6 +64,8 @@
         "unsafe_xml",
         "invalid_profile",
         "profile_mismatch",
+        "invalid_reading",
+        "unknown_exercise",
         "unsupported_language",
         "citation_mismatch",
         "skipped_division",

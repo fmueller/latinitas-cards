@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-29T19:31:15Z"
+updated_at: "2026-10-29T20:43:33Z"
 active_spec_version: v0.4.0
 active_spec_path: specs/v0.4.0.md
 current_task: ""
@@ -13,8 +13,8 @@ blockers:
     - 'T-176-decide-whether-cref-pattern-example-should-warn: maintainer decision: whether the Aeneid line, Book cRefPattern example should warn, which the Fixed Contracts TEI subset deepest-first case-insensitive citation_mismatch rule currently treats as matching'
     - 'T-177-decide-where-allow-unknown-keeps-tei-elements: maintainer decision: where --allow-unknown keeps unknown TEI elements without a canonical-text position (between textparts or lines, inside flattened notes, headings and variants, inside app or choice, or in omitted passages), which the Fixed Contracts TEI subset says are kept in source_extra but T-159 fails closed'
     - 'T-178-decide-whether-import-translations-rejects-a-non: maintainer decision: reject a non-Latin CORPUS in import-translations'
-next_action: Resolve blocker on T-178-decide-whether-import-translations-rejects-a-non
-last_verification_result: pass for T-165-read-known-lemmas-from-a-confirmed-deck-profile at 2026-10-29T19:31:15Z
+next_action: 'Start task T-168-preview-export-and-inspect-corpus-exercises: Preview, export and inspect corpus exercises'
+last_verification_result: pass for T-166-rank-candidates-and-persist-sticky-selections at 2026-10-29T20:42:26Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -45,11 +45,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-165-read-known-lemmas-from-a-confirmed-deck-profile at 2026-10-29T19:31:15Z
+- pass for T-166-rank-candidates-and-persist-sticky-selections at 2026-10-29T20:42:26Z
 
 ## Next Action
 
-- Resolve blocker on T-178-decide-whether-import-translations-rejects-a-non
+- Start task T-168-preview-export-and-inspect-corpus-exercises: Preview, export and inspect corpus exercises
 
 ## Relevant Artifacts
 
@@ -61,8 +61,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 8
+- todo: 7
 - in_progress: 0
-- completed: 164
+- completed: 165
 - blocked: 6
 - cancelled: 0

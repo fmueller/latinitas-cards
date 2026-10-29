@@ -14,6 +14,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   a language other than the card's is withheld, even when accepted.
 - `corpus-cards profile validate` checks a corpus-generation profile, which names the
   corpora, target language, recipes with budgets, reading, limits and ranking weights.
+- `corpus-cards select` ranks reviewed corpus exercises, keeps earlier selections and
+  fills free budgets; its candidate report explains scores, filters and exclusions.
 - `corpus normalize --adapter tei` imports one Perseus/EpiDoc TEI edition with its own
   citations, header provenance and an optional `--work` ID. Notes, apparatus readings and
   `choice` alternatives stay with each passage, inline and editorial markup is kept as

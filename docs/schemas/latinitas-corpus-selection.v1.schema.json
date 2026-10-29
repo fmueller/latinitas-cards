@@ -1,0 +1,255 @@
+{
+  "$defs": {
+    "CorpusRecipe": {
+      "enum": [
+        "corpus_lexical_recognition",
+        "corpus_guided_analysis",
+        "corpus_phrase_translation",
+        "corpus_sentence_translation"
+      ],
+      "type": "string"
+    },
+    "DeselectedEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "context_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "latinitas_id": {
+          "title": "Latinitas Id",
+          "type": "string"
+        },
+        "object_key": {
+          "title": "Object Key",
+          "type": "string"
+        },
+        "passage_id": {
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "recipe": {
+          "$ref": "#/$defs/CorpusRecipe"
+        },
+        "run": {
+          "minimum": 1,
+          "title": "Run",
+          "type": "integer"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Target"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "$ref": "#/$defs/Unit"
+        }
+      },
+      "required": [
+        "latinitas_id",
+        "object_key",
+        "recipe",
+        "passage_id",
+        "unit",
+        "target",
+        "context_digest",
+        "run",
+        "reason"
+      ],
+      "title": "DeselectedEntry",
+      "type": "object"
+    },
+    "LanguageTag": {
+      "pattern": "^(?:(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4}|[A-Za-z]{5,8})(?:-[A-Za-z]{4})?(?:-(?:[A-Za-z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(?:-[0-9A-WY-Za-wy-z](?:-[A-Za-z0-9]{2,8})+)*(?:-[xX](?:-[A-Za-z0-9]{1,8})+)?|[xX](?:-[A-Za-z0-9]{1,8})+|[eE][nN]-[gG][bB]-[oO][eE][dD]|[iI]-[aA][mM][iI]|[iI]-[bB][nN][nN]|[iI]-[dD][eE][fF][aA][uU][lL][tT]|[iI]-[eE][nN][oO][cC][hH][iI][aA][nN]|[iI]-[hH][aA][kK]|[iI]-[kK][lL][iI][nN][gG][oO][nN]|[iI]-[lL][uU][xX]|[iI]-[mM][iI][nN][gG][oO]|[iI]-[nN][aA][vV][aA][jJ][oO]|[iI]-[pP][wW][nN]|[iI]-[tT][aA][oO]|[iI]-[tT][aA][yY]|[iI]-[tT][sS][uU]|[sS][gG][nN]-[bB][eE]-[fF][rR]|[sS][gG][nN]-[bB][eE]-[nN][lL]|[sS][gG][nN]-[cC][hH]-[dD][eE]|[aA][rR][tT]-[lL][oO][jJ][bB][aA][nN]|[cC][eE][lL]-[gG][aA][uU][lL][iI][sS][hH]|[nN][oO]-[bB][oO][kK]|[nN][oO]-[nN][yY][nN]|[zZ][hH]-[gG][uU][oO][yY][uU]|[zZ][hH]-[hH][aA][kK][kK][aA]|[zZ][hH]-[mM][iI][nN]|[zZ][hH]-[mM][iI][nN]-[nN][aA][nN]|[zZ][hH]-[xX][iI][aA][nN][gG])$",
+      "type": "string"
+    },
+    "Nonnegative": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "PassageUnit": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "passage",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "PassageUnit",
+      "type": "object"
+    },
+    "SelectedEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "context_digest": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "latinitas_id": {
+          "title": "Latinitas Id",
+          "type": "string"
+        },
+        "object_key": {
+          "title": "Object Key",
+          "type": "string"
+        },
+        "passage_id": {
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "recipe": {
+          "$ref": "#/$defs/CorpusRecipe"
+        },
+        "run": {
+          "minimum": 1,
+          "title": "Run",
+          "type": "integer"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Target"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "$ref": "#/$defs/Unit"
+        }
+      },
+      "required": [
+        "latinitas_id",
+        "object_key",
+        "recipe",
+        "passage_id",
+        "unit",
+        "target",
+        "context_digest",
+        "run"
+      ],
+      "title": "SelectedEntry",
+      "type": "object"
+    },
+    "SentenceUnit": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "$ref": "#/$defs/Nonnegative"
+        },
+        "kind": {
+          "const": "sentence",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "index"
+      ],
+      "title": "SentenceUnit",
+      "type": "object"
+    },
+    "Sha256": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "properties": {
+        "form": {
+          "minLength": 1,
+          "title": "Form",
+          "type": "string"
+        },
+        "occurrence": {
+          "$ref": "#/$defs/Nonnegative"
+        }
+      },
+      "required": [
+        "form",
+        "occurrence"
+      ],
+      "title": "Target",
+      "type": "object"
+    },
+    "Unit": {
+      "discriminator": {
+        "mapping": {
+          "passage": "#/$defs/PassageUnit",
+          "sentence": "#/$defs/SentenceUnit"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SentenceUnit"
+        },
+        {
+          "$ref": "#/$defs/PassageUnit"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "deselected": {
+      "items": {
+        "$ref": "#/$defs/DeselectedEntry"
+      },
+      "title": "Deselected",
+      "type": "array"
+    },
+    "format": {
+      "const": "latinitas-corpus-selection",
+      "title": "Format",
+      "type": "string"
+    },
+    "profile_id": {
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "runs": {
+      "$ref": "#/$defs/Nonnegative"
+    },
+    "selected": {
+      "items": {
+        "$ref": "#/$defs/SelectedEntry"
+      },
+      "title": "Selected",
+      "type": "array"
+    },
+    "target_language": {
+      "$ref": "#/$defs/LanguageTag"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "format",
+    "profile_id",
+    "target_language",
+    "runs",
+    "selected",
+    "deselected"
+  ],
+  "title": "Selection",
+  "type": "object"
+}

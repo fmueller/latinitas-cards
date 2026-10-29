@@ -79,6 +79,8 @@ class Code(StrEnum):
     UNSAFE_XML = "unsafe_xml"
     INVALID_PROFILE = "invalid_profile"
     PROFILE_MISMATCH = "profile_mismatch"
+    INVALID_READING = "invalid_reading"
+    UNKNOWN_EXERCISE = "unknown_exercise"
     UNSUPPORTED_LANGUAGE = "unsupported_language"
     CITATION_MISMATCH = "citation_mismatch"
     SKIPPED_DIVISION = "skipped_division"
@@ -158,6 +160,8 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.UNSAFE_XML: DiagnosticCode(3, "Source XML contains a forbidden declaration"),
     Code.INVALID_PROFILE: DiagnosticCode(3, "Corpus profile is invalid"),
     Code.PROFILE_MISMATCH: DiagnosticCode(3, "Corpora differ from the profile's corpus list"),
+    Code.INVALID_READING: DiagnosticCode(3, "Reading range has unknown or reversed bounds"),
+    Code.UNKNOWN_EXERCISE: DiagnosticCode(3, "Requested exercise is not available in the selection"),
     Code.UNSUPPORTED_LANGUAGE: DiagnosticCode(3, "Source language is unsupported"),
     Code.CITATION_MISMATCH: DiagnosticCode(0, "Declared citation labels differ from the source structure"),
     Code.SKIPPED_DIVISION: DiagnosticCode(0, "Non-edition source division was skipped"),
