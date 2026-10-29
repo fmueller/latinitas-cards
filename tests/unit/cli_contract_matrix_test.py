@@ -225,6 +225,13 @@ CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
     ("corpus normalize", 4): lambda tmp: normalize_case(tmp, 4),
     ("policy validate", 0): lambda _: ["policy", "validate", str(FIXTURES.parent / "policy/first-match.json")],
     ("policy validate", 3): lambda tmp: ["policy", "validate", str(tmp / "missing-policy.json")],
+    ("corpus-cards profile validate", 0): lambda _: [
+        "corpus-cards",
+        "profile",
+        "validate",
+        str(FIXTURES.parents[2] / "docs/examples/corpus-profile.json"),
+    ],
+    ("corpus-cards profile validate", 3): lambda tmp: ["corpus-cards", "profile", "validate", str(tmp / "absent.json")],
 }
 
 
@@ -252,7 +259,7 @@ def test_matrix_covers_registered_contract_commands() -> None:
 
     root = get_command(real_app)
     assert isinstance(root, TyperGroup)
-    for name in ("corpus", "annotations", "policy"):
+    for name in ("corpus", "annotations", "policy", "corpus-cards"):
         if name in root.commands:
             group = root.commands[name]
             assert isinstance(group, TyperGroup)

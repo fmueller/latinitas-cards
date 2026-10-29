@@ -19,6 +19,7 @@ Current command set:
 - `authored {validate,preview,export}`: import authored JSONL notes
 - `managed {plan,approve,emit,observe,reconcile}`: offline managed CSV update handoff
 - `form-parsing {preview,export}`: reviewed contextual form-parsing exercises
+- `corpus-cards profile validate`: validate a corpus-generation profile
 
 ## Architecture
 

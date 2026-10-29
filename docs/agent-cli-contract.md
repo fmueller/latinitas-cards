@@ -4,7 +4,7 @@
 installed package metadata and exits 0 without requiring a subcommand or input.
 The existing root help description and legacy commands are unchanged.
 
-The new `corpus`, `annotations` and `policy` commands use the version 1
+The new `corpus`, `annotations`, `policy` and `corpus-cards` commands use the version 1
 `latinitas-cli-result` envelope. Text is the default. `--json` emits exactly one
 canonical JSON document on stdout, followed by a newline. Diagnostics are carried
 inside that document; text mode sends diagnostics to stderr with unsafe controls
@@ -103,6 +103,8 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `invalid_xml` | 3 | Source is not well-formed XML |
 | `unsafe_xml` | 3 | Source XML contains a forbidden declaration |
 | `unknown_passage` | 3 | Requested passage is absent from the corpus |
+| `invalid_profile` | 3 | Corpus profile is invalid |
+| `profile_mismatch` | 3 | Corpora differ from the profile's corpus list |
 
 ## Contract command matrix
 
@@ -123,6 +125,7 @@ executable cases together.
 | corpus show | 0, 2, 3 |
 | corpus config | 0, 3 |
 | policy validate | 0, 3 |
+| corpus-cards profile validate | 0, 3 |
 
 `annotations approve` requires explicit `--operation` IDs (no approve-all).
 An auto ID is accepted as a no-op selection. Empty/blank `--review` or a malformed
@@ -237,7 +240,22 @@ needed field flags and `--confirm` saves without prompting. Explicit
 `--non-interactive` preserves legacy setup outcomes, including cancellation
 without `--confirm`. Setup keeps its legacy output, not a result envelope.
 `cloze --parallel-mode prompt` without a terminal warns on stderr and ignores
-translations. Contract commands (`corpus`, `annotations`, `policy`) never prompt.
+translations. Contract commands (`corpus`, `annotations`, `policy`, `corpus-cards`) never prompt.
+
+`corpus-cards profile validate PROFILE [--json]` reads only the
+`latinitas-corpus-profile` version 1 file (see
+[the example](examples/corpus-profile.json)) and returns
+`{"profile_id","profile_digest","profile"}`. `profile` is the effective profile
+with defaults applied, and `profile_digest` is its structured hash, so key order,
+whitespace and explicitly written defaults do not change it. The profile is strict:
+unknown keys, floats, a `target_language` whose primary subtag is not `de` or
+`en`, unknown or repeated recipes, out-of-range budgets, limits or weights,
+unsorted or repeated `corpora`, unsorted or repeated `targets` (compared after
+`latin-fold/1`), blank names, names with surrounding whitespace or line breaks, and a reading
+`corpus_id` not in `corpora` exit 3 (`invalid_profile`). Validation does not
+read corpora: reading works and refs are checked by the later `corpus-cards`
+commands that use them, and those commands exit 3 (`profile_mismatch`) when given
+corpora that differ from the profile's `corpora` list.
 
 `corpus normalize` accepts plain text or structural USFX and returns `{"review_items":[]}` on success.
 Unresolved ordinal assignments return `review_required` (1) with items containing

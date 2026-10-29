@@ -9,6 +9,7 @@ from .annotation_sidecar import AnnotationSchema
 from .cli_contract import CliResult
 from .corpus_manifest import CorpusManifest
 from .corpus_model import CorpusDescriptor, CorpusRecordSchema
+from .corpus_profile import CorpusProfile
 from .policy import Policy
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -20,6 +21,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "latinitas-corpus": CorpusRecordSchema,
     "latinitas-corpus-descriptor": CorpusDescriptor,
     "latinitas-corpus-manifest": CorpusManifest,
+    "latinitas-corpus-profile": CorpusProfile,
     "latinitas-policy": Policy,
 }
 

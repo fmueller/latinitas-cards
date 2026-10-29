@@ -1,12 +1,12 @@
 ---
 id: T-162-define-the-corpus-generation-profile-and-corpus
 title: Define the corpus-generation profile and the corpus-cards command group
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#corpus-first-profiles-and-exercise-identity
 dependencies:
     - T-156-add-the-language-table-and-english-terminology
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T08:46:13Z"
 ---
 
 # T-162-define-the-corpus-generation-profile-and-corpus Define the corpus-generation profile and the corpus-cards command group
@@ -47,3 +47,4 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T08:46:07Z: verification pass

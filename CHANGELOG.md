@@ -12,6 +12,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   and comparison text in English. Latin-first prompts and other tags are unchanged.
 - Reviewed form translations and phrase references can be English. A phrase reference in
   a language other than the card's is withheld, even when accepted.
+- `corpus-cards profile validate` checks a corpus-generation profile, which names the
+  corpora, target language, recipes with budgets, reading, limits and ranking weights.
 
 ### Limitations
 

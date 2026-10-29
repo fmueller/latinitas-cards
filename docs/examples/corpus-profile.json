@@ -1,0 +1,30 @@
+{
+  "format": "latinitas-corpus-profile",
+  "version": 1,
+  "profile_id": "caesar-bg-reading",
+  "corpora": ["caesar-bg", "vergil-aeneid"],
+  "target_language": "en-GB",
+  "note_type": "Latinitas Corpus Context v1",
+  "deck": "Latin::Corpus::Caesar",
+  "recipes": [
+    {"recipe": "corpus_lexical_recognition", "budget": 40},
+    {"recipe": "corpus_guided_analysis", "budget": 20},
+    {"recipe": "corpus_phrase_translation", "budget": 15},
+    {"recipe": "corpus_sentence_translation", "budget": 10}
+  ],
+  "budgets": {"per_run": 25, "per_work": 120},
+  "reading": [
+    {"corpus_id": "caesar-bg", "work": "phi0448.phi001", "from": "1.1.1", "to": "1.1.4"}
+  ],
+  "reading_only": false,
+  "targets": ["bellum", "gallia", "pars"],
+  "limits": {"min_tokens": 4, "ideal_tokens": 12, "max_tokens": 30, "max_unknown": null},
+  "weights": {"reading": 40, "target": 30, "novelty": 20, "length": 10, "unknown": 20, "coverage": 10},
+  "morphology": {
+    "version": 1,
+    "theme": "muted",
+    "appearance": "auto",
+    "comparison": "static",
+    "terminology": {"version": 1, "language": "user"}
+  }
+}

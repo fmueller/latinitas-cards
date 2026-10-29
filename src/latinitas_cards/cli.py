@@ -2384,6 +2384,7 @@ def _register_commands() -> None:
     from .commands.claims import app as claims_app
     from .commands.cloze import cloze
     from .commands.corpus import app as corpus_app
+    from .commands.corpus_cards import app as corpus_cards_app
     from .commands.form_parsing import app as form_parsing_app
     from .commands.generate import generate
     from .commands.inspect import inspect
@@ -2413,6 +2414,7 @@ def _register_commands() -> None:
     app.add_typer(corpus_app, name="corpus")
     app.add_typer(annotations_app, name="annotations")
     app.add_typer(policy_app, name="policy")
+    app.add_typer(corpus_cards_app, name="corpus-cards")
     app.add_typer(phrases_app, name="phrases")
     app.add_typer(terminology_app, name="terminology")
 

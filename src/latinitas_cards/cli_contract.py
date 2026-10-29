@@ -77,6 +77,8 @@ class Code(StrEnum):
     EMPTY_PASSAGE = "empty_passage"
     INVALID_XML = "invalid_xml"
     UNSAFE_XML = "unsafe_xml"
+    INVALID_PROFILE = "invalid_profile"
+    PROFILE_MISMATCH = "profile_mismatch"
 
 
 @dataclass(frozen=True)
@@ -146,6 +148,8 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.EMPTY_PASSAGE: DiagnosticCode(3, "Source passage has no canonical text"),
     Code.INVALID_XML: DiagnosticCode(3, "Source is not well-formed XML"),
     Code.UNSAFE_XML: DiagnosticCode(3, "Source XML contains a forbidden declaration"),
+    Code.INVALID_PROFILE: DiagnosticCode(3, "Corpus profile is invalid"),
+    Code.PROFILE_MISMATCH: DiagnosticCode(3, "Corpora differ from the profile's corpus list"),
 }
 
 

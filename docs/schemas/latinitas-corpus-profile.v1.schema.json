@@ -1,0 +1,318 @@
+{
+  "$defs": {
+    "Budget": {
+      "maximum": 1000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "Budgets": {
+      "additionalProperties": false,
+      "properties": {
+        "per_run": {
+          "$ref": "#/$defs/Budget",
+          "default": 50
+        },
+        "per_work": {
+          "$ref": "#/$defs/Budget",
+          "default": 200
+        }
+      },
+      "title": "Budgets",
+      "type": "object"
+    },
+    "CorpusId": {
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
+      "type": "string"
+    },
+    "CorpusRecipe": {
+      "enum": [
+        "corpus_lexical_recognition",
+        "corpus_guided_analysis",
+        "corpus_phrase_translation",
+        "corpus_sentence_translation"
+      ],
+      "type": "string"
+    },
+    "LanguageTag": {
+      "pattern": "^(?:(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4}|[A-Za-z]{5,8})(?:-[A-Za-z]{4})?(?:-(?:[A-Za-z]{2}|[0-9]{3}))?(?:-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(?:-[0-9A-WY-Za-wy-z](?:-[A-Za-z0-9]{2,8})+)*(?:-[xX](?:-[A-Za-z0-9]{1,8})+)?|[xX](?:-[A-Za-z0-9]{1,8})+|[eE][nN]-[gG][bB]-[oO][eE][dD]|[iI]-[aA][mM][iI]|[iI]-[bB][nN][nN]|[iI]-[dD][eE][fF][aA][uU][lL][tT]|[iI]-[eE][nN][oO][cC][hH][iI][aA][nN]|[iI]-[hH][aA][kK]|[iI]-[kK][lL][iI][nN][gG][oO][nN]|[iI]-[lL][uU][xX]|[iI]-[mM][iI][nN][gG][oO]|[iI]-[nN][aA][vV][aA][jJ][oO]|[iI]-[pP][wW][nN]|[iI]-[tT][aA][oO]|[iI]-[tT][aA][yY]|[iI]-[tT][sS][uU]|[sS][gG][nN]-[bB][eE]-[fF][rR]|[sS][gG][nN]-[bB][eE]-[nN][lL]|[sS][gG][nN]-[cC][hH]-[dD][eE]|[aA][rR][tT]-[lL][oO][jJ][bB][aA][nN]|[cC][eE][lL]-[gG][aA][uU][lL][iI][sS][hH]|[nN][oO]-[bB][oO][kK]|[nN][oO]-[nN][yY][nN]|[zZ][hH]-[gG][uU][oO][yY][uU]|[zZ][hH]-[hH][aA][kK][kK][aA]|[zZ][hH]-[mM][iI][nN]|[zZ][hH]-[mM][iI][nN]-[nN][aA][nN]|[zZ][hH]-[xX][iI][aA][nN][gG])$",
+      "type": "string"
+    },
+    "Limits": {
+      "additionalProperties": false,
+      "properties": {
+        "ideal_tokens": {
+          "$ref": "#/$defs/TokenCount",
+          "default": 12
+        },
+        "max_tokens": {
+          "$ref": "#/$defs/TokenCount",
+          "default": 30
+        },
+        "max_unknown": {
+          "anyOf": [
+            {
+              "maximum": 200,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Unknown"
+        },
+        "min_tokens": {
+          "$ref": "#/$defs/TokenCount",
+          "default": 3
+        }
+      },
+      "title": "Limits",
+      "type": "object"
+    },
+    "MorphologySettings": {
+      "additionalProperties": false,
+      "description": "Versioned presentation only; static remains the unverified-client default.",
+      "properties": {
+        "appearance": {
+          "default": "light",
+          "enum": [
+            "light",
+            "dark",
+            "auto"
+          ],
+          "title": "Appearance",
+          "type": "string"
+        },
+        "comparison": {
+          "default": "static",
+          "enum": [
+            "static",
+            "disclosure"
+          ],
+          "title": "Comparison",
+          "type": "string"
+        },
+        "terminology": {
+          "$ref": "#/$defs/TerminologySettings"
+        },
+        "theme": {
+          "default": "muted",
+          "enum": [
+            "muted",
+            "monochrome"
+          ],
+          "title": "Theme",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "title": "MorphologySettings",
+      "type": "object"
+    },
+    "Name": {
+      "pattern": "^\\S(?:[^\\r\\n]*\\S)?$",
+      "type": "string"
+    },
+    "ReadingRange": {
+      "additionalProperties": false,
+      "properties": {
+        "corpus_id": {
+          "$ref": "#/$defs/CorpusId"
+        },
+        "from": {
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "title": "To",
+          "type": "string"
+        },
+        "work": {
+          "title": "Work",
+          "type": "string"
+        }
+      },
+      "required": [
+        "corpus_id",
+        "work",
+        "from",
+        "to"
+      ],
+      "title": "ReadingRange",
+      "type": "object"
+    },
+    "RecipeBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "budget": {
+          "$ref": "#/$defs/Budget"
+        },
+        "recipe": {
+          "$ref": "#/$defs/CorpusRecipe"
+        }
+      },
+      "required": [
+        "recipe",
+        "budget"
+      ],
+      "title": "RecipeBudget",
+      "type": "object"
+    },
+    "TerminologySettings": {
+      "additionalProperties": false,
+      "description": "Presentation vocabulary; never part of linguistic claim binding.",
+      "properties": {
+        "language": {
+          "default": "latin",
+          "enum": [
+            "latin",
+            "user"
+          ],
+          "title": "Language",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "title": "TerminologySettings",
+      "type": "object"
+    },
+    "TokenCount": {
+      "maximum": 200,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "Weight": {
+      "maximum": 100,
+      "minimum": -100,
+      "type": "integer"
+    },
+    "Weights": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "$ref": "#/$defs/Weight",
+          "default": 10
+        },
+        "length": {
+          "$ref": "#/$defs/Weight",
+          "default": 10
+        },
+        "novelty": {
+          "$ref": "#/$defs/Weight",
+          "default": 20
+        },
+        "reading": {
+          "$ref": "#/$defs/Weight",
+          "default": 40
+        },
+        "target": {
+          "$ref": "#/$defs/Weight",
+          "default": 30
+        },
+        "unknown": {
+          "$ref": "#/$defs/Weight",
+          "default": 20
+        }
+      },
+      "title": "Weights",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "budgets": {
+      "$ref": "#/$defs/Budgets"
+    },
+    "corpora": {
+      "items": {
+        "$ref": "#/$defs/CorpusId"
+      },
+      "minItems": 1,
+      "title": "Corpora",
+      "type": "array"
+    },
+    "deck": {
+      "$ref": "#/$defs/Name"
+    },
+    "format": {
+      "const": "latinitas-corpus-profile",
+      "title": "Format",
+      "type": "string"
+    },
+    "limits": {
+      "$ref": "#/$defs/Limits"
+    },
+    "morphology": {
+      "$ref": "#/$defs/MorphologySettings"
+    },
+    "note_type": {
+      "$ref": "#/$defs/Name",
+      "default": "Latinitas Corpus Context v1"
+    },
+    "profile_id": {
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "reading": {
+      "items": {
+        "$ref": "#/$defs/ReadingRange"
+      },
+      "title": "Reading",
+      "type": "array"
+    },
+    "reading_only": {
+      "default": false,
+      "title": "Reading Only",
+      "type": "boolean"
+    },
+    "recipes": {
+      "items": {
+        "$ref": "#/$defs/RecipeBudget"
+      },
+      "minItems": 1,
+      "title": "Recipes",
+      "type": "array"
+    },
+    "target_language": {
+      "$ref": "#/$defs/LanguageTag",
+      "default": "de"
+    },
+    "targets": {
+      "items": {
+        "$ref": "#/$defs/Name"
+      },
+      "title": "Targets",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "weights": {
+      "$ref": "#/$defs/Weights"
+    }
+  },
+  "required": [
+    "version",
+    "format",
+    "profile_id",
+    "corpora",
+    "deck",
+    "recipes"
+  ],
+  "title": "CorpusProfile",
+  "type": "object"
+}

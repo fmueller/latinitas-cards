@@ -61,7 +61,9 @@
         "invalid_structure",
         "empty_passage",
         "invalid_xml",
-        "unsafe_xml"
+        "unsafe_xml",
+        "invalid_profile",
+        "profile_mismatch"
       ],
       "title": "Code",
       "type": "string"
