@@ -1,12 +1,12 @@
 ---
 id: T-167-deselect-and-restore-selected-corpus-exercises
 title: Deselect and restore selected corpus exercises
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#ranked-card-budgets
 dependencies:
     - T-166-rank-candidates-and-persist-sticky-selections
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T22:45:26Z"
 ---
 
 # T-167-deselect-and-restore-selected-corpus-exercises Deselect and restore selected corpus exercises
@@ -43,3 +43,5 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T22:45:26Z: verification pass
+- 2026-10-29T22:45:26Z: Implemented reasoned tombstones and explicit restoration retaining reviewed context. Independent high-risk review approved; exact-candidate 46-call CLI acceptance and mandatory ruff/mypy/pytest chain passed (3145 passed, 7 skipped). Only delivery and exact-head CI supervision remain; no successor started.

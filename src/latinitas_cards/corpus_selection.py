@@ -151,11 +151,13 @@ class CandidatesReport(VersionOne):
     candidates: list[CandidateEntry]
 
 
-def load_selection(path: Path, profile: CorpusProfile) -> Selection:
-    """An absent file starts empty; a present file must retain its exact profile binding."""
+def load_selection(path: Path, profile: CorpusProfile | None = None) -> Selection:
+    """Validate stored state; only profile-bound selection may start an absent file empty."""
     try:
         raw = path.read_bytes()
-    except FileNotFoundError:
+    except FileNotFoundError as error:
+        if profile is None:
+            raise ContractError(Code.UNREADABLE, str(error), path=str(path)) from error
         return Selection(
             format="latinitas-corpus-selection",
             version=1,
@@ -182,9 +184,58 @@ def load_selection(path: Path, profile: CorpusProfile) -> Selection:
         selection = Selection.model_validate(value)
     except (ValueError, UnicodeError, RecursionError) as error:
         raise ContractError(Code.INVALID_INPUT, str(error), path=str(path)) from error
-    if (selection.profile_id, selection.target_language) != (profile.profile_id, profile.target_language):
+    if profile is not None and (selection.profile_id, selection.target_language) != (
+        profile.profile_id,
+        profile.target_language,
+    ):
         raise ContractError(Code.BINDING_DRIFT, "Selection profile_id or target_language differs", path=str(path))
     return selection
+
+
+def deselect_corpus(
+    selection_path: Path, exercises: Iterable[str], reason: str, *, restore: bool = False
+) -> tuple[JsonValue, list[Diagnostic]]:
+    """Move selected entries to tombstones or restore their stored context under the writer lock."""
+    identities = set(exercises)
+    if not identities or not reason:
+        raise ContractError(Code.USAGE_ERROR, "At least one --exercise and a nonempty --reason are required")
+    lock = Path(f"{selection_path.resolve()}.lock")
+    reject_aliases(selection_path, [lock])
+    with writer_locks([selection_path]):
+        reject_aliases(selection_path, [lock])
+        selection = load_selection(selection_path)
+        selected = {row.latinitas_id: row for row in selection.selected}
+        deselected = {row.latinitas_id: row for row in selection.deselected}
+        unknown = identities - (selected.keys() | deselected.keys())
+        if unknown:
+            raise ContractError(Code.UNKNOWN_EXERCISE, f"Unknown exercises: {', '.join(sorted(unknown))}")
+        changing = identities & (deselected.keys() if restore else selected.keys())
+        if changing:
+            run = selection.runs + 1
+            for identity in changing:
+                if restore:
+                    value = deselected.pop(identity).model_dump(exclude={"reason"})
+                    selected[identity] = SelectedEntry.model_validate(value | {"run": run})
+                else:
+                    value = selected.pop(identity).model_dump()
+                    deselected[identity] = DeselectedEntry.model_validate(value | {"run": run, "reason": reason})
+            selection = Selection.model_validate(
+                selection.model_dump()
+                | {
+                    "runs": run,
+                    "selected": [selected[key] for key in sorted(selected)],
+                    "deselected": [deselected[key] for key in sorted(deselected)],
+                }
+            )
+            data = (canonical_json(selection.model_dump(mode="json")) + "\n").encode("utf-8")
+            with stage_bytes(selection_path, data) as staged:
+                reject_aliases(selection_path, [lock])
+                replace_staged(selection_path, staged)
+        return {
+            "runs": selection.runs,
+            "selected": len(selection.selected),
+            "deselected": len(selection.deselected),
+        }, []
 
 
 def reading_passages(profile: CorpusProfile, views: dict[str, FactView]) -> set[str]:

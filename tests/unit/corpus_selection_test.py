@@ -182,12 +182,15 @@ def test_homographs_known_lemmas_and_multiset_exclusions(tmp_path: Path) -> None
     assert report["known_lemmas"] is not None
 
 
-def test_context_confirmation_missing_target_and_errors(tmp_path: Path) -> None:
+@pytest.mark.parametrize("while_deselected", [False, True])
+def test_context_confirmation_missing_target_and_errors(tmp_path: Path, while_deselected: bool) -> None:
     facts = Fixture(tmp_path, ("Puer librum legit.",))
     lexical(facts, 0, "librum", "liber")
     settings: dict[str, Any] = {"recipes": [{"recipe": LEXICAL, "budget": 1}]}
     row = choose(tmp_path, facts, **settings)["candidates"][0]
     identity = row["latinitas_id"]
+    if while_deselected:
+        deselect(tmp_path, identity)
     before = (tmp_path / "selection.json").read_bytes()
     facts.edit(0, "Puer librum amat.")
     result = RUNNER.invoke(
@@ -204,13 +207,35 @@ def test_context_confirmation_missing_target_and_errors(tmp_path: Path) -> None:
     # A reviewed correction gets a fresh claims file; historical stale decisions are not reused.
     Path(f"{facts.corpus}.claims.json").unlink()
     lexical(facts, 0, "librum", "liber")
+    if while_deselected:
+        choose(tmp_path, facts, **settings)
+        assert (tmp_path / "selection.json").read_bytes() == before
+        deselect(tmp_path, identity, restore=True)
+        before = (tmp_path / "selection.json").read_bytes()
     corrected = choose(tmp_path, facts, **settings)["candidates"][0]
     assert corrected["latinitas_id"] == identity
     assert corrected["reasons"] == ["context_changed"]
     assert corrected["outcome"] == "kept" and corrected["score"] is None
     assert (tmp_path / "selection.json").read_bytes() == before
+    if while_deselected:
+        from corpus_output_test import invoke
+
+        mtime = (tmp_path / "selection.json").stat().st_mtime_ns
+        preview = invoke(tmp_path, facts, "preview")["result"]["exercises"]
+        assert [(e["latinitas_id"], e["reasons"], e["answer"]) for e in preview] == [
+            (identity, ["context_changed"], "")
+        ]
+        invoke(tmp_path, facts, "inspect")
+        output = tmp_path / "withheld.csv"
+        withheld = invoke(tmp_path, facts, "export", "--output", str(output), code=1)
+        assert withheld["diagnostics"][-1]["code"] == "nothing_to_export" and not output.exists()
+        assert (tmp_path / "selection.json").stat().st_mtime_ns == mtime
+        assert (tmp_path / "selection.json").read_bytes() == before
     confirmed = choose(tmp_path, facts, flags=("--confirm-context", identity), **settings)
-    assert confirmed["runs"] == 2 and confirmed["candidates"][0]["eligible"]
+    assert confirmed["runs"] == (4 if while_deselected else 2) and confirmed["candidates"][0]["eligible"]
+    if while_deselected:
+        assert invoke(tmp_path, facts, "preview")["result"]["exercises"][0]["answer"]
+        assert invoke(tmp_path, facts, "export", "--output", str(output))["result"]["exported"] == 1
     facts.edit(0, "Puer volumen amat.")
     missing = choose(tmp_path, facts, expected_exit=1, **settings)["candidates"]
     assert [(r["outcome"], r["reasons"]) for r in missing] == [("kept", ["target_missing"])]
@@ -480,16 +505,148 @@ def test_deselected_precedes_budgets_and_never_reselects(tmp_path: Path) -> None
     choose(tmp_path, facts, recipes=[{"recipe": LEXICAL, "budget": 10}])
     state = tmp_path / "selection.json"
     value = json.loads(state.read_bytes())
-    removed = value["selected"].pop()
-    value["runs"] += 1
-    removed.update(run=value["runs"], reason="Reviewed removal")
-    value["deselected"] = [removed]
-    state.write_text(json.dumps(value))
+    removed = value["selected"][-1]
+    deselect(tmp_path, removed["latinitas_id"])
     report = choose(tmp_path, facts, recipes=[{"recipe": LEXICAL, "budget": 1}], budgets={"per_run": 1, "per_work": 1})
     assert (
         next(r for r in report["candidates"] if r["latinitas_id"] == removed["latinitas_id"])["outcome"] == "deselected"
     )
     assert len(json.loads(state.read_bytes())["selected"]) == 1
+
+
+def deselect(root: Path, *identities: str, restore: bool = False, reason: str = "Reviewed removal") -> None:
+    args = ["corpus-cards", "deselect", str(root / "selection.json"), "--reason", reason, "--json"]
+    for identity in identities:
+        args += ["--exercise", identity]
+    if restore:
+        args.append("--restore")
+    result = RUNNER.invoke(app, args)
+    assert result.exit_code == 0, result.output
+
+
+def test_deselect_restore_preserves_entries_and_noops(tmp_path: Path) -> None:
+    facts = Fixture(tmp_path, ("Puer librum legit.", "Mater filium amat."))
+    lexical(facts, 0, "librum", "liber")
+    lexical(facts, 1, "filium", "filius")
+    settings: dict[str, Any] = {"recipes": [{"recipe": LEXICAL, "budget": 2}]}
+    choose(tmp_path, facts, **settings)
+    state = tmp_path / "selection.json"
+    original = json.loads(state.read_bytes())
+    identities = [row["latinitas_id"] for row in original["selected"]]
+    before, mtime = state.read_bytes(), state.stat().st_mtime_ns
+    unknown = RUNNER.invoke(
+        app,
+        [
+            "corpus-cards",
+            "deselect",
+            str(state),
+            "--exercise",
+            identities[0],
+            "--exercise",
+            "absent",
+            "--reason",
+            "No partial changes",
+            "--json",
+        ],
+    )
+    assert unknown.exit_code == 3, unknown.output
+    assert json.loads(unknown.stdout)["diagnostics"][0]["code"] == "unknown_exercise"
+    assert (state.read_bytes(), state.stat().st_mtime_ns) == (before, mtime)
+    deselect(tmp_path, identities[0], reason="First review")
+    first_tombstone = json.loads(state.read_bytes())["deselected"][0]
+    assert first_tombstone == original["selected"][0] | {"run": 2, "reason": "First review"}
+    deselect(tmp_path, *reversed(identities), identities[0], reason="Keep this exact reason.\nReviewed.")
+    value = json.loads(state.read_bytes())
+    assert value["runs"] == 3 and value["selected"] == []
+    assert value["deselected"] == [
+        first_tombstone,
+        original["selected"][1] | {"run": 3, "reason": "Keep this exact reason.\nReviewed."},
+    ]
+    before, mtime = state.read_bytes(), state.stat().st_mtime_ns
+    deselect(tmp_path, *identities, reason="Must not overwrite the reason")
+    choose(tmp_path, facts, **settings)
+    assert (state.read_bytes(), state.stat().st_mtime_ns) == (before, mtime)
+    result = RUNNER.invoke(
+        app,
+        [
+            "corpus-cards",
+            "deselect",
+            str(state),
+            "--exercise",
+            identities[0],
+            "--exercise",
+            "absent",
+            "--reason",
+            "No partial updates",
+            "--restore",
+            "--json",
+        ],
+    )
+    assert result.exit_code == 3, result.output
+    assert json.loads(result.stdout)["diagnostics"][0]["code"] == "unknown_exercise"
+    assert (state.read_bytes(), state.stat().st_mtime_ns) == (before, mtime)
+    deselect(tmp_path, identities[0], restore=True)
+    first_restored = json.loads(state.read_bytes())["selected"][0]
+    assert first_restored == original["selected"][0] | {"run": 4}
+    deselect(tmp_path, *identities, identities[1], restore=True)
+    restored = json.loads(state.read_bytes())
+    assert restored == original | {"runs": 5, "selected": [first_restored, original["selected"][1] | {"run": 5}]}
+    before, mtime = state.read_bytes(), state.stat().st_mtime_ns
+    deselect(tmp_path, *identities, restore=True)
+    assert (state.read_bytes(), state.stat().st_mtime_ns) == (before, mtime)
+    assert all(row["outcome"] == "kept" for row in choose(tmp_path, facts, **settings)["candidates"])
+
+
+@pytest.mark.parametrize("failure", ["busy", "symlink", "hardlink", "replace", "invalid", "empty_reason"])
+def test_deselect_writer_failures_preserve_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str) -> None:
+    from latinitas_cards import corpus_selection
+
+    facts = Fixture(tmp_path, ("Puer librum legit.",))
+    lexical(facts, 0, "librum", "liber")
+    identity = choose(tmp_path, facts, recipes=[{"recipe": LEXICAL, "budget": 1}])["candidates"][0]["latinitas_id"]
+    state = tmp_path / "selection.json"
+    lock = Path(f"{state}.lock")
+    expected_code, expected_exit = "unreadable", 3
+    if failure in {"symlink", "hardlink"}:
+        lock.unlink()
+        if failure == "symlink":
+            lock.symlink_to(state)
+        else:
+            os.link(state, lock)
+        expected_code = "alias"
+    elif failure == "replace":
+
+        def fail_replace(path: Path, staged: Path) -> None:
+            raise OSError("Injected before replace")
+
+        monkeypatch.setattr(corpus_selection, "replace_staged", fail_replace)
+    elif failure == "invalid":
+        state.write_text('{"format":"latinitas-corpus-selection","format":"duplicate"}')
+        expected_code = "invalid_input"
+    elif failure == "empty_reason":
+        expected_code, expected_exit = "usage_error", 2
+    else:
+        expected_code, expected_exit = "busy", 4
+    before, mtime = state.read_bytes(), state.stat().st_mtime_ns
+    args = [
+        "corpus-cards",
+        "deselect",
+        str(state),
+        "--exercise",
+        identity,
+        "--reason",
+        "" if failure == "empty_reason" else "Reviewed",
+        "--json",
+    ]
+    if failure == "busy":
+        with writer_lock(state):
+            result = RUNNER.invoke(app, args)
+    else:
+        result = RUNNER.invoke(app, args)
+    assert result.exit_code == expected_exit, result.output
+    assert json.loads(result.stdout)["diagnostics"][0]["code"] == expected_code
+    assert (state.read_bytes(), state.stat().st_mtime_ns) == (before, mtime)
+    assert not list(tmp_path.glob(".selection.json.*"))
 
 
 def select_args(root: Path, facts: Fixture) -> list[str]:

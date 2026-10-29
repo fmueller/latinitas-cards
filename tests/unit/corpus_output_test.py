@@ -91,6 +91,35 @@ def test_preview_export_inspect_and_claim_slots(tmp_path: Path, language: str) -
     assert invoke(tmp_path, facts, "inspect", "--check", str(output), code=1)["diagnostics"][-1]["code"] == "card_drift"
 
 
+def test_deselect_restore_output_journey(tmp_path: Path) -> None:
+    from corpus_selection_test import deselect
+
+    facts = selected(tmp_path)
+    state = tmp_path / "selection.json"
+    original = json.loads(state.read_bytes())
+    removed = original["selected"][0]
+    identity = removed["latinitas_id"]
+    baseline = tmp_path / "baseline.csv"
+    invoke(tmp_path, facts, "export", "--output", str(baseline))
+    deselect(tmp_path, identity)
+    invoke(tmp_path, facts, "select", "--report", str(tmp_path / "report.json"))
+    before, mtime = state.read_bytes(), state.stat().st_mtime_ns
+    preview = invoke(tmp_path, facts, "preview")["result"]["exercises"]
+    assert {e["latinitas_id"] for e in preview} == {e["latinitas_id"] for e in original["selected"][1:]}
+    drift = invoke(tmp_path, facts, "inspect", "--check", str(baseline), code=1)
+    assert drift["diagnostics"][-1]["code"] == "card_drift"
+    assert (state.read_bytes(), state.stat().st_mtime_ns) == (before, mtime)
+    output = tmp_path / "remaining.csv"
+    assert invoke(tmp_path, facts, "export", "--output", str(output))["result"]["exported"] == 3
+    assert {row["LatinitasID"] for row in read_export_csv(output)} == {e["latinitas_id"] for e in preview}
+    deselect(tmp_path, identity, restore=True)
+    restored = json.loads(state.read_bytes())
+    assert next(e for e in restored["selected"] if e["latinitas_id"] == identity) == removed | {"run": 3}
+    invoke(tmp_path, facts, "select", "--report", str(tmp_path / "report.json"))
+    assert len(invoke(tmp_path, facts, "preview")["result"]["exercises"]) == 4
+    invoke(tmp_path, facts, "inspect", "--check", str(baseline))
+
+
 def test_review_withholding_and_binding_guards(tmp_path: Path) -> None:
     facts = selected(tmp_path)
     output = tmp_path / "cards.csv"

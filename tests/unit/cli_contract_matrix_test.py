@@ -219,6 +219,22 @@ def select_case(tmp: Path, exit_code: int) -> list[str]:
     return args
 
 
+def deselect_case(tmp: Path, exit_code: int) -> list[str]:
+    import json
+
+    from corpus_output_test import selected
+
+    selected(tmp)
+    selection = tmp / "selection.json"
+    identity = json.loads(selection.read_bytes())["selected"][0]["latinitas_id"]
+    args = ["corpus-cards", "deselect", str(selection), "--exercise", identity, "--reason", "Reviewed"]
+    if exit_code == 2:
+        args[-1] = ""
+    elif exit_code == 3:
+        args[4] = "unknown"
+    return args
+
+
 def corpus_output_case(tmp: Path, command: str, exit_code: int) -> list[str]:
     from corpus_output_test import invoke, selected
 
@@ -265,6 +281,7 @@ CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
         for code in codes
     },
     **{("corpus-cards select", code): partial(select_case, exit_code=code) for code in (0, 1, 2, 3, 4)},
+    **{("corpus-cards deselect", code): partial(deselect_case, exit_code=code) for code in (0, 2, 3, 4)},
     **{
         ("annotations import-translations", code): partial(import_translations_case, exit_code=code)
         for code in (0, 2, 3, 4)
@@ -392,10 +409,16 @@ def test_contract_exit_case(pair: tuple[str, int], tmp_path: Path) -> None:
         def readline(self, size: int | None = -1) -> bytes:
             raise AssertionError("Contract command attempted to read stdin")
 
-    with writer_lock(tmp_path / "out.jsonl") if pair[1] == 4 and pair[0].startswith("annotations ") else nullcontext():
+    args = CONTRACT_EXIT_CASES[pair](tmp_path)
+    lock_target = None
+    if pair[1] == 4 and pair[0].startswith("annotations "):
+        lock_target = tmp_path / "out.jsonl"
+    elif pair == ("corpus-cards deselect", 4):
+        lock_target = tmp_path / "selection.json"
+    with writer_lock(lock_target) if lock_target is not None else nullcontext():
         result = ClickRunner().invoke(
             cast(click.Command, get_command(real_app)),
-            [*CONTRACT_EXIT_CASES[pair](tmp_path), "--json"],
+            [*args, "--json"],
             input=NoReadInput(),
         )
     envelope = CliResult.model_validate_json(result.stdout)

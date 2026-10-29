@@ -9,7 +9,7 @@ from pydantic import JsonValue
 from ..cli_contract import Diagnostic, run_contract
 from ..corpus_output import export_corpus, inspect_corpus, preview_corpus
 from ..corpus_profile import load_corpus_profile, profile_digest
-from ..corpus_selection import select_corpus
+from ..corpus_selection import deselect_corpus, select_corpus
 
 app = typer.Typer(help="Generate study cards directly from normalized corpora.")
 profile_app = typer.Typer(help="Validate corpus-generation profiles.")
@@ -58,6 +58,22 @@ def select(
             known_source=known_lemmas_source,
             confirm_context=confirm_context or (),
         ),
+    )
+
+
+@app.command()
+def deselect(
+    selection: Annotated[Path, typer.Argument(help="Existing sticky selection JSON file.")],
+    exercise: Annotated[list[str], typer.Option("--exercise", help="LatinitasID; repeat as needed.")],
+    reason: Annotated[str, typer.Option(help="Human reason for deselection.")],
+    restore: Annotated[bool, typer.Option(help="Restore stored entries instead of deselecting.")] = False,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Deselect exercises or restore them with their previously reviewed context digest."""
+    run_contract(
+        "corpus-cards deselect",
+        json_output,
+        lambda: deselect_corpus(selection, exercise, reason, restore=restore),
     )
 
 

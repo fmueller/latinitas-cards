@@ -140,6 +140,7 @@ executable cases together.
 | policy validate | 0, 3 |
 | corpus-cards profile validate | 0, 3 |
 | corpus-cards select | 0, 1, 2, 3, 4 |
+| corpus-cards deselect | 0, 2, 3, 4 |
 | corpus-cards preview | 0, 1, 2, 3, 4 |
 | corpus-cards export | 0, 1, 3, 4 |
 | corpus-cards inspect | 0, 1, 3, 4 |
@@ -321,6 +322,21 @@ fact reasons `missing_fact`, `stale_fact`, `open_fact`, `withheld_fact`,
 `conflicting_facts`, `unsupported_morphology`, `wrong_language`, `no_features`,
 `invalid_span`; selection reasons `target_missing`, `context_changed`.
 These are report values, not diagnostics. Deselection's human reason is free text.
+
+`corpus-cards deselect SELECTION --exercise LATINITAS_ID... --reason TEXT [--restore]`
+moves selected exercises into sorted tombstones containing the complete entry,
+the exact nonempty reason and the deselecting run. It writes only the selection;
+later `select` runs never reselect tombstones. `--restore` moves them back with
+their stored context digest and the restoring run, removing the reason. A context
+corrected while deselected therefore stays `context_changed` until confirmed.
+An ID in neither list exits 3 (`unknown_exercise`) without partial changes.
+Repeated deselection and restoring an already selected ID preserve selection bytes,
+mtime and `runs`; a batch that changes entries increments `runs` only once.
+An empty reason exits 2 (`usage_error`), including with `--restore`.
+The selection is read under its nonblocking writer lock (`busy`, 4), validated
+without needing a profile, and atomically replaced only on change. Selection/lock
+symlink and hardlink aliases fail (`alias`, 3); absent or unreadable selections
+fail (`unreadable`, 3), and malformed state fails (`invalid_input`, 3).
 
 `--confirm-context ID` (repeatable) records a reviewed selected exercise's current
 digest; a missing/nonselected ID exits 3 (`unknown_exercise`). A changed context
