@@ -84,6 +84,7 @@ class Code(StrEnum):
     SKIPPED_DIVISION = "skipped_division"
     SKIPPED_EMPTY_PASSAGE = "skipped_empty_passage"
     DESCRIPTOR_OVERRIDE = "descriptor_override"
+    GAP_IN_TEXT = "gap_in_text"
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,7 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.SKIPPED_DIVISION: DiagnosticCode(0, "Non-edition source division was skipped"),
     Code.SKIPPED_EMPTY_PASSAGE: DiagnosticCode(0, "Source passage without canonical text was omitted"),
     Code.DESCRIPTOR_OVERRIDE: DiagnosticCode(0, "Descriptor value replaced a source header value"),
+    Code.GAP_IN_TEXT: DiagnosticCode(0, "Source text has an editorial gap"),
 }
 
 

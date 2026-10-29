@@ -174,21 +174,45 @@ holds `teiHeader` and `text/body`, and the body holds exactly one
 Other body divisions, such as a translation, are skipped with one
 `skipped_division` warning naming their types.
 
-A passage is an `l[@n]` outside `note` and `del`, or a deepest
-`div[@type="textpart"]` with no such line. `lg` groups lines transparently; an `l`
-without `@n`, or inside `note` or `del`, is flattened text, and one without text
-between lines is ignored. An `l[@n]` inside `head`, or with an empty `@n`, fails
-`invalid_structure`. In a verse textpart a `note`, `del`, `lb`, `pb` or `milestone`
-between lines attaches to the preceding kept line of the same textpart, else to the
-next passage; `head`, and these items outside verse textparts, attach to the next
-passage, else to the last one. Other text outside lines fails `invalid_structure`.
-A passage whose canonical text is empty, such as a line consisting only of `del`,
-is omitted with a `skipped_empty_passage` warning naming its ref; its own notes,
-headings and `lb`/`pb`/`milestone` spans attach as if they stood between passages.
+A passage is an `l[@n]` outside `note`, `rdg`, `sic`, `abbr`, `orig` and `del`, or a
+deepest `div[@type="textpart"]` with no such line. `lg` groups lines transparently;
+an `l` without `@n`, or inside those elements, is flattened text. An `l[@n]` inside
+`head`, or with an empty `@n`, fails `invalid_structure`. In a verse textpart a
+`note`, `del`, `rdg`, `lb`, `pb`, `cb`, `milestone` or `gap` between lines, including
+inside an unnumbered `l` or between `lg` groups, attaches to the preceding kept line
+of the same textpart, else to the next passage; `head`, and these items (plus `bibl`
+and `desc`) outside verse textparts, attach to the next passage, else to the last
+one. Other text outside lines fails `invalid_structure`. A passage whose canonical
+text is empty, such as a line consisting only of `del`, is omitted with a
+`skipped_empty_passage` warning naming its ref; its own notes, headings and empty
+spans attach as if they stood between passages, and its other spans are dropped.
 An edition whose passages are all omitted fails `invalid_structure`.
-`note` becomes a `note`-kind note, `del` text a `variant`-kind note and `head` a
-heading; `p` and `ab` keep their text and record `source_markup` spans with their
-attributes, and `lb`, `pb` and `milestone` record empty spans.
+
+Text and markup:
+
+- `note`, `bibl` and `desc` become `note`-kind notes and `head` a heading, each with
+  its flattened text. `del` and each `rdg` become `variant`-kind notes.
+- `app` keeps the text of its `lem`. Inside `choice`, the `corr`, `expan` or `reg`
+  text is kept and `sic`, `abbr` or `orig` become `variant`-kind notes; with no kept
+  child nothing stays in `text`. `app` and `choice` record no span and allow only
+  these children, at most one of them kept, and whitespace. `lem` outside `app`
+  fails `invalid_structure`.
+- Flattened text has no position in canonical text, so `app`, `lem`, `rdg`, `choice`,
+  `gap` or an unknown element inside a note, heading or variant fails
+  `invalid_structure`.
+- Outside `choice`, `reg`, `corr`, `expan`, `sic`, `abbr` and `orig` keep their text
+  and record spans, as do `p`, `ab`, `add`, `supplied`, `unclear`, `hi`, `emph`, `ex`,
+  `q`, `quote`, `foreign`, `name`, `persName`, `placeName`, `geogName`, `num`,
+  `date`, `w`, `seg`, `label`, `title` and `cit`. Each `source_markup` entry holds the
+  element's attributes and its span in canonical text.
+- `lb`, `pb`, `cb`, `milestone` and `gap` must be empty and record empty spans; a
+  kept passage holding gaps warns `gap_in_text` once with its ref and gap count.
+- Any other element, including drama (`sp`, `speaker`, `stage`), fails
+  `unknown_element` (exit 3) with names and counts. With `--allow-unknown` an unknown
+  element in passage text keeps its text and records its attributes and span in
+  `source_extra`, and the same diagnostic is a warning. One outside passage text
+  (between textparts or lines, inside flattened text, `app` or `choice`) still fails
+  `invalid_structure`, and one in an omitted passage is dropped.
 
 Citations use scheme `tei-cts`: one part per textpart `@subtype` (plus `line` for a
 line) with the raw NFC `@n` values, displayed joined with `.`; `native_ref` joins
@@ -212,8 +236,6 @@ title (the work title keeps the header value) and warns `descriptor_override` fo
 each header value it replaces with a different one.
 
 Like USFX, this adapter writes only the corpus and rejects `--manifest`, approval
-flags, `--citation-template` and, for now, `--allow-unknown` (exit 2). Notes,
-apparatus and editorial markup beyond the elements above are not yet supported:
-other elements fail `unknown_element` with names and counts. Regenerate the
+flags and `--citation-template` (exit 2). Regenerate the
 synthetic goldens deliberately with
 `uv run python scripts/regen-corpus-fixtures.py --target tei --force`.

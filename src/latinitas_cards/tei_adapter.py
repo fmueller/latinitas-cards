@@ -5,6 +5,7 @@ import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from pydantic import ValidationError
 
@@ -33,14 +34,60 @@ from .xml_reader import XmlEventReader
 TEI_NS = "http://www.tei-c.org/ns/1.0"
 WORK_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
 _XML_NS = "{http://www.w3.org/XML/1998/namespace}"
-_KNOWN = frozenset(
-    {"TEI", "teiHeader", "text", "body", "div", "p", "ab", "l", "lg", "head", "note", "del", "lb", "pb", "milestone"}
-)
 # An l[@n] inside one of these is flattened text, never a passage.
 _NOT_PASSAGE_CONTEXT = frozenset({"note", "rdg", "sic", "abbr", "orig", "del"})
-_EMPTY = frozenset({"lb", "pb", "milestone"})
-_BETWEEN_LINES = frozenset({"note", "del", *_EMPTY})
-_ATTACHED = frozenset({"head", *_BETWEEN_LINES})
+# Elements whose flattened text leaves canonical text as a note of this kind.
+_NOTES: dict[str, Literal["note", "variant"]] = {
+    "note": "note",
+    "bibl": "note",
+    "desc": "note",
+    "del": "variant",
+    "rdg": "variant",
+}
+_EMPTY = frozenset({"lb", "pb", "cb", "milestone", "gap"})
+# Elements that keep their text and record a source_markup span with their attributes.
+_SPANS = frozenset(
+    {
+        "p",
+        "ab",
+        "add",
+        "supplied",
+        "unclear",
+        "hi",
+        "emph",
+        "ex",
+        "q",
+        "quote",
+        "foreign",
+        "name",
+        "persName",
+        "placeName",
+        "geogName",
+        "num",
+        "date",
+        "w",
+        "seg",
+        "label",
+        "title",
+        "cit",
+        "reg",
+        "corr",
+        "expan",
+        "sic",
+        "abbr",
+        "orig",
+    }
+)
+# Inside app or choice: the kept children's text stays, the variant children become variant notes.
+_ALTERNATIVES = {
+    "app": (frozenset({"lem"}), frozenset({"rdg"})),
+    "choice": (frozenset({"corr", "expan", "reg"}), frozenset({"sic", "abbr", "orig"})),
+}
+# Their meaning needs a position in canonical text, which flattened notes, headings and variants lack.
+_POSITIONED = frozenset({"app", "lem", "rdg", "choice", "gap"})
+_BETWEEN_LINES = frozenset({"note", "del", "rdg", *_EMPTY})
+_ATTACHED = frozenset({"head", *_NOTES, *_EMPTY})
+_KNOWN = frozenset({"TEI", "teiHeader", "text", "body", "div", "l", "lg", "lem", *_ATTACHED, *_SPANS, *_ALTERNATIVES})
 
 
 @dataclass(slots=True)
@@ -75,6 +122,7 @@ class _Passage:
     notes: list[CorpusNote] = field(default_factory=list)
     headings: list[CorpusHeading] = field(default_factory=list)
     markup: list[CorpusMarkup] = field(default_factory=list)
+    extra: list[CorpusMarkup] = field(default_factory=list)
 
 
 def _invalid(message: str) -> ContractError:
@@ -91,8 +139,8 @@ def _attribute(name: str) -> str:
     return "xml:" + name[len(_XML_NS) :] if name.startswith(_XML_NS) else name
 
 
-def _read(source: Path) -> tuple[_Element, list[str], XmlEventReader]:
-    """Build the document without skipped body divisions; unknown text elements fail with counts."""
+def _read(source: Path) -> tuple[_Element, list[str], Counter[str], XmlEventReader]:
+    """Build the document without skipped body divisions, counting unknown elements outside the header."""
     reader = XmlEventReader(source, namespaces=True)
     root: _Element | None = None
     stack: list[_Element] = []
@@ -141,13 +189,8 @@ def _read(source: Path) -> tuple[_Element, list[str], XmlEventReader]:
             root = element
         stack.append(element)
         pending.append([])
-    if unknown:
-        raise ContractError(
-            Code.UNKNOWN_ELEMENT,
-            "Unknown elements: " + ", ".join(f"{name}={count}" for name, count in sorted(unknown.items())),
-        )
     assert root is not None
-    return root, skipped, reader
+    return root, skipped, unknown, reader
 
 
 def _elements(element: _Element | None, name: str) -> list[_Element]:
@@ -181,6 +224,18 @@ def _text(element: _Element | None) -> str | None:
     return canonical_text(_raw_text(element)) or None
 
 
+def _flattened(element: _Element) -> str:
+    """The text of a note, variant or heading; positioned or (allowed) unknown elements inside it fail."""
+    pending = [element]
+    while pending:
+        for child in pending.pop().children:
+            if isinstance(child, _Element):
+                if child.name in _POSITIONED or child.name not in _KNOWN:
+                    raise _invalid(f"{child.name} inside {element.name}")
+                pending.append(child)
+    return _text(element) or ""
+
+
 def _has_passage_line(element: _Element) -> bool:
     return any(
         isinstance(child, _Element)
@@ -191,16 +246,16 @@ def _has_passage_line(element: _Element) -> bool:
 
 
 def _attachment(element: _Element) -> _Attachment:
-    """A note, deletion or heading flattens its text out of passage text; lb, pb and milestone are empty spans."""
+    """Notes, variants and headings flatten their text out of passage text; empty elements are empty spans."""
     if element.name == "head":
         if _has_passage_line(element):
             raise _invalid("Line passage inside head")
-        return CorpusHeading(text=_text(element) or "")
+        return CorpusHeading(text=_flattened(element))
     if element.name in _EMPTY:
         if element.children:
             raise _invalid(f"{element.name} must be empty")
         return CorpusMarkup(element=element.name, attributes=element.attrs, span=[0, 0])
-    return CorpusNote(kind="note" if element.name == "note" else "variant", text=_text(element) or "")
+    return CorpusNote(kind=_NOTES[element.name], text=_flattened(element))
 
 
 def _only_elements(element: _Element, allowed: set[str]) -> None:
@@ -261,11 +316,10 @@ class _Extractor:
                 passage = _Passage((*units, "line"), [*values, child.attrs["n"]], part)
                 self.fill(passage, child)
                 self.items.append(passage)
-            elif child.name == "lg":
+            elif child.name in {"l", "lg"}:
+                # An unnumbered l groups like lg: its items attach between lines and an l[@n] in it is a passage.
                 self.lines(child, units, values, part)
-            elif child.name == "l" and not _raw_text(child).strip():
-                continue  # An unnumbered line without text flattens to nothing.
-            elif child.name in _ATTACHED:
+            elif child.name == "head" or child.name in _BETWEEN_LINES:
                 # Headings go to the next line; other items prefer the preceding line.
                 self.items.append(_Loose(_attachment(child), None if child.name == "head" else part))
             else:
@@ -285,15 +339,30 @@ class _Extractor:
                     passage.headings.append(item)
                 else:
                     passage.notes.append(item)
-            elif child.name in {"p", "ab"}:
-                entry = CorpusMarkup(element=child.name, attributes=child.attrs, span=[passage.length, passage.length])
-                passage.markup.append(entry)
-                self.fill(passage, child)
-                entry.span[1] = passage.length
             elif child.name in {"l", "lg"}:
                 if child.name == "l" and "n" in child.attrs:
                     raise _invalid("Line passage inside another passage")
                 self.fill(passage, child)
+            elif child.name in _ALTERNATIVES:
+                kept, variants = _ALTERNATIVES[child.name]
+                if sum(isinstance(option, _Element) and option.name in kept for option in child.children) > 1:
+                    raise _invalid(f"{child.name} holds more than one kept alternative")
+                for option in child.children:
+                    if isinstance(option, str):
+                        if option.strip():
+                            raise _invalid(f"Text directly inside {child.name}")
+                    elif option.name in kept:
+                        self.fill(passage, option)
+                    elif option.name in variants:
+                        passage.notes.append(CorpusNote(kind="variant", text=_flattened(option)))
+                    else:
+                        raise _invalid(f"{option.name} is not allowed inside {child.name}")
+            elif child.name in _SPANS or child.name not in _KNOWN:
+                # Only --allow-unknown lets an unknown element reach here; it is kept in source_extra.
+                entry = CorpusMarkup(element=child.name, attributes=child.attrs, span=[passage.length, passage.length])
+                (passage.markup if child.name in _SPANS else passage.extra).append(entry)
+                self.fill(passage, child)
+                entry.span[1] = passage.length
             else:
                 raise _invalid(f"{child.name} inside a passage")
 
@@ -321,7 +390,7 @@ def _resolve(items: list[_Passage | _Loose], texts: dict[int, str]) -> None:
         if isinstance(item, _Loose):
             loose = [item]
         else:
-            # p and ab spans of an omitted passage cover no kept text; only empty spans move.
+            # Text spans and source_extra of an omitted passage cover no kept text; only empty spans move.
             empty = [entry for entry in item.markup if entry.element in _EMPTY]
             own: list[_Attachment] = [*item.headings, *item.notes, *empty]
             loose = [_Loose(entry, None if isinstance(entry, CorpusHeading) else item.part) for entry in own]
@@ -405,12 +474,18 @@ def build_tei(
     descriptor: CorpusDescriptor | None,
     *,
     work: str | None = None,
+    allow_unknown: bool = False,
     diagnostics: list[Diagnostic] | None = None,
 ) -> list[CorpusRecord]:
     """Fully validate before the caller can open an output for replacement."""
-    root, skipped, reader = _read(source)
-    edition = _edition(root)
+    root, skipped, unknown, reader = _read(source)
     warnings: list[Diagnostic] = []
+    if unknown:
+        message = "Unknown elements: " + ", ".join(f"{name}={count}" for name, count in sorted(unknown.items()))
+        if not allow_unknown:
+            raise ContractError(Code.UNKNOWN_ELEMENT, message)
+        warnings.append(_warning(Code.UNKNOWN_ELEMENT, message))
+    edition = _edition(root)
     if skipped:
         warnings.append(_warning(Code.SKIPPED_DIVISION, "Skipped body divisions: " + ", ".join(sorted(set(skipped)))))
     extractor = _Extractor()
@@ -440,7 +515,8 @@ def build_tei(
         seen.add(ref)
         refs[index] = ref
         raw = "".join(passage.raw)
-        content = canonical_markup(raw, passage.markup) if passage.markup else canonical_text(raw)
+        spans = [*passage.markup, *passage.extra]
+        content = canonical_markup(raw, spans) if spans else canonical_text(raw)
         if content:
             texts[index] = content
         else:
@@ -450,6 +526,11 @@ def build_tei(
     if not texts:
         raise _invalid("Edition contains no passages")
     _resolve(items, texts)
+    for index, passage in found:
+        gaps = sum(entry.element == "gap" for entry in passage.markup)
+        if gaps and index in texts:
+            message = f"Passage {refs[index]} has {gaps} gap{'s' if gaps > 1 else ''} in its text"
+            warnings.append(_warning(Code.GAP_IN_TEXT, message, refs[index]))
 
     work_id = _work_id(edition, filename, work, corpus_id)
     work_title = fields["title"]
@@ -507,6 +588,7 @@ def build_tei(
                     notes=passage.notes or None,
                     headings=passage.headings or None,
                     source_markup=passage.markup or None,
+                    source_extra=passage.extra or None,
                 )
             )
     except ValidationError as error:

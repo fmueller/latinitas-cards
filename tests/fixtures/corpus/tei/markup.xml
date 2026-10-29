@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Synthetic editorial markup</title>
+      </titleStmt>
+      <publicationStmt>
+        <publisher>Synthetic Perseus</publisher>
+      </publicationStmt>
+      <sourceDesc>
+        <bibl><title>Synthetic markup source</title></bibl>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div type="edition" n="urn:cts:latinLit:phi9999.phi001.synthetic-lat1" xml:lang="lat">
+        <div type="textpart" subtype="chapter" n="1">
+          <head>Caput <hi rend="italic">primum</hi></head>
+          <div type="textpart" subtype="section" n="1">
+            <p>Arma <app><lem wit="#M">virumque</lem><rdg wit="#P">virosque</rdg><rdg>virum</rdg></app> cano<note>cf. <bibl>Aen. 1.1</bibl></note>.</p>
+          </div>
+          <div type="textpart" subtype="section" n="2">
+            <p><choice><sic>Troie</sic><corr>Troiae</corr></choice> qui <choice><abbr>pri.</abbr><expan>pri<ex>mus</ex></expan></choice> ab oris <choice><orig>Ytaliam</orig><reg>Italiam</reg></choice></p>
+          </div>
+          <div type="textpart" subtype="section" n="3">
+            <p><label>I.</label> <persName><name>Aeneas</name></persName> <add place="above">et</add> <supplied reason="lost">Achates</supplied> <unclear>venerunt</unclear> <placeName>Carthaginem</placeName><cb n="b"/> <geogName>Libyae</geogName>.</p>
+          </div>
+          <div type="textpart" subtype="section" n="4">
+            <p><q>Quid</q> <quote>arma</quote> <foreign xml:lang="grc">logos</foreign> <num value="3">tres</num> <date when="-0044">idibus</date> <w lemma="sum">est</w> <seg type="x">hic</seg>.</p>
+          </div>
+          <div type="textpart" subtype="section" n="5">
+            <p><title>Aeneis</title> <corr>recte</corr> <abbr>cos.</abbr> <orig>quom</orig> <gap reason="lost"/><hi rend="bold">finis</hi> <cit><quote>ut ait</quote><bibl>Cic.</bibl></cit><del>x</del>.</p><milestone unit="para"/>
+          </div>
+          <div type="textpart" subtype="section" n="6">
+            <p>A &lt;B&gt; &amp; <hi rend="a&quot;b">C</hi><desc>descriptio</desc></p>
+          </div>
+        </div>
+      </div>
+    </body>
+  </text>
+</TEI>

@@ -86,9 +86,9 @@ def test_prose_fixture_matches_literal_expectations_and_golden(tmp_path: Path) -
     )
     assert corpus["title"] == "De Bello Gallico"
     assert (work["work"], work["title"], work["order"]) == ("phi0448.phi001", "De Bello Gallico", 1)
-    assert [p["native_ref"] for p in found] == ["1.1.pr", "1.1.3a", "1.2.62b", "1.2.1%2E5%20%C3%A9"]
-    assert [p["passage_id"] for p in found][-1] == "test-corpus:1.2.1%2E5%20%C3%A9"
-    assert [p["order"] for p in found] == [1, 2, 3, 4]
+    assert [p["native_ref"] for p in found] == ["1.1.pr", "1.1.3a", "1.2.62b", "1.2.1%2E5%20%C3%A9", "1.3.1"]
+    assert [p["passage_id"] for p in found][3] == "test-corpus:1.2.1%2E5%20%C3%A9"
+    assert [p["order"] for p in found] == [1, 2, 3, 4, 5]
     assert {p["work"] for p in found} == {"phi0448.phi001"}
     assert found[3]["citation"] == {
         "scheme": "tei-cts",
@@ -99,7 +99,7 @@ def test_prose_fixture_matches_literal_expectations_and_golden(tmp_path: Path) -
             {"unit": "section", "value": "1.5 é"},
         ],
     }
-    first, second, third, fourth = found
+    first, second, third, fourth, fifth = found
     assert first["text"] == "Gallia est omnis divisa in partes tres."
     assert first["headings"] == [{"text": "Liber primus"}]
     assert first["notes"] == [{"kind": "note", "text": "nota bene"}]
@@ -122,6 +122,17 @@ def test_prose_fixture_matches_literal_expectations_and_golden(tmp_path: Path) -
     assert fourth["text"] == "Is M. Messala consule."
     assert fourth["passage_hash"] == "sha256:" + hashlib.sha256(b"Is M. Messala consule.").hexdigest()
     assert fourth["norm"] == "is m. messala consule."
+    # Standalone reg and sic (Cicero/Caesar shapes) keep their words; desc is a note.
+    assert fifth["text"] == "Is Helvetiis persuasit, Marco Pisone consulibus."
+    assert fifth["notes"] == [{"kind": "note", "text": "codex"}]
+    assert fifth["source_markup"] == [
+        {"element": "p", "attributes": {}, "span": [0, 48]},
+        {"element": "reg", "attributes": {}, "span": [3, 12]},
+        {"element": "expan", "attributes": {}, "span": [24, 29]},
+        {"element": "ex", "attributes": {}, "span": [25, 29]},
+        {"element": "emph", "attributes": {}, "span": [30, 36]},
+        {"element": "sic", "attributes": {}, "span": [37, 47]},
+    ]
     assert output.read_bytes() == (FIXTURES / "prose.expected.jsonl").read_bytes()
     assert CliRunner().invoke(app, ["corpus", "validate", str(output), "--json"]).exit_code == 0
     assert not output.with_suffix(".manifest.json").exists()
@@ -318,11 +329,53 @@ def test_edition_language_namespace_and_unsafe_inputs(tmp_path: Path, xml: str, 
     assert not output.exists()
 
 
+DRAMA = (
+    '<div type="textpart" subtype="b" n="1"><p>a <sp who="#davus"><speaker>Davus</speaker> <p>quid</p></sp>'
+    ' <x:y xmlns:x="urn:x" k="v">z</x:y><sp/></p></div>'
+)
+
+
 def test_unknown_element_names_and_counts(tmp_path: Path) -> None:
     edition = '<div type="textpart" subtype="b" n="1"><p>a<sp/><sp/><x:y xmlns:x="urn:x"/></p></div>'
     result, _ = run_inline(tmp_path, document(edition))
     assert result.exit_code == 3, result.output
     assert json.loads(result.stdout)["diagnostics"][0]["message"] == "Unknown elements: sp=2, {urn:x}y=1"
+    output = tmp_path / "out.jsonl"
+    output.write_bytes(b"previous output\n")
+    result, _ = run_inline(tmp_path, document(DRAMA))
+    assert result.exit_code == 3, result.output
+    (only,) = json.loads(result.stdout)["diagnostics"]
+    assert (only["code"], only["severity"]) == ("unknown_element", "error")
+    assert only["message"] == "Unknown elements: sp=2, speaker=1, {urn:x}y=1"
+    assert output.read_bytes() == b"previous output\n"
+
+
+def test_allow_unknown_keeps_unknown_elements_in_source_extra(tmp_path: Path) -> None:
+    result, output = run_inline(tmp_path, document(DRAMA), "--allow-unknown")
+    assert result.exit_code == 0, result.output
+    (warning,) = json.loads(result.stdout)["diagnostics"]
+    assert (warning["code"], warning["severity"]) == ("unknown_element", "warning")
+    assert warning["message"] == "Unknown elements: sp=2, speaker=1, {urn:x}y=1"
+    (passage,) = passages(output)
+    assert passage["text"] == "a Davus quid z"
+    assert passage["source_markup"] == [
+        {"element": "p", "attributes": {}, "span": [0, 14]},
+        {"element": "p", "attributes": {}, "span": [8, 12]},
+    ]
+    assert passage["source_extra"] == [
+        {"element": "sp", "attributes": {"who": "#davus"}, "span": [2, 12]},
+        {"element": "speaker", "attributes": {}, "span": [2, 7]},
+        {"element": "{urn:x}y", "attributes": {"k": "v"}, "span": [13, 14]},
+        {"element": "sp", "attributes": {}, "span": [14, 14]},
+    ]
+    validated = CliRunner().invoke(app, ["corpus", "validate", str(output), "--json"])
+    assert validated.exit_code == 0, validated.output
+    assert json.loads(validated.stdout)["result"]["counts"]["passage"] == 1
+    # Unknown elements outside passages still have no place to keep their text.
+    edition = '<div type="textpart" subtype="b" n="1"><div type="textpart" subtype="c" n="1">a</div><sp>b</sp></div>'
+    result, _ = run_inline(tmp_path, document(edition), "--allow-unknown")
+    assert result.exit_code == 3, result.output
+    assert diagnostics(result)[-1][:2] == ("invalid_structure", "error")
 
 
 def test_translation_division_is_skipped_with_warning(tmp_path: Path) -> None:
@@ -468,7 +521,6 @@ def test_header_fallbacks_and_descriptor_override(tmp_path: Path) -> None:
         ["--approve-reuse", "0=p000001"],
         ["--approve-allocation", "0"],
         ["--approve-removal", "p000001"],
-        ["--allow-unknown"],
     ],
 )
 def test_text_only_options_are_usage_errors(tmp_path: Path, flags: list[str]) -> None:
@@ -567,3 +619,226 @@ def test_descriptor_filling_absent_header_fields_does_not_warn(tmp_path: Path) -
     assert result.exit_code == 0, result.output
     assert diagnostics(result) == []
     assert (rows(output)[0]["url"], rows(output)[0]["publisher"]) == ("https://x", "P")
+
+
+def test_markup_fixture_keeps_listed_elements_as_spans_and_alternatives_as_notes(tmp_path: Path) -> None:
+    output = tmp_path / "markup.jsonl"
+    result = normalize(FIXTURES / "markup.xml", output)
+    assert result.exit_code == 0, result.output
+    assert diagnostics(result) == [("gap_in_text", "warning", "1.5")]
+    first, second, third, fourth, fifth, sixth = passages(output)
+
+    def span(element: str, start: int, end: int, **attributes: str) -> dict[str, Any]:
+        return {"element": element, "attributes": attributes, "span": [start, end]}
+
+    # app keeps lem; each rdg is a variant; bibl inside a note is note text; head markup flattens.
+    assert first["text"] == "Arma virumque cano."
+    assert first["headings"] == [{"text": "Caput primum"}]
+    assert first["notes"] == [
+        {"kind": "variant", "text": "virosque"},
+        {"kind": "variant", "text": "virum"},
+        {"kind": "note", "text": "cf. Aen. 1.1"},
+    ]
+    assert first["source_markup"] == [span("p", 0, 19)]
+    # Inside choice, corr/expan/reg are kept without spans and sic/abbr/orig become variants.
+    assert second["text"] == "Troiae qui primus ab oris Italiam"
+    assert second["notes"] == [
+        {"kind": "variant", "text": "Troie"},
+        {"kind": "variant", "text": "pri."},
+        {"kind": "variant", "text": "Ytaliam"},
+    ]
+    assert second["source_markup"] == [span("p", 0, 33), span("ex", 14, 17)]
+    assert third["text"] == "I. Aeneas et Achates venerunt Carthaginem Libyae."
+    assert third["notes"] is None
+    assert third["source_markup"] == [
+        span("p", 0, 49),
+        span("label", 0, 2),
+        span("persName", 3, 9),
+        span("name", 3, 9),
+        span("add", 10, 12, place="above"),
+        span("supplied", 13, 20, reason="lost"),
+        span("unclear", 21, 29),
+        span("placeName", 30, 41),
+        span("cb", 41, 41, n="b"),
+        span("geogName", 42, 48),
+    ]
+    assert fourth["text"] == "Quid arma logos tres idibus est hic."
+    assert fourth["source_markup"] == [
+        span("p", 0, 36),
+        span("q", 0, 4),
+        span("quote", 5, 9),
+        span("foreign", 10, 15, **{"xml:lang": "grc"}),
+        span("num", 16, 20, value="3"),
+        span("date", 21, 27, when="-0044"),
+        span("w", 28, 31, lemma="sum"),
+        span("seg", 32, 35, type="x"),
+    ]
+    # Standalone corr/abbr/orig keep their text; gap is an empty span before the whitespace it follows.
+    assert fifth["text"] == "Aeneis recte cos. quom finis ut ait."
+    assert fifth["notes"] == [{"kind": "note", "text": "Cic."}, {"kind": "variant", "text": "x"}]
+    assert fifth["source_markup"] == [
+        span("p", 0, 36),
+        span("title", 0, 6),
+        span("corr", 7, 12),
+        span("abbr", 13, 17),
+        span("orig", 18, 22),
+        span("gap", 22, 22, reason="lost"),
+        span("hi", 23, 28, rend="bold"),
+        span("cit", 29, 35),
+        span("quote", 29, 35),
+        span("milestone", 36, 36, unit="para"),
+    ]
+    assert sixth["text"] == "A <B> & C"
+    assert sixth["notes"] == [{"kind": "note", "text": "descriptio"}]
+    assert sixth["source_markup"] == [span("p", 0, 9), span("hi", 8, 9, rend='a"b')]
+    assert all(p["source_extra"] is None and p["headings"] is None for p in passages(output)[1:])
+    assert output.read_bytes() == (FIXTURES / "markup.expected.jsonl").read_bytes()
+    assert CliRunner().invoke(app, ["corpus", "validate", str(output), "--json"]).exit_code == 0
+
+
+def test_unnumbered_lines_between_lines_attach_their_items(tmp_path: Path) -> None:
+    # T-158 failed on the note and silently dropped the page break.
+    edition = (
+        '<div type="textpart" subtype="book" n="1"><l n="1">a</l><l><note>N</note></l><l><pb n="5"/></l>'
+        '<l n="2">b</l></div>'
+    )
+    result, output = run_inline(tmp_path, document(edition))
+    assert result.exit_code == 0, result.output
+    first, second = passages(output)
+    assert first["notes"] == [{"kind": "note", "text": "N"}]
+    assert first["source_markup"] == [{"element": "pb", "attributes": {"n": "5"}, "span": [1, 1]}]
+    assert (second["notes"], second["source_markup"]) == (None, None)
+
+
+def test_gaps_warn_once_per_passage_with_their_count(tmp_path: Path) -> None:
+    edition = (
+        '<div type="textpart" subtype="s" n="1"><p>a <gap/>b <gap/><gap/>c</p></div>'
+        '<div type="textpart" subtype="s" n="2">d</div>'
+    )
+    result, output = run_inline(tmp_path, document(edition))
+    assert result.exit_code == 0, result.output
+    (warning,) = json.loads(result.stdout)["diagnostics"]
+    assert (warning["code"], warning["severity"], warning["ref"]) == ("gap_in_text", "warning", "1")
+    assert warning["message"] == "Passage 1 has 3 gaps in its text"
+    first, _ = passages(output)
+    assert [entry["span"] for entry in first["source_markup"] if entry["element"] == "gap"] == [[1, 1], [3, 3], [3, 3]]
+
+
+@pytest.mark.parametrize(
+    "edition",
+    [
+        '<div type="textpart" subtype="b" n="1"><p>a <note>n <foo k="v">z</foo></note></p></div>',
+        '<div type="textpart" subtype="b" n="1"><head>H <foo/></head><p>a</p></div>',
+        '<div type="textpart" subtype="b" n="1"><p>a <choice><sic><foo>x</foo></sic><corr>y</corr></choice></p></div>',
+        '<div type="textpart" subtype="b" n="1"><p>a <app><lem>b</lem><rdgGrp><rdg>c</rdg></rdgGrp></app></p></div>',
+        '<div type="textpart" subtype="b" n="1"><l n="1">a</l><foo/><l n="2">b</l></div>',
+    ],
+)
+def test_allowed_unknown_elements_without_a_text_position_are_invalid(tmp_path: Path, edition: str) -> None:
+    # --allow-unknown keeps unknown elements only where they have a span in passage text.
+    result, output = run_inline(tmp_path, document(edition), "--allow-unknown")
+    assert result.exit_code == 3, result.output
+    assert diagnostics(result) == [("invalid_structure", "error", None)]
+    assert not output.exists()
+
+
+def test_between_line_items_attach_across_groups_and_unnumbered_lines(tmp_path: Path) -> None:
+    edition = (
+        '<div type="textpart" subtype="book" n="1"><lg><l n="1">a</l></lg><rdg>A</rdg><l><note>N</note></l><cb/>'
+        '<lg><l n="2">b</l></lg><l><pb n="5"/></l> <gap/><lg><l n="3">c</l></lg></div>'
+    )
+    result, output = run_inline(tmp_path, document(edition))
+    assert result.exit_code == 0, result.output
+    assert diagnostics(result) == [("gap_in_text", "warning", "1.2")]
+    first, second, third = passages(output)
+    assert first["notes"] == [{"kind": "variant", "text": "A"}, {"kind": "note", "text": "N"}]
+    assert first["source_markup"] == [{"element": "cb", "attributes": {}, "span": [1, 1]}]
+    assert second["source_markup"] == [
+        {"element": "pb", "attributes": {"n": "5"}, "span": [1, 1]},
+        {"element": "gap", "attributes": {}, "span": [1, 1]},
+    ]
+    assert (second["notes"], third["notes"], third["source_markup"]) == (None, None, None)
+
+
+@pytest.mark.parametrize(
+    "edition",
+    [
+        '<l n="1">a</l><bibl>B</bibl><l n="2">b</l>',
+        '<l n="1">a</l><desc>D</desc><l n="2">b</l>',
+        '<l n="1">a</l><l>stray</l><l n="2">b</l>',
+        '<l n="1">a</l><app><rdg>x</rdg></app><l n="2">b</l>',
+        '<l n="1">a<choice>x<sic>y</sic><corr>z</corr></choice></l>',
+        '<l n="1">a<choice><sic>y</sic><hi>z</hi></choice></l>',
+        '<l n="1">a<app><lem>b</lem>c</app></l>',
+        '<l n="1">a<app><lem>b</lem><note>c</note></app></l>',
+        '<l n="1">a<lem>b</lem></l>',
+        '<l n="1">a<gap>lost</gap></l>',
+        '<l n="1">a<cb>b</cb></l>',
+        # More than one kept alternative would join readings into one word.
+        '<l n="1">x <choice><sic>Troie</sic><corr>Troiae</corr><corr>Troia</corr></choice> y</l>',
+        '<l n="1">x <choice><reg>Troiae</reg><corr>Troia</corr></choice> y</l>',
+        '<l n="1"><app><lem>a</lem><lem>b</lem></app></l>',
+        # Flattened notes, headings and variants have no text position for alternatives or gaps.
+        '<head>Bellum <choice><sic>Troie</sic><corr>Troiae</corr></choice></head><l n="1">a</l>',
+        '<l n="1">a<note>cf. <choice><abbr>Verg</abbr><expan>Vergilius</expan></choice></note></l>',
+        '<l n="1">a</l><note>lege <app><lem>cano</lem><rdg>canto</rdg></app></note><l n="2">b</l>',
+        '<l n="1">a<app><lem>x</lem><rdg>y<choice><sic>z</sic><corr>w</corr></choice></rdg></app></l>',
+        '<l n="1">a<choice><sic><choice><abbr>b</abbr><expan>bb</expan></choice></sic><corr>c</corr></choice></l>',
+        '<l n="1">a<note>x <gap/> y</note></l>',
+        '<l n="1">a<del>b<gap/></del></l>',
+        '<l n="1">a<bibl><hi>Verg.</hi> <gap/></bibl></l>',
+        '<head>A<lem>B</lem></head><l n="1">a</l>',
+        '<l n="1">a<note>lege <rdg>cano</rdg><rdg>canto</rdg></note></l>',
+    ],
+)
+def test_misplaced_editorial_markup_is_invalid(tmp_path: Path, edition: str) -> None:
+    result, output = run_inline(tmp_path, document(f'<div type="textpart" subtype="book" n="1">{edition}</div>'))
+    assert result.exit_code == 3, result.output
+    assert diagnostics(result)[0][:2] == ("invalid_structure", "error")
+    assert not output.exists()
+
+
+def test_alternatives_inside_lines_and_bare_readings(tmp_path: Path) -> None:
+    edition = (
+        '<div type="textpart" subtype="book" n="1">'
+        '<l n="1"><choice> <corr>Troiae</corr> <sic>Troie <l n="9">x</l></sic> </choice> qui</l>'
+        '<l n="2">a<app><rdg>b</rdg><rdg/></app> <rdg>c</rdg>d <sic>quom</sic> <reg>cum</reg></l></div>'
+    )
+    result, output = run_inline(tmp_path, document(edition))
+    assert result.exit_code == 0, result.output
+    first, second = passages(output)
+    # The kept alternative records no span; whitespace between alternatives is not text.
+    assert (first["text"], first["source_markup"]) == ("Troiae qui", None)
+    assert first["notes"] == [{"kind": "variant", "text": "Troie x"}]
+    assert second["text"] == "a d quom cum"
+    assert second["notes"] == [
+        {"kind": "variant", "text": "b"},
+        {"kind": "variant", "text": ""},
+        {"kind": "variant", "text": "c"},
+    ]
+    assert second["source_markup"] == [
+        {"element": "sic", "attributes": {}, "span": [4, 8]},
+        {"element": "reg", "attributes": {}, "span": [9, 12]},
+    ]
+
+
+def test_annotations_segment_works_on_a_tei_corpus(tmp_path: Path) -> None:
+    corpus = tmp_path / "markup.jsonl"
+    assert normalize(FIXTURES / "markup.xml", corpus).exit_code == 0
+    result = CliRunner().invoke(
+        app, ["annotations", "segment", str(corpus), "--timestamp", "2026-01-01T00:00:00Z", "--json"]
+    )
+    assert result.exit_code == 0, result.output
+    lines = corpus.with_suffix(".annotations.jsonl").read_text(encoding="utf-8").splitlines()
+    records = [json.loads(line) for line in lines if json.loads(line)["record"] == "annotation"]
+    assert len(records) == 6
+    sentences = {r["anchor"]["passage_id"]: r["value"]["sentences"] for r in records}
+
+    def sentence(start: int, end: int, tokens: list[int], *, continued: bool = False, continues: bool = False) -> Any:
+        return {"continued": continued, "continues": continues, "span": [start, end], "tokens": tokens}
+
+    assert sentences["test-corpus:1.1"] == [sentence(0, 19, [0, 4])]
+    # Section 2 has no terminator, so its sentence continues into section 3.
+    assert sentences["test-corpus:1.2"] == [sentence(0, 33, [0, 6], continues=True)]
+    assert sentences["test-corpus:1.3"] == [sentence(0, 2, [0, 2], continued=True), sentence(3, 49, [2, 9])]
+    assert sentences["test-corpus:1.6"] == [sentence(0, 9, [0, 6], continues=True)]

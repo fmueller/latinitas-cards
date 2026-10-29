@@ -68,7 +68,8 @@
         "citation_mismatch",
         "skipped_division",
         "skipped_empty_passage",
-        "descriptor_override"
+        "descriptor_override",
+        "gap_in_text"
       ],
       "title": "Code",
       "type": "string"

@@ -84,7 +84,7 @@ def test_rejected_options(tmp_path: Path, flags: list[str], code: str) -> None:
         ("usfx", ["--language", "x-latin", "--manifest", "m"], "Malformed language tag"),
         ("usfx", ["--citation-template", "bad", "--manifest", "m"], "Malformed citation template"),
         ("usfx", ["--manifest", "m"], "USFX cannot use templates, manifests or approvals"),
-        ("text", ["--allow-unknown", "--manifest", "m"], "--allow-unknown requires the USFX adapter"),
+        ("text", ["--allow-unknown", "--manifest", "m"], "--allow-unknown requires the USFX or TEI adapter"),
     ],
 )
 def test_option_checks_run_in_order(tmp_path: Path, adapter: str, flags: list[str], message: str) -> None:

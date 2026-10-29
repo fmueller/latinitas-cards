@@ -228,8 +228,6 @@ def _normalize_usfx(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnost
 
 
 def _normalize_tei(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
-    if request.allow_unknown:
-        raise ContractError(Code.USAGE_ERROR, "--allow-unknown is not yet supported by the TEI adapter")
     if request.work is not None and not WORK_ID.fullmatch(request.work):
         raise ContractError(Code.USAGE_ERROR, "Malformed --work ID")
     return _normalize_xml(
@@ -241,6 +239,7 @@ def _normalize_tei(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnosti
             request.language,
             descriptor,
             work=request.work,
+            allow_unknown=request.allow_unknown,
             diagnostics=diagnostics,
         ),
     )
@@ -255,7 +254,7 @@ def _normalize_text(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnost
         request.template,
     )
     if request.allow_unknown:
-        raise ContractError(Code.USAGE_ERROR, "--allow-unknown requires the USFX adapter")
+        raise ContractError(Code.USAGE_ERROR, "--allow-unknown requires the USFX or TEI adapter")
     if request.work is not None:
         raise ContractError(Code.USAGE_ERROR, "--work requires the TEI adapter")
     if template and (

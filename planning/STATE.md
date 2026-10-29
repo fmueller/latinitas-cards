@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-29T12:44:18Z"
+updated_at: "2026-10-29T13:58:58Z"
 active_spec_version: v0.4.0
 active_spec_path: specs/v0.4.0.md
 current_task: ""
@@ -11,8 +11,9 @@ blockers:
     - 'T-174-decide-whether-generate-recipe-overrides-should: maintainer decision: whether a generate --recipe override should be excluded from claim fingerprints, which changes the unchanged v0.2.1 fingerprint contract'
     - 'T-175-decide-whether-token-glosses-should-be-phrase: maintainer decision: whether translation annotations anchored to one word token (lexical glosses) should be excluded from phrase translation candidates, which the Fixed Contracts Recipes candidate rule currently reports as invalid_span'
     - 'T-176-decide-whether-cref-pattern-example-should-warn: maintainer decision: whether the Aeneid line, Book cRefPattern example should warn, which the Fixed Contracts TEI subset deepest-first case-insensitive citation_mismatch rule currently treats as matching'
-next_action: Resolve blocker on T-176-decide-whether-cref-pattern-example-should-warn
-last_verification_result: pass for T-158-normalize-perseus-epidoc-tei-structure-citations at 2026-10-29T12:44:18Z
+    - 'T-177-decide-where-allow-unknown-keeps-tei-elements: maintainer decision: where --allow-unknown keeps unknown TEI elements without a canonical-text position (between textparts or lines, inside flattened notes, headings and variants, inside app or choice, or in omitted passages), which the Fixed Contracts TEI subset says are kept in source_extra but T-159 fails closed'
+next_action: Resolve blocker on T-177-decide-where-allow-unknown-keeps-tei-elements
+last_verification_result: pass for T-159-preserve-tei-notes-apparatus-and-editorial-markup at 2026-10-29T13:58:58Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -38,14 +39,15 @@ continuation_notes:
 - T-174-decide-whether-generate-recipe-overrides-should: maintainer decision: whether a generate --recipe override should be excluded from claim fingerprints, which changes the unchanged v0.2.1 fingerprint contract
 - T-175-decide-whether-token-glosses-should-be-phrase: maintainer decision: whether translation annotations anchored to one word token (lexical glosses) should be excluded from phrase translation candidates, which the Fixed Contracts Recipes candidate rule currently reports as invalid_span
 - T-176-decide-whether-cref-pattern-example-should-warn: maintainer decision: whether the Aeneid line, Book cRefPattern example should warn, which the Fixed Contracts TEI subset deepest-first case-insensitive citation_mismatch rule currently treats as matching
+- T-177-decide-where-allow-unknown-keeps-tei-elements: maintainer decision: where --allow-unknown keeps unknown TEI elements without a canonical-text position (between textparts or lines, inside flattened notes, headings and variants, inside app or choice, or in omitted passages), which the Fixed Contracts TEI subset says are kept in source_extra but T-159 fails closed
 
 ## Last Verification
 
-- pass for T-158-normalize-perseus-epidoc-tei-structure-citations at 2026-10-29T12:44:18Z
+- pass for T-159-preserve-tei-notes-apparatus-and-editorial-markup at 2026-10-29T13:58:58Z
 
 ## Next Action
 
-- Resolve blocker on T-176-decide-whether-cref-pattern-example-should-warn
+- Resolve blocker on T-177-decide-where-allow-unknown-keeps-tei-elements
 
 ## Relevant Artifacts
 
@@ -57,8 +59,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 11
+- todo: 10
 - in_progress: 0
-- completed: 161
-- blocked: 4
+- completed: 162
+- blocked: 5
 - cancelled: 0

@@ -1,12 +1,12 @@
 ---
 id: T-159-preserve-tei-notes-apparatus-and-editorial-markup
 title: Preserve TEI notes, apparatus and editorial markup; fail closed on unknown elements
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#tei-xml-adapter
 dependencies:
     - T-158-normalize-perseus-epidoc-tei-structure-citations
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T13:58:58Z"
 ---
 
 # T-159-preserve-tei-notes-apparatus-and-editorial-markup Preserve TEI notes, apparatus and editorial markup; fail closed on unknown elements
@@ -47,3 +47,13 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T13:58:58Z: verification pass
+- Verify run 2026-10-29T13:58:58Z: ruff, mypy and pytest -v green; independent
+  conventional review approved; independent QA acceptance passed on real CLI runs.
+- Fixed T-158 defects: an unnumbered `l` between lines holding only a note failed
+  and one holding only `pb` dropped it; it now groups like `lg`.
+- Assumptions: `cb` and `gap` attach between lines like `lb`; `app`, `lem`, `rdg`,
+  `choice`, `gap` and allowed unknown elements inside flattened notes, headings and
+  variants, and more than one kept alternative, fail `invalid_structure`.
+- Follow-up T-177 (blocked, maintainer decision) covers unknown elements without a
+  canonical-text position under `--allow-unknown`.

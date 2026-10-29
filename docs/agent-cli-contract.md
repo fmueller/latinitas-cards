@@ -110,6 +110,7 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `skipped_division` | 0 | Non-edition source division was skipped |
 | `skipped_empty_passage` | 0 | Source passage without canonical text was omitted |
 | `descriptor_override` | 0 | Descriptor value replaced a source header value |
+| `gap_in_text` | 0 | Source text has an editorial gap |
 
 ## Contract command matrix
 
@@ -269,7 +270,7 @@ are ordered by ordinal, then removed refs. No output bytes change until all are
 approved. See [normalized corpora](normalized-corpus.md) for the flags and recovery
 protocol. Template/manifest or template/approval combinations, malformed templates
 or languages, USFX or TEI combined with templates, manifests or approvals, `--allow-unknown`
-with TEI, and `--work` that is malformed or used without TEI return `usage_error` (2).
+with plain text, and `--work` that is malformed or used without TEI return `usage_error` (2).
 Rejected input/approvals/aliases and expected filesystem failures return 3;
 lock contention and recovery binding drift return 4. Existing corpus files are
 atomically replaced, not treated as immutable artifacts (`exists` does not apply).
