@@ -1,0 +1,98 @@
+[
+  {
+    "fingerprint": "d1da13416ad63a9525049a1660f78be85f1b9822a7262df0ed8c2aec906d280f",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "accepted"
+  },
+  {
+    "fingerprint": "e200d99d6ae9a588181101d8b34f1f542e743fe323abb68122b49a13b3cee17d",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "71eeed8c37985fe257a90b851837bdb8526a341ab5683b6c50d292b2983c866e",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "509f960e025d5ff1a352ee2062cc39aa52e1e01b40b55ce3f31752caf0f4b6f0",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "046716cbbb9aef844779f48fd36621eda9e6fb83da36480bca45b4f93f0538e8",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "accepted"
+  },
+  {
+    "fingerprint": "700c1c8ddc3b983de1be4d742a05e8048848489e2c41c8e8cb2b2c7c0e75cd9f",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "83f8604643bcdaa76caf2704d1d779ceb92874700578bf9bf736e272754ea2a6",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "dce43ea58fe2dba148706ff8481f4d7137106856a6b22e450f58655419933f4a",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "84f6afc287c8f12dd4d49a887257841ff2ff6b0ae9681907be645855ae5de844",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "accepted"
+  },
+  {
+    "fingerprint": "ff2902bf21cf4126ae123af8f1f9450416efe1ff9055e3729a3709ffff894ae0",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "2bb47e27ee6cd11cc4a51548cba22553060fd090530b11a7d916bb5e38f598cb",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "48f5f26af972f2ae71a2cebfb767f66bcb3e2d6133e2e73752f6bd3a28d5408a",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "c6859aecbc19a4677f4cb304ca775a84c1c856ba3e97b3e13779e5fc378b0de7",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "accepted"
+  },
+  {
+    "fingerprint": "2cd29caa518eb21758e7d6f8f89f402ca717a4717276fd53e1569ad2757ba26c",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "57401eef75ed68b6c8b253d5292acf67347e4a777fb8c567a7427faa3cd61744",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  },
+  {
+    "fingerprint": "b42fa0c2998893101f81376cb3c3e11574d263610af169aa6e2f3334c674b157",
+    "reason": "Individually checked synthetic characterization evidence",
+    "reviewer": "Golden fixture reviewer",
+    "status": "withheld"
+  }
+]

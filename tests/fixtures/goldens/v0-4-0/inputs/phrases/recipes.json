@@ -1,0 +1,86 @@
+{
+  "exercises": [
+    {
+      "candidate_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+      "distinction": "case",
+      "recipe": "phrase_recognition",
+      "reference": {
+        "evidence": [
+          {
+            "reference": "cum",
+            "source": "fixture",
+            "text": "reviewed context",
+            "version": "1"
+          }
+        ],
+        "language": "de",
+        "readings": [
+          {
+            "contributions": {
+              "object": "Begleitung; cum regiert den Ablativ."
+            },
+            "explanation": "Die Präposition cum bestimmt hier den Kasus.",
+            "features": {
+              "object": {
+                "case": "ablative",
+                "gender": "masculine",
+                "mood": null,
+                "number": "singular",
+                "person": null,
+                "tense": null,
+                "voice": null
+              }
+            },
+            "translations": [
+              "mit einem Freund",
+              "mit dem Freund"
+            ]
+          }
+        ]
+      },
+      "target": "object"
+    },
+    {
+      "candidate_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+      "distinction": "meaning",
+      "recipe": "phrase_translation",
+      "reference": {
+        "evidence": [
+          {
+            "reference": "cum",
+            "source": "fixture",
+            "text": "reviewed context",
+            "version": "1"
+          }
+        ],
+        "language": "de",
+        "readings": [
+          {
+            "contributions": {
+              "object": "Begleitung; cum regiert den Ablativ."
+            },
+            "explanation": "Die Präposition cum bestimmt hier den Kasus.",
+            "features": {
+              "object": {
+                "case": "ablative",
+                "gender": "masculine",
+                "mood": null,
+                "number": "singular",
+                "person": null,
+                "tense": null,
+                "voice": null
+              }
+            },
+            "translations": [
+              "mit einem Freund",
+              "mit dem Freund"
+            ]
+          }
+        ]
+      },
+      "target": null
+    }
+  ],
+  "max_exercises": 2,
+  "version": 1
+}

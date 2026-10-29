@@ -1,0 +1,1584 @@
+version:
+1
+schema:
+"phrase-v1"
+layout_version:
+1
+terminology:
+{
+  "version": 1,
+  "language": "latin"
+}
+limits:
+{
+  "max_exercises": 2
+}
+exercises:
+[
+  {
+    "semantic_key": "phrase-exercise-v1-8f0ea8fef8fb2c49fdb7e71d400893df228d4c9b328986e65791e3a2f13d9ff9",
+    "candidate_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+    "recipe": "phrase_translation",
+    "target": null,
+    "distinction": "meaning",
+    "schema": "phrase-v1",
+    "layout_version": 1,
+    "review_state": "reviewed",
+    "reason": "Individually checked synthetic characterization evidence",
+    "enabled": "1",
+    "prompt": "cum amico\n\u00dcbersetze und vergleiche anschlie\u00dfend mit der Referenz.",
+    "answer": "Reviewed reference\nLesart 1: mit einem Freund / mit dem Freund\nDie Pr\u00e4position cum bestimmt hier den Kasus.\nSelbsteinsch\u00e4tzung: Vergleiche den Sinn, nicht den genauen Wortlaut.",
+    "prompt_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">cum amico<br>\u00dcbersetze und vergleiche anschlie\u00dfend mit der Referenz.</div>",
+    "answer_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">Reviewed reference<br>Lesart 1: mit einem Freund / mit dem Freund<br>Die Pr\u00e4position cum bestimmt hier den Kasus.<br>Selbsteinsch\u00e4tzung: Vergleiche den Sinn, nicht den genauen Wortlaut.</div>",
+    "readings": [
+      {
+        "translations": [
+          "mit einem Freund",
+          "mit dem Freund"
+        ],
+        "features": {
+          "object": {
+            "case": "ablative",
+            "number": "singular",
+            "gender": "masculine",
+            "person": null,
+            "tense": null,
+            "mood": null,
+            "voice": null
+          }
+        },
+        "contributions": {
+          "object": "Begleitung; cum regiert den Ablativ."
+        },
+        "explanation": "Die Pr\u00e4position cum bestimmt hier den Kasus."
+      }
+    ],
+    "claim_fingerprint": "3ef6f1bfe5c5ef4ff73b84e5cd8ac3efad5dba9f719dec9c650d0fb8e0f6b2b5",
+    "grading": "self-assessment",
+    "latinitas_id": "latinitas-v2-d5b384b48e00d07b9bd72df9470bd10e9cc80e825749a4c7354b0aff7ea6081f",
+    "object_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+    "slot": 10,
+    "card_semantic_key": "phrase_translation:phrase",
+    "eligible": true,
+    "reasons": [],
+    "claims": [
+      {
+        "identity": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+        "candidate_id": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+        "feature": "combination",
+        "kind": "explanation",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"bindings\":[{\"entry\":\"friend\",\"form\":\"abl-sg\",\"role\":\"object\",\"sense\":\"person\",\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"candidate_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"constituents\":[{\"entry\":\"friend\",\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"form\":{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},\"role\":\"object\",\"sense\":{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"input_fingerprints\":[\"5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8\",\"6273c98ef831ca1382033ecfb7db86f3fd256d097fccfa72dd6bfaae6b82f50b\",\"b676a90d19f1da58ec87d8715dc80db8dbd9aebcad7c349bc95292aea345c08d\",\"cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88\"],\"object_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"pattern\":\"with\",\"pattern_evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"pattern_version\":1,\"source_identity\":\"phrase-source-v1-48390372846cabffae0b2b502bf115cf5bd5ff0e60c55dee057fe75418560f49\",\"source_scope\":\"phrase-input-v1\",\"text\":\"cum amico\"}",
+        "value": "Explicitly approve this combination's grammatical correctness and naturalness.",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          },
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          },
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "friend-person",
+            "version": "1",
+            "text": "human participant"
+          },
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "cum amico",
+            "version": "1",
+            "text": "cum governs ablative; with a friend"
+          }
+        ],
+        "fingerprint": "59eef5639d84d9ab18bd03c78c3e6ef1583a9826562c7abc3f1a8001e33f96c8",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "phrase-exercise-v1-8f0ea8fef8fb2c49fdb7e71d400893df228d4c9b328986e65791e3a2f13d9ff9",
+        "candidate_id": "phrase-exercise-v1-8f0ea8fef8fb2c49fdb7e71d400893df228d4c9b328986e65791e3a2f13d9ff9",
+        "feature": "answer",
+        "kind": "explanation",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"bindings\":[{\"entry\":\"friend\",\"form\":\"abl-sg\",\"role\":\"object\",\"sense\":\"person\",\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"candidate_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"constituents\":[{\"entry\":\"friend\",\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"form\":{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},\"role\":\"object\",\"sense\":{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"input_fingerprints\":[\"5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8\",\"6273c98ef831ca1382033ecfb7db86f3fd256d097fccfa72dd6bfaae6b82f50b\",\"b676a90d19f1da58ec87d8715dc80db8dbd9aebcad7c349bc95292aea345c08d\",\"cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88\"],\"object_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"pattern\":\"with\",\"pattern_evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"pattern_version\":1,\"source_identity\":\"phrase-source-v1-48390372846cabffae0b2b502bf115cf5bd5ff0e60c55dee057fe75418560f49\",\"source_scope\":\"phrase-input-v1\",\"text\":\"cum amico\"}",
+        "value": "{\"evidence\":[{\"reference\":\"cum\",\"source\":\"fixture\",\"text\":\"reviewed context\",\"version\":\"1\"}],\"language\":\"de\",\"readings\":[{\"contributions\":{\"object\":\"Begleitung; cum regiert den Ablativ.\"},\"explanation\":\"Die Pr\u00e4position cum bestimmt hier den Kasus.\",\"features\":{\"object\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null}},\"translations\":[\"mit einem Freund\",\"mit dem Freund\"]}]}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "fixture",
+            "reference": "cum",
+            "version": "1",
+            "text": "reviewed context"
+          }
+        ],
+        "fingerprint": "3ef6f1bfe5c5ef4ff73b84e5cd8ac3efad5dba9f719dec9c650d0fb8e0f6b2b5",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "friend",
+        "candidate_id": "friend/gender",
+        "feature": "gender",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+        "value": "\"masculine\"",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          }
+        ],
+        "fingerprint": "cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "friend",
+        "candidate_id": "friend/form:abl-sg",
+        "feature": "form:abl-sg",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+        "value": "{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          }
+        ],
+        "fingerprint": "b676a90d19f1da58ec87d8715dc80db8dbd9aebcad7c349bc95292aea345c08d",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "friend",
+        "candidate_id": "friend/sense:person",
+        "feature": "sense:person",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+        "value": "{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "friend-person",
+            "version": "1",
+            "text": "human participant"
+          }
+        ],
+        "fingerprint": "5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "pattern:with",
+        "candidate_id": "pattern:with/pattern",
+        "feature": "pattern",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"key\":\"with\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"ablative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]}}}",
+        "value": "{\"evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"key\":\"with\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"ablative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]}}}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "cum amico",
+            "version": "1",
+            "text": "cum governs ablative; with a friend"
+          }
+        ],
+        "fingerprint": "6273c98ef831ca1382033ecfb7db86f3fd256d097fccfa72dd6bfaae6b82f50b",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      }
+    ]
+  },
+  {
+    "semantic_key": "phrase-exercise-v1-dc83a9364d20919b21602907c977412dba643a849c349ff21c5ff1318beb7191",
+    "candidate_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+    "recipe": "phrase_recognition",
+    "target": "object",
+    "distinction": "case",
+    "schema": "phrase-v1",
+    "layout_version": 1,
+    "review_state": "reviewed",
+    "reason": "Individually checked synthetic characterization evidence",
+    "enabled": "1",
+    "prompt": "cum amico\nBestimme amico [object]: Casus.",
+    "answer": "Reviewed reference\nLesart 1: mit einem Freund / mit dem Freund\nCasus: ablativus\nNumerus: singularis\nGenus: masculinum\nBegleitung; cum regiert den Ablativ.\nDie Pr\u00e4position cum bestimmt hier den Kasus.",
+    "prompt_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">cum amico<br>Bestimme amico [object]: Casus.</div>",
+    "answer_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">Reviewed reference<br>Lesart 1: mit einem Freund / mit dem Freund<br>Casus: ablativus<br>Numerus: singularis<br>Genus: masculinum<br>Begleitung; cum regiert den Ablativ.<br>Die Pr\u00e4position cum bestimmt hier den Kasus.</div>",
+    "readings": [
+      {
+        "translations": [
+          "mit einem Freund",
+          "mit dem Freund"
+        ],
+        "features": {
+          "object": {
+            "case": "ablative",
+            "number": "singular",
+            "gender": "masculine",
+            "person": null,
+            "tense": null,
+            "mood": null,
+            "voice": null
+          }
+        },
+        "contributions": {
+          "object": "Begleitung; cum regiert den Ablativ."
+        },
+        "explanation": "Die Pr\u00e4position cum bestimmt hier den Kasus."
+      }
+    ],
+    "claim_fingerprint": "de9af6861a0ddf05e7d03af8dc0f2ded034eb5357f588a276c2fd6c3f9787e5b",
+    "grading": "recognition",
+    "latinitas_id": "latinitas-v2-cd55fe9c2b13f29be6289e82247ee5aa63b01e015844098b73a78f8b2641043a",
+    "object_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+    "slot": 11,
+    "card_semantic_key": "phrase_recognition:phrase",
+    "eligible": true,
+    "reasons": [],
+    "claims": [
+      {
+        "identity": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+        "candidate_id": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+        "feature": "combination",
+        "kind": "explanation",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"bindings\":[{\"entry\":\"friend\",\"form\":\"abl-sg\",\"role\":\"object\",\"sense\":\"person\",\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"candidate_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"constituents\":[{\"entry\":\"friend\",\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"form\":{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},\"role\":\"object\",\"sense\":{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"input_fingerprints\":[\"5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8\",\"6273c98ef831ca1382033ecfb7db86f3fd256d097fccfa72dd6bfaae6b82f50b\",\"b676a90d19f1da58ec87d8715dc80db8dbd9aebcad7c349bc95292aea345c08d\",\"cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88\"],\"object_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"pattern\":\"with\",\"pattern_evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"pattern_version\":1,\"source_identity\":\"phrase-source-v1-48390372846cabffae0b2b502bf115cf5bd5ff0e60c55dee057fe75418560f49\",\"source_scope\":\"phrase-input-v1\",\"text\":\"cum amico\"}",
+        "value": "Explicitly approve this combination's grammatical correctness and naturalness.",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          },
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          },
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "friend-person",
+            "version": "1",
+            "text": "human participant"
+          },
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "cum amico",
+            "version": "1",
+            "text": "cum governs ablative; with a friend"
+          }
+        ],
+        "fingerprint": "59eef5639d84d9ab18bd03c78c3e6ef1583a9826562c7abc3f1a8001e33f96c8",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "phrase-exercise-v1-dc83a9364d20919b21602907c977412dba643a849c349ff21c5ff1318beb7191",
+        "candidate_id": "phrase-exercise-v1-dc83a9364d20919b21602907c977412dba643a849c349ff21c5ff1318beb7191",
+        "feature": "answer",
+        "kind": "explanation",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"bindings\":[{\"entry\":\"friend\",\"form\":\"abl-sg\",\"role\":\"object\",\"sense\":\"person\",\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"candidate_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"constituents\":[{\"entry\":\"friend\",\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"form\":{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},\"role\":\"object\",\"sense\":{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"input_fingerprints\":[\"5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8\",\"6273c98ef831ca1382033ecfb7db86f3fd256d097fccfa72dd6bfaae6b82f50b\",\"b676a90d19f1da58ec87d8715dc80db8dbd9aebcad7c349bc95292aea345c08d\",\"cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88\"],\"object_key\":\"phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b\",\"pattern\":\"with\",\"pattern_evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"pattern_version\":1,\"source_identity\":\"phrase-source-v1-48390372846cabffae0b2b502bf115cf5bd5ff0e60c55dee057fe75418560f49\",\"source_scope\":\"phrase-input-v1\",\"text\":\"cum amico\"}",
+        "value": "{\"evidence\":[{\"reference\":\"cum\",\"source\":\"fixture\",\"text\":\"reviewed context\",\"version\":\"1\"}],\"language\":\"de\",\"readings\":[{\"contributions\":{\"object\":\"Begleitung; cum regiert den Ablativ.\"},\"explanation\":\"Die Pr\u00e4position cum bestimmt hier den Kasus.\",\"features\":{\"object\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null}},\"translations\":[\"mit einem Freund\",\"mit dem Freund\"]}]}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "fixture",
+            "reference": "cum",
+            "version": "1",
+            "text": "reviewed context"
+          }
+        ],
+        "fingerprint": "de9af6861a0ddf05e7d03af8dc0f2ded034eb5357f588a276c2fd6c3f9787e5b",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "friend",
+        "candidate_id": "friend/gender",
+        "feature": "gender",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+        "value": "\"masculine\"",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          }
+        ],
+        "fingerprint": "cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "friend",
+        "candidate_id": "friend/form:abl-sg",
+        "feature": "form:abl-sg",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+        "value": "{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "amicus",
+            "version": "1",
+            "text": "masculine noun; checked bounded forms"
+          }
+        ],
+        "fingerprint": "b676a90d19f1da58ec87d8715dc80db8dbd9aebcad7c349bc95292aea345c08d",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "friend",
+        "candidate_id": "friend/sense:person",
+        "feature": "sense:person",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+        "value": "{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "friend-person",
+            "version": "1",
+            "text": "human participant"
+          }
+        ],
+        "fingerprint": "5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      {
+        "identity": "pattern:with",
+        "candidate_id": "pattern:with/pattern",
+        "feature": "pattern",
+        "kind": "label",
+        "selected_sense": null,
+        "language": null,
+        "form": "{\"evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"key\":\"with\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"ablative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]}}}",
+        "value": "{\"evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"key\":\"with\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"ablative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]}}}",
+        "alternatives": [],
+        "evidence": [
+          {
+            "source": "Synthetic teaching fixture",
+            "reference": "cum amico",
+            "version": "1",
+            "text": "cum governs ablative; with a friend"
+          }
+        ],
+        "fingerprint": "6273c98ef831ca1382033ecfb7db86f3fd256d097fccfa72dd6bfaae6b82f50b",
+        "status": "accepted",
+        "review_status": "accepted",
+        "reason": "Individually checked synthetic characterization evidence"
+      }
+    ]
+  }
+]
+skipped:
+[]
+generation:
+{
+  "version": 1,
+  "limits": {
+    "max_exercises": 20,
+    "variants_per_binding": 2
+  },
+  "candidates": [
+    {
+      "pattern": "with",
+      "bindings": [
+        {
+          "role": "object",
+          "entry": "friend",
+          "sense": "person",
+          "form": "abl-sg",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          }
+        }
+      ],
+      "source_identity": "phrase-source-v1-48390372846cabffae0b2b502bf115cf5bd5ff0e60c55dee057fe75418560f49",
+      "source_scope": "phrase-input-v1",
+      "object_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+      "candidate_key": "phrase-object-v1-19c83b0eba949cc5511b9a859de8a50e55b827a44c4a59acd9d99d3692b1809b",
+      "text": "cum amico",
+      "family": "preposition-noun",
+      "pattern_version": 1,
+      "function_words": [
+        "cum"
+      ],
+      "pattern_evidence": [
+        {
+          "source": "Synthetic teaching fixture",
+          "reference": "cum amico",
+          "version": "1",
+          "text": "cum governs ablative; with a friend"
+        }
+      ],
+      "constituents": [
+        {
+          "role": "object",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "friend",
+          "sense": {
+            "key": "person",
+            "meaning": "Freund",
+            "valency": {},
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "friend-person",
+                "version": "1",
+                "text": "human participant"
+              }
+            ]
+          },
+          "form": {
+            "key": "abl-sg",
+            "text": "amico",
+            "features": {
+              "case": "ablative",
+              "number": "singular",
+              "gender": "masculine",
+              "person": null,
+              "tense": null,
+              "mood": null,
+              "voice": null
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ]
+        }
+      ],
+      "review_state": "proposal",
+      "input_claims": [
+        {
+          "identity": "friend",
+          "candidate_id": "friend/gender",
+          "feature": "gender",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "\"masculine\"",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/form:abl-sg",
+          "feature": "form:abl-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "b676a90d19f1da58ec87d8715dc80db8dbd9aebcad7c349bc95292aea345c08d",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/sense:person",
+          "feature": "sense:person",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "friend-person",
+              "version": "1",
+              "text": "human participant"
+            }
+          ],
+          "fingerprint": "5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "pattern:with",
+          "candidate_id": "pattern:with/pattern",
+          "feature": "pattern",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"key\":\"with\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"ablative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]}}}",
+          "value": "{\"evidence\":[{\"reference\":\"cum amico\",\"source\":\"Synthetic teaching fixture\",\"text\":\"cum governs ablative; with a friend\",\"version\":\"1\"}],\"family\":\"preposition-noun\",\"function_words\":[\"cum\"],\"key\":\"with\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"ablative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]}}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "cum amico",
+              "version": "1",
+              "text": "cum governs ablative; with a friend"
+            }
+          ],
+          "fingerprint": "6273c98ef831ca1382033ecfb7db86f3fd256d097fccfa72dd6bfaae6b82f50b",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        }
+      ]
+    },
+    {
+      "pattern": "sees",
+      "bindings": [
+        {
+          "role": "object",
+          "entry": "friend",
+          "sense": "person",
+          "form": "acc-sg",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          }
+        },
+        {
+          "role": "subject",
+          "entry": "girl",
+          "sense": "person",
+          "form": "nom-sg",
+          "source": {
+            "value": "girl",
+            "scope": "reviewed-fixture-scope"
+          }
+        },
+        {
+          "role": "verb",
+          "entry": "see",
+          "sense": "perceive",
+          "form": "present-sg",
+          "source": {
+            "value": "see",
+            "scope": "reviewed-fixture-scope"
+          }
+        }
+      ],
+      "source_identity": "phrase-source-v1-ff886ab6a917aac92a0e5f1e3b84d83e205a95e84968a50daffbafc5f03fe655",
+      "source_scope": "phrase-input-v1",
+      "object_key": "phrase-object-v1-e9fbcd5782af73ca71b170ff986aea315a2d3a7eefa264ff42606d042199b49f",
+      "candidate_key": "phrase-object-v1-e9fbcd5782af73ca71b170ff986aea315a2d3a7eefa264ff42606d042199b49f",
+      "text": "puella amicum videt",
+      "family": "verb-noun",
+      "pattern_version": 1,
+      "function_words": [],
+      "pattern_evidence": [
+        {
+          "source": "Synthetic teaching fixture",
+          "reference": "puella amicum videt",
+          "version": "1",
+          "text": "third-person subject agreement and transitive accusative valency; either human can see the other"
+        }
+      ],
+      "constituents": [
+        {
+          "role": "object",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "friend",
+          "sense": {
+            "key": "person",
+            "meaning": "Freund",
+            "valency": {},
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "friend-person",
+                "version": "1",
+                "text": "human participant"
+              }
+            ]
+          },
+          "form": {
+            "key": "acc-sg",
+            "text": "amicum",
+            "features": {
+              "case": "accusative",
+              "number": "singular",
+              "gender": "masculine",
+              "person": null,
+              "tense": null,
+              "mood": null,
+              "voice": null
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ]
+        },
+        {
+          "role": "subject",
+          "source": {
+            "value": "girl",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "girl",
+          "sense": {
+            "key": "person",
+            "meaning": "M\u00e4dchen",
+            "valency": {},
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "girl-person",
+                "version": "1",
+                "text": "human participant"
+              }
+            ]
+          },
+          "form": {
+            "key": "nom-sg",
+            "text": "puella",
+            "features": {
+              "case": "nominative",
+              "number": "singular",
+              "gender": "feminine",
+              "person": null,
+              "tense": null,
+              "mood": null,
+              "voice": null
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "puella/puellae",
+              "version": "1",
+              "text": "feminine noun; puella nominative singular, puellae nominative plural in the reviewed plural clause; puellam accusative singular"
+            }
+          ]
+        },
+        {
+          "role": "verb",
+          "source": {
+            "value": "see",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "see",
+          "sense": {
+            "key": "perceive",
+            "meaning": "sehen",
+            "valency": {
+              "subject": "nominative",
+              "object": "accusative"
+            },
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "see-perceive",
+                "version": "1",
+                "text": "subject sees direct accusative object"
+              }
+            ]
+          },
+          "form": {
+            "key": "present-sg",
+            "text": "videt",
+            "features": {
+              "case": null,
+              "number": "singular",
+              "gender": null,
+              "person": "3",
+              "tense": "present",
+              "mood": "indicative",
+              "voice": "active"
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "videt analysis",
+              "version": "1",
+              "text": "videt: third person singular present active indicative; agrees with puella"
+            },
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "vident analysis",
+              "version": "1",
+              "text": "vident: third person plural present active indicative; agrees with puellae, not puella"
+            }
+          ]
+        }
+      ],
+      "review_state": "proposal",
+      "input_claims": [
+        {
+          "identity": "friend",
+          "candidate_id": "friend/gender",
+          "feature": "gender",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "\"masculine\"",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/form:acc-sg",
+          "feature": "form:acc-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "004c3096b4b2f81517e639785c74cbc5da71904245507241760134a8209b76c2",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/sense:person",
+          "feature": "sense:person",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "friend-person",
+              "version": "1",
+              "text": "human participant"
+            }
+          ],
+          "fingerprint": "5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "girl",
+          "candidate_id": "girl/gender",
+          "feature": "gender",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"puella/puellae\",\"source\":\"Synthetic teaching fixture\",\"text\":\"feminine noun; puella nominative singular, puellae nominative plural in the reviewed plural clause; puellam accusative singular\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"puella\"},{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"plural\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-pl\",\"text\":\"puellae\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"puellam\"}],\"gender\":\"feminine\",\"identity\":\"girl\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"girl-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"M\u00e4dchen\",\"valency\":{}}]},\"fields\":{\"ID\":\"girl\",\"Parts\":\"puellae\",\"Word\":\"puella\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"girl\"}}",
+          "value": "\"feminine\"",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "puella/puellae",
+              "version": "1",
+              "text": "feminine noun; puella nominative singular, puellae nominative plural in the reviewed plural clause; puellam accusative singular"
+            }
+          ],
+          "fingerprint": "61e30c6ae23d60a336153a5373ce29286141d8dc7966ad405404e30c98caefa0",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "girl",
+          "candidate_id": "girl/form:nom-sg",
+          "feature": "form:nom-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"puella/puellae\",\"source\":\"Synthetic teaching fixture\",\"text\":\"feminine noun; puella nominative singular, puellae nominative plural in the reviewed plural clause; puellam accusative singular\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"puella\"},{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"plural\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-pl\",\"text\":\"puellae\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"puellam\"}],\"gender\":\"feminine\",\"identity\":\"girl\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"girl-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"M\u00e4dchen\",\"valency\":{}}]},\"fields\":{\"ID\":\"girl\",\"Parts\":\"puellae\",\"Word\":\"puella\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"girl\"}}",
+          "value": "{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"puella\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "puella/puellae",
+              "version": "1",
+              "text": "feminine noun; puella nominative singular, puellae nominative plural in the reviewed plural clause; puellam accusative singular"
+            }
+          ],
+          "fingerprint": "335f512206fdf875de686012604510eca91b7ade5556ff2df357dfa67b12eabb",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "girl",
+          "candidate_id": "girl/sense:person",
+          "feature": "sense:person",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"puella/puellae\",\"source\":\"Synthetic teaching fixture\",\"text\":\"feminine noun; puella nominative singular, puellae nominative plural in the reviewed plural clause; puellam accusative singular\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"puella\"},{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"plural\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-pl\",\"text\":\"puellae\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"puellam\"}],\"gender\":\"feminine\",\"identity\":\"girl\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"girl-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"M\u00e4dchen\",\"valency\":{}}]},\"fields\":{\"ID\":\"girl\",\"Parts\":\"puellae\",\"Word\":\"puella\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"girl\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"girl-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"M\u00e4dchen\",\"valency\":{}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "girl-person",
+              "version": "1",
+              "text": "human participant"
+            }
+          ],
+          "fingerprint": "9439c0e5c2783a954b463997aa13bb772303ad4266fddc27f87096df7f082f3e",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "see",
+          "candidate_id": "see/form:present-sg",
+          "feature": "form:present-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"videt analysis\",\"source\":\"Synthetic teaching fixture\",\"text\":\"videt: third person singular present active indicative; agrees with puella\",\"version\":\"1\"},{\"reference\":\"vident analysis\",\"source\":\"Synthetic teaching fixture\",\"text\":\"vident: third person plural present active indicative; agrees with puellae, not puella\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":null,\"gender\":null,\"mood\":\"indicative\",\"number\":\"singular\",\"person\":\"3\",\"tense\":\"present\",\"voice\":\"active\"},\"key\":\"present-sg\",\"text\":\"videt\"},{\"features\":{\"case\":null,\"gender\":null,\"mood\":\"indicative\",\"number\":\"plural\",\"person\":\"3\",\"tense\":\"present\",\"voice\":\"active\"},\"key\":\"present-pl\",\"text\":\"vident\"}],\"gender\":null,\"identity\":\"see\",\"pos\":\"verb\",\"senses\":[{\"evidence\":[{\"reference\":\"see-perceive\",\"source\":\"Synthetic teaching fixture\",\"text\":\"subject sees direct accusative object\",\"version\":\"1\"}],\"key\":\"perceive\",\"meaning\":\"sehen\",\"valency\":{\"object\":\"accusative\",\"subject\":\"nominative\"}}]},\"fields\":{\"ID\":\"see\",\"Parts\":\"videre\",\"Word\":\"video\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"see\"}}",
+          "value": "{\"features\":{\"case\":null,\"gender\":null,\"mood\":\"indicative\",\"number\":\"singular\",\"person\":\"3\",\"tense\":\"present\",\"voice\":\"active\"},\"key\":\"present-sg\",\"text\":\"videt\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "videt analysis",
+              "version": "1",
+              "text": "videt: third person singular present active indicative; agrees with puella"
+            },
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "vident analysis",
+              "version": "1",
+              "text": "vident: third person plural present active indicative; agrees with puellae, not puella"
+            }
+          ],
+          "fingerprint": "3569558be498cc61d2b8475fb34672f7072f0d9d1da4624a6ac91c9e7766534b",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "see",
+          "candidate_id": "see/sense:perceive",
+          "feature": "sense:perceive",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"videt analysis\",\"source\":\"Synthetic teaching fixture\",\"text\":\"videt: third person singular present active indicative; agrees with puella\",\"version\":\"1\"},{\"reference\":\"vident analysis\",\"source\":\"Synthetic teaching fixture\",\"text\":\"vident: third person plural present active indicative; agrees with puellae, not puella\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":null,\"gender\":null,\"mood\":\"indicative\",\"number\":\"singular\",\"person\":\"3\",\"tense\":\"present\",\"voice\":\"active\"},\"key\":\"present-sg\",\"text\":\"videt\"},{\"features\":{\"case\":null,\"gender\":null,\"mood\":\"indicative\",\"number\":\"plural\",\"person\":\"3\",\"tense\":\"present\",\"voice\":\"active\"},\"key\":\"present-pl\",\"text\":\"vident\"}],\"gender\":null,\"identity\":\"see\",\"pos\":\"verb\",\"senses\":[{\"evidence\":[{\"reference\":\"see-perceive\",\"source\":\"Synthetic teaching fixture\",\"text\":\"subject sees direct accusative object\",\"version\":\"1\"}],\"key\":\"perceive\",\"meaning\":\"sehen\",\"valency\":{\"object\":\"accusative\",\"subject\":\"nominative\"}}]},\"fields\":{\"ID\":\"see\",\"Parts\":\"videre\",\"Word\":\"video\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"see\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"see-perceive\",\"source\":\"Synthetic teaching fixture\",\"text\":\"subject sees direct accusative object\",\"version\":\"1\"}],\"key\":\"perceive\",\"meaning\":\"sehen\",\"valency\":{\"object\":\"accusative\",\"subject\":\"nominative\"}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "see-perceive",
+              "version": "1",
+              "text": "subject sees direct accusative object"
+            }
+          ],
+          "fingerprint": "6e546b301ebc9d0185f301ad5a0312e1d6eb9800ae27b6801cfc574fd4886b26",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "pattern:sees",
+          "candidate_id": "pattern:sees/pattern",
+          "feature": "pattern",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"evidence\":[{\"reference\":\"puella amicum videt\",\"source\":\"Synthetic teaching fixture\",\"text\":\"third-person subject agreement and transitive accusative valency; either human can see the other\",\"version\":\"1\"}],\"family\":\"verb-noun\",\"function_words\":[],\"key\":\"sees\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"accusative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\",\"girl/person\"]},\"subject\":{\"pos\":\"noun\",\"requires\":{\"case\":\"nominative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"girl/person\",\"friend/person\"]},\"verb\":{\"pos\":\"verb\",\"requires\":{\"case\":null,\"gender\":null,\"mood\":\"indicative\",\"number\":null,\"person\":\"3\",\"tense\":\"present\",\"voice\":\"active\"},\"senses\":[\"see/perceive\"]}}}",
+          "value": "{\"evidence\":[{\"reference\":\"puella amicum videt\",\"source\":\"Synthetic teaching fixture\",\"text\":\"third-person subject agreement and transitive accusative valency; either human can see the other\",\"version\":\"1\"}],\"family\":\"verb-noun\",\"function_words\":[],\"key\":\"sees\",\"roles\":{\"object\":{\"pos\":\"noun\",\"requires\":{\"case\":\"accusative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\",\"girl/person\"]},\"subject\":{\"pos\":\"noun\",\"requires\":{\"case\":\"nominative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"girl/person\",\"friend/person\"]},\"verb\":{\"pos\":\"verb\",\"requires\":{\"case\":null,\"gender\":null,\"mood\":\"indicative\",\"number\":null,\"person\":\"3\",\"tense\":\"present\",\"voice\":\"active\"},\"senses\":[\"see/perceive\"]}}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "puella amicum videt",
+              "version": "1",
+              "text": "third-person subject agreement and transitive accusative valency; either human can see the other"
+            }
+          ],
+          "fingerprint": "fa3610109450b84e77fb46577974462fc16399083b394f0cfe3376b4635f4634",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        }
+      ]
+    },
+    {
+      "pattern": "possessor",
+      "bindings": [
+        {
+          "role": "dependent",
+          "entry": "friend",
+          "sense": "person",
+          "form": "gen-sg",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          }
+        },
+        {
+          "role": "head",
+          "entry": "book",
+          "sense": "volume",
+          "form": "nom-sg",
+          "source": {
+            "value": "book",
+            "scope": "reviewed-fixture-scope"
+          }
+        }
+      ],
+      "source_identity": "phrase-source-v1-2e3c4d71d9b85be87cf419900c75ea38b8dc60959cb38b60a40f0483cc0ddbaa",
+      "source_scope": "phrase-input-v1",
+      "object_key": "phrase-object-v1-890d90464ddba69f662011a304f77ec82cb1daf07aa94d2851b39376cbffbea1",
+      "candidate_key": "phrase-object-v1-890d90464ddba69f662011a304f77ec82cb1daf07aa94d2851b39376cbffbea1",
+      "text": "liber amici",
+      "family": "noun-genitive",
+      "pattern_version": 1,
+      "function_words": [],
+      "pattern_evidence": [
+        {
+          "source": "Synthetic teaching fixture",
+          "reference": "liber amici",
+          "version": "1",
+          "text": "possessor dependent in genitive; the friend's book"
+        }
+      ],
+      "constituents": [
+        {
+          "role": "dependent",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "friend",
+          "sense": {
+            "key": "person",
+            "meaning": "Freund",
+            "valency": {},
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "friend-person",
+                "version": "1",
+                "text": "human participant"
+              }
+            ]
+          },
+          "form": {
+            "key": "gen-sg",
+            "text": "amici",
+            "features": {
+              "case": "genitive",
+              "number": "singular",
+              "gender": "masculine",
+              "person": null,
+              "tense": null,
+              "mood": null,
+              "voice": null
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ]
+        },
+        {
+          "role": "head",
+          "source": {
+            "value": "book",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "book",
+          "sense": {
+            "key": "volume",
+            "meaning": "Buch",
+            "valency": {},
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "book-volume",
+                "version": "1",
+                "text": "possessable volume"
+              }
+            ]
+          },
+          "form": {
+            "key": "nom-sg",
+            "text": "liber",
+            "features": {
+              "case": "nominative",
+              "number": "singular",
+              "gender": "masculine",
+              "person": null,
+              "tense": null,
+              "mood": null,
+              "voice": null
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "liber",
+              "version": "1",
+              "text": "masculine noun; nominative singular liber"
+            }
+          ]
+        }
+      ],
+      "review_state": "proposal",
+      "input_claims": [
+        {
+          "identity": "friend",
+          "candidate_id": "friend/gender",
+          "feature": "gender",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "\"masculine\"",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/form:gen-sg",
+          "feature": "form:gen-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "71d4cc50af391bf4579fe4d9aebcbc69a1faaa73fb587c93a9fe1ef387616901",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/sense:person",
+          "feature": "sense:person",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "friend-person",
+              "version": "1",
+              "text": "human participant"
+            }
+          ],
+          "fingerprint": "5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "book",
+          "candidate_id": "book/gender",
+          "feature": "gender",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"liber\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; nominative singular liber\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"liber\"}],\"gender\":\"masculine\",\"identity\":\"book\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"book-volume\",\"source\":\"Synthetic teaching fixture\",\"text\":\"possessable volume\",\"version\":\"1\"}],\"key\":\"volume\",\"meaning\":\"Buch\",\"valency\":{}}]},\"fields\":{\"ID\":\"book\",\"Parts\":\"libri\",\"Word\":\"liber\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"book\"}}",
+          "value": "\"masculine\"",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "liber",
+              "version": "1",
+              "text": "masculine noun; nominative singular liber"
+            }
+          ],
+          "fingerprint": "4fc14f845256b62b5dd086fc111bcaff0c7406be891ca59d2a8ee70190faf762",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "book",
+          "candidate_id": "book/form:nom-sg",
+          "feature": "form:nom-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"liber\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; nominative singular liber\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"liber\"}],\"gender\":\"masculine\",\"identity\":\"book\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"book-volume\",\"source\":\"Synthetic teaching fixture\",\"text\":\"possessable volume\",\"version\":\"1\"}],\"key\":\"volume\",\"meaning\":\"Buch\",\"valency\":{}}]},\"fields\":{\"ID\":\"book\",\"Parts\":\"libri\",\"Word\":\"liber\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"book\"}}",
+          "value": "{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"liber\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "liber",
+              "version": "1",
+              "text": "masculine noun; nominative singular liber"
+            }
+          ],
+          "fingerprint": "fe816588a34e420cff8add4241e12684806df004bf2f94ebb7246bd9ca188cfe",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "book",
+          "candidate_id": "book/sense:volume",
+          "feature": "sense:volume",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"liber\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; nominative singular liber\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"liber\"}],\"gender\":\"masculine\",\"identity\":\"book\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"book-volume\",\"source\":\"Synthetic teaching fixture\",\"text\":\"possessable volume\",\"version\":\"1\"}],\"key\":\"volume\",\"meaning\":\"Buch\",\"valency\":{}}]},\"fields\":{\"ID\":\"book\",\"Parts\":\"libri\",\"Word\":\"liber\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"book\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"book-volume\",\"source\":\"Synthetic teaching fixture\",\"text\":\"possessable volume\",\"version\":\"1\"}],\"key\":\"volume\",\"meaning\":\"Buch\",\"valency\":{}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "book-volume",
+              "version": "1",
+              "text": "possessable volume"
+            }
+          ],
+          "fingerprint": "d484efaac634d308af9244700f20a45465937ddc603bb32b49760ef640ea37d0",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "pattern:possessor",
+          "candidate_id": "pattern:possessor/pattern",
+          "feature": "pattern",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"evidence\":[{\"reference\":\"liber amici\",\"source\":\"Synthetic teaching fixture\",\"text\":\"possessor dependent in genitive; the friend's book\",\"version\":\"1\"}],\"family\":\"noun-genitive\",\"function_words\":[],\"key\":\"possessor\",\"roles\":{\"dependent\":{\"pos\":\"noun\",\"requires\":{\"case\":\"genitive\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]},\"head\":{\"pos\":\"noun\",\"requires\":{\"case\":\"nominative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"book/volume\"]}}}",
+          "value": "{\"evidence\":[{\"reference\":\"liber amici\",\"source\":\"Synthetic teaching fixture\",\"text\":\"possessor dependent in genitive; the friend's book\",\"version\":\"1\"}],\"family\":\"noun-genitive\",\"function_words\":[],\"key\":\"possessor\",\"roles\":{\"dependent\":{\"pos\":\"noun\",\"requires\":{\"case\":\"genitive\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]},\"head\":{\"pos\":\"noun\",\"requires\":{\"case\":\"nominative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"book/volume\"]}}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "liber amici",
+              "version": "1",
+              "text": "possessor dependent in genitive; the friend's book"
+            }
+          ],
+          "fingerprint": "6284aa37cd8a477ae6c6b37d92f35b210def4dee859cda1c527618a3bd808917",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        }
+      ]
+    },
+    {
+      "pattern": "quality",
+      "bindings": [
+        {
+          "role": "head",
+          "entry": "friend",
+          "sense": "person",
+          "form": "nom-sg",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          }
+        },
+        {
+          "role": "modifier",
+          "entry": "good",
+          "sense": "quality",
+          "form": "masc-sg",
+          "source": {
+            "value": "good",
+            "scope": "reviewed-fixture-scope"
+          }
+        }
+      ],
+      "source_identity": "phrase-source-v1-8fe6bb7f1293663db0330092c0472619ed6327f0387470ee364e350875d2383e",
+      "source_scope": "phrase-input-v1",
+      "object_key": "phrase-object-v1-ae5749722a2b353511e5c903f4a7831ca401d65a30d23dbc14e7df503ec50b11",
+      "candidate_key": "phrase-object-v1-ae5749722a2b353511e5c903f4a7831ca401d65a30d23dbc14e7df503ec50b11",
+      "text": "amicus bonus",
+      "family": "adjective-noun",
+      "pattern_version": 1,
+      "function_words": [],
+      "pattern_evidence": [
+        {
+          "source": "Synthetic teaching fixture",
+          "reference": "amicus bonus",
+          "version": "1",
+          "text": "adjective agrees in case, number and gender; a good friend"
+        }
+      ],
+      "constituents": [
+        {
+          "role": "head",
+          "source": {
+            "value": "friend",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "friend",
+          "sense": {
+            "key": "person",
+            "meaning": "Freund",
+            "valency": {},
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "friend-person",
+                "version": "1",
+                "text": "human participant"
+              }
+            ]
+          },
+          "form": {
+            "key": "nom-sg",
+            "text": "amicus",
+            "features": {
+              "case": "nominative",
+              "number": "singular",
+              "gender": "masculine",
+              "person": null,
+              "tense": null,
+              "mood": null,
+              "voice": null
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ]
+        },
+        {
+          "role": "modifier",
+          "source": {
+            "value": "good",
+            "scope": "reviewed-fixture-scope"
+          },
+          "entry": "good",
+          "sense": {
+            "key": "quality",
+            "meaning": "gut",
+            "valency": {},
+            "evidence": [
+              {
+                "source": "Synthetic teaching fixture",
+                "reference": "good-quality",
+                "version": "1",
+                "text": "quality attributed to friend in bounded fixture"
+              }
+            ]
+          },
+          "form": {
+            "key": "masc-sg",
+            "text": "bonus",
+            "features": {
+              "case": "nominative",
+              "number": "singular",
+              "gender": "masculine",
+              "person": null,
+              "tense": null,
+              "mood": null,
+              "voice": null
+            }
+          },
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "bonus",
+              "version": "1",
+              "text": "contrasting masculine and feminine nominative singular"
+            }
+          ]
+        }
+      ],
+      "review_state": "proposal",
+      "input_claims": [
+        {
+          "identity": "friend",
+          "candidate_id": "friend/gender",
+          "feature": "gender",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "\"masculine\"",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "cc03393b2ea8ebffbd399d9abb7d6842718b67aa6b2245ec85e5581f0c428f88",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/form:nom-sg",
+          "feature": "form:nom-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus",
+              "version": "1",
+              "text": "masculine noun; checked bounded forms"
+            }
+          ],
+          "fingerprint": "12a4bc5e71f03702326a22cebd0591d0deada04fe7911358b3fe1a2336da9c2d",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "friend",
+          "candidate_id": "friend/sense:person",
+          "feature": "sense:person",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"amicus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"masculine noun; checked bounded forms\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"nom-sg\",\"text\":\"amicus\"},{\"features\":{\"case\":\"accusative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"acc-sg\",\"text\":\"amicum\"},{\"features\":{\"case\":\"ablative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"abl-sg\",\"text\":\"amico\"},{\"features\":{\"case\":\"genitive\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"gen-sg\",\"text\":\"amici\"}],\"gender\":\"masculine\",\"identity\":\"friend\",\"pos\":\"noun\",\"senses\":[{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}]},\"fields\":{\"ID\":\"friend\",\"Parts\":\"amici\",\"Word\":\"amicus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"friend\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"friend-person\",\"source\":\"Synthetic teaching fixture\",\"text\":\"human participant\",\"version\":\"1\"}],\"key\":\"person\",\"meaning\":\"Freund\",\"valency\":{}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "friend-person",
+              "version": "1",
+              "text": "human participant"
+            }
+          ],
+          "fingerprint": "5437aabbd14d0153a410471b1eb79a69929483c621008b7e9363c00b00268bb8",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "good",
+          "candidate_id": "good/form:masc-sg",
+          "feature": "form:masc-sg",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"bonus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"contrasting masculine and feminine nominative singular\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"masc-sg\",\"text\":\"bonus\"},{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"fem-sg\",\"text\":\"bona\"}],\"gender\":null,\"identity\":\"good\",\"pos\":\"adjective\",\"senses\":[{\"evidence\":[{\"reference\":\"good-quality\",\"source\":\"Synthetic teaching fixture\",\"text\":\"quality attributed to friend in bounded fixture\",\"version\":\"1\"}],\"key\":\"quality\",\"meaning\":\"gut\",\"valency\":{}}]},\"fields\":{\"ID\":\"good\",\"Parts\":\"bona\",\"Word\":\"bonus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"good\"}}",
+          "value": "{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"masc-sg\",\"text\":\"bonus\"}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "bonus",
+              "version": "1",
+              "text": "contrasting masculine and feminine nominative singular"
+            }
+          ],
+          "fingerprint": "79918de89471e020cd2e3199b5b42f257ffadb0069f60364c70def0f57032d14",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "good",
+          "candidate_id": "good/sense:quality",
+          "feature": "sense:quality",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"entry\":{\"evidence\":[{\"reference\":\"bonus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"contrasting masculine and feminine nominative singular\",\"version\":\"1\"}],\"forms\":[{\"features\":{\"case\":\"nominative\",\"gender\":\"masculine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"masc-sg\",\"text\":\"bonus\"},{\"features\":{\"case\":\"nominative\",\"gender\":\"feminine\",\"mood\":null,\"number\":\"singular\",\"person\":null,\"tense\":null,\"voice\":null},\"key\":\"fem-sg\",\"text\":\"bona\"}],\"gender\":null,\"identity\":\"good\",\"pos\":\"adjective\",\"senses\":[{\"evidence\":[{\"reference\":\"good-quality\",\"source\":\"Synthetic teaching fixture\",\"text\":\"quality attributed to friend in bounded fixture\",\"version\":\"1\"}],\"key\":\"quality\",\"meaning\":\"gut\",\"valency\":{}}]},\"fields\":{\"ID\":\"good\",\"Parts\":\"bona\",\"Word\":\"bonus\"},\"source\":{\"scope\":\"reviewed-fixture-scope\",\"value\":\"good\"}}",
+          "value": "{\"evidence\":[{\"reference\":\"good-quality\",\"source\":\"Synthetic teaching fixture\",\"text\":\"quality attributed to friend in bounded fixture\",\"version\":\"1\"}],\"key\":\"quality\",\"meaning\":\"gut\",\"valency\":{}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "good-quality",
+              "version": "1",
+              "text": "quality attributed to friend in bounded fixture"
+            }
+          ],
+          "fingerprint": "2e91ac82ceb8dd1259c22804ffc6fcab7a9f78abc90fd25370e44cc4a8ad67ab",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        },
+        {
+          "identity": "pattern:quality",
+          "candidate_id": "pattern:quality/pattern",
+          "feature": "pattern",
+          "kind": "label",
+          "selected_sense": null,
+          "language": null,
+          "form": "{\"evidence\":[{\"reference\":\"amicus bonus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"adjective agrees in case, number and gender; a good friend\",\"version\":\"1\"}],\"family\":\"adjective-noun\",\"function_words\":[],\"key\":\"quality\",\"roles\":{\"head\":{\"pos\":\"noun\",\"requires\":{\"case\":\"nominative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]},\"modifier\":{\"pos\":\"adjective\",\"requires\":{\"case\":null,\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"good/quality\"]}}}",
+          "value": "{\"evidence\":[{\"reference\":\"amicus bonus\",\"source\":\"Synthetic teaching fixture\",\"text\":\"adjective agrees in case, number and gender; a good friend\",\"version\":\"1\"}],\"family\":\"adjective-noun\",\"function_words\":[],\"key\":\"quality\",\"roles\":{\"head\":{\"pos\":\"noun\",\"requires\":{\"case\":\"nominative\",\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"friend/person\"]},\"modifier\":{\"pos\":\"adjective\",\"requires\":{\"case\":null,\"gender\":null,\"mood\":null,\"number\":null,\"person\":null,\"tense\":null,\"voice\":null},\"senses\":[\"good/quality\"]}}}",
+          "alternatives": [],
+          "evidence": [
+            {
+              "source": "Synthetic teaching fixture",
+              "reference": "amicus bonus",
+              "version": "1",
+              "text": "adjective agrees in case, number and gender; a good friend"
+            }
+          ],
+          "fingerprint": "5be64feb20b5cf01f02ecfbec0ebb3cf40e0b2d1f15ecf2b77742a59c7af37bc",
+          "status": "accepted",
+          "review_status": "accepted",
+          "reason": "Individually checked synthetic characterization evidence"
+        }
+      ]
+    }
+  ],
+  "skipped": [],
+  "visited": 4,
+  "unvisited": 0,
+  "limit_reason": null,
+  "supported_subset": "Explicit reviewed forms only; nominative third-person noun clauses. No inferred paradigms, naturalness approval, recipes or export."
+}
+supported_subset:
+"Explicit reviewed phrase exercises. Claim attestation is not export or managed-plan approval. Initial CSV import is manual; retained-slot updates require separate managed-plan approval. Native Desktop/Mobile acceptance remains pending."
+diagnostics:
+[]

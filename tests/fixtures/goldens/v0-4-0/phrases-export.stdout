@@ -1,0 +1,8 @@
+exported:
+2
+output:
+"<TMP>/phrases.csv"
+diagnostics:
+[]
+requires:
+"reviewed phrase-v1/CSS v4 manual setup, manual import and explicit baseline adoption; not managed creation or withdrawal"

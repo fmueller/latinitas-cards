@@ -1,0 +1,46 @@
+{
+  "schema_version": 2,
+  "source_identity": {
+    "strategy": "source_id_field",
+    "field": "ID"
+  },
+  "note_type": "Latin",
+  "fields": {
+    "lexical_entry_field": "Lemma",
+    "principal_parts_field": "Forms",
+    "meaning_field": "Meaning"
+  },
+  "principal_parts": {
+    "roles": [
+      "present_1s",
+      "present_infinitive",
+      "perfect_1s",
+      "supine"
+    ],
+    "separators": [
+      ","
+    ],
+    "pipe_alternatives": false,
+    "trailing_poet_hint": false
+  },
+  "language_tag": "de",
+  "generated_note_type": "Latinitas Principal Parts",
+  "target_deck": "Latin::Latinitas",
+  "tags": [
+    "latinitas"
+  ],
+  "selected_recipes": [
+    "principal_part_completion",
+    "principal_part_recognition"
+  ],
+  "morphology": {
+    "version": 1,
+    "theme": "muted",
+    "appearance": "auto",
+    "comparison": "static",
+    "terminology": {
+      "version": 1,
+      "language": "user"
+    }
+  }
+}

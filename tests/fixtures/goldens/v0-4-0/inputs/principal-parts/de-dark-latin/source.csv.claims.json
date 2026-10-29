@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "decisions": [
+    {
+      "base_fingerprint": "38b7ed7c68eb9604b268a9bfc7af200f1842cb4456c5be9dac654b8a21314a95",
+      "decision": {
+        "claim_fingerprint": "38b7ed7c68eb9604b268a9bfc7af200f1842cb4456c5be9dac654b8a21314a95",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "010f649f627ba3eeaffe423b1f0ab0a468087616284a930a1d606f28647bbcf8",
+      "decision": {
+        "claim_fingerprint": "010f649f627ba3eeaffe423b1f0ab0a468087616284a930a1d606f28647bbcf8",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "1a031d0c1de89b39dd431fb71fe1c0cac2271f3ed31926433852e7e41ad39a2c",
+      "decision": {
+        "claim_fingerprint": "1a031d0c1de89b39dd431fb71fe1c0cac2271f3ed31926433852e7e41ad39a2c",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "dce5d66a1c615aaa1ddb26bafdbdccf0e1846bc74e496079bc515f09b1a8236e",
+      "decision": {
+        "claim_fingerprint": "898bcd5dd3aad9e91bb965bfe4099a6ea62806a3c3070948e2e8ea01ecd123c6",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": "ich liebe",
+      "evidence": [
+        {
+          "source": "Latin reviewer",
+          "reference": "love",
+          "version": "1",
+          "text": "Checked form, role and active meaning"
+        }
+      ],
+      "selected_sense": "love"
+    },
+    {
+      "base_fingerprint": "3cf1ebc89aa1855ea939ba562af7f594f369657d12aa231eb1468af424d17bd6",
+      "decision": {
+        "claim_fingerprint": "3cf1ebc89aa1855ea939ba562af7f594f369657d12aa231eb1468af424d17bd6",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "bf86ad841c2e4729e2d962dc8bf1e50b9e994dd49a87594b08c42ccd2199a51e",
+      "decision": {
+        "claim_fingerprint": "bf86ad841c2e4729e2d962dc8bf1e50b9e994dd49a87594b08c42ccd2199a51e",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "6f21e865c0cb80f0a80bd34c89429efe5123ba929cba4880fdbcb97b9a90cd38",
+      "decision": {
+        "claim_fingerprint": "6f21e865c0cb80f0a80bd34c89429efe5123ba929cba4880fdbcb97b9a90cd38",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "7946075fe98c5bf39db2ed55ce3b407868d49f2eec62af237166d65b82be3b83",
+      "decision": {
+        "claim_fingerprint": "311ab49040d9c67e7e26314fc48e781b40801aed305aa315efa2f4c5ec7e2e6e",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": "lieben",
+      "evidence": [
+        {
+          "source": "Latin reviewer",
+          "reference": "love",
+          "version": "1",
+          "text": "Checked form, role and active meaning"
+        }
+      ],
+      "selected_sense": "love"
+    },
+    {
+      "base_fingerprint": "2839531911b9aa8d887b36533f941e16ae807605381864c97e73de23c597acc2",
+      "decision": {
+        "claim_fingerprint": "2839531911b9aa8d887b36533f941e16ae807605381864c97e73de23c597acc2",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "787a40de3037a3181c2b93236c0b835c8cf69f52caf333dc9faa68f29c75009b",
+      "decision": {
+        "claim_fingerprint": "787a40de3037a3181c2b93236c0b835c8cf69f52caf333dc9faa68f29c75009b",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "e382cde39edf4cc77afc35e86d1df0433810df8a734654f7a759f0d61e28adfe",
+      "decision": {
+        "claim_fingerprint": "e382cde39edf4cc77afc35e86d1df0433810df8a734654f7a759f0d61e28adfe",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "54db3e30a4571ba3b38d0781d0afd7190790bc406a0fe1d0b389649846f6f76c",
+      "decision": {
+        "claim_fingerprint": "e0c2bb417d2d0a3ac7a472f019f9033f21e016b10a5859a94b4bea96516a1007",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": "ich habe geliebt",
+      "evidence": [
+        {
+          "source": "Latin reviewer",
+          "reference": "love",
+          "version": "1",
+          "text": "Checked form, role and active meaning"
+        }
+      ],
+      "selected_sense": "love"
+    },
+    {
+      "base_fingerprint": "7da40a0adcd29bc5c952d8893e49fa6bd04baa7798be54b5529b49ce4ad34cf6",
+      "decision": {
+        "claim_fingerprint": "7da40a0adcd29bc5c952d8893e49fa6bd04baa7798be54b5529b49ce4ad34cf6",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "810727b9a45c7b0e23329f30a95ba19bde97bcaa98eb112d135ac8a159415682",
+      "decision": {
+        "claim_fingerprint": "810727b9a45c7b0e23329f30a95ba19bde97bcaa98eb112d135ac8a159415682",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "467a070c9d2621c6cc7bbdba7e293692486a03ebcf13c132a80ffa6ec0e2e03c",
+      "decision": {
+        "claim_fingerprint": "467a070c9d2621c6cc7bbdba7e293692486a03ebcf13c132a80ffa6ec0e2e03c",
+        "status": "withheld",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": null,
+      "evidence": null,
+      "selected_sense": null
+    },
+    {
+      "base_fingerprint": "ffa8a2a46b295be0efbf38464a09bd724a7eb113ec62766368dc614e03e52a3d",
+      "decision": {
+        "claim_fingerprint": "a597e5616d3293991b7674c84c9f1bca2ee68eee92d7371234c255f5a53a92fe",
+        "status": "accepted",
+        "reviewer": "Golden fixture reviewer",
+        "reason": "Individually checked synthetic characterization evidence"
+      },
+      "value": "um zu lieben",
+      "evidence": [
+        {
+          "source": "Latin reviewer",
+          "reference": "love",
+          "version": "1",
+          "text": "Checked form, role and active meaning"
+        }
+      ],
+      "selected_sense": "love"
+    }
+  ]
+}

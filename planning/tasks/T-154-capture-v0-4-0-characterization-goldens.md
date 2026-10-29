@@ -1,11 +1,11 @@
 ---
 id: T-154-capture-v0-4-0-characterization-goldens
 title: Capture v0.4.0 characterization goldens for German deck output and corpus normalization
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#delivery-order
 dependencies: []
-updated_at: "2026-10-27T23:10:30Z"
+updated_at: "2026-10-29T00:33:23Z"
 ---
 
 # T-154-capture-v0-4-0-characterization-goldens Capture v0.4.0 characterization goldens for German deck output and corpus normalization
@@ -47,3 +47,6 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-28T23:22:55Z: verification pass
+- 2026-10-28T23:22:55Z: Implemented from uncommitted working tree on top of 71b3169f; src/ untouched (empty git diff --stat -- src/).
+- 2026-10-29T00:33:23Z: verification pass

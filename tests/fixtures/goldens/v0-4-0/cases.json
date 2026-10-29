@@ -1,0 +1,402 @@
+[
+  {
+    "argv": [
+      "preview",
+      "--input",
+      "principal-parts/de-light-user/source.csv",
+      "--profile",
+      "principal-parts/de-light-user/profile.json",
+      "--limit",
+      "8"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-de-light-user-preview",
+    "outputs": {},
+    "stdout": "principal-de-light-user-preview.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "principal-parts/de-light-user/source.csv",
+      "--profile",
+      "principal-parts/de-light-user/profile.json",
+      "--output",
+      "{TMP}/principal-de-light-user.csv",
+      "--approve-fresh-import"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-de-light-user-generate",
+    "outputs": {
+      "principal-de-light-user.csv": "principal-de-light-user.csv",
+      "principal-parts/de-light-user/source.csv.latinitas-cards.json": "principal-de-light-user.checkpoint.json",
+      "principal-parts/de-light-user/source.csv.latinitas.json": "principal-de-light-user.source-manifest.json"
+    },
+    "stdout": "principal-de-light-user-generate.stdout"
+  },
+  {
+    "argv": [
+      "preview",
+      "--input",
+      "principal-parts/de-dark-latin/source.csv",
+      "--profile",
+      "principal-parts/de-dark-latin/profile.json",
+      "--limit",
+      "8"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-de-dark-latin-preview",
+    "outputs": {},
+    "stdout": "principal-de-dark-latin-preview.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "principal-parts/de-dark-latin/source.csv",
+      "--profile",
+      "principal-parts/de-dark-latin/profile.json",
+      "--output",
+      "{TMP}/principal-de-dark-latin.csv",
+      "--approve-fresh-import"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-de-dark-latin-generate",
+    "outputs": {
+      "principal-de-dark-latin.csv": "principal-de-dark-latin.csv",
+      "principal-parts/de-dark-latin/source.csv.latinitas-cards.json": "principal-de-dark-latin.checkpoint.json",
+      "principal-parts/de-dark-latin/source.csv.latinitas.json": "principal-de-dark-latin.source-manifest.json"
+    },
+    "stdout": "principal-de-dark-latin-generate.stdout"
+  },
+  {
+    "argv": [
+      "preview",
+      "--input",
+      "principal-parts/de-auto-user/source.csv",
+      "--profile",
+      "principal-parts/de-auto-user/profile.json",
+      "--limit",
+      "8"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-de-auto-user-preview",
+    "outputs": {},
+    "stdout": "principal-de-auto-user-preview.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "principal-parts/de-auto-user/source.csv",
+      "--profile",
+      "principal-parts/de-auto-user/profile.json",
+      "--output",
+      "{TMP}/principal-de-auto-user.csv",
+      "--approve-fresh-import"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-de-auto-user-generate",
+    "outputs": {
+      "principal-de-auto-user.csv": "principal-de-auto-user.csv",
+      "principal-parts/de-auto-user/source.csv.latinitas-cards.json": "principal-de-auto-user.checkpoint.json",
+      "principal-parts/de-auto-user/source.csv.latinitas.json": "principal-de-auto-user.source-manifest.json"
+    },
+    "stdout": "principal-de-auto-user-generate.stdout"
+  },
+  {
+    "argv": [
+      "preview",
+      "--input",
+      "principal-parts/fr-auto-latin/source.csv",
+      "--profile",
+      "principal-parts/fr-auto-latin/profile.json",
+      "--limit",
+      "8"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-fr-auto-latin-preview",
+    "outputs": {},
+    "stdout": "principal-fr-auto-latin-preview.stdout"
+  },
+  {
+    "argv": [
+      "generate",
+      "--input",
+      "principal-parts/fr-auto-latin/source.csv",
+      "--profile",
+      "principal-parts/fr-auto-latin/profile.json",
+      "--output",
+      "{TMP}/principal-fr-auto-latin.csv",
+      "--approve-fresh-import"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "principal-fr-auto-latin-generate",
+    "outputs": {
+      "principal-fr-auto-latin.csv": "principal-fr-auto-latin.csv",
+      "principal-parts/fr-auto-latin/source.csv.latinitas-cards.json": "principal-fr-auto-latin.checkpoint.json",
+      "principal-parts/fr-auto-latin/source.csv.latinitas.json": "principal-fr-auto-latin.source-manifest.json"
+    },
+    "stdout": "principal-fr-auto-latin-generate.stdout"
+  },
+  {
+    "argv": [
+      "phrases",
+      "preview",
+      "phrases/inputs.json",
+      "phrases/selected.json",
+      "phrases/recipes.json"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "phrases-preview",
+    "outputs": {},
+    "stdout": "phrases-preview.stdout"
+  },
+  {
+    "argv": [
+      "phrases",
+      "export",
+      "phrases/inputs.json",
+      "phrases/selected.json",
+      "phrases/recipes.json",
+      "{TMP}/phrases.csv"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "phrases-export",
+    "outputs": {
+      "phrases.csv": "phrases.csv"
+    },
+    "stdout": "phrases-export.stdout"
+  },
+  {
+    "argv": [
+      "form-parsing",
+      "preview",
+      "{FIX}/form-parsing/parsing.json",
+      "--terminology",
+      "latin"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "form-parsing-latin-preview",
+    "outputs": {},
+    "stdout": "form-parsing-latin-preview.stdout"
+  },
+  {
+    "argv": [
+      "form-parsing",
+      "export",
+      "{FIX}/form-parsing/parsing.json",
+      "{TMP}/form-parsing-latin.csv",
+      "--terminology",
+      "latin",
+      "--approve-fresh-import"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "form-parsing-latin-export",
+    "outputs": {
+      "form-parsing-latin.csv": "form-parsing-latin.csv"
+    },
+    "stdout": "form-parsing-latin-export.stdout"
+  },
+  {
+    "argv": [
+      "form-parsing",
+      "preview",
+      "{FIX}/form-parsing/parsing.json",
+      "--terminology",
+      "user"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "form-parsing-user-preview",
+    "outputs": {},
+    "stdout": "form-parsing-user-preview.stdout"
+  },
+  {
+    "argv": [
+      "form-parsing",
+      "export",
+      "{FIX}/form-parsing/parsing.json",
+      "{TMP}/form-parsing-user.csv",
+      "--terminology",
+      "user",
+      "--approve-fresh-import"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "form-parsing-user-export",
+    "outputs": {
+      "form-parsing-user.csv": "form-parsing-user.csv"
+    },
+    "stdout": "form-parsing-user-export.stdout"
+  },
+  {
+    "argv": [
+      "corpus",
+      "normalize",
+      "{FIX}/corpus/gen-1-1-5.usfx.xml",
+      "--adapter",
+      "usfx",
+      "--corpus-id",
+      "vulgata-clementina",
+      "--descriptor",
+      "{FIX}/corpus/lat-clementine.descriptor.json",
+      "--output",
+      "{TMP}/corpus.jsonl",
+      "--json"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "corpus-usfx",
+    "outputs": {
+      "corpus.jsonl": "corpus-usfx.jsonl",
+      "corpus.jsonl.lock": "corpus-usfx.jsonl.lock"
+    },
+    "stdout": "corpus-usfx.stdout"
+  },
+  {
+    "argv": [
+      "corpus",
+      "validate",
+      "{TMP}/corpus.jsonl",
+      "--json"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "corpus-usfx-validate",
+    "outputs": {},
+    "setup": [
+      [
+        "corpus",
+        "normalize",
+        "{FIX}/corpus/gen-1-1-5.usfx.xml",
+        "--adapter",
+        "usfx",
+        "--corpus-id",
+        "vulgata-clementina",
+        "--descriptor",
+        "{FIX}/corpus/lat-clementine.descriptor.json",
+        "--output",
+        "{TMP}/corpus.jsonl",
+        "--json"
+      ]
+    ],
+    "stdout": "corpus-usfx-validate.stdout"
+  },
+  {
+    "argv": [
+      "corpus",
+      "normalize",
+      "{FIX}/corpus/refrain.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "text-test",
+      "--output",
+      "{TMP}/corpus.jsonl",
+      "--json"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "corpus-text-manifest",
+    "outputs": {
+      "corpus.jsonl": "corpus-text-manifest.jsonl",
+      "corpus.jsonl.lock": "corpus-text-manifest.jsonl.lock",
+      "corpus.manifest.json": "corpus-text-manifest.manifest.json",
+      "corpus.manifest.json.lock": "corpus-text-manifest.manifest.json.lock"
+    },
+    "stdout": "corpus-text-manifest.stdout"
+  },
+  {
+    "argv": [
+      "corpus",
+      "validate",
+      "{TMP}/corpus.jsonl",
+      "--json"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "corpus-text-manifest-validate",
+    "outputs": {},
+    "setup": [
+      [
+        "corpus",
+        "normalize",
+        "{FIX}/corpus/refrain.txt",
+        "--adapter",
+        "text",
+        "--corpus-id",
+        "text-test",
+        "--output",
+        "{TMP}/corpus.jsonl",
+        "--json"
+      ]
+    ],
+    "stdout": "corpus-text-manifest-validate.stdout"
+  },
+  {
+    "argv": [
+      "corpus",
+      "normalize",
+      "{FIX}/corpus/wsl-three.txt",
+      "--adapter",
+      "text",
+      "--corpus-id",
+      "wsl",
+      "--citation-template",
+      "wsl:work.section.line",
+      "--output",
+      "{TMP}/corpus.jsonl",
+      "--json"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "corpus-text-template",
+    "outputs": {
+      "corpus.jsonl": "corpus-text-template.jsonl",
+      "corpus.jsonl.lock": "corpus-text-template.jsonl.lock"
+    },
+    "stdout": "corpus-text-template.stdout"
+  },
+  {
+    "argv": [
+      "corpus",
+      "validate",
+      "{TMP}/corpus.jsonl",
+      "--json"
+    ],
+    "exclusions": {},
+    "exit_code": 0,
+    "name": "corpus-text-template-validate",
+    "outputs": {},
+    "setup": [
+      [
+        "corpus",
+        "normalize",
+        "{FIX}/corpus/wsl-three.txt",
+        "--adapter",
+        "text",
+        "--corpus-id",
+        "wsl",
+        "--citation-template",
+        "wsl:work.section.line",
+        "--output",
+        "{TMP}/corpus.jsonl",
+        "--json"
+      ]
+    ],
+    "stdout": "corpus-text-template-validate.stdout"
+  }
+]

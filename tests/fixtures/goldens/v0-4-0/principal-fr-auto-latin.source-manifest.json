@@ -1,0 +1,14 @@
+{
+  "entries": [],
+  "mapping_digest": "",
+  "next_source_number": 1,
+  "schema_version": 2,
+  "source_columns": [
+    "ID",
+    "Lemma",
+    "Forms",
+    "Meaning"
+  ],
+  "source_digest": "",
+  "source_scope": "v0-4-0-principal-parts-fr-auto-latin-v1"
+}

@@ -1,0 +1,24 @@
+{
+  "checkpoint_version": 1,
+  "export_fingerprint": "export-sha256:80bcba0dd23522ed9ed7e9fcf6ba52a7ac31a35f0c6e4881e436c1d1c86a456a",
+  "note_family": "latinitas-note-family-v1",
+  "note_schema": "3",
+  "objects": [
+    {
+      "card_keys": [
+        "principal_part_completion:present_1s",
+        "principal_part_completion:present_infinitive",
+        "principal_part_completion:perfect_1s",
+        "principal_part_completion:supine",
+        "principal_part_recognition:present_1s",
+        "principal_part_recognition:present_infinitive",
+        "principal_part_recognition:perfect_1s",
+        "principal_part_recognition:supine"
+      ],
+      "latinitas_id": "latinitas-v2-53112263c17018e2a280ab63da2887a6aebb470515125ffa0f6a63932f008773"
+    }
+  ],
+  "source_scope": "v0-4-0-principal-parts-fr-auto-latin-v1",
+  "template_registry_digest": "card-registry-sha256:b1e7709e3db8ac17645c0254d9cecfa2d558a105b9b40e87bfcc329ef0adb96d",
+  "template_registry_version": 1
+}

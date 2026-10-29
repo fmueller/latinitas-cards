@@ -11,7 +11,7 @@ def test_capture_manifest_covers_exact_golden_bytes() -> None:
     assert len(capture["commit"]) == 40
     actual = {
         str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for directory in ("legacy-vulgate", "claims-v1")
+        for directory in ("legacy-vulgate", "claims-v1", "v0-4-0")
         for path in (root / directory).rglob("*")
         if path.is_file()
     }

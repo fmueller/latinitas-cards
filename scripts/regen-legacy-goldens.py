@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GOLDENS = ROOT / "tests/fixtures/goldens"
 LEGACY = GOLDENS / "legacy-vulgate"
 CLAIMS = GOLDENS / "claims-v1"
+V040 = GOLDENS / "v0-4-0"
 
 
 def encoded(value: object) -> bytes:
@@ -98,8 +99,14 @@ def legacy_case(case: dict[str, Any], *, capture: bool, directory: Path | None =
             _create_colpkg_with_anki2(work / "input.apkg", [["amo", "I love", ""], ["sum", "I am", ""]])
         if case.get("full_vulgate"):
             shutil.copyfile(ROOT / "data/lat-clementine.usfx.xml", work / "full.xml")
+
+        def expand(arguments: list[str]) -> list[str]:
+            return [a.replace("{FIX}", str(work)).replace("{TMP}", str(work)) for a in arguments]
+
+        for setup in case.get("setup", []):
+            invoke(expand(setup), work)
         before = {str(p.relative_to(work)): p.read_bytes() for p in work.rglob("*") if p.is_file()}
-        argv = [a.replace("{FIX}", str(work)).replace("{TMP}", str(work)) for a in case["argv"]]
+        argv = expand(case["argv"])
         stdout = invoke(argv, work, case["exit_code"])
         compare(directory / case["stdout"], stdout, capture)
         for output, golden in case["outputs"].items():
@@ -440,6 +447,302 @@ def seed_claims() -> None:
             (destination / "cases.json").write_bytes(encoded({"replay": replays, "exports": exports, "exclusions": {}}))
 
 
+def seed_v040() -> None:
+    from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
+
+    sys.path.insert(0, str(ROOT / "tests/unit"))
+    from phrase_recipes_test import exercise
+
+    if V040.exists():
+        shutil.rmtree(V040)
+    inputs = V040 / "inputs"
+    inputs.mkdir(parents=True)
+    cases: list[dict[str, Any]] = []
+
+    def add(
+        name: str,
+        argv: list[str],
+        *,
+        outputs: dict[str, str] | None = None,
+        setup: list[list[str]] | None = None,
+    ) -> None:
+        case = {
+            "name": name,
+            "argv": argv,
+            "exit_code": 0,
+            "stdout": f"{name}.stdout",
+            "outputs": outputs or {},
+            "exclusions": {},
+        }
+        if setup:
+            case["setup"] = setup
+        cases.append(case)
+
+    def claim_decision(claim: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "fingerprint": claim["fingerprint"],
+            "status": "accepted" if claim["value"] is not None else "withheld",
+            "reviewer": "Golden fixture reviewer",
+            "reason": "Individually checked synthetic characterization evidence",
+        }
+
+    translations = {
+        "present_1s": "ich liebe",
+        "present_infinitive": "lieben",
+        "perfect_1s": "ich habe geliebt",
+        "supine": "um zu lieben",
+    }
+    for language, appearance, terminology in (
+        ("de", "light", "user"),
+        ("de", "dark", "latin"),
+        ("de", "auto", "user"),
+        ("fr", "auto", "latin"),
+    ):
+        variant = f"{language}-{appearance}-{terminology}"
+        family = inputs / "principal-parts" / variant
+        family.mkdir(parents=True)
+        with tempfile.TemporaryDirectory(prefix="lg", dir="/tmp") as directory:
+            work = Path(directory)
+            (work / "source.csv").write_text(
+                'ID,Lemma,Forms,Meaning\na,amō,"amō, amāre, amāvī, amātum",lieben\n', encoding="utf-8"
+            )
+            profile = DeckProfile.default(
+                note_type="Latin",
+                lexical_entry_field="Lemma",
+                principal_parts_field="Forms",
+                meaning_field="Meaning",
+                source_identity=SourceIdentityConfig(strategy="source_id_field", field="ID"),
+                separators=(",",),
+                selected_recipes=("principal_part_completion", "principal_part_recognition"),
+            ).apply_overrides(
+                {
+                    "language_tag": language,
+                    "morphology": {
+                        "appearance": appearance,
+                        "terminology": {"language": terminology},
+                    },
+                }
+            )
+            profile.save(work / "profile.json")
+            (work / "source.csv.latinitas.json").write_bytes(
+                encoded(
+                    {
+                        "schema_version": 2,
+                        "source_columns": ["ID", "Lemma", "Forms", "Meaning"],
+                        "source_scope": f"v0-4-0-principal-parts-{variant}-v1",
+                        "entries": [],
+                    }
+                )
+            )
+            args = ["claims", "list", "source.csv", "--profile", "profile.json", "--json"]
+            claims = json.loads(invoke(args, work))["claims"]
+            decisions = []
+            for claim in claims:
+                decision = claim_decision(claim)
+                if language == "de" and claim["kind"] == "translation":
+                    decision.update(
+                        {
+                            "status": "accepted",
+                            "value": translations[claim["feature"]],
+                            "selected_sense": "love",
+                            "evidence": [
+                                {
+                                    "source": "Latin reviewer",
+                                    "reference": "love",
+                                    "version": "1",
+                                    "text": "Checked form, role and active meaning",
+                                }
+                            ],
+                        }
+                    )
+                decisions.append(decision)
+            (work / "decisions.json").write_bytes(encoded(decisions))
+            invoke(["claims", "record", "source.csv", "--profile", "profile.json", "--batch", "decisions.json"], work)
+            case_name = f"principal-{variant}"
+            input_arg = f"principal-parts/{variant}/source.csv"
+            profile_arg = f"principal-parts/{variant}/profile.json"
+            add(f"{case_name}-preview", ["preview", "--input", input_arg, "--profile", profile_arg, "--limit", "8"])
+            output = f"{case_name}.csv"
+            add(
+                f"{case_name}-generate",
+                [
+                    "generate",
+                    "--input",
+                    input_arg,
+                    "--profile",
+                    profile_arg,
+                    "--output",
+                    f"{{TMP}}/{output}",
+                    "--approve-fresh-import",
+                ],
+                outputs={
+                    output: output,
+                    f"{input_arg}.latinitas.json": f"{case_name}.source-manifest.json",
+                    f"{input_arg}.latinitas-cards.json": f"{case_name}.checkpoint.json",
+                },
+            )
+            for path in work.iterdir():
+                if path.is_file():
+                    shutil.copyfile(path, family / path.name)
+
+    phrase_source = CLAIMS / "phrases"
+    phrase_inputs = inputs / "phrases"
+    phrase_inputs.mkdir(parents=True)
+    for name in (
+        "deck.csv",
+        "deck.csv.latinitas.json",
+        "profile.json",
+        "inputs.json",
+        "inputs.json.claims.json",
+        "inputs.json.claims.json.lock",
+        "selected.json",
+        "decisions-0.json",
+    ):
+        shutil.copyfile(phrase_source / name, phrase_inputs / name)
+    with tempfile.TemporaryDirectory(prefix="lg", dir="/tmp") as directory:
+        work = Path(directory)
+        shutil.copytree(phrase_inputs, work, dirs_exist_ok=True)
+        candidates = json.loads(invoke(["phrases", "generate", "inputs.json", "selected.json", "--json"], work))[
+            "candidates"
+        ]
+        exercises = [
+            exercise(recipe).model_copy(update={"candidate_key": candidates[0]["candidate_key"]})
+            for recipe in ("phrase_recognition", "phrase_translation")
+        ]
+        (work / "recipes.json").write_bytes(
+            encoded(
+                {
+                    "version": 1,
+                    "max_exercises": 2,
+                    "exercises": [selected.model_dump(mode="json") for selected in exercises],
+                }
+            )
+        )
+        args = ["inputs.json", "--selections", "selected.json", "--recipes", "recipes.json"]
+        claims = json.loads(invoke(["claims", "list", *args, "--json"], work))["claims"]
+        decisions = [claim_decision(claim) for claim in claims]
+        (work / "decisions-1.json").write_bytes(encoded(decisions))
+        invoke(["claims", "record", *args, "--batch", "decisions-1.json"], work)
+        for name in ("recipes.json", "recipes.json.claims.json", "recipes.json.claims.json.lock", "decisions-1.json"):
+            shutil.copyfile(work / name, phrase_inputs / name)
+    add(
+        "phrases-preview",
+        [
+            "phrases",
+            "preview",
+            "phrases/inputs.json",
+            "phrases/selected.json",
+            "phrases/recipes.json",
+        ],
+    )
+    add(
+        "phrases-export",
+        [
+            "phrases",
+            "export",
+            "phrases/inputs.json",
+            "phrases/selected.json",
+            "phrases/recipes.json",
+            "{TMP}/phrases.csv",
+        ],
+        outputs={"phrases.csv": "phrases.csv"},
+    )
+
+    parsing_source = CLAIMS / "form-parsing"
+    parsing_inputs = inputs / "form-parsing"
+    parsing_inputs.mkdir(parents=True)
+    for name in ("parsing.json", "parsing.json.claims.json", "parsing.json.claims.json.lock", "decisions-0.json"):
+        shutil.copyfile(parsing_source / name, parsing_inputs / name)
+    for terminology in ("latin", "user"):
+        suffix = f"-{terminology}"
+        output = f"form-parsing{suffix}.csv"
+        add(
+            f"form-parsing{suffix}-preview",
+            ["form-parsing", "preview", "{FIX}/form-parsing/parsing.json", "--terminology", terminology],
+        )
+        add(
+            f"form-parsing{suffix}-export",
+            [
+                "form-parsing",
+                "export",
+                "{FIX}/form-parsing/parsing.json",
+                f"{{TMP}}/{output}",
+                "--terminology",
+                terminology,
+                "--approve-fresh-import",
+            ],
+            outputs={output: output},
+        )
+
+    corpus_inputs = inputs / "corpus"
+    corpus_inputs.mkdir(parents=True)
+    for source in (
+        ROOT / "tests/fixtures/corpus/usfx/gen-1-1-5.usfx.xml",
+        ROOT / "data/lat-clementine.descriptor.json",
+        ROOT / "tests/fixtures/corpus/text/refrain.txt",
+        ROOT / "tests/fixtures/corpus/text/wsl-three.txt",
+    ):
+        shutil.copyfile(source, corpus_inputs / source.name)
+    normalizations = {
+        "corpus-usfx": [
+            "corpus",
+            "normalize",
+            "{FIX}/corpus/gen-1-1-5.usfx.xml",
+            "--adapter",
+            "usfx",
+            "--corpus-id",
+            "vulgata-clementina",
+            "--descriptor",
+            "{FIX}/corpus/lat-clementine.descriptor.json",
+            "--output",
+            "{TMP}/corpus.jsonl",
+            "--json",
+        ],
+        "corpus-text-manifest": [
+            "corpus",
+            "normalize",
+            "{FIX}/corpus/refrain.txt",
+            "--adapter",
+            "text",
+            "--corpus-id",
+            "text-test",
+            "--output",
+            "{TMP}/corpus.jsonl",
+            "--json",
+        ],
+        "corpus-text-template": [
+            "corpus",
+            "normalize",
+            "{FIX}/corpus/wsl-three.txt",
+            "--adapter",
+            "text",
+            "--corpus-id",
+            "wsl",
+            "--citation-template",
+            "wsl:work.section.line",
+            "--output",
+            "{TMP}/corpus.jsonl",
+            "--json",
+        ],
+    }
+    for name, argv in normalizations.items():
+        outputs = {"corpus.jsonl": f"{name}.jsonl", "corpus.jsonl.lock": f"{name}.jsonl.lock"}
+        if name == "corpus-text-manifest":
+            outputs.update(
+                {
+                    "corpus.manifest.json": f"{name}.manifest.json",
+                    "corpus.manifest.json.lock": f"{name}.manifest.json.lock",
+                }
+            )
+        add(name, argv, outputs=outputs)
+        add(
+            f"{name}-validate",
+            ["corpus", "validate", "{TMP}/corpus.jsonl", "--json"],
+            setup=[argv],
+        )
+    (V040 / "cases.json").write_bytes(encoded(cases))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--i-know-this-rewrites-characterization-goldens", action="store_true", required=True)
@@ -455,13 +758,16 @@ def main() -> None:
         return
     seed_legacy()
     seed_claims()
+    seed_v040()
     for case in json.loads((LEGACY / "cases.json").read_bytes()):
         legacy_case(case, capture=True)
     for family in ("principal-parts", "form-parsing", "phrases"):
         claim_case(family, capture=True)
+    for case in json.loads((V040 / "cases.json").read_bytes()):
+        legacy_case(case, capture=True, directory=V040)
     manifest = {
         str(p.relative_to(GOLDENS)): hashlib.sha256(p.read_bytes()).hexdigest()
-        for directory in (LEGACY, CLAIMS)
+        for directory in (LEGACY, CLAIMS, V040)
         for p in sorted(directory.rglob("*"))
         if p.is_file()
     }

@@ -1,0 +1,24 @@
+{
+  "checkpoint_version": 1,
+  "export_fingerprint": "export-sha256:9168e5e889e5c891c05cc91841f6c9d4d0b80f3f57ff99a4553a26f2cc33c557",
+  "note_family": "latinitas-note-family-v1",
+  "note_schema": "3",
+  "objects": [
+    {
+      "card_keys": [
+        "principal_part_completion:present_1s",
+        "principal_part_completion:present_infinitive",
+        "principal_part_completion:perfect_1s",
+        "principal_part_completion:supine",
+        "principal_part_recognition:present_1s",
+        "principal_part_recognition:present_infinitive",
+        "principal_part_recognition:perfect_1s",
+        "principal_part_recognition:supine"
+      ],
+      "latinitas_id": "latinitas-v2-7879d4dddecc8580eb2271a4286de0dc741a91666cf6e70de291c48249601f65"
+    }
+  ],
+  "source_scope": "v0-4-0-principal-parts-de-auto-user-v1",
+  "template_registry_digest": "card-registry-sha256:b1e7709e3db8ac17645c0254d9cecfa2d558a105b9b40e87bfcc329ef0adb96d",
+  "template_registry_version": 1
+}

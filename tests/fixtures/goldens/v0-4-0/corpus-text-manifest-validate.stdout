@@ -1,0 +1,1 @@
+{"command":"corpus validate","diagnostics":[],"exit_code":0,"format":"latinitas-cli-result","ok":true,"result":{"counts":{"corpus":1,"header":1,"passage":3,"work":1}},"version":1}
