@@ -1,12 +1,12 @@
 ---
 id: T-160-build-the-accepted-fact-view-and-consume-latinitas
 title: Build the accepted-fact view and consume latinitas-morph/1
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#context-and-translation-recipes
 dependencies:
     - T-156-add-the-language-table-and-english-terminology
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T07:16:24Z"
 ---
 
 # T-160-build-the-accepted-fact-view-and-consume-latinitas Build the accepted-fact view and consume latinitas-morph/1
@@ -52,3 +52,4 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T07:16:15Z: verification pass
