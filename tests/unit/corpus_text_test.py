@@ -103,7 +103,7 @@ def test_option_checks_run_in_order(tmp_path: Path, adapter: str, flags: list[st
 def test_adapter_registry_is_the_only_dispatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     source, output = tmp_path / "input", tmp_path / "out"
     source.write_text("a\n")
-    assert set(corpus.ADAPTERS) == {"text", "usfx"}
+    assert set(corpus.ADAPTERS) == {"tei", "text", "usfx"}
     requests: list[corpus.NormalizeRequest] = []
 
     def fake(request: corpus.NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:

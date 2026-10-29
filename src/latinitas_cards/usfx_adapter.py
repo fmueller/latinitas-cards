@@ -2,10 +2,7 @@
 
 import re
 import unicodedata
-from array import array
-from bisect import bisect_left, bisect_right
 from collections import Counter
-from collections.abc import Iterator
 from pathlib import Path
 from xml.parsers import expat
 
@@ -25,6 +22,7 @@ from .corpus_model import (
     CorpusPassage,
     CorpusRecord,
     CorpusWork,
+    canonical_markup,
     canonical_text,
     encode_ref_component,
     latin_fold,
@@ -123,73 +121,6 @@ def legacy_projection(path: Path) -> pd.DataFrame:
     return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)
 
 
-def _canonical_markup(raw: str, entries: list[CorpusMarkup]) -> str:
-    """Map raw span intervals through NFC and whitespace collapse with sparse offsets.
-
-    Match NFD origins in canonical combining order on both sides of NFC. This
-    preserves offsets even when combining marks reorder across XML boundaries.
-    A span touching part of a composed character includes that whole code point.
-    Only markup boundaries get offset storage; combining runs use packed indices.
-    """
-
-    def origins(text: str) -> Iterator[int]:
-        marks: dict[int, array[int]] = {}
-        for index, char in enumerate(text):
-            for part in unicodedata.normalize("NFD", char):
-                combining = unicodedata.combining(part)
-                if not combining:
-                    for category in sorted(marks):
-                        yield from marks[category]
-                    marks.clear()
-                    yield index
-                else:
-                    if combining not in marks:
-                        marks[combining] = array("I")
-                    marks[combining].append(index)
-        for category in sorted(marks):
-            yield from marks[category]
-
-    for entry in entries:
-        start, end = entry.span
-        while start < end and raw[start].isspace():
-            start += 1
-        while end > start and raw[end - 1].isspace():
-            end -= 1
-        entry.span = [start, end]
-    boundaries = sorted({0, len(raw), *(point for entry in entries for point in entry.span)})
-    starts = [len(raw)] * (len(boundaries) - 1)
-    ends = [0] * (len(boundaries) - 1)
-    nfc = unicodedata.normalize("NFC", raw)
-    removed = 0
-    pending = False
-    maximum_target = -1
-    for source, target in zip(origins(raw), origins(nfc), strict=True):
-        whitespace = nfc[target].isspace()
-        if target > maximum_target:
-            if whitespace:
-                removed += 1
-                pending = pending or target >= removed
-            elif pending:
-                removed -= 1
-                pending = False
-            maximum_target = target
-        # Reordered marks can revisit a preceding NFC character, but cannot
-        # cross whitespace, so its removed-whitespace count remains unchanged.
-        start = target - removed + int(whitespace)
-        end = start + int(not whitespace)
-        segment = bisect_right(boundaries, source) - 1
-        starts[segment] = min(starts[segment], start)
-        ends[segment] = max(ends[segment], end)
-    for entry in entries:
-        left, right = (bisect_left(boundaries, point) for point in entry.span)
-        if left < right:
-            entry.span = [min(starts[left:right]), max(ends[left:right])]
-        else:
-            point = ends[left - 1] if left else 0
-            entry.span = [point, point]
-    return canonical_text(nfc)
-
-
 _SUPPORTED = {"usfx", "book", "h", "c", "v", "ve", "p", "q", "wj", "w", "f", "x", "fe", "s"}
 
 
@@ -228,7 +159,7 @@ class _StrictBuilder:
         if self.open_markup:
             self.invalid("Markup crosses a verse boundary")
         raw = "".join(self.buffer)
-        text = _canonical_markup(raw, [*self.markup, *self.extra]) if self.markup or self.extra else canonical_text(raw)
+        text = canonical_markup(raw, [*self.markup, *self.extra]) if self.markup or self.extra else canonical_text(raw)
         if not text:
             raise ContractError(Code.EMPTY_PASSAGE, "Verse has no canonical text")
         values = [self.book, self.chapter, self.verse]

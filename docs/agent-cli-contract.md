@@ -98,13 +98,18 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `review_required` | 1 | Identity reconciliation requires review |
 | `invalid_line` | 3 | Text line does not match citation template |
 | `duplicate_source_ref` | 3 | Source label is repeated |
-| `invalid_structure` | 3 | USFX structure is invalid |
+| `invalid_structure` | 3 | Source structure is invalid |
 | `empty_passage` | 3 | Source passage has no canonical text |
 | `invalid_xml` | 3 | Source is not well-formed XML |
 | `unsafe_xml` | 3 | Source XML contains a forbidden declaration |
 | `unknown_passage` | 3 | Requested passage is absent from the corpus |
 | `invalid_profile` | 3 | Corpus profile is invalid |
 | `profile_mismatch` | 3 | Corpora differ from the profile's corpus list |
+| `unsupported_language` | 3 | Source language is unsupported |
+| `citation_mismatch` | 0 | Declared citation labels differ from the source structure |
+| `skipped_division` | 0 | Non-edition source division was skipped |
+| `skipped_empty_passage` | 0 | Source passage without canonical text was omitted |
+| `descriptor_override` | 0 | Descriptor value replaced a source header value |
 
 ## Contract command matrix
 
@@ -257,13 +262,14 @@ read corpora: reading works and refs are checked by the later `corpus-cards`
 commands that use them, and those commands exit 3 (`profile_mismatch`) when given
 corpora that differ from the profile's `corpora` list.
 
-`corpus normalize` accepts plain text or structural USFX and returns `{"review_items":[]}` on success.
+`corpus normalize` accepts plain text, structural USFX or structural TEI and returns `{"review_items":[]}` on success.
 Unresolved ordinal assignments return `review_required` (1) with items containing
 `kind`, zero-based `ordinal` (null for removals), and `candidates` refs. Findings
 are ordered by ordinal, then removed refs. No output bytes change until all are
 approved. See [normalized corpora](normalized-corpus.md) for the flags and recovery
 protocol. Template/manifest or template/approval combinations, malformed templates
-or languages, and USFX combined with templates, manifests or approvals return `usage_error` (2).
+or languages, USFX or TEI combined with templates, manifests or approvals, `--allow-unknown`
+with TEI, and `--work` that is malformed or used without TEI return `usage_error` (2).
 Rejected input/approvals/aliases and expected filesystem failures return 3;
 lock contention and recovery binding drift return 4. Existing corpus files are
 atomically replaced, not treated as immutable artifacts (`exists` does not apply).

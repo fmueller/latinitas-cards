@@ -1,12 +1,12 @@
 ---
 id: T-158-normalize-perseus-epidoc-tei-structure-citations
 title: Normalize Perseus/EpiDoc TEI structure, citations and header metadata
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#tei-xml-adapter
 dependencies:
     - T-155-share-the-hardened-xml-reader-and-add-an-adapter
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T12:44:18Z"
 ---
 
 # T-158-normalize-perseus-epidoc-tei-structure-citations Normalize Perseus/EpiDoc TEI structure, citations and header metadata
@@ -62,3 +62,5 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T12:44:18Z: verification pass
+- 2026-10-29T12:44:18Z: Structural TEI subset implemented; see verification run. Follow-up T-176 blocked on a maintainer decision.

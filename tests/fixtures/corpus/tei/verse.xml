@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Metamorphoses</title>
+      </titleStmt>
+      <editionStmt>
+        <edition>Synthetic verse edition</edition>
+      </editionStmt>
+      <publicationStmt>
+        <publisher>Synthetic Perseus</publisher>
+        <availability>
+          <licence>Public domain</licence>
+        </availability>
+      </publicationStmt>
+      <sourceDesc>
+        <bibl><title>Unused source title</title></bibl>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <refsDecl n="CTS">
+        <cRefPattern n="line" matchPattern="(\w+).(\w+)" replacementPattern="#xpath(/tei:TEI)"/>
+        <cRefPattern n="book" matchPattern="(\w+)" replacementPattern="#xpath(/tei:TEI)"/>
+      </refsDecl>
+    </encodingDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div type="edition" n="urn:cts:latinLit:phi0959.phi006.perseus-lat2" xml:lang="la">
+        <div type="textpart" subtype="book" n="1">
+          <head>Liber I</head>
+          <l n="1">In nova fert animus mutatas dicere formas</l>
+          <note>Codd. add <l n="1a">versus spurius</l> <del>deletum</del></note>
+          <lg>
+            <l n="2">corpora; di, coeptis <note>nam vos</note>nam vos mutastis et illas</l>
+            <pb n="3"/>
+            <l n="3"><del>adspirate meis</del></l>
+          </lg>
+          <milestone unit="card" n="4"/>
+          <l n="4">ad mea perpetuum deducite tempora carmen.</l>
+        </div>
+        <div type="textpart" subtype="book" n="2">
+          <del>Nondum</del>
+          <l n="1">Regia Solis erat <lb/>sublimibus alta columnis</l>
+        </div>
+      </div>
+    </body>
+  </text>
+</TEI>

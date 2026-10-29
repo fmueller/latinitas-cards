@@ -155,3 +155,65 @@ tests never regenerate snapshots. The fixture is the bundled source's exact
 prefix through GEN 1:5's `ve`, followed by `</book></usfx>` and a newline.
 Synthetic markup snapshots and rejection expectations are regenerated separately
 with `uv run python scripts/regen-corpus-fixtures.py --target markup --force`.
+
+## Structural TEI
+
+```sh
+uv run latinitas-cards corpus normalize tests/fixtures/corpus/tei/prose.xml \
+  --adapter tei --corpus-id caesar-bg --output caesar.jsonl --json
+```
+
+`--adapter tei` (`tei/1`, profile `epidoc-cts/1`) imports one TEI P5 file in the
+`http://www.tei-c.org/ns/1.0` namespace in the Perseus/EpiDoc CTS style as one work.
+It uses the shared hardened reader with namespace processing; outside `teiHeader`
+and skipped divisions, unsupported elements, including any in another namespace,
+are unknown, and processing instructions are ignored. The root `TEI`
+holds `teiHeader` and `text/body`, and the body holds exactly one
+`div[@type="edition"]` with `xml:lang` `lat` or `la`. A missing edition fails
+`invalid_structure` and another language `unsupported_language` (both exit 3).
+Other body divisions, such as a translation, are skipped with one
+`skipped_division` warning naming their types.
+
+A passage is an `l[@n]` outside `note` and `del`, or a deepest
+`div[@type="textpart"]` with no such line. `lg` groups lines transparently; an `l`
+without `@n`, or inside `note` or `del`, is flattened text, and one without text
+between lines is ignored. An `l[@n]` inside `head`, or with an empty `@n`, fails
+`invalid_structure`. In a verse textpart a `note`, `del`, `lb`, `pb` or `milestone`
+between lines attaches to the preceding kept line of the same textpart, else to the
+next passage; `head`, and these items outside verse textparts, attach to the next
+passage, else to the last one. Other text outside lines fails `invalid_structure`.
+A passage whose canonical text is empty, such as a line consisting only of `del`,
+is omitted with a `skipped_empty_passage` warning naming its ref; its own notes,
+headings and `lb`/`pb`/`milestone` spans attach as if they stood between passages.
+An edition whose passages are all omitted fails `invalid_structure`.
+`note` becomes a `note`-kind note, `del` text a `variant`-kind note and `head` a
+heading; `p` and `ab` keep their text and record `source_markup` spans with their
+attributes, and `lb`, `pb` and `milestone` record empty spans.
+
+Citations use scheme `tei-cts`: one part per textpart `@subtype` (plus `line` for a
+line) with the raw NFC `@n` values, displayed joined with `.`; `native_ref` joins
+the individually encoded components (components `1`, `2` and `1.5 é` give
+`1.2.1%2E5%20%C3%A9`).
+Every passage must share the same unit path and every ancestor textpart needs
+`@subtype` and `@n`, otherwise `invalid_structure`; a repeated ref fails
+`duplicate_source_ref`. `refsDecl[@n="CTS"]/cRefPattern/@n` labels that, read
+deepest first, differ case-insensitively from the unit path only warn
+`citation_mismatch`.
+
+The work ID is `--work ID` (`^[A-Za-z0-9._-]{1,64}$`, TEI only), else the textgroup
+and work of a CTS URN in the edition `@n` when they match that pattern, else the
+first two components of `publicationStmt/idno[@type="filename"]` when they match
+`^[a-z]+[0-9]+\.[a-z]+[0-9]+$`, else the corpus ID. The work and corpus titles are
+the first `titleStmt/title`. The header supplies `edition`
+(`editionStmt/edition`, else the first `sourceDesc//title`), `publisher`,
+`url` (`idno[@type="URI"]`) and `license` (`licence/@target`, else its text), each
+null when absent. A `--descriptor` value overrides these fields and the corpus
+title (the work title keeps the header value) and warns `descriptor_override` for
+each header value it replaces with a different one.
+
+Like USFX, this adapter writes only the corpus and rejects `--manifest`, approval
+flags, `--citation-template` and, for now, `--allow-unknown` (exit 2). Notes,
+apparatus and editorial markup beyond the elements above are not yet supported:
+other elements fail `unknown_element` with names and counts. Regenerate the
+synthetic goldens deliberately with
+`uv run python scripts/regen-corpus-fixtures.py --target tei --force`.

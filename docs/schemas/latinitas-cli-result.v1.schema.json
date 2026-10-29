@@ -63,7 +63,12 @@
         "invalid_xml",
         "unsafe_xml",
         "invalid_profile",
-        "profile_mismatch"
+        "profile_mismatch",
+        "unsupported_language",
+        "citation_mismatch",
+        "skipped_division",
+        "skipped_empty_passage",
+        "descriptor_override"
       ],
       "title": "Code",
       "type": "string"

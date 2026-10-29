@@ -14,12 +14,16 @@ Notable user-facing changes to Latinitas Cards are documented here.
   a language other than the card's is withheld, even when accepted.
 - `corpus-cards profile validate` checks a corpus-generation profile, which names the
   corpora, target language, recipes with budgets, reading, limits and ranking weights.
+- `corpus normalize --adapter tei` imports one Perseus/EpiDoc TEI edition with its own
+  citations, header provenance and an optional `--work` ID.
 
 ### Limitations
 
 - Switching a profile's language tag makes all of its reviewed claims stale; review them
   again in the new language.
 - `preview --help` and `generate --help` still describe `--terminology user` as German.
+- The TEI adapter does not yet accept apparatus, `choice` or most inline markup, or
+  `--allow-unknown`. Corpora it writes are rejected by v0.3.0 releases.
 
 ## [0.3.0] - 2026-10-20
 

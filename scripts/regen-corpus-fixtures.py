@@ -30,6 +30,7 @@ from latinitas_cards.corpus_model import (
     passage_hash,
 )
 from latinitas_cards.json_schemas import SCHEMAS, render_schema
+from latinitas_cards.tei_adapter import build_tei
 from latinitas_cards.usfx_adapter import build_usfx
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -141,6 +142,7 @@ def main() -> None:
             "schemas",
             "usfx",
             "markup",
+            "tei",
             "vulgate-digest",
             "cloze-jsonl",
             "annotations",
@@ -384,6 +386,14 @@ def main() -> None:
                 except ContractError as error:
                     cases[key] = {"exit": error.exit_code, "code": error.diagnostic.code}
         outputs[FIXTURES / "usfx/markup/cases.json"] = json.dumps(cases, indent=2, sort_keys=True) + "\n"
+    elif args.target == "tei":
+        outputs = {
+            FIXTURES / f"tei/{source.stem}.expected.jsonl": "".join(
+                canonical_json(record.model_dump(mode="json", by_alias=True)) + "\n"
+                for record in build_tei(source, "test-corpus", "la", None)
+            )
+            for source in sorted((FIXTURES / "tei").glob("*.xml"))
+        }
     elif args.target == "invalid":
         outputs = {FIXTURES / "invalid" / name: data for name, data in invalid_files().items()}
     elif args.target == "usfx":

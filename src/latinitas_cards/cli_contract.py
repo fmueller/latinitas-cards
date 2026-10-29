@@ -79,6 +79,11 @@ class Code(StrEnum):
     UNSAFE_XML = "unsafe_xml"
     INVALID_PROFILE = "invalid_profile"
     PROFILE_MISMATCH = "profile_mismatch"
+    UNSUPPORTED_LANGUAGE = "unsupported_language"
+    CITATION_MISMATCH = "citation_mismatch"
+    SKIPPED_DIVISION = "skipped_division"
+    SKIPPED_EMPTY_PASSAGE = "skipped_empty_passage"
+    DESCRIPTOR_OVERRIDE = "descriptor_override"
 
 
 @dataclass(frozen=True)
@@ -144,12 +149,17 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.REVIEW_REQUIRED: DiagnosticCode(1, "Identity reconciliation requires review"),
     Code.INVALID_LINE: DiagnosticCode(3, "Text line does not match citation template"),
     Code.DUPLICATE_SOURCE_REF: DiagnosticCode(3, "Source label is repeated"),
-    Code.INVALID_STRUCTURE: DiagnosticCode(3, "USFX structure is invalid"),
+    Code.INVALID_STRUCTURE: DiagnosticCode(3, "Source structure is invalid"),
     Code.EMPTY_PASSAGE: DiagnosticCode(3, "Source passage has no canonical text"),
     Code.INVALID_XML: DiagnosticCode(3, "Source is not well-formed XML"),
     Code.UNSAFE_XML: DiagnosticCode(3, "Source XML contains a forbidden declaration"),
     Code.INVALID_PROFILE: DiagnosticCode(3, "Corpus profile is invalid"),
     Code.PROFILE_MISMATCH: DiagnosticCode(3, "Corpora differ from the profile's corpus list"),
+    Code.UNSUPPORTED_LANGUAGE: DiagnosticCode(3, "Source language is unsupported"),
+    Code.CITATION_MISMATCH: DiagnosticCode(0, "Declared citation labels differ from the source structure"),
+    Code.SKIPPED_DIVISION: DiagnosticCode(0, "Non-edition source division was skipped"),
+    Code.SKIPPED_EMPTY_PASSAGE: DiagnosticCode(0, "Source passage without canonical text was omitted"),
+    Code.DESCRIPTOR_OVERRIDE: DiagnosticCode(0, "Descriptor value replaced a source header value"),
 }
 
 

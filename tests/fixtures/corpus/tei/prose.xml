@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://www.stoa.org/epidoc/schema/latest/tei-epidoc.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>De Bello Gallico</title>
+        <title type="sub">Machine readable text</title>
+        <author>C. Iulius Caesar</author>
+      </titleStmt>
+      <publicationStmt>
+        <publisher>Synthetic Perseus</publisher>
+        <idno type="filename">phi0448.phi001.perseus-lat2.xml</idno>
+        <idno type="URI">https://example.org/caesar</idno>
+        <availability>
+          <licence target="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</licence>
+        </availability>
+      </publicationStmt>
+      <sourceDesc>
+        <biblStruct>
+          <monogr>
+            <title>C. Iuli Caesaris Commentarii</title>
+          </monogr>
+        </biblStruct>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <refsDecl n="CTS">
+        <cRefPattern n="section" matchPattern="(\w+).(\w+).(\w+)" replacementPattern="#xpath(/tei:TEI)"/>
+        <cRefPattern n="chapter" matchPattern="(\w+).(\w+)" replacementPattern="#xpath(/tei:TEI)"/>
+        <cRefPattern n="book" matchPattern="(\w+)" replacementPattern="#xpath(/tei:TEI)"/>
+      </refsDecl>
+    </encodingDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div type="edition" n="urn:cts:latinLit:phi0448.phi001.perseus-lat2" xml:lang="lat">
+        <div type="textpart" subtype="book" n="1">
+          <head>Liber primus</head>
+          <div type="textpart" subtype="chapter" n="1">
+            <div type="textpart" subtype="section" n="pr">
+              <p>Gallia est omnis <lb/>divisa in partes tres<note>nota bene</note>.</p>
+            </div>
+            <div type="textpart" subtype="section" n="3a">
+              <p n="x">Quarum unam <del>deleta</del>incolunt Belgae.</p>
+            </div>
+          </div>
+          <pb n="2"/>
+          <div type="textpart" subtype="chapter" n="2">
+            <div type="textpart" subtype="section" n="62b">
+              <ab>Apud Helvetios <milestone unit="para"/>longe nobilissimus fuit Orgetorix.</ab>
+            </div>
+            <div type="textpart" subtype="section" n="1.5 é">
+              <p>Is M. Messala consule.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+  </text>
+</TEI>

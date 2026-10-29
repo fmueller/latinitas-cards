@@ -55,7 +55,8 @@
         "adapter": {
           "enum": [
             "usfx/1",
-            "text/1"
+            "text/1",
+            "tei/1"
           ],
           "title": "Adapter",
           "type": "string"
@@ -270,7 +271,9 @@
           "enum": [
             "f",
             "x",
-            "fe"
+            "fe",
+            "note",
+            "variant"
           ],
           "title": "Kind",
           "type": "string"

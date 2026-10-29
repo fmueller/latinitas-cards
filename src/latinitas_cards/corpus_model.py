@@ -2,6 +2,9 @@
 
 import re
 import unicodedata
+from array import array
+from bisect import bisect_left, bisect_right
+from collections.abc import Iterator
 from typing import Annotated, Literal, Self
 
 from pydantic import (
@@ -131,7 +134,7 @@ class CorpusHeader(VersionOne):
     language: LanguageTag = "la"
     text_canon: Literal[1] = 1
     norm_rules: Literal["latin-fold/1"] = "latin-fold/1"
-    adapter: Literal["usfx/1", "text/1"]
+    adapter: Literal["usfx/1", "text/1", "tei/1"]
     source: CorpusSource
     edition: str | None = None
     publisher: str | None = None
@@ -197,7 +200,7 @@ class CorpusTranslation(CorpusModel):
 
 
 class CorpusNote(CorpusModel):
-    kind: Literal["f", "x", "fe"]
+    kind: Literal["f", "x", "fe", "note", "variant"]
     text: str
 
 
@@ -215,6 +218,73 @@ class CorpusMarkup(CorpusModel):
         if self.span[1] < self.span[0]:
             raise ValueError("span end precedes start")
         return self
+
+
+def canonical_markup(raw: str, entries: list[CorpusMarkup]) -> str:
+    """Map raw span intervals through NFC and whitespace collapse with sparse offsets.
+
+    Match NFD origins in canonical combining order on both sides of NFC. This
+    preserves offsets even when combining marks reorder across XML boundaries.
+    A span touching part of a composed character includes that whole code point.
+    Only markup boundaries get offset storage; combining runs use packed indices.
+    """
+
+    def origins(text: str) -> Iterator[int]:
+        marks: dict[int, array[int]] = {}
+        for index, char in enumerate(text):
+            for part in unicodedata.normalize("NFD", char):
+                combining = unicodedata.combining(part)
+                if not combining:
+                    for category in sorted(marks):
+                        yield from marks[category]
+                    marks.clear()
+                    yield index
+                else:
+                    if combining not in marks:
+                        marks[combining] = array("I")
+                    marks[combining].append(index)
+        for category in sorted(marks):
+            yield from marks[category]
+
+    for entry in entries:
+        start, end = entry.span
+        while start < end and raw[start].isspace():
+            start += 1
+        while end > start and raw[end - 1].isspace():
+            end -= 1
+        entry.span = [start, end]
+    boundaries = sorted({0, len(raw), *(point for entry in entries for point in entry.span)})
+    starts = [len(raw)] * (len(boundaries) - 1)
+    ends = [0] * (len(boundaries) - 1)
+    nfc = unicodedata.normalize("NFC", raw)
+    removed = 0
+    pending = False
+    maximum_target = -1
+    for source, target in zip(origins(raw), origins(nfc), strict=True):
+        whitespace = nfc[target].isspace()
+        if target > maximum_target:
+            if whitespace:
+                removed += 1
+                pending = pending or target >= removed
+            elif pending:
+                removed -= 1
+                pending = False
+            maximum_target = target
+        # Reordered marks can revisit a preceding NFC character, but cannot
+        # cross whitespace, so its removed-whitespace count remains unchanged.
+        start = target - removed + int(whitespace)
+        end = start + int(not whitespace)
+        segment = bisect_right(boundaries, source) - 1
+        starts[segment] = min(starts[segment], start)
+        ends[segment] = max(ends[segment], end)
+    for entry in entries:
+        left, right = (bisect_left(boundaries, point) for point in entry.span)
+        if left < right:
+            entry.span = [min(starts[left:right]), max(ends[left:right])]
+        else:
+            point = ends[left - 1] if left else 0
+            entry.span = [point, point]
+    return canonical_text(nfc)
 
 
 class CorpusPassage(CorpusModel):

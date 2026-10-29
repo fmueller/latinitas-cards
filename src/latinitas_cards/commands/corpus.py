@@ -22,6 +22,7 @@ from ..corpus_text import build_corpus, parse_template, read_lines
 from ..corpus_validation import validate_corpus, validate_records
 from ..effective_config import build_report
 from ..profile_setup import encode_unsafe_controls
+from ..tei_adapter import WORK_ID, build_tei
 from ..usfx_adapter import build_usfx
 
 app = typer.Typer(help="Normalize and inspect versioned corpora.")
@@ -179,9 +180,15 @@ class NormalizeRequest:
     approve_allocation: list[int]
     approve_removal: list[str]
     allow_unknown: bool
+    work: str | None
 
 
-def _normalize_usfx(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
+def _normalize_xml(
+    request: NormalizeRequest,
+    name: str,
+    build: Callable[[CorpusDescriptor | None, list[Diagnostic]], list[CorpusRecord]],
+) -> tuple[JsonValue, list[Diagnostic]]:
+    """Source-native XML adapters write only the corpus; they never use templates, manifests or approvals."""
     if (
         request.template is not None
         or request.manifest is not None
@@ -189,25 +196,54 @@ def _normalize_usfx(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnost
         or request.approve_allocation
         or request.approve_removal
     ):
-        raise ContractError(Code.USAGE_ERROR, "USFX cannot use templates, manifests or approvals")
+        raise ContractError(Code.USAGE_ERROR, f"{name} cannot use templates, manifests or approvals")
     source, descriptor = request.source, request.descriptor
     try:
-        usfx_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes()) if descriptor else None
+        parsed_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes()) if descriptor else None
         diagnostics: list[Diagnostic] = []
-        records = build_usfx(
-            source,
-            request.corpus_id,
-            request.language,
-            usfx_descriptor,
-            allow_unknown=request.allow_unknown,
-            diagnostics=diagnostics,
-        )
+        records = build(parsed_descriptor, diagnostics)
         write_corpus(request.output, records, [source, *([descriptor] if descriptor else [])])
     except ValidationError as error:
         raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
     except OSError as error:
         raise ContractError(Code.UNREADABLE, str(error)) from error
     return {"review_items": []}, diagnostics
+
+
+def _normalize_usfx(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
+    if request.work is not None:
+        raise ContractError(Code.USAGE_ERROR, "--work requires the TEI adapter")
+    return _normalize_xml(
+        request,
+        "USFX",
+        lambda descriptor, diagnostics: build_usfx(
+            request.source,
+            request.corpus_id,
+            request.language,
+            descriptor,
+            allow_unknown=request.allow_unknown,
+            diagnostics=diagnostics,
+        ),
+    )
+
+
+def _normalize_tei(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
+    if request.allow_unknown:
+        raise ContractError(Code.USAGE_ERROR, "--allow-unknown is not yet supported by the TEI adapter")
+    if request.work is not None and not WORK_ID.fullmatch(request.work):
+        raise ContractError(Code.USAGE_ERROR, "Malformed --work ID")
+    return _normalize_xml(
+        request,
+        "TEI",
+        lambda descriptor, diagnostics: build_tei(
+            request.source,
+            request.corpus_id,
+            request.language,
+            descriptor,
+            work=request.work,
+            diagnostics=diagnostics,
+        ),
+    )
 
 
 def _normalize_text(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
@@ -220,6 +256,8 @@ def _normalize_text(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnost
     )
     if request.allow_unknown:
         raise ContractError(Code.USAGE_ERROR, "--allow-unknown requires the USFX adapter")
+    if request.work is not None:
+        raise ContractError(Code.USAGE_ERROR, "--work requires the TEI adapter")
     if template and (
         manifest is not None or request.approve_reuse or request.approve_allocation or request.approve_removal
     ):
@@ -283,6 +321,7 @@ def _normalize_text(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnost
 
 # The single dispatch point for `corpus normalize --adapter NAME`.
 ADAPTERS: dict[str, Callable[[NormalizeRequest], tuple[JsonValue, list[Diagnostic]]]] = {
+    "tei": _normalize_tei,
     "text": _normalize_text,
     "usfx": _normalize_usfx,
 }
@@ -302,6 +341,7 @@ def normalize(
     approve_allocation: Annotated[list[int] | None, typer.Option("--approve-allocation")] = None,
     approve_removal: Annotated[list[str] | None, typer.Option("--approve-removal")] = None,
     allow_unknown: Annotated[bool, typer.Option("--allow-unknown")] = False,
+    work: Annotated[str | None, typer.Option("--work", help="TEI work ID.")] = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
     """Normalize text with stable reviewed ordinal refs, or explicit source labels."""
@@ -325,6 +365,7 @@ def normalize(
                 approve_allocation=approve_allocation or [],
                 approve_removal=approve_removal or [],
                 allow_unknown=allow_unknown,
+                work=work,
             )
         )
 
