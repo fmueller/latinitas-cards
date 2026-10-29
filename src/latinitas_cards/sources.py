@@ -14,7 +14,7 @@ import json
 import sqlite3
 import tempfile
 import zipfile
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -114,17 +114,29 @@ def read_source_records(
     source_id_field: str | None = None,
     encoding: str | None = None,
     note_type: str | None = None,
+    on_record_error: Callable[[str, str], None] | None = None,
 ) -> tuple[CanonicalSourceRecord, ...]:
-    """Read CSV, APKG, or COLPKG input into deterministic canonical records."""
+    """Read CSV, APKG, or COLPKG input into deterministic canonical records.
+
+    With ``on_record_error``, skip individually unreadable rows/notes and
+    report their location and reason. Whole-source structural failures remain
+    fatal. Without the callback, all record failures remain fatal too.
+    """
 
     path = Path(source_path)
     suffix = path.suffix.lower()
     if suffix == ".csv":
-        return read_csv_records(path, source_id_field=source_id_field, encoding=encoding, note_type=note_type)
+        return read_csv_records(
+            path,
+            source_id_field=source_id_field,
+            encoding=encoding,
+            note_type=note_type,
+            on_record_error=on_record_error,
+        )
     if suffix == ".apkg":
-        return read_apkg_records(path, note_type=note_type)
+        return read_apkg_records(path, note_type=note_type, on_record_error=on_record_error)
     if suffix == ".colpkg":
-        return read_colpkg_records(path, note_type=note_type)
+        return read_colpkg_records(path, note_type=note_type, on_record_error=on_record_error)
     raise CanonicalSourceError(path, "expected a .csv, .apkg, or .colpkg source")
 
 
@@ -134,13 +146,14 @@ def read_csv_records(
     source_id_field: str | None = None,
     encoding: str | None = None,
     note_type: str | None = None,
+    on_record_error: Callable[[str, str], None] | None = None,
 ) -> tuple[CanonicalSourceRecord, ...]:
     """Read a headered CSV while preserving arbitrary named fields and row order."""
 
     path = Path(source_path)
     raw = _read_source_bytes(path)
     text, selected_encoding = _decode_csv(raw, path, encoding)
-    rows, headers, delimiter = _parse_csv(text, path)
+    rows, headers, delimiter = _parse_csv(text, path, on_record_error)
     if source_id_field is not None and source_id_field not in headers:
         raise CanonicalSourceError(path, f"configured source-ID column '{source_id_field}' is missing")
 
@@ -177,20 +190,22 @@ def read_apkg_records(
     source_path: str | Path,
     *,
     note_type: str | None = None,
+    on_record_error: Callable[[str, str], None] | None = None,
 ) -> tuple[CanonicalSourceRecord, ...]:
     """Read an Anki package while retaining native note GUIDs."""
 
-    return _read_anki_records(Path(source_path), "apkg", note_type)
+    return _read_anki_records(Path(source_path), "apkg", note_type, on_record_error)
 
 
 def read_colpkg_records(
     source_path: str | Path,
     *,
     note_type: str | None = None,
+    on_record_error: Callable[[str, str], None] | None = None,
 ) -> tuple[CanonicalSourceRecord, ...]:
     """Read an Anki collection package while retaining native note GUIDs."""
 
-    return _read_anki_records(Path(source_path), "colpkg", note_type)
+    return _read_anki_records(Path(source_path), "colpkg", note_type, on_record_error)
 
 
 def inspect_source(
@@ -245,7 +260,11 @@ def _candidate_encodings(raw: bytes) -> tuple[str, ...]:
     return _CSV_FALLBACK_ENCODINGS
 
 
-def _parse_csv(text: str, path: Path) -> tuple[list[tuple[int, list[str]]], list[str], str]:
+def _parse_csv(
+    text: str,
+    path: Path,
+    on_record_error: Callable[[str, str], None] | None = None,
+) -> tuple[list[tuple[int, list[str]]], list[str], str]:
     sample = text[:8192]
     try:
         dialect = csv.Sniffer().sniff(sample, delimiters=",;\t|")
@@ -271,7 +290,11 @@ def _parse_csv(text: str, path: Path) -> tuple[list[tuple[int, list[str]]], list
         if not row:
             continue
         if len(row) != len(headers):
-            raise CanonicalSourceError(path, "CSV row has a different number of fields than its header")
+            row_error = CanonicalSourceError(path, "CSV row has a different number of fields than its header")
+            if on_record_error is None:
+                raise row_error
+            on_record_error(f"row {row_number}", row_error.assumption)
+            continue
         rows.append((row_number, row))
     return rows, headers, delimiter
 
@@ -285,6 +308,7 @@ def _read_anki_records(
     path: Path,
     source_kind: Literal["apkg", "colpkg"],
     requested_note_type: str | None,
+    on_record_error: Callable[[str, str], None] | None = None,
 ) -> tuple[CanonicalSourceRecord, ...]:
     try:
         with zipfile.ZipFile(path, "r") as archive, tempfile.TemporaryDirectory() as temporary_directory:
@@ -300,7 +324,7 @@ def _read_anki_records(
                     raise CanonicalSourceError(path, "collection database is not valid zstd data") from error
             database_path = Path(temporary_directory) / "collection.anki2"
             database_path.write_bytes(database_bytes)
-            return _read_anki_database(path, database_path, source_kind, requested_note_type)
+            return _read_anki_database(path, database_path, source_kind, requested_note_type, on_record_error)
     except CanonicalSourceError:
         raise
     except zipfile.BadZipFile as error:
@@ -340,6 +364,7 @@ def _read_anki_database(
     database_path: Path,
     source_kind: Literal["apkg", "colpkg"],
     requested_note_type: str | None,
+    on_record_error: Callable[[str, str], None] | None = None,
 ) -> tuple[CanonicalSourceRecord, ...]:
     try:
         con = sqlite3.connect(database_path)
@@ -361,13 +386,19 @@ def _read_anki_database(
             records: list[CanonicalSourceRecord] = []
             seen_guids: set[str] = set()
             for row in rows:
-                record = _build_anki_record(
-                    source_path,
-                    source_kind,
-                    row,
-                    note_types,
-                    field_names,
-                )
+                try:
+                    record = _build_anki_record(
+                        source_path,
+                        source_kind,
+                        row,
+                        note_types,
+                        field_names,
+                    )
+                except CanonicalSourceError as error:
+                    if on_record_error is None:
+                        raise
+                    on_record_error(f"note {row['id']}", error.assumption)
+                    continue
                 if requested_note_type is None or record.note_type == requested_note_type:
                     if record.source_identity in seen_guids:
                         raise CanonicalSourceError(
