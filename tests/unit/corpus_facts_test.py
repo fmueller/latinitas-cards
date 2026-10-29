@@ -26,9 +26,9 @@ LINES = ("Arma virumque cano.", "Mater filium amat. Puer legit.", "Canis currit"
 class Fixture:
     """Disposable corpus normalized and segmented through the real CLI."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, lines: tuple[str, ...] = LINES) -> None:
         source = root / "source.txt"
-        source.write_text("\n".join(LINES) + "\n")
+        source.write_text("\n".join(lines) + "\n")
         self.corpus = root / "corpus.jsonl"
         self.sidecar = root / "corpus.annotations.jsonl"
         for args in (

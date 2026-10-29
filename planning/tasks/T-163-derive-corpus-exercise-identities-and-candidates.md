@@ -1,13 +1,13 @@
 ---
 id: T-163-derive-corpus-exercise-identities-and-candidates
 title: Derive corpus exercise identities and candidates for the four recipes
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#corpus-first-profiles-and-exercise-identity
 dependencies:
     - T-160-build-the-accepted-fact-view-and-consume-latinitas
     - T-162-define-the-corpus-generation-profile-and-corpus
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T09:39:58Z"
 ---
 
 # T-163-derive-corpus-exercise-identities-and-candidates Derive corpus exercise identities and candidates for the four recipes
@@ -51,3 +51,4 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T09:39:53Z: verification pass
