@@ -8,6 +8,7 @@ from pydantic import JsonValue
 
 from ..cli_contract import Diagnostic, run_contract
 from ..corpus_output import export_corpus, inspect_corpus, preview_corpus
+from ..corpus_plan import plan_corpus
 from ..corpus_profile import load_corpus_profile, profile_digest
 from ..corpus_selection import deselect_corpus, select_corpus
 
@@ -119,3 +120,19 @@ def inspect(
 ) -> None:
     """Inspect selected exercises and optionally check an export, without writing files."""
     run_contract("corpus-cards inspect", json_output, lambda: inspect_corpus(profile, corpus, selection, check))
+
+
+@app.command()
+def plan(
+    profile: Annotated[Path, typer.Argument(help="Corpus-generation profile JSON file.")],
+    snapshot: Annotated[Path, typer.Argument(help="Complete destination snapshot JSON.")],
+    state: Annotated[Path, typer.Argument(help="Adopted managed baseline JSON.")],
+    corpus: Annotated[list[Path], typer.Option("--corpus")],
+    selection: Annotated[Path, typer.Option()],
+    output: Annotated[Path, typer.Option(help="Immutable managed plan request JSON.")],
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Request reviewed updates and explicit blocked retirements; never write to Anki."""
+    run_contract(
+        "corpus-cards plan", json_output, lambda: plan_corpus(profile, corpus, selection, snapshot, state, output)
+    )

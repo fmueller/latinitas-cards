@@ -354,7 +354,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     commands.remove(policy)
     commands.extend(policy.commands.values())
     corpus_cards = cast(click.Group, click_app.commands["corpus-cards"])
-    assert set(corpus_cards.commands) == {"profile", "select", "deselect", "preview", "export", "inspect"}
+    assert set(corpus_cards.commands) == {"profile", "select", "deselect", "preview", "export", "inspect", "plan"}
     corpus_profile = cast(click.Group, corpus_cards.commands["profile"])
     assert set(corpus_profile.commands) == {"validate"}
     commands.remove(corpus_cards)

@@ -20,6 +20,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   `--restore` returns them, requiring confirmation if their context has changed.
 - `corpus-cards preview`, `export` and `inspect --check` show reviewed selected exercises,
   create an initial Anki CSV and detect stale, unreviewed or changed exported cards.
+- `corpus-cards plan` hands reviewed corrections to managed CSV updates, preserves
+  withheld notes and reports explicit deselections as blocked manual retirements.
 - `corpus normalize --adapter tei` imports one Perseus/EpiDoc TEI edition with its own
   citations, header provenance and an optional `--work` ID. Notes, apparatus readings and
   `choice` alternatives stay with each passage, inline and editorial markup is kept as

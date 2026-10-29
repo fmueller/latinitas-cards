@@ -144,6 +144,7 @@ executable cases together.
 | corpus-cards preview | 0, 1, 2, 3, 4 |
 | corpus-cards export | 0, 1, 3, 4 |
 | corpus-cards inspect | 0, 1, 3, 4 |
+| corpus-cards plan | 0, 1, 3, 4 |
 
 `annotations approve` requires explicit `--operation` IDs (no approve-all).
 An auto ID is accepted as a no-op selection. Empty/blank `--review` or a malformed
@@ -390,6 +391,28 @@ Neither command fills budgets or changes selections. Missing targets and changed
 contexts stay selected but withheld as `target_missing` and `context_changed`.
 Another profile ID or target language exits 4 `binding_drift`; unlisted or missing
 corpora exit 3 `profile_mismatch`. Invalid reading bounds exit 3 `invalid_reading`.
+
+`corpus-cards plan PROFILE --corpus FILE... --selection FILE SNAPSHOT STATE --output REQUEST`
+writes an immutable request for `managed plan REQUEST`. It captures the snapshot,
+adopted baseline and consumed input digests. An identical rerun is a no-op; different
+bytes at the same output exit 3 `exists`. Inputs and their lock paths cannot be outputs.
+The command does not change selections, managed state or the destination.
+
+Eligible bound selections propose approved content and retained-slot payloads. Ineligible
+anchored selections carry their unchanged anchored fields with status `withheld`.
+For anchored notes, `Profile` comes from the anchor. Tag origins are preserved, and
+`Personal Notes` is never proposed. Unanchored exercises outside the bound managed set,
+and ineligible exercises without anchors, are reported in `not_imported`. An eligible missing bound
+member is an unsupported create; a previously anchored note that disappears requires
+destination reconciliation instead. Only explicitly deselected anchored corpus IDs
+propose retirement, which remains an unsupported structural effect, not deletion.
+Switching target language with a new selection never retires old-language notes.
+
+Use `managed plan`, separate operation-bound `managed approve`, and `managed emit`
+for the offline CSV handoff. Native import is manual; `managed observe` or `reconcile`
+is required afterward. Selection/destination binding drift exits 4 `binding_drift`;
+corpus/profile mismatch exits 3 `profile_mismatch`. Stale fact diagnostics can exit 1
+while still writing a request containing withheld proposals.
 
 ### Legacy exceptions (not envelope commands)
 

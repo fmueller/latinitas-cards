@@ -274,6 +274,38 @@ def corpus_output_case(tmp: Path, command: str, exit_code: int) -> list[str]:
     return args
 
 
+def corpus_plan_case(tmp: Path, exit_code: int) -> list[str]:
+    from corpus_exercises_test import profile
+    from corpus_output_test import selected
+    from corpus_plan_test import destination
+
+    from latinitas_cards.annotation_sidecar import Annotation, read_sidecar
+
+    facts = selected(tmp)
+    destination(tmp, facts)
+    if exit_code == 1:
+        facts.retract(
+            next(r for r in read_sidecar(facts.sidecar) if isinstance(r, Annotation) and r.layer == "morphology")
+        )
+    elif exit_code == 3:
+        (tmp / "profile.json").unlink()
+    elif exit_code == 4:
+        (tmp / "profile.json").write_text(profile(profile_id="another").model_dump_json())
+    return [
+        "corpus-cards",
+        "plan",
+        str(tmp / "profile.json"),
+        str(tmp / "snapshot.json"),
+        str(tmp / "state.json"),
+        "--corpus",
+        str(facts.corpus),
+        "--selection",
+        str(tmp / "selection.json"),
+        "--output",
+        str(tmp / "request.json"),
+    ]
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
     **{
         (f"corpus-cards {command}", code): partial(corpus_output_case, command=command, exit_code=code)
@@ -282,6 +314,7 @@ CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
     },
     **{("corpus-cards select", code): partial(select_case, exit_code=code) for code in (0, 1, 2, 3, 4)},
     **{("corpus-cards deselect", code): partial(deselect_case, exit_code=code) for code in (0, 2, 3, 4)},
+    **{("corpus-cards plan", code): partial(corpus_plan_case, exit_code=code) for code in (0, 1, 3, 4)},
     **{
         ("annotations import-translations", code): partial(import_translations_case, exit_code=code)
         for code in (0, 2, 3, 4)

@@ -1,13 +1,13 @@
 ---
 id: T-169-plan-managed-updates-for-corpus-exercises
 title: Plan managed updates and blocked retirement for corpus exercises
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#corpus-first-profiles-and-exercise-identity
 dependencies:
     - T-168-preview-export-and-inspect-corpus-exercises
     - T-167-deselect-and-restore-selected-corpus-exercises
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T23:43:15Z"
 ---
 
 # T-169-plan-managed-updates-for-corpus-exercises Plan managed updates and blocked retirement for corpus exercises
@@ -50,4 +50,5 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 
 ## Verification Notes
 
-- Not started.
+- 2026-10-29T23:43:15Z: verification pass
+- 2026-10-29T23:43:15Z: Implemented immutable corpus-cards plan requests with captured-byte provenance, bound-set filtering, anchored withheld fields/Profile/tag origins and explicit-only blocked retirement. TDD and controlled regression probes passed; independent high-risk review approved all dispositions; seven public-CLI QA journeys and final ruff/mypy/pytest chain passed (3166 passed, 7 skipped). Native Anki behavior remains outside this offline handoff. No successor started or maintainer gate changed.
