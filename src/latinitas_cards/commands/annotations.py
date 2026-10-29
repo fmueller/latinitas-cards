@@ -18,6 +18,7 @@ from ..corpus_io import CorpusFinding, read_corpus
 from ..corpus_model import CorpusPassage
 from ..corpus_segmentation import segment_work, tokenize
 from ..corpus_validation import validate_records
+from ..parallel_translations import import_translations
 
 app = typer.Typer(help="Produce versioned annotation sidecars.")
 
@@ -62,6 +63,28 @@ def approve(
 ) -> None:
     """Record explicit review of selected operation IDs by a declared actor."""
     run_contract("annotations approve", json_output, lambda: approve_plan(plan, operation, actor, review, output))
+
+
+@app.command("import-translations")
+def import_translations_command(
+    corpus: Annotated[Path, typer.Argument(help="Normalized Latin corpus JSONL.")],
+    parallel: Annotated[Path, typer.Option(help="Normalized parallel corpus in the target language.")],
+    language: Annotated[str, typer.Option()],
+    producer_kind: Annotated[str, typer.Option(help="human, agent or llm.")],
+    producer_name: Annotated[str, typer.Option()],
+    producer_version: Annotated[str, typer.Option()],
+    output: Annotated[Path, typer.Option()],
+    timestamp: Annotated[str | None, typer.Option()] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Write a patch of span-less translations aligned by native_ref; no sidecar or claim writes."""
+    run_contract(
+        "annotations import-translations",
+        json_output,
+        lambda: import_translations(
+            corpus, parallel, language, producer_kind, producer_name, producer_version, output, timestamp
+        ),
+    )
 
 
 @app.command()

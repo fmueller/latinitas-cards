@@ -159,7 +159,37 @@ def annotation_apply_case(tmp: Path, exit_code: int) -> list[str]:
     return args
 
 
+def import_translations_case(tmp: Path, exit_code: int) -> list[str]:
+    corpus = FIXTURES / "valid/ordinal.jsonl"
+    parallel = tmp / "parallel.jsonl"
+    # The same corpus relabelled German shares every native_ref with the Latin original.
+    header, *rows = corpus.read_text().splitlines()
+    parallel.write_text("\n".join([header.replace('"language":"la"', '"language":"de"'), *rows]) + "\n")
+    return [
+        "annotations",
+        "import-translations",
+        str(corpus),
+        "--parallel",
+        str(corpus if exit_code == 3 else parallel),
+        "--language",
+        "de",
+        "--producer-kind",
+        "human",
+        "--producer-name",
+        "fixture",
+        "--producer-version",
+        "1",
+        "--output",
+        str(tmp / "out.jsonl"),
+        *(["--timestamp", "not-a-date"] if exit_code == 2 else []),
+    ]
+
+
 CONTRACT_EXIT_CASES: dict[tuple[str, int], Callable[[Path], list[str]]] = {
+    **{
+        ("annotations import-translations", code): partial(import_translations_case, exit_code=code)
+        for code in (0, 2, 3, 4)
+    },
     ("corpus show", 2): lambda tmp: [
         "corpus",
         "show",

@@ -111,6 +111,8 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `skipped_empty_passage` | 0 | Source passage without canonical text was omitted |
 | `descriptor_override` | 0 | Descriptor value replaced a source header value |
 | `gap_in_text` | 0 | Source text has an editorial gap |
+| `unmatched_translation` | 0 | Latin passage has no parallel translation |
+| `unmatched_parallel` | 0 | Parallel passage has no Latin passage |
 
 ## Contract command matrix
 
@@ -128,6 +130,7 @@ executable cases together.
 | annotations plan | 0, 1, 3, 4 |
 | annotations approve | 0, 3, 4, 5 |
 | annotations apply | 0, 2, 3, 4, 5 |
+| annotations import-translations | 0, 2, 3, 4 |
 | corpus show | 0, 2, 3 |
 | corpus config | 0, 3 |
 | policy validate | 0, 3 |
@@ -167,6 +170,13 @@ receipts (`actor_refused`, 5); `receipt_actor: any` permits agent declarations.
 | invalid plan operation, any producer/actor kind | 3 `invalid_operation`, no append |
 | agent receipt under human-only policy | 5 `actor_refused`, no append |
 | deny operation without receipt selection | 0 with `denied` warning, denied records never appended |
+
+`annotations import-translations CORPUS --parallel PARALLEL --language TAG
+--producer-kind human|agent|llm --producer-name N --producer-version V --output
+PATCH [--timestamp T]` writes only a `latinitas-annotation-patch` and reports
+`{"operations","patch","written"}`; `written` is false for an identical rerun.
+Unmatched refs warn on both sides; usage, language, artifact and lock exits are
+described in [annotation sidecars](annotation-sidecars.md#import-aligned-parallel-translations).
 
 The routing matrix lives in `tests/unit/annotation_routing_test.py`; lock contention
 and synchronized competing claims writers also run in `annotation_apply_test.py`.

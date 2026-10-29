@@ -13,12 +13,18 @@ from .corpus_model import CorpusRecord, canonical_text, latin_fold, passage_hash
 
 
 def _has_surrogate(value: object) -> bool:
-    if isinstance(value, str):
-        return any("\ud800" <= char <= "\udfff" for char in value)
-    if isinstance(value, dict):
-        return any(_has_surrogate(key) or _has_surrogate(item) for key, item in value.items())
-    if isinstance(value, list):
-        return any(_has_surrogate(item) for item in value)
+    # Iterative, so nesting that json.loads accepts cannot exhaust the interpreter stack.
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            if any("\ud800" <= char <= "\udfff" for char in item):
+                return True
+        elif isinstance(item, dict):
+            pending.extend(item.keys())
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
     return False
 
 

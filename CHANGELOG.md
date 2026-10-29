@@ -19,6 +19,13 @@ Notable user-facing changes to Latinitas Cards are documented here.
   `choice` alternatives stay with each passage, inline and editorial markup is kept as
   spans, gaps warn, and `--allow-unknown` keeps unknown elements in passage text in
   `source_extra`.
+- `annotations import-translations` turns a translation corpus aligned by citation into a
+  patch of passage translations to plan, approve and apply; it reports unmatched passages.
+
+### Fixed
+
+- Corpus commands report validation errors for deeply nested JSON instead of failing
+  with an internal error.
 
 ### Limitations
 

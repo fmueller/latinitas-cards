@@ -156,6 +156,46 @@ Path(f"docs/schemas/{name}.v1.schema.json").write_text(render_schema(SCHEMAS[nam
 PY
 ```
 
+## Import aligned parallel translations
+
+```sh
+latinitas-cards corpus normalize german.txt --adapter text --corpus-id reader-de \
+  --language de --citation-template wsl:work.section.line --output german.jsonl
+latinitas-cards annotations import-translations latin.jsonl --parallel german.jsonl \
+  --language de --producer-kind human --producer-name wsl-de --producer-version 2024 \
+  --output translations.patch.json --timestamp 2026-01-01T00:00:00Z --json
+```
+
+The parallel corpus is a normalized corpus in the target language whose
+`native_ref`s match the Latin corpus, for example a text file normalized with the
+same `--citation-template` labels. For each Latin passage whose `native_ref`
+occurs in it, the patch gets one `add` of a span-less `translation` annotation
+`{language: TAG, text}` on that Latin passage and its `passage_hash`. The text is
+the parallel passage's canonical text, and `TAG` is `--language` as given.
+Operations follow Latin corpus order and carry the given producer.
+
+Latin passages without a non-empty parallel passage warn `unmatched_translation`;
+parallel passages without a Latin passage warn `unmatched_parallel`. Each warning
+names the passage's `native_ref` and carries its passage ID in `ref`. A parallel
+header language whose primary subtag differs from that of `--language`, or is
+`la`, exits 3 `unsupported_language`. Corpus validation findings exit 3
+`invalid_corpus` naming the first finding, followed by the findings; loader
+errors (`unreadable`, `invalid_json`, `missing_header`) keep their codes (exit 3).
+A malformed `--language`, `--producer-kind` other than `human`, `agent` or `llm`,
+or a producer name or version the patch schema rejects exits 2 `usage_error`
+naming the option.
+
+A valid `--timestamp` becomes every operation's `created`; an invalid one exits 2
+`timestamp_required`. Without it, operations carry no `created`, and `apply`
+takes the time from its own `--timestamp` or `SOURCE_DATE_EPOCH`. The patch is
+an immutable artifact like plans and receipts: identical bytes are a no-op,
+different bytes exit 3 `exists`, and a held output lock exits 4 `busy`. Aliases
+of either corpus or its sidecar and claims defaults, of any existing corpus,
+sidecar, claims, manifest or policy document, or of any `*.lock` or
+`*.manifest.json` path exit 3 `alias`. The command writes only the patch, never
+a sidecar or claim decision, so applied translations stay `open` until
+`claims record` accepts them.
+
 ## Plan and explicitly approve (without applying)
 
 ```sh

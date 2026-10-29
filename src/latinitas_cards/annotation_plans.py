@@ -425,6 +425,7 @@ def write_document(output: Path, document: dict[str, Any], protected: Sequence[P
             header = json.loads(previous.split(b"\n", 1)[0])
     except (ValueError, UnicodeError, RecursionError):
         header = None
+    # An existing artifact of the document's own format is a rerun: identical bytes or `exists`.
     if isinstance(header, dict) and (
         header.get("format")
         in {
@@ -434,6 +435,7 @@ def write_document(output: Path, document: dict[str, Any], protected: Sequence[P
             "latinitas-policy",
             "latinitas-annotation-patch",
         }
+        - {document["format"]}
         or "decisions" in header
     ):
         raise ContractError(Code.ALIAS, "Output is a protected document", path=str(output))

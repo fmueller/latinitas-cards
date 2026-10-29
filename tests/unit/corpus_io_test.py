@@ -58,6 +58,7 @@ def test_reader_streams_and_yields_findings(tmp_path: Path, monkeypatch: pytest.
         ("", Code.MISSING_HEADER),
         ("[]\n", Code.INVALID_JSON),
         ("oops\n", Code.INVALID_JSON),
+        ("[" * 200_000 + "]" * 200_000 + "\n", Code.INVALID_JSON),
         ('{"record":"work"}\n', Code.MISSING_HEADER),
         ('{"record":"header","format":"other","version":1}\n', Code.UNSUPPORTED_FORMAT),
         *[

@@ -69,7 +69,9 @@
         "skipped_division",
         "skipped_empty_passage",
         "descriptor_override",
-        "gap_in_text"
+        "gap_in_text",
+        "unmatched_translation",
+        "unmatched_parallel"
       ],
       "title": "Code",
       "type": "string"

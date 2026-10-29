@@ -1,12 +1,12 @@
 ---
 id: T-161-import-aligned-parallel-translations-as-annotation
 title: Import aligned parallel translations as annotation patches
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#context-and-translation-recipes
 dependencies:
     - T-154-capture-v0-4-0-characterization-goldens
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T18:41:27Z"
 ---
 
 # T-161-import-aligned-parallel-translations-as-annotation Import aligned parallel translations as annotation patches
@@ -48,4 +48,19 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 
 ## Verification Notes
 
-- Not started.
+- Preserved the legitimate in-progress start across checkout transfer; the full
+  17-file patch and source candidate hashes matched before continuation.
+- Independent integrated QA passed on final candidate SHA256
+  `0a6730b0de74cf31c67c834f0e916291c4fac66c285fc2b63a604ffc67fca582`:
+  98 real CLI subprocesses, 360 assertions and 69 matrix/golden tests. German
+  and English normalization, import, plan, approve, apply and individual claims
+  acceptance preserved provenance and kept unaccepted facts ineligible.
+- The scoped C8 simplifier made no changes. Independent disposition verification
+  confirmed iterative surrogate-scan equivalence on 10,000 JSON-shaped values
+  and structured errors instead of exit 70 for deep inputs. The changelog wording
+  correction was independently read back; no required review findings remain.
+- Prior F1-F6 findings were verified fixed. C3 is blocked medium-priority T-178;
+  the spec's language rejection contract was not changed. A pre-existing approve
+  receipt/default-sidecar path collision remains separate from T-161.
+- 2026-10-29T18:41:22Z: verification pass
+- 2026-10-29T18:41:27Z: Verified 2026-10-29T18:41:22Z: ruff, mypy and full pytest passed (3057 passed, 7 skipped); independent C8 review and integrated CLI QA passed. C3 recorded as blocked maintainer-decision T178.

@@ -323,3 +323,15 @@ def test_show_default_limit_scans_past_page_for_unknown_ids_and_invalid_tail(tmp
         stream.write("bad JSON\n")
     rejected = CliRunner().invoke(app, args)
     assert rejected.exit_code == 3 and json.loads(rejected.stdout)["result"] is None
+
+
+@pytest.mark.parametrize("depth", [500, 3000])
+def test_deep_nesting_is_a_finding_not_internal(tmp_path: Path, depth: int) -> None:
+    records = rows()
+    # A lone surrogate at the bottom proves the whole nested value is still scanned.
+    records[3]["source_extra"] = {"deep": json.loads("[" * depth + json.dumps("\ud800") + "]" * depth)}
+    path = tmp_path / "deep.jsonl"
+    path.write_text("".join(json.dumps(row, ensure_ascii=True) + "\n" for row in records))
+    result = invoke(path)
+    assert result.exit_code == 1, result.output
+    assert "invalid_record" in {d["code"] for d in json.loads(result.stdout)["diagnostics"]}

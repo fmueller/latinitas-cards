@@ -85,6 +85,8 @@ class Code(StrEnum):
     SKIPPED_EMPTY_PASSAGE = "skipped_empty_passage"
     DESCRIPTOR_OVERRIDE = "descriptor_override"
     GAP_IN_TEXT = "gap_in_text"
+    UNMATCHED_TRANSLATION = "unmatched_translation"
+    UNMATCHED_PARALLEL = "unmatched_parallel"
 
 
 @dataclass(frozen=True)
@@ -162,6 +164,8 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.SKIPPED_EMPTY_PASSAGE: DiagnosticCode(0, "Source passage without canonical text was omitted"),
     Code.DESCRIPTOR_OVERRIDE: DiagnosticCode(0, "Descriptor value replaced a source header value"),
     Code.GAP_IN_TEXT: DiagnosticCode(0, "Source text has an editorial gap"),
+    Code.UNMATCHED_TRANSLATION: DiagnosticCode(0, "Latin passage has no parallel translation"),
+    Code.UNMATCHED_PARALLEL: DiagnosticCode(0, "Parallel passage has no Latin passage"),
 }
 
 

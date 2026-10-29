@@ -50,7 +50,7 @@ def read_corpus(path: Path) -> Iterator[CorpusRecord | CorpusFinding]:
                 floats.clear()
                 try:
                     raw = json.loads(line, parse_float=parse_float, parse_constant=parse_float)
-                except ValueError as error:
+                except (ValueError, RecursionError) as error:
                     raise ContractError(Code.INVALID_JSON, f"Line {number}: {error}", path=str(path)) from error
                 if not isinstance(raw, dict):
                     raise ContractError(Code.INVALID_JSON, f"Line {number}: expected an object", path=str(path))
