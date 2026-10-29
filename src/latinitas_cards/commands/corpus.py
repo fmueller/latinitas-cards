@@ -1,7 +1,8 @@
 """Normalized corpus inspection and normalization commands."""
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
@@ -163,6 +164,130 @@ def show(
     run_contract("corpus show", json_output, body)
 
 
+@dataclass(frozen=True)
+class NormalizeRequest:
+    """`corpus normalize` options after the adapter-independent checks."""
+
+    source: Path
+    corpus_id: str
+    output: Path
+    language: str
+    descriptor: Path | None
+    manifest: Path | None
+    template: tuple[str, list[str]] | None
+    approve_reuse: list[str]
+    approve_allocation: list[int]
+    approve_removal: list[str]
+    allow_unknown: bool
+
+
+def _normalize_usfx(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
+    if (
+        request.template is not None
+        or request.manifest is not None
+        or request.approve_reuse
+        or request.approve_allocation
+        or request.approve_removal
+    ):
+        raise ContractError(Code.USAGE_ERROR, "USFX cannot use templates, manifests or approvals")
+    source, descriptor = request.source, request.descriptor
+    try:
+        usfx_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes()) if descriptor else None
+        diagnostics: list[Diagnostic] = []
+        records = build_usfx(
+            source,
+            request.corpus_id,
+            request.language,
+            usfx_descriptor,
+            allow_unknown=request.allow_unknown,
+            diagnostics=diagnostics,
+        )
+        write_corpus(request.output, records, [source, *([descriptor] if descriptor else [])])
+    except ValidationError as error:
+        raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
+    except OSError as error:
+        raise ContractError(Code.UNREADABLE, str(error)) from error
+    return {"review_items": []}, diagnostics
+
+
+def _normalize_text(request: NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
+    source, output, manifest, descriptor, template = (
+        request.source,
+        request.output,
+        request.manifest,
+        request.descriptor,
+        request.template,
+    )
+    if request.allow_unknown:
+        raise ContractError(Code.USAGE_ERROR, "--allow-unknown requires the USFX adapter")
+    if template and (
+        manifest is not None or request.approve_reuse or request.approve_allocation or request.approve_removal
+    ):
+        raise ContractError(Code.USAGE_ERROR, "Templates cannot use manifests or approvals")
+    approvals = Approvals.parse(request.approve_reuse, request.approve_allocation, request.approve_removal)
+    targets = [output] if template else [output, manifest or output.with_suffix(".manifest.json")]
+    inputs = [source, *([descriptor] if descriptor else [])]
+    locks = [Path(f"{spelling}.lock") for path in targets for spelling in (path.absolute(), path.resolve())]
+
+    def aliases() -> None:
+        for i, target in enumerate(targets):
+            atomic_io.reject_aliases(target, [*targets[:i], *targets[i + 1 :], *inputs, *locks])
+        for lock in locks:
+            atomic_io.reject_aliases(lock, inputs)
+
+    try:
+        aliases()
+        with atomic_io.writer_locks(targets):
+            aliases()
+            raw = source.read_bytes()
+            parsed_descriptor = None
+            if descriptor:
+                try:
+                    parsed_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes())
+                except ValidationError as error:
+                    raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
+            texts, labels = read_lines(raw, template)
+
+            def build(refs: list[str]) -> bytes:
+                return build_corpus(
+                    source, raw, request.corpus_id, request.language, parsed_descriptor, texts, refs, template, labels
+                )
+
+            if template:
+                target_bytes = build([".".join(encode_ref_component(p) for p in parts) for parts in labels])
+                if read_optional(output) != target_bytes:
+                    atomic_io.atomic_replace(output.resolve(), target_bytes)
+                return {"review_items": []}, []
+            request_record: dict[str, JsonValue] = {
+                "source": {"sha256": digest_bytes(raw), "file_name": source.name},
+                "corpus_id": request.corpus_id,
+                "adapter": "text/1",
+                "text_canon": 1,
+                "norm_rules": "latin-fold/1",
+                "language": request.language,
+                "descriptor": parsed_descriptor.model_dump(mode="json") if parsed_descriptor else None,
+                "approvals": approvals.model_dump(mode="json"),
+            }
+            return materialize(
+                output.resolve(),
+                targets[1].resolve(),
+                request.corpus_id,
+                [passage_hash(t) for t in texts],
+                request_record,
+                approvals,
+                build,
+            )
+    except OSError as error:
+        raise ContractError(Code.UNREADABLE, str(error)) from error
+
+
+# The single dispatch point for `corpus normalize --adapter NAME`.
+ADAPTERS: dict[str, Callable[[NormalizeRequest], tuple[JsonValue, list[Diagnostic]]]] = {
+    "text": _normalize_text,
+    "usfx": _normalize_usfx,
+}
+
+
 @app.command()
 def normalize(
     source: Annotated[Path, typer.Argument(help="UTF-8 source file.")],
@@ -182,90 +307,25 @@ def normalize(
     """Normalize text with stable reviewed ordinal refs, or explicit source labels."""
 
     def body() -> tuple[JsonValue, list[Diagnostic]]:
-        if adapter not in {"text", "usfx"}:
+        build = ADAPTERS.get(adapter)
+        if build is None:
             raise ContractError(Code.USAGE_ERROR, f"Adapter {adapter!r} is not yet supported")
         if not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*", language):
             raise ContractError(Code.USAGE_ERROR, "Malformed language tag")
-        template = parse_template(citation_template)
-        if adapter == "usfx":
-            if (
-                citation_template is not None
-                or manifest is not None
-                or approve_reuse
-                or approve_allocation
-                or approve_removal
-            ):
-                raise ContractError(Code.USAGE_ERROR, "USFX cannot use templates, manifests or approvals")
-            try:
-                usfx_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes()) if descriptor else None
-                diagnostics: list[Diagnostic] = []
-                records = build_usfx(
-                    source, corpus_id, language, usfx_descriptor, allow_unknown=allow_unknown, diagnostics=diagnostics
-                )
-                write_corpus(output, records, [source, *([descriptor] if descriptor else [])])
-            except ValidationError as error:
-                raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
-            except OSError as error:
-                raise ContractError(Code.UNREADABLE, str(error)) from error
-            return {"review_items": []}, diagnostics
-        if allow_unknown:
-            raise ContractError(Code.USAGE_ERROR, "--allow-unknown requires the USFX adapter")
-        if template and (manifest is not None or approve_reuse or approve_allocation or approve_removal):
-            raise ContractError(Code.USAGE_ERROR, "Templates cannot use manifests or approvals")
-        approvals = Approvals.parse(approve_reuse or [], approve_allocation or [], approve_removal or [])
-        targets = [output] if template else [output, manifest or output.with_suffix(".manifest.json")]
-        inputs = [source, *([descriptor] if descriptor else [])]
-        locks = [Path(f"{spelling}.lock") for path in targets for spelling in (path.absolute(), path.resolve())]
-
-        def aliases() -> None:
-            for i, target in enumerate(targets):
-                atomic_io.reject_aliases(target, [*targets[:i], *targets[i + 1 :], *inputs, *locks])
-            for lock in locks:
-                atomic_io.reject_aliases(lock, inputs)
-
-        try:
-            aliases()
-            with atomic_io.writer_locks(targets):
-                aliases()
-                raw = source.read_bytes()
-                parsed_descriptor = None
-                if descriptor:
-                    try:
-                        parsed_descriptor = CorpusDescriptor.model_validate_json(descriptor.read_bytes())
-                    except ValidationError as error:
-                        raise ContractError(Code.INVALID_CORPUS, f"Invalid descriptor: {error}") from error
-                texts, labels = read_lines(raw, template)
-
-                def build(refs: list[str]) -> bytes:
-                    return build_corpus(
-                        source, raw, corpus_id, language, parsed_descriptor, texts, refs, template, labels
-                    )
-
-                if template:
-                    target_bytes = build([".".join(encode_ref_component(p) for p in parts) for parts in labels])
-                    if read_optional(output) != target_bytes:
-                        atomic_io.atomic_replace(output.resolve(), target_bytes)
-                    return {"review_items": []}, []
-                request: dict[str, JsonValue] = {
-                    "source": {"sha256": digest_bytes(raw), "file_name": source.name},
-                    "corpus_id": corpus_id,
-                    "adapter": "text/1",
-                    "text_canon": 1,
-                    "norm_rules": "latin-fold/1",
-                    "language": language,
-                    "descriptor": parsed_descriptor.model_dump(mode="json") if parsed_descriptor else None,
-                    "approvals": approvals.model_dump(mode="json"),
-                }
-                return materialize(
-                    output.resolve(),
-                    targets[1].resolve(),
-                    corpus_id,
-                    [passage_hash(t) for t in texts],
-                    request,
-                    approvals,
-                    build,
-                )
-        except OSError as error:
-            raise ContractError(Code.UNREADABLE, str(error)) from error
+        return build(
+            NormalizeRequest(
+                source=source,
+                corpus_id=corpus_id,
+                output=output,
+                language=language,
+                descriptor=descriptor,
+                manifest=manifest,
+                template=parse_template(citation_template),
+                approve_reuse=approve_reuse or [],
+                approve_allocation=approve_allocation or [],
+                approve_removal=approve_removal or [],
+                allow_unknown=allow_unknown,
+            )
+        )
 
     run_contract("corpus normalize", json_output, body, render_text=_render_text)

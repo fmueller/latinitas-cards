@@ -1,11 +1,10 @@
 """Legacy USFX projection for the experimental Vulgate commands."""
 
-import hashlib
 import re
 import unicodedata
 from array import array
 from bisect import bisect_left, bisect_right
-from collections import Counter, deque
+from collections import Counter
 from collections.abc import Iterator
 from pathlib import Path
 from xml.parsers import expat
@@ -25,7 +24,6 @@ from .corpus_model import (
     CorpusNote,
     CorpusPassage,
     CorpusRecord,
-    CorpusSource,
     CorpusWork,
     canonical_text,
     encode_ref_component,
@@ -33,6 +31,7 @@ from .corpus_model import (
     passage_hash,
 )
 from .corpus_validation import validate_records
+from .xml_reader import XmlEventReader
 
 
 def normalize_latin(s: str) -> str:
@@ -80,7 +79,7 @@ def legacy_projection(path: Path) -> pd.DataFrame:
     initial_tag: str | None = None
     text: list[str] = []
     try:
-        for kind, value, attrs in _EventReader(path, legacy=True):
+        for kind, value, attrs in XmlEventReader(path, namespaces=True):
             if kind == "text":
                 text.append(value)
                 continue
@@ -122,79 +121,6 @@ def legacy_projection(path: Path) -> pd.DataFrame:
 
     df["text_norm"] = df["text"].apply(normalize_latin)
     return df.sort_values(["book", "chapter", "verse"]).reset_index(drop=True)
-
-
-class _EventReader:
-    """Chunk-fed expat events; no tree, source mutation or entity resolution."""
-
-    def __init__(self, path: Path, *, legacy: bool = False) -> None:
-        self.path = path
-        self.legacy = legacy
-        self.source: CorpusSource | None = None
-
-    def __iter__(self) -> Iterator[tuple[str, str, dict[str, str]]]:
-        limit = 64 * 1024 * 1024
-        if self.path.stat().st_size > limit:
-            raise ContractError(Code.INPUT_TOO_LARGE, "XML input exceeds 64 MiB")
-        events: deque[tuple[str, str, dict[str, str]]] = deque()
-        # ElementTree expands namespace names; the strict adapter retains its
-        # existing raw-name policy. Legacy matching must not strip namespaces.
-        parser = expat.ParserCreate(namespace_separator="}" if self.legacy else None)
-        depth = 0
-
-        def start(name: str, attrs: dict[str, str]) -> None:
-            nonlocal depth
-            depth += 1
-            if depth > 64:
-                raise ContractError(Code.DEPTH_EXCEEDED, "XML element depth exceeds 64")
-            if self.legacy:
-                name = "{" + name if "}" in name else name
-                attrs = {("{" + key if "}" in key else key): value for key, value in attrs.items()}
-            events.append(("start", name, attrs))
-
-        parser.StartElementHandler = start
-
-        def end(name: str) -> None:
-            nonlocal depth
-            depth -= 1
-            # Expat locates an explicit closing tag at its '<', but an empty
-            # element's end after '/>'. Include UTF-16's two byte orders.
-            context = parser.GetInputContext() or b""
-            explicit = context.startswith((b"</", b"<\x00/\x00", b"\x00<\x00/"))
-            events.append(("end" if explicit else "empty_end", name, {}))
-
-        parser.EndElementHandler = end
-        parser.CharacterDataHandler = lambda text: events.append(("text", text, {}))
-
-        def unsafe(*args: object) -> None:
-            raise ContractError(Code.UNSAFE_XML, "DTD and entities are not allowed")
-
-        def external(*args: object) -> int:
-            unsafe()
-            return 0
-
-        parser.StartDoctypeDeclHandler = unsafe
-        parser.EntityDeclHandler = unsafe
-        parser.ExternalEntityRefHandler = external
-        parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_NEVER)
-        digest = hashlib.sha256()
-        size = 0
-        try:
-            with self.path.open("rb") as stream:
-                while chunk := stream.read(65536):
-                    size += len(chunk)
-                    if size > limit:
-                        raise ContractError(Code.INPUT_TOO_LARGE, "XML input exceeds 64 MiB")
-                    digest.update(chunk)
-                    parser.Parse(chunk, False)
-                    while events:
-                        yield events.popleft()
-                parser.Parse(b"", True)
-                while events:
-                    yield events.popleft()
-        except (expat.ExpatError, LookupError, ValueError) as error:
-            raise ContractError(Code.INVALID_XML, str(error)) from error
-        self.source = CorpusSource(file_name=self.path.name, sha256=f"sha256:{digest.hexdigest()}", bytes=size)
 
 
 def _canonical_markup(raw: str, entries: list[CorpusMarkup]) -> str:
@@ -461,7 +387,7 @@ def build_usfx(
     diagnostics: list[Diagnostic] | None = None,
 ) -> list[CorpusRecord]:
     """Fully validate before the caller can open an output for replacement."""
-    reader = _EventReader(source)
+    reader = XmlEventReader(source)
     builder = _StrictBuilder(corpus_id)
     unknown: Counter[str] = Counter()
     failure: ContractError | None = None

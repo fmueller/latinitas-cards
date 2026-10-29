@@ -214,3 +214,40 @@ def test_provenance_audit() -> None:
         "It does not authorize publication or unblock the maintainer release gate.",
     ):
         assert literal in audit
+
+
+def test_milestone_verse_directly_before_a_closing_tag(tmp_path: Path) -> None:
+    source, output = tmp_path / "input.xml", tmp_path / "out.jsonl"
+    source.write_text('<usfx><book id="GEN"><c id="1"/><p><v id="1"/>a<ve/><v id="2"/></p>b<ve/></book></usfx>')
+    result = normalize(source, output)
+    assert result.exit_code == 0, result.output
+    rows = [json.loads(line) for line in output.read_bytes().splitlines()]
+    assert [(r["native_ref"], r["text"]) for r in rows if r["record"] == "passage"] == [
+        ("GEN.1.1", "a"),
+        ("GEN.1.2", "b"),
+    ]
+
+
+def test_explicit_verse_end_after_a_comment_split_at_a_read(tmp_path: Path) -> None:
+    source, output = tmp_path / "input.xml", tmp_path / "out.jsonl"
+    head = '<usfx><book id="A"><c id="1"/><v id="1"><!--'
+    source.write_text(f"{head}{'y' * (65536 - len(head) - 2)}/> --></v>later<ve/></book></usfx>")
+    assert source.read_bytes()[:65536].endswith(b"/>")
+    result = normalize(source, output)
+    assert result.exit_code == 3, result.output
+    assert json.loads(result.stdout)["diagnostics"][0]["code"] == "empty_passage"
+    assert not output.exists()
+
+
+def test_unterminated_empty_milestone_verse_and_raw_attribute_names(tmp_path: Path) -> None:
+    source, output = tmp_path / "input.xml", tmp_path / "out.jsonl"
+    source.write_text('<usfx><book id="A"><c id="1"/><v id="1"/>a<ve/><v id="2"/></book></usfx>')
+    result = normalize(source, output)
+    assert result.exit_code == 3, result.output
+    diagnostic = json.loads(result.stdout)["diagnostics"][0]
+    assert (diagnostic["code"], diagnostic["message"]) == ("invalid_structure", "Unterminated milestone verse")
+    source.write_text('<usfx><book id="A"><c id="1"/><v id="1">a <w xml:lang="la">b</w></v></book></usfx>')
+    result = normalize(source, output)
+    assert result.exit_code == 0, result.output
+    passage = [json.loads(line) for line in output.read_bytes().splitlines()][-1]
+    assert passage["source_markup"][0]["attributes"] == {"xml:lang": "la"}

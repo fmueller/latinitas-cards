@@ -140,9 +140,10 @@ Notes (`f`, `x`, `fe`) and headings (`s`) flatten their descendants in document
 order, canonicalize their text, and do not enter passage text or hashes. Notes
 inside a verse attach there; headings and notes outside a verse attach to the next
 passage in the same work, or fail `invalid_structure` if none exists.
-The strict expat reader rejects DTD/entity declarations and external references,
-disables parameter-entity parsing, checks 64 MiB at stat and while streaming, and
-rejects element depth above 64, including note descendants. No XML dependency is added.
+The hardened expat reader shared by the XML adapters rejects DTD/entity declarations
+and external references, disables parameter-entity parsing, checks 64 MiB at stat and
+while streaming, and rejects element depth above 64, including note descendants. No
+XML dependency is added.
 For accepted inputs, legacy Vulgate commands (`preview --usfx`, `generate --usfx`,
 and `cloze` with USFX) retain their existing projection and outputs. They reject
 DTD/entity declarations and external entities, inputs over 64 MiB, and element depth over

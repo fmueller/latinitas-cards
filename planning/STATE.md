@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-29T00:36:56Z"
+updated_at: "2026-10-29T02:34:51Z"
 active_spec_version: v0.4.0
 active_spec_path: specs/v0.4.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-173-publish-v0-4-0-maintainer-release-gate: maintainer release gate'
-next_action: 'Start task T-155-share-the-hardened-xml-reader-and-add-an-adapter: Share the hardened XML reader and add a corpus adapter registry'
-last_verification_result: pass for T-154-capture-v0-4-0-characterization-goldens at 2026-10-29T00:33:23Z
+next_action: Resolve blocker on T-173-publish-v0-4-0-maintainer-release-gate
+last_verification_result: pass for T-155-share-the-hardened-xml-reader-and-add-an-adapter at 2026-10-29T02:34:51Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-154-capture-v0-4-0-characterization-goldens at 2026-10-29T00:33:23Z
+- pass for T-155-share-the-hardened-xml-reader-and-add-an-adapter at 2026-10-29T02:34:51Z
 
 ## Next Action
 
-- Start task T-155-share-the-hardened-xml-reader-and-add-an-adapter: Share the hardened XML reader and add a corpus adapter registry
+- Resolve blocker on T-173-publish-v0-4-0-maintainer-release-gate
 
 ## Relevant Artifacts
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 19
+- todo: 18
 - in_progress: 0
-- completed: 153
+- completed: 154
 - blocked: 1
 - cancelled: 0

@@ -7,10 +7,13 @@ import sys
 from pathlib import Path
 
 import pytest
+from pydantic import JsonValue
 from typer.testing import CliRunner, Result
 
 from latinitas_cards.atomic_io import writer_lock
 from latinitas_cards.cli import app
+from latinitas_cards.cli_contract import Diagnostic
+from latinitas_cards.commands import corpus
 
 FIXTURES = Path(__file__).parents[1] / "fixtures/corpus/text"
 
@@ -72,6 +75,50 @@ def test_rejected_options(tmp_path: Path, flags: list[str], code: str) -> None:
     assert result.exit_code == (2 if code == "usage_error" else 3), result.output
     assert json.loads(result.stdout)["diagnostics"][0]["code"] == code
     assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    "adapter,flags,message",
+    [
+        ("nope", ["--language", "x-latin"], "Adapter 'nope' is not yet supported"),
+        ("usfx", ["--language", "x-latin", "--manifest", "m"], "Malformed language tag"),
+        ("usfx", ["--citation-template", "bad", "--manifest", "m"], "Malformed citation template"),
+        ("usfx", ["--manifest", "m"], "USFX cannot use templates, manifests or approvals"),
+        ("text", ["--allow-unknown", "--manifest", "m"], "--allow-unknown requires the USFX adapter"),
+    ],
+)
+def test_option_checks_run_in_order(tmp_path: Path, adapter: str, flags: list[str], message: str) -> None:
+    source, output = tmp_path / "input", tmp_path / "out"
+    source.write_text("a\n")
+    result = CliRunner().invoke(
+        app,
+        ["corpus", "normalize", str(source), "--adapter", adapter, "--corpus-id", "c", "--output", str(output)]
+        + ["--json", *flags],
+    )
+    assert result.exit_code == 2, result.output
+    assert json.loads(result.stdout)["diagnostics"][0]["message"] == message
+    assert not output.exists()
+
+
+def test_adapter_registry_is_the_only_dispatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source, output = tmp_path / "input", tmp_path / "out"
+    source.write_text("a\n")
+    assert set(corpus.ADAPTERS) == {"text", "usfx"}
+    requests: list[corpus.NormalizeRequest] = []
+
+    def fake(request: corpus.NormalizeRequest) -> tuple[JsonValue, list[Diagnostic]]:
+        requests.append(request)
+        return {"review_items": []}, []
+
+    monkeypatch.setitem(corpus.ADAPTERS, "fake", fake)
+    monkeypatch.delitem(corpus.ADAPTERS, "usfx")
+    argv = ["corpus", "normalize", str(source), "--corpus-id", "c", "--output", str(output), "--json"]
+    result = CliRunner().invoke(app, [*argv, "--adapter", "fake"])
+    assert result.exit_code == 0, result.output
+    assert [(r.source, r.corpus_id, r.output) for r in requests] == [(source, "c", output)]
+    result = CliRunner().invoke(app, [*argv, "--adapter", "usfx"])
+    assert result.exit_code == 2, result.output
+    assert json.loads(result.stdout)["diagnostics"][0]["message"] == "Adapter 'usfx' is not yet supported"
 
 
 @pytest.mark.parametrize(

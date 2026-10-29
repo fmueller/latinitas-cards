@@ -1,12 +1,12 @@
 ---
 id: T-155-share-the-hardened-xml-reader-and-add-an-adapter
 title: Share the hardened XML reader and add a corpus adapter registry
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#tei-xml-adapter
 dependencies:
     - T-154-capture-v0-4-0-characterization-goldens
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T02:34:51Z"
 ---
 
 # T-155-share-the-hardened-xml-reader-and-add-an-adapter Share the hardened XML reader and add a corpus adapter registry
@@ -45,3 +45,4 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T02:34:51Z: verification pass
