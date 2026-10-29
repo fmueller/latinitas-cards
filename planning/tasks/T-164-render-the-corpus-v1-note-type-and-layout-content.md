@@ -1,13 +1,13 @@
 ---
 id: T-164-render-the-corpus-v1-note-type-and-layout-content
 title: Render the corpus-v1 note type and per-layout managed content fields
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#context-and-translation-recipes
 dependencies:
     - T-163-derive-corpus-exercise-identities-and-candidates
     - T-157-localize-fixed-card-strings-and-english-reviewed
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-29T11:06:55Z"
 ---
 
 # T-164-render-the-corpus-v1-note-type-and-layout-content Render the corpus-v1 note type and per-layout managed content fields
@@ -57,3 +57,4 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-29T11:06:47Z: verification pass

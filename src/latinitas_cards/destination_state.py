@@ -392,6 +392,11 @@ def adopt(snapshot: DestinationSnapshot, ownership: Mapping[str, object], approv
     data = snapshot.payload
     if set(ownership) != {note["identity"] for note in data["notes"]}:
         raise ReconciliationRequired("review ownership for every observed note")
+    for note in data["notes"]:
+        keep = _object(ownership[note["identity"]]).get("keep_fields", [])
+        # _ownership accepts any known layout's field; a kept field must exist on this note.
+        if isinstance(keep, list) and any(isinstance(name, str) and name not in note["fields"] for name in keep):
+            raise ReconciliationRequired("invalid user keep override")
     anchors = {
         note["identity"]: {
             **note,
@@ -570,10 +575,7 @@ def begin_observation(
             for name in (slot.prompt_field, slot.answer_field)
         }
         for name in fields:
-            if (
-                name not in {"Lemma", "Principal Parts", "Meaning", "Generator", "Profile"} | payload_fields
-                and fields[name] != notes[identity]["fields"][name]
-            ):
+            if name not in layout.content_fields | payload_fields and fields[name] != notes[identity]["fields"][name]:
                 raise ReconciliationRequired("unsupported identity/schema/slot effect")
         for name in result["anchors"][identity]["keep_fields"]:
             if fields[name] != notes[identity]["fields"][name]:

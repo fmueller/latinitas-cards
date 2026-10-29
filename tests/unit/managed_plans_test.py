@@ -8,6 +8,9 @@ from typing import Any
 
 import pytest
 from card_lifecycle_test import capture, fixture, generated
+from corpus_exercises_test import profile
+from corpus_facts_test import Fixture, text
+from corpus_notes_test import LINES, rendered
 from typer.testing import CliRunner
 
 from latinitas_cards.cli import app
@@ -479,3 +482,77 @@ def test_unrepresentable_csv_tag_fails_closed(tag: str) -> None:
     snapshot = capture(data)
     with pytest.raises(ReconciliationRequired, match="tag.*whitespace|tag.*control"):
         compose_plan(snapshot, state, [request(snapshot, lemma="amo")], {})
+
+
+def test_corpus_passage_correction_plans_approves_and_applies(tmp_path: Path) -> None:
+    from latinitas_cards.destination_state import begin_observation, load_state, reconcile, save_state, schema_contract
+    from latinitas_cards.managed_application import emit_updates, observe_updates
+    from latinitas_cards.managed_layouts import layout_version
+
+    (tmp_path / "corpus").mkdir()
+    facts = Fixture(tmp_path / "corpus", LINES)
+    facts.decide("accepted", facts.add(0, "translation", text("en", "Marcus sees his friend."), (0, 20)))
+    candidate, fields = next(item for item in rendered(facts, profile()) if not item[0].reasons)
+    assert candidate.recipe == "corpus_sentence_translation" and candidate.object_key is not None
+    identity, layout = fields["LatinitasID"], layout_version("corpus-v1")
+    slot = next(s for s in layout.slots if s.recipe == candidate.recipe)
+    data = fixture(generated())[0].payload
+    data["schema"] = schema_contract("model", "corpus-v1")
+    data["managed_set"] = {
+        "scope": "corpus-passage-v1",
+        "members": [[identity, "corpus-passage-v1", candidate.passage_id, candidate.object_key]],
+    }
+    note = data["notes"][0]
+    note.update(identity=identity, source=["corpus-passage-v1", candidate.passage_id, candidate.object_key])
+    note["fields"] = fields
+    row = {"semantic_key": slot.semantic_key, "ordinal": slot.ordinal, "template_name": slot.template_name}
+    note["cards"]["rows"] = [{"id": "card", **row, "suspended": False, "due": 9}]
+    snapshot = capture(data)
+    ownership: dict[str, list[str]] = {"source_tags": [], "configured_tags": [], "keep_tags": [], "keep_fields": []}
+    state = adopt(snapshot, {identity: ownership}, "explicit adoption")
+    corrected = "Marcus amicum videt. Amicus rīdet."
+    changes = {
+        "Passage": corrected,
+        "Citation": "p000001 (facts, corrected)",
+        "Language": "en-GB",
+        "Profile": "reader-b",
+        "Generator": "corpus-v2",
+    }
+    proposal = {"identity": identity, "fields": {**fields, **changes}}
+    plan = compose_plan(snapshot, state, [proposal], {"generated_note_type": "Corpus", "target_deck": "Latin"})
+    operations = {op["field"]: op for op in plan["notes"][0]["operations"]}
+    assert {name: op["supported"] for name, op in operations.items()} == {
+        "Passage": True,
+        "Citation": True,
+        "Language": False,
+        "Profile": False,
+        "Generator": False,
+    }
+    with pytest.raises(ReconciliationRequired, match="unsupported"):
+        approve_plan(plan, [operations["Language"]["id"]], "review")
+    approved = approve_plan(plan, [operations["Passage"]["id"]], "separate write review")
+    assert approved["import_columns"] == [*layout.fields[:-1], "Tags"]
+    assert approved["import_rows"] == [[*{**fields, "Passage": corrected}.values(), ""]]
+    journal = tmp_path / "state.json"
+    save_state(journal, state)
+    backup = tmp_path / "backup.bin"
+    backup.write_bytes(b"operator-attested synthetic backup; not native proof")
+    output = tmp_path / "updates.csv"
+    emit_updates(plan, approved, snapshot, journal, backup, "restore fixture", output, "Corpus", "Latin")
+    assert "Personal Notes" not in output.read_text()
+    after = deepcopy(data)
+    after.update(snapshot_id="after", artifact_sha256="b" * 64)
+    after["notes"][0]["fields"]["Passage"] = corrected
+    observed = capture(after)
+    result = observe_updates(journal, plan["plan_id"], observed, "manual synthetic import", interval_confirmed=True)
+    assert result["observed"] == [operations["Passage"]["id"]]
+    assert load_state(journal)["anchors"][identity]["fields"]["Passage"] == corrected
+    assert reconcile(observed, load_state(journal)) == ()
+    # Application accepts only the bound layout's content fields, independently of planning.
+    for name, allowed in (("Latin", True), ("Citation", True), ("Language", False), ("Profile", False)):
+        target = {"fields": {**fields, name: "changed"}, "tags": [], **ownership}
+        if allowed:
+            begin_observation(state, snapshot, f"plan-{name}", {identity: target}, "approval")
+        else:
+            with pytest.raises(ReconciliationRequired, match="unsupported identity/schema/slot"):
+                begin_observation(state, snapshot, f"plan-{name}", {identity: target}, "approval")

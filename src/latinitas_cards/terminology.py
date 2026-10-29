@@ -154,6 +154,24 @@ CARD_STRINGS: dict[str, dict[CardLanguage, str]] = {
     "reviewed_reference": {"de": "Reviewed reference", "en": "Reviewed reference"},
     "proposed_reference": {"de": "Proposed reference — not asserted", "en": "Proposed reference — not asserted"},
     "withheld": {"de": "Withheld: ", "en": "Withheld: "},
+    "corpus_lexical_prompt": {
+        "de": "Was bedeutet das markierte Wort hier?",
+        "en": "What does the highlighted word mean here?",
+    },
+    "corpus_analysis_prompt": {
+        "de": "Bestimme das markierte Wort und übersetze dann den Satz.",
+        "en": "Analyse the highlighted word, then translate the sentence.",
+    },
+    "corpus_phrase_prompt": {
+        "de": "Übersetze die markierte Wendung im Zusammenhang.",
+        "en": "Translate the highlighted phrase in context.",
+    },
+    "corpus_sentence_prompt": {"de": "Übersetze den Satz.", "en": "Translate the sentence."},
+    "corpus_passage_prompt": {"de": "Übersetze den Abschnitt.", "en": "Translate the passage."},
+    "reference_guidance": {
+        "de": "Referenzübersetzung: Andere Übersetzungen können ebenso richtig sein.",
+        "en": "Reference translation: other translations can be correct as well.",
+    },
 }
 
 

@@ -26,7 +26,7 @@ LINES = ("Arma virumque cano.", "Mater filium amat. Puer legit.", "Canis currit"
 class Fixture:
     """Disposable corpus normalized and segmented through the real CLI."""
 
-    def __init__(self, root: Path, lines: tuple[str, ...] = LINES) -> None:
+    def __init__(self, root: Path, lines: tuple[str, ...] = LINES, *normalize: str) -> None:
         source = root / "source.txt"
         source.write_text("\n".join(lines) + "\n")
         self.corpus = root / "corpus.jsonl"
@@ -40,6 +40,7 @@ class Fixture:
                 "text",
                 "--corpus-id",
                 "facts",
+                *normalize,
                 "--output",
                 str(self.corpus),
             ],

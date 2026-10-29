@@ -486,3 +486,16 @@ def test_empty_attempt_does_not_create_an_inconsistent_pending_journal(evidence:
     before = read_snapshot(evidence, bound(evidence))
     with pytest.raises(ReconciliationRequired, match="empty"):
         begin_observation(adopt(before, ownership(), "adopt"), before, "empty-plan", {}, "approved")
+
+
+@pytest.mark.parametrize("field", ["Passage", "Latin", "Meaning"])
+def test_keep_fields_must_name_fields_of_the_note_own_layout(evidence: dict[str, Any], field: str) -> None:
+    snapshot = read_snapshot(evidence, bound(evidence))
+    origins = ownership()
+    origins["id-A"]["keep_fields"] = [field]
+    if field == "Meaning":
+        assert adopt(snapshot, origins, "adopt")["anchors"]["id-A"]["keep_fields"] == ["Meaning"]
+    else:
+        # A corpus-v1 field cannot be kept on a reference note; it would only fail later at application.
+        with pytest.raises(ReconciliationRequired, match="invalid user keep override"):
+            adopt(snapshot, origins, "adopt")

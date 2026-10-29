@@ -27,8 +27,6 @@ from .destination_state import (
 from .managed_layouts import layout_fields, layout_version
 from .profile import tag_character_violation
 
-CONTENT_FIELDS = frozenset(("Lemma", "Principal Parts", "Meaning", "Generator", "Profile"))
-
 
 def compose_plan(
     snapshot: DestinationSnapshot,
@@ -166,7 +164,7 @@ def compose_plan(
             conflict = f"field:{name}" in conflicts
             if d == value and not conflict and f"field:{name}" not in reconciliation["decisions"]:
                 continue
-            supported = name in CONTENT_FIELDS and not conflict and not retention_unsafe and not retire
+            supported = name in layout.content_fields and not conflict and not retention_unsafe and not retire
             if name in layout.payload_fields:
                 slot = next(slot for slot in layout.slots if name in (slot.prompt_field, slot.answer_field))
                 supported = (
@@ -305,7 +303,7 @@ def approve_plan(plan: object, selected_operations: Sequence[str], review: str) 
                 raise ReconciliationRequired("unsupported or unresolved selected operation")
             if operation["kind"] == "field":
                 name = operation["field"]
-                if name not in CONTENT_FIELDS | layout.payload_fields:
+                if name not in layout.content_fields | layout.payload_fields:
                     raise ReconciliationRequired("unsupported or personal field")
                 target["fields"][name] = operation["value"]
             elif operation["kind"] == "tags":
