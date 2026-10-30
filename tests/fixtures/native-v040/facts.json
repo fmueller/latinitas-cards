@@ -1,0 +1,13 @@
+{
+  "text": "Marcus amicum videt.",
+  "morphology": {"tagset": "latinitas-morph/1", "lemma": "amicus", "pos": "noun", "features": {"case": "accusativus", "number": "singularis"}},
+  "translations": {
+    "de": {"word": "Freund", "phrase": "sieht einen Freund", "sentence": "Marcus sieht einen Freund."},
+    "en": {"word": "friend", "phrase": "sees a friend", "sentence": "Marcus sees a friend."}
+  },
+  "phrase_reference": {
+    "translations": ["with a friend", "with the friend"],
+    "contribution": "Accompaniment; cum governs the ablative.",
+    "explanation": "The preposition cum determines the case here."
+  }
+}

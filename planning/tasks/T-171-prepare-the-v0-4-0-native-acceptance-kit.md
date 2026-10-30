@@ -1,14 +1,14 @@
 ---
 id: T-171-prepare-the-v0-4-0-native-acceptance-kit
 title: Prepare the v0.4.0 native acceptance kit for Linux Anki Desktop
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#native-acceptance
 dependencies:
     - T-164-render-the-corpus-v1-note-type-and-layout-content
     - T-157-localize-fixed-card-strings-and-english-reviewed
     - T-168-preview-export-and-inspect-corpus-exercises
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-30T01:39:22Z"
 ---
 
 # T-171-prepare-the-v0-4-0-native-acceptance-kit Prepare the v0.4.0 native acceptance kit for Linux Anki Desktop
@@ -45,3 +45,5 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-30T01:39:22Z: verification pass
+- 2026-10-30T01:39:22Z: Offline preparation only. Dedicated simplification, independent medium-risk coordinated review and adversarial challenge, independent two-environment acceptance QA and full ruff/mypy/pytest chain passed. Native Linux Anki Desktop and AnkiMobile remain unverified; no release authorization. Existing maintainer decisions remain untouched; do not start T-172 until its readiness condition is met.
