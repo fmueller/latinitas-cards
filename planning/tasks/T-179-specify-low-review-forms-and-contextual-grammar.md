@@ -67,3 +67,29 @@ it does not implement features, activate a spec or authorize release.
   been used on origin/main. No existing task or upstream state was replaced.
 - The maintainer subsequently authorized committing and pushing these
   documentation changes on main; no feature implementation was authorized.
+- Follow-up interview decisions revise both inactive specs: process all
+  selected material within processing limits and export all eligible cards
+  after duplicate/redundant-variant suppression by default, with smaller
+  batches optional and valid stored checks reused. No default card quota.
+- Reliability takes priority over yield. Keep uncertain candidates outside
+  Anki without mandatory user review; show acceptance status, collapsible
+  evidence/limitations and filterable metadata, not uncalibrated model
+  percentages on cards or in tags.
+- v0.5.5 targets the broader examination-oriented clause families, subject
+  to independently evaluated subtype boundaries. Use manageable sentences
+  or coherent marked parts of longer sentences, preserve necessary context
+  on the front and full context on the answer/report, and avoid analysis
+  labels on translation fronts or automatic whole/part card multiplication.
+- These follow-up edits do not activate a spec or authorize implementation,
+  another commit or another push. Prior review hashes cover the delivered
+  snapshot, not these semantic changes.
+- The final targeted semantic-delta recheck found no blockers in the changed
+  Gate 1 contracts or affected Gate 2 proposed package mapping. Total review
+  budget consumed: two initial gates and two targeted rechecks; none remain.
+  This establishes draft consistency, not implementation readiness or
+  measured linguistic reliability. Follow-up reviewed SHA-256 values:
+  - specs/v0.5.0.md: 615fab4f8e4f2001ef9d5e206dd56ab402c6379256629c7c97671a011320189c
+  - specs/v0.5.5.md: 159259a7089de6661721b69b154181f8dbe23dccf8d90a7383bde66238e8ab4d
+- Follow-up structural checks passed: `mise exec -- taskrail validate` and
+  `git diff --check`. No application code or templates changed; runtime and
+  native Anki acceptance scenarios remain planned evidence, not executed tests.
