@@ -334,8 +334,10 @@ def test_filters_reading_ineligible_order_and_sentence_factors(tmp_path: Path) -
         facts.decide("accepted", facts.add(i, "translation", text("en", "whole")))
     lexical(facts, 0, "librum", "liber")
     lexical(facts, 0, "Puer", "puer")
-    facts.add(0, "translation", text("en", "bad"), (1, 3))
-    facts.add(0, "translation", text("en", "bad"), (5, 10))
+    invalid = [
+        facts.add(0, "translation", text("en", "bad"), (1, 3)),
+        facts.add(0, "translation", text("en", "bad"), (5, 10)),
+    ]
     facts.add(1, "morphology", morph("filius"), (6, 12))  # Open, so no score.
     report = choose(tmp_path, facts, targets=["liber", "puer"], limits={"ideal_tokens": 3})
     sentence = next(r for r in report["candidates"] if r["recipe"] == SENTENCE and r["passage_id"] == "facts:p000001")
@@ -344,12 +346,9 @@ def test_filters_reading_ineligible_order_and_sentence_factors(tmp_path: Path) -
     entries = report["candidates"]
     ineligible = [r for r in entries if not r["eligible"] and r["annotation_id"] is None]
     assert [r["latinitas_id"] for r in ineligible] == sorted(r["latinitas_id"] for r in ineligible)
-    expected_invalid = sorted(
-        r.annotation_id
-        for r in read_sidecar(facts.sidecar)
-        if isinstance(r, Annotation) and r.layer == "translation" and r.anchor.span is not None
-    )
+    expected_invalid = sorted(row.annotation_id for row in invalid)
     assert [r["annotation_id"] for r in entries[-len(expected_invalid) :]] == expected_invalid
+    assert [r["annotation_id"] for r in entries if r["annotation_id"] is not None] == expected_invalid
     # Fragment wins over length/unknown/reading; length wins over unknown/reading.
     filtered = choose(tmp_path, facts, reading_only=True, limits={"min_tokens": 4, "ideal_tokens": 4, "max_unknown": 0})
     assert {

@@ -223,7 +223,8 @@ def test_ineligible_and_fragment_exercises_enable_no_slot(reviewed: Fixture) -> 
         assert fields["LatinitasID"] == candidate.latinitas_id
     lexical = next(f for c, f in withheld if c.recipe == "corpus_lexical_recognition")
     assert lexical["Latin"] == '<span class="corpus-target">Marcus</span> amicum videt.'
-    invalid = next(c for c in candidates(reviewed) if c.annotation_id is not None)
+    malformed = reviewed.add(0, "translation", text("en", "Marcus "), (0, 7))
+    invalid = next(c for c in candidates(reviewed) if c.annotation_id == malformed.annotation_id)
     with pytest.raises(ValueError, match="identity"):
         render_corpus_note(invalid, reviewed.view().passages[invalid.passage_id], profile())
 

@@ -1,12 +1,12 @@
 ---
 id: T-175-decide-whether-token-glosses-should-be-phrase
 title: Decide whether token glosses should be phrase translation candidates
-status: blocked
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#context-and-translation-recipes
 dependencies:
     - T-163-derive-corpus-exercise-identities-and-candidates
-updated_at: "2026-10-29T09:28:32Z"
+updated_at: "2026-10-30T20:23:07Z"
 ---
 
 # T-175-decide-whether-token-glosses-should-be-phrase Decide whether token glosses should be phrase translation candidates
@@ -37,8 +37,25 @@ documented as intended.
 
 ## Verification Notes
 
-- Not started. Observed in T-163 review on the T-163 candidate.
+- Verification passed at 2026-10-30T20:22:47Z after the exact Ruff, mypy and
+  pytest chain: 3180 passed, 7 skipped. Baseline regression checks failed as
+  intended; the final candidate's focused suite passed all 81 tests.
+- Dedicated simplification and independent medium-risk conventional review,
+  including specialist and adversarial passes, found no remaining defects. The
+  full-suite renderer fixture assumption was corrected and independently
+  rechecked without weakening its identity-error assertion.
+- Independent integrated acceptance reran normalize, annotation review and
+  select/report/preview workflows against the final candidate and the base.
+  In both languages, only six exact-word gloss report rows disappeared; all
+  other rows, exercise identities and previews stayed unchanged, including
+  lexical answers. Malformed spans retained individual annotation IDs.
+- Four inside-token malformed controls were persisted directly after both
+  versions' patch planners rejected them; downstream review and consumers were
+  exercised normally. Other fixture records passed plan/approve/apply.
 
 ## Implementation Notes
 
 - 2026-10-29T09:28:32Z: maintainer decision: whether translation annotations anchored to one word token (lexical glosses) should be excluded from phrase translation candidates, which the Fixed Contracts Recipes candidate rule currently reports as invalid_span
+- 2026-10-30T19:58:08Z: Maintainer approved: exclude translations anchored to exactly one word token from phrase candidates because they belong to lexical cards; retain invalid_span per annotation_id for malformed multiword spans and preserve all other candidate identities. Authorize only the necessary narrow Fixed Contracts clarification.
+- 2026-10-30T20:22:47Z: verification pass
+- 2026-10-30T20:23:07Z: Implement the approved exact-word gloss exclusion with lexical preservation and unchanged remaining identities; independent review and final-candidate integrated acceptance passed after full mandatory gates. No successor started.

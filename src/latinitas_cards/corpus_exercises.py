@@ -129,9 +129,10 @@ class _Passage:
 
     def _phrases(self) -> list[Candidate]:
         sentence_spans = {sentence.span for sentence in self.facts.sentences}
+        word_spans = {self.tokens[token] for token in self.words}
         result: list[Candidate] = []
         for (layer, span), facts in sorted(self.facts.facts.items(), key=lambda item: item[0][1] or (-1, -1)):
-            if layer != "translation" or span is None or span in sentence_spans:
+            if layer != "translation" or span is None or span in sentence_spans or span in word_spans:
                 continue
             window = self._window(span)
             if window is None:

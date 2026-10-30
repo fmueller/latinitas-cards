@@ -8,6 +8,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 - `generate --recipe` and `preview --recipe` keep existing claim reviews when filtering
   output recipes. Editing recipes in a saved profile still requires renewed reviews.
+- Corpus phrase candidate reports omit exact word-token glosses, which remain available
+  to lexical cards. Malformed phrase spans still appear as `invalid_span` entries.
 
 ### Added
 

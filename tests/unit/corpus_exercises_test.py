@@ -128,7 +128,7 @@ def test_four_recipes_identity_and_eligibility(facts: Fixture) -> None:
     )
     invalid = [(c.annotation_id, c.reasons, c.unit, c.latinitas_id) for c in found if c.annotation_id is not None]
     assert sorted(invalid) == sorted(
-        (row.annotation_id, ("invalid_span",), None, None) for row in (gloss, trailing, twin, equal)
+        (row.annotation_id, ("invalid_span",), None, None) for row in (trailing, twin, equal)
     )
     # The open morphology still yields a candidate, so the report can show it.
     lexical = next(c for c in found if c.target == occurrence[0])
@@ -144,7 +144,10 @@ def test_four_recipes_identity_and_eligibility(facts: Fixture) -> None:
         ((17, 23), False),  # starts at punctuation
         ((0, 29), False),  # every word of the sentence
         ((1, 10), False),  # not on a word-token boundary
-        ((0, 4), False),  # one word
+        ((1, 4), False),  # substring of one word, not an exact token
+        ((0, 5), False),  # one word with trailing whitespace
+        ((11, 18), False),  # one word with trailing punctuation
+        ((17, 18), False),  # an exact punctuation token, not a word
     ],
 )
 def test_phrase_spans_are_qualified(facts: Fixture, span: tuple[int, int], valid: bool) -> None:
@@ -154,6 +157,15 @@ def test_phrase_spans_are_qualified(facts: Fixture, span: tuple[int, int], valid
     assert [(c.reasons, c.annotation_id is None) for c in phrases] == [
         ((), True) if valid else (("invalid_span",), False)
     ]
+
+
+@pytest.mark.parametrize("language", ["en", "de"])
+@pytest.mark.parametrize("status", ["accepted", "withheld", None])
+def test_exact_word_glosses_are_not_phrase_candidates(facts: Fixture, language: str, status: str | None) -> None:
+    rows = [facts.add(0, "translation", text(language, "gloss"), span) for span in ((0, 4), (11, 17), (19, 23))]
+    if status is not None:
+        facts.decide(status, *rows)
+    assert not [c for c in candidates(facts) if c.recipe == "corpus_phrase_translation"]
 
 
 def test_phrase_crossing_sentences_and_occurrence_counting(tmp_path: Path) -> None:
