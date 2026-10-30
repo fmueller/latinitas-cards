@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `annotations import-translations` rejects source corpora not labeled Latin with
+  `unsupported_language` (exit 3), without changing output or review state.
 - `corpus normalize --adapter tei --allow-unknown` rejects unknown elements in
   omitted empty passages instead of silently dropping them.
 - `generate --recipe` and `preview --recipe` keep existing claim reviews when filtering

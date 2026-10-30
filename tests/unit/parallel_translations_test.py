@@ -204,8 +204,23 @@ def test_latin_or_mismatched_parallel_language_is_rejected(
     assert not output.exists()
 
 
+@pytest.mark.parametrize("source_language", ["de", "en-GB", "fr"])
+@pytest.mark.parametrize("existing", [False, True])
+def test_non_latin_source_language_is_rejected(tmp_path: Path, source_language: str, existing: bool) -> None:
+    latin = normalize(tmp_path, "latin", LATIN, source_language, "reader")
+    parallel = normalize(tmp_path, "parallel", GERMAN, "de", "parallel")
+    output = tmp_path / "patch.json"
+    if existing:
+        output.write_bytes(b"existing output\n")
+    before = {path: path.read_bytes() for path in tmp_path.iterdir()}
+    envelope = import_translations(latin, parallel, output)
+    assert (envelope.exit_code, [d.code for d in envelope.diagnostics]) == (3, ["unsupported_language"])
+    assert envelope.diagnostics[0].path == str(latin)
+    assert {path: path.read_bytes() for path in tmp_path.iterdir()} == before
+
+
 def test_primary_subtag_matches_case_insensitively_and_tag_is_kept(tmp_path: Path) -> None:
-    latin = normalize(tmp_path, "latin", LATIN, "la", "reader")
+    latin = normalize(tmp_path, "latin", GERMAN, "LA-Latn", "reader")
     parallel = normalize(tmp_path, "parallel", GERMAN, "de-CH", "parallel")
     output = tmp_path / "patch.json"
     assert import_translations(latin, parallel, output, language="DE-AT").exit_code == 0

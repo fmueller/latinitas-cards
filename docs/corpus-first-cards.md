@@ -70,9 +70,10 @@ uv run latinitas-cards annotations import-translations "$work/latin.jsonl" \
 
 Alignment uses `native_ref`, not passage order or similar-looking text. Unmatched
 Latin and parallel refs warn separately. The parallel header must match the
-requested language's primary subtag and must not be Latin. Supply a Latin CORPUS:
-the current importer does not enforce that input's language (a blocked maintainer
-decision), so success alone does not establish a valid Latin study source.
+requested language's primary subtag and must not be Latin. The source CORPUS
+header must declare primary language `la` (case-insensitive); otherwise import
+fails with `unsupported_language` (exit 3). This checks metadata, not the passage
+text's language, so success alone does not establish a valid Latin study source.
 
 Add explicitly anchored facts to the imported passage translation. The Python
 block authors a patch, not a sidecar or review decision. It reads generated IDs

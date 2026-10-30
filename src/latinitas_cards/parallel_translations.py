@@ -51,6 +51,13 @@ def import_translations(
     parallel_rows, invalid_parallel = _read(parallel)
     if invalid or invalid_parallel:
         return None, [*invalid, *invalid_parallel]
+    latin_header = next(row for row in latin_rows if isinstance(row, CorpusHeader))
+    if _primary(latin_header.language) != "la":
+        raise ContractError(
+            Code.UNSUPPORTED_LANGUAGE,
+            f"Source corpus language {latin_header.language!r} must be Latin (la)",
+            path=str(corpus),
+        )
     header = next(row for row in parallel_rows if isinstance(row, CorpusHeader))
     latin = [row for row in latin_rows if isinstance(row, CorpusPassage)]
     translated = [row for row in parallel_rows if isinstance(row, CorpusPassage)]
