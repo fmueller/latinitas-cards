@@ -19,6 +19,13 @@ operation index, or for `corpus normalize` the zero-based passage ordinal N.
 The generated schema lives at the repository-root-relative path
 `docs/schemas/latinitas-cli-result.v1.schema.json`.
 
+For a runnable TEI/English workflow, annotation review and the initial CSV versus
+managed-update boundary, see [corpus-first cards](corpus-first-cards.md). The
+[recognized TEI elements](normalized-corpus.md#recognized-tei-elements) are a closed,
+position-sensitive subset, not general TEI support. Reference translations guide
+study; they are not automatic grading keys. Deck profile language changes stale
+claims; corpus language changes require matching facts and a new bound selection.
+
 ## Exit classes
 
 | exit | meaning |

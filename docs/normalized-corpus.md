@@ -239,3 +239,47 @@ Like USFX, this adapter writes only the corpus and rejects `--manifest`, approva
 flags and `--citation-template` (exit 2). Regenerate the
 synthetic goldens deliberately with
 `uv run python scripts/regen-corpus-fixtures.py --target tei --force`.
+
+### Recognized TEI elements
+
+This is the complete case-sensitive element vocabulary outside the header and
+skipped divisions. Recognition does not make an element valid in every position;
+the placement rules above still apply.
+
+| Elements | Treatment |
+| --- | --- |
+| `TEI`, `teiHeader`, `text`, `body`, `div` | Document, header and edition/textpart structure. |
+| `l`, `lg` | Numbered line passages and transparent line groups. |
+| `head` | Heading, outside canonical passage text. |
+| `note`, `bibl`, `desc` | Flattened notes, outside canonical passage text. |
+| `app`, `lem`, `rdg` | Apparatus: keep lemma text, retain readings as variants. |
+| `choice`, `corr`, `expan`, `reg`, `sic`, `abbr`, `orig` | Editorial alternatives; outside choice, retain text and spans. |
+| `del` | Deleted text retained as a variant, not canonical text. |
+| `p`, `ab`, `add`, `supplied`, `unclear`, `hi`, `emph`, `ex` | Retain text and markup spans. |
+| `q`, `quote`, `foreign`, `name`, `persName`, `placeName`, `geogName` | Retain text and markup spans. |
+| `num`, `date`, `w`, `seg`, `label`, `title`, `cit` | Retain text and markup spans. |
+| `lb`, `pb`, `cb`, `milestone`, `gap` | Empty spans; gaps also warn. |
+
+Header descendants are read as metadata, not passage markup. The consumed paths
+are `titleStmt/title`, `editionStmt/edition`, `sourceDesc//title`,
+`publicationStmt/publisher`, `publicationStmt/idno`,
+`publicationStmt/availability/licence` and
+`encodingDesc/refsDecl[@n="CTS"]/cRefPattern`. Other header content is not
+guaranteed to be retained.
+
+### TEI scope and compatibility
+
+No network fetching, drama conversion, multi-file editions, translation-division
+import or arbitrary TEI customization is supported. Normalize a parallel
+translation separately and use `annotations import-translations`; skipped TEI
+translation divisions do not become annotations. `--allow-unknown` is not a
+general preservation mode: unknown elements need a position in retained canonical text.
+The out-of-text retention question remains a blocked maintainer decision; do not
+move or flatten scholarly content to evade a rejection without reviewing that
+source transformation.
+
+CTS pattern labels are compared deepest-first and case-insensitively. A reversed
+human-readable example is not evidence of a warning; the actual unit path decides.
+The example-versus-rule question remains with the maintainer.
+Older v0.3.0 readers reject `tei/1` corpora even though the corpus wire version
+remains 1. USFX and plain-text outputs keep their existing formats.

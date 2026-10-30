@@ -20,8 +20,12 @@ This repository uses versioned specs under `specs/`.
   publication evidence is recorded in `docs/release-v0.3.0.md`.
 - `specs/v0.4.0.md` is the active implementation spec, activated through Taskrail. It
   adds corpus-first cards from reviewed sidecar annotations, ranked sticky selection, a
-  Perseus/EpiDoc TEI adapter, and German and English generated content. T-173 is the
-  blocked maintainer release gate.
+  Perseus/EpiDoc TEI adapter, parallel translation import, and German and English
+  generated content. See the [corpus workflow](../docs/corpus-first-cards.md) for
+  runnable examples and the initial-import/adoption/managed-update boundary.
+  Native acceptance and final release readiness remain separate unfinished gates;
+  T-173 is the blocked maintainer release gate. Blocked maintainer decisions do not
+  relax the Fixed Contracts or authorize extra behavior.
 - `specs/v0.5.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
   preserve the agreed progression through corpus-first generation, grammar/syntax study,
   optional direct Anki integration, reproducible projects, CLI/migration hardening,

@@ -16,7 +16,7 @@ text-import CSV without modifying the source.
 
 ## Workflow
 
-The supported workflow is **deck-first**:
+The released deck-generation workflow is **deck-first**:
 
 1. Inspect a CSV, APKG, or COLPKG source and confirm its field mapping.
 2. Save the human-readable, versioned profile and reuse it on later runs.
@@ -33,6 +33,18 @@ via `phrases`, with separately reviewed translation/recognition exercises and of
 eligibility checks, deterministic approved CSV export and managed retained-slot updates.
 Initial creation is manual CSV import plus explicit adoption; withdrawal remains a
 blocked plan requiring reviewed manual resolution, not CSV omission or automatic retirement.
+
+The active v0.4.0 checkout also supports [corpus-first cards](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md):
+normalize Latin text, USFX or a supported TEI edition, import aligned translations,
+review annotation claims, rank candidates and keep a sticky selection, then preview
+and export a new corpus CSV. The walkthrough covers all four recipes, English output,
+deselect/restore and the separate adoption/managed-update boundary. Reference
+translations guide study, not automatic grading. Initial CSV import can create notes;
+managed CSV updates cannot create or retire them. See the
+[complete TEI subset and exclusions](https://github.com/fmueller/latinitas-cards/blob/main/docs/normalized-corpus.md#recognized-tei-elements)
+and [agent contract](https://github.com/fmueller/latinitas-cards/blob/main/docs/agent-cli-contract.md) for schemas, diagnostics and reasons.
+This is unreleased implementation work, not completed native acceptance or release
+readiness. The maintainer release gate remains blocked.
 
 Profiles select recipes explicitly; the approved representative profile uses
 `principal_part_completion` and `principal_part_recognition`. It uses the semantic role

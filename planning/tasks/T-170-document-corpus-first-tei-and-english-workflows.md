@@ -1,7 +1,7 @@
 ---
 id: T-170-document-corpus-first-tei-and-english-workflows
 title: Document corpus-first, TEI and English workflows and complete the contract registry
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#fixed-contracts
 dependencies:
@@ -9,7 +9,7 @@ dependencies:
     - T-161-import-aligned-parallel-translations-as-annotation
     - T-169-plan-managed-updates-for-corpus-exercises
     - T-157-localize-fixed-card-strings-and-english-reviewed
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-30T00:36:08Z"
 ---
 
 # T-170-document-corpus-first-tei-and-english-workflows Document corpus-first, TEI and English workflows and complete the contract registry
@@ -48,3 +48,5 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Verification Notes
 
 - Not started.
+- 2026-10-30T00:36:08Z: verification pass
+- 2026-10-30T00:36:08Z: Completed documentation and contract guards after independent high-risk review, exact-candidate synthetic CLI QA and final ruff/mypy/pytest chain (3168 passed, 7 skipped). Initial CSV creation remains separate from unsupported managed create/retire. Native acceptance and release gates remain open; no successor started or maintainer decision changed.

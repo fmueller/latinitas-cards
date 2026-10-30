@@ -64,8 +64,9 @@ does not. The translation fixture has an independent literal canonical ID vector
   a reading; it never changes source text. Alternatives obey the same layer shape.
 
 Morphology, translation, supersession and retraction enter as validated records;
-there is no built-in analyzer. Import/apply, claims and policy commands are not
-implemented here.
+there is no built-in analyzer. Use the plan/approve/apply flow below to import
+proposals, then [review claims](reviewed-claim-cli.md#corpus-annotation-review-version-2).
+The [corpus-first walkthrough](corpus-first-cards.md) runs both gates in order.
 
 ## Read-only anchor inspection
 
@@ -144,16 +145,11 @@ uv run python scripts/regen-corpus-fixtures.py --target annotation-state --force
 
 `text/wsl-two.txt` exercises removal by re-normalizing to the same corpus path;
 line-3 records become unmatched. These fixed-timestamp corpora also serve T-115.
-Until the existing T-127 exporter follow-up is implemented, render the new schema
-through the established registry API (shared schema drift tests still apply):
+Regenerate all registered schemas through the shared exporter (drift tests check
+the committed files):
 
 ```sh
-uv run python - <<'PY'
-from pathlib import Path
-from latinitas_cards.json_schemas import SCHEMAS, render_schema
-name = "latinitas-annotations"
-Path(f"docs/schemas/{name}.v1.schema.json").write_text(render_schema(SCHEMAS[name]), encoding="utf-8")
-PY
+uv run python scripts/export-json-schemas.py
 ```
 
 ## Import aligned parallel translations
@@ -249,5 +245,5 @@ uv run python scripts/regen-corpus-fixtures.py --target annotation-plans --force
 
 The generator captures only temporary artifacts before the existing shared
 symlink/overwrite guards and atomic replacement run on every fixture destination.
-It does not touch legacy goldens. For the three new schema names, use the same
-`SCHEMAS`/`render_schema` API above; the existing exporter remains T-127 scope.
+It does not touch legacy goldens. The shared schema exporter above includes patch,
+plan and receipt schemas.

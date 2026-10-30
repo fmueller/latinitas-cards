@@ -1,14 +1,40 @@
 """Public CLI contract, independent of the legacy diagnostic APIs."""
 
 import ast
+import json
+import re
 from pathlib import Path
 
 import pytest
 from source_guard_helpers import active_source_tree
 
 from latinitas_cards.cli_contract import DIAGNOSTIC_CODES, Code
+from latinitas_cards.tei_adapter import _KNOWN
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_documented_corpus_outcomes_match_schema() -> None:
+    document = (ROOT / "docs/agent-cli-contract.md").read_text()
+    vocabulary = document.split("The closed outcome/withholding vocabulary", 1)[1].split("These are report values", 1)[
+        0
+    ]
+    schema = json.loads((ROOT / "docs/schemas/latinitas-corpus-candidates.v1.schema.json").read_text())
+    outcomes = schema["$defs"]["CandidateEntry"]["properties"]["outcome"]["anyOf"][0]["enum"]
+    assert set(re.findall(r"`([^`]+)`", vocabulary)) == set(outcomes) | set(schema["$defs"]["Reason"]["enum"])
+
+
+def test_documented_tei_elements_match_recognized_subset() -> None:
+    document = (ROOT / "docs/normalized-corpus.md").read_text()
+    table = document.split("### Recognized TEI elements", 1)[1].split("###", 1)[0]
+    elements = [
+        element
+        for row in table.splitlines()
+        if row.startswith("| `")
+        for element in re.findall(r"`([^`]+)`", row.split("|")[1])
+    ]
+    assert len(elements) == len(set(elements))
+    assert set(elements) == _KNOWN
 
 
 def test_registry_matches_documentation() -> None:
