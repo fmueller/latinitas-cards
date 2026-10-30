@@ -35,8 +35,10 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
   validate`.
 - Citation cases: `pr`, `3a`, `62b` and percent-encoded components; duplicate citation
   exit 3 `duplicate_source_ref`; inconsistent unit paths and stray verse-textpart text
-  exit 3 `invalid_structure`; a `cRefPattern` label mismatch (`line, Book`) warns
-  `citation_mismatch` only.
+  exit 3 `invalid_structure`; a `cRefPattern` label mismatch (`Book, line` in declaration
+  order for a `book, line` unit path) warns `citation_mismatch` only. The Aeneid's
+  `line, Book` in declaration order matches that path under the deepest-first,
+  case-insensitive comparison and does not warn.
 - Missing edition (exit 3 `invalid_structure`), non-Latin edition (exit 3
   `unsupported_language`), translation division (`skipped_division` warning), wrong
   namespace, DTD, entity, depth-65 and over-64-MiB inputs (exit 3).
