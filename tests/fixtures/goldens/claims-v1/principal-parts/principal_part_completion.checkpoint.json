@@ -1,6 +1,6 @@
 {
   "checkpoint_version": 1,
-  "export_fingerprint": "export-sha256:387a50b428ca127e3aca5000bf4b6c37a4b17c6a67d15b4ad3ba4a3f4a47c7c0",
+  "export_fingerprint": "export-sha256:3d0028779b2e147e8a68583d74ed41d9a4d1771e84a0fa341dc2613869078a3a",
   "note_family": "latinitas-note-family-v1",
   "note_schema": "3",
   "objects": [
@@ -8,7 +8,8 @@
       "card_keys": [
         "principal_part_completion:present_1s",
         "principal_part_completion:present_infinitive",
-        "principal_part_completion:perfect_1s"
+        "principal_part_completion:perfect_1s",
+        "principal_part_completion:supine"
       ],
       "latinitas_id": "latinitas-v2-ef1bd91fb6c7f75df07e9bbae02ac89b217f95997128edbd928f95de476e3063"
     }

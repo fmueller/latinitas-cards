@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- `generate --recipe` and `preview --recipe` keep existing claim reviews when filtering
+  output recipes. Editing recipes in a saved profile still requires renewed reviews.
+
 ### Added
 
 - Profiles with `user` terminology accept English (`en`) language tags and render

@@ -1,6 +1,10 @@
 import csv
+import hashlib
+import html
 import io
+import json
 import os
+import shutil
 import sqlite3
 import zipfile
 from pathlib import Path
@@ -41,6 +45,78 @@ def _write_source(path: Path) -> None:
 
 def _command() -> click.Command:
     return cast(click.Command, _typer_get_command(app))
+
+
+@pytest.mark.parametrize("recipe", ["principal_part_completion", "principal_part_recognition"])
+def test_recipe_filter_preserves_reviews_and_unfiltered_bytes(tmp_path: Path, recipe: str) -> None:
+    fixture = Path(__file__).parents[1] / "fixtures/goldens/claims-v1/principal-parts"
+    shutil.copytree(fixture, tmp_path, dirs_exist_ok=True)
+    source = tmp_path / "source.csv"
+    profile = tmp_path / "profile.json"
+    original_profile = profile.read_bytes()
+    sidecar = tmp_path / "source.csv.claims.json"
+    original_sidecar = sidecar.read_bytes()
+    output = tmp_path / "output.csv"
+    args = ["--input", str(source), "--profile", str(profile), "--output", str(output)]
+    runner = CliRunner()
+    full = runner.invoke(_command(), ["generate", *args, "--approve-fresh-import"])
+    assert full.exit_code == 0, full.output
+    # Captured from unchanged origin/main, not calculated by the implementation under test.
+    assert hashlib.sha256(output.read_bytes()).hexdigest() == (
+        "04eb85e86efc485638ee0912db8dc08955ed54f365aa54de4c055ff542d1badd"
+    )
+    (tmp_path / "source.csv.latinitas-cards.json").unlink()
+    filtered = runner.invoke(_command(), ["generate", *args, "--recipe", recipe, "--approve-fresh-import"])
+    assert filtered.exit_code == 0, filtered.output
+    assert "Accepted reviewed claims: 4/16" in filtered.output
+    assert "Stale or unmatched" not in filtered.output
+    lines = output.read_text().splitlines()
+    columns = next(line.removeprefix("#columns:") for line in lines if line.startswith("#columns:"))
+    rows = list(
+        csv.DictReader(io.StringIO("\n".join([columns, *(line for line in lines if not line.startswith("#"))])))
+    )
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["Lemma"] == "amō"
+    prefix = "Completion" if recipe == "principal_part_completion" else "Recognition"
+    other = "Recognition" if prefix == "Completion" else "Completion"
+    assert [row[f"{prefix}{role}Enabled"] for role in ("Present", "Infinitive", "Perfect", "Supine")] == ["1"] * 4
+    assert all(row[f"{other}{role}Enabled"] == "" for role in ("Present", "Infinitive", "Perfect", "Supine"))
+    payload = row["Principal Parts"].split('<span hidden class="principal-part-review">')[1].split("</span>")[0]
+    comparison = json.loads(html.unescape(payload))
+    actual_decisions = {
+        item["decision"]["claim_fingerprint"]: item["decision"]["status"]
+        for role in comparison["roles"]
+        for item in role["claims"]
+    }
+    expected_decisions = {
+        item["decision"]["claim_fingerprint"]: item["decision"]["status"]
+        for item in json.loads(original_sidecar)["decisions"]
+    }
+    assert actual_decisions == expected_decisions
+    checkpoint = tmp_path / "source.csv.latinitas-cards.json"
+    saved_checkpoint = checkpoint.read_bytes()
+    preview = runner.invoke(
+        _command(), ["preview", "--input", str(source), "--profile", str(profile), "--recipe", recipe]
+    )
+    assert preview.exit_code == 0, preview.output
+    assert "Accepted reviewed claims: 4/16" in preview.output
+    assert "Stale or unmatched" not in preview.output
+    assert "Cards: 4" in preview.output
+    assert checkpoint.read_bytes() == saved_checkpoint
+    assert profile.read_bytes() == original_profile
+    assert sidecar.read_bytes() == original_sidecar
+
+    # Editing the saved recipe list must still invalidate the old whole-profile binding.
+    changed = json.loads(original_profile)
+    changed["selected_recipes"] = [recipe]
+    profile.write_text(json.dumps(changed))
+    stale = runner.invoke(
+        _command(), ["preview", "--input", str(source), "--profile", str(profile), "--recipe", recipe]
+    )
+    assert stale.exit_code == 0, stale.output
+    assert "Stale or unmatched decision ignored" in stale.output
+    assert "Accepted reviewed claims: 0/0" in stale.output
 
 
 def _commit_scope_state(source: Path, profile: DeckProfile) -> None:

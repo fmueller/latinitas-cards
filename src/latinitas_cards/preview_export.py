@@ -148,6 +148,7 @@ def prepare_principal_part_export(
     legacy_note_types: Iterable[str] = (),
     claim_assessments: Sequence[ClaimAssessment] = (),
     read_review_sidecar: bool = True,
+    recipes: Sequence[str] | None = None,
 ) -> PrincipalPartExportResult:
     """Read immutable input and build a typed generation result without writing files."""
 
@@ -172,6 +173,7 @@ def prepare_principal_part_export(
                     legacy_note_types=legacy_note_types,
                     claim_assessments=assessments,
                     read_review_sidecar=False,
+                    recipes=recipes,
                 )
 
             state = principal_review(prepare(()))
@@ -205,6 +207,7 @@ def prepare_principal_part_export(
             approved_removals=approved_removals,
             approve_fresh_import=approve_fresh_import,
             claim_assessments=claim_assessments,
+            recipes=recipes,
         )
 
     package_checkpoint_file = Path(f"{source}{CHECKPOINT_SUFFIX}")
@@ -241,11 +244,12 @@ def prepare_principal_part_export(
             approve_new_scope=approve_new_scope,
             approve_fresh_import=approve_fresh_import,
             claim_assessments=claim_assessments,
+            recipes=recipes,
         )
 
     source_id_field = profile.source_identity.field if strategy == "source_id_field" else None
     records = read_source_records(source, source_id_field=source_id_field)
-    generation = generate_learning_object_notes(records, profile, claim_assessments=claim_assessments)
+    generation = generate_learning_object_notes(records, profile, claim_assessments=claim_assessments, recipes=recipes)
     package_result = PrincipalPartExportResult(
         source_path=source,
         profile=profile,
@@ -283,6 +287,7 @@ def _prepare_scoped_csv(
     approved_allocations: Mapping[int, str | None] | Iterable[int] | None = None,
     approved_removals: Iterable[str] | None = None,
     claim_assessments: Sequence[ClaimAssessment] = (),
+    recipes: Sequence[str] | None = None,
 ) -> PrincipalPartExportResult:
     """Prepare one CSV source under a persisted, unique identity scope."""
 
@@ -333,12 +338,13 @@ def _prepare_scoped_csv(
             manifest_identities=identities,
             source_scope=scope,
             claim_assessments=claim_assessments,
+            recipes=recipes,
         )
         manifest_reviews = reconciliation.reviews
         candidate_manifest = reconciliation.manifest
     else:
         generation = generate_learning_object_notes(
-            records, profile, source_scope=scope, claim_assessments=claim_assessments
+            records, profile, source_scope=scope, claim_assessments=claim_assessments, recipes=recipes
         )
         manifest_reviews = ()
         candidate_manifest = base_state

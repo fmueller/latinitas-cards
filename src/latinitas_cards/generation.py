@@ -114,10 +114,11 @@ def generate_learning_object_notes(
     manifest_identities: Sequence[str | None] | None = None,
     source_scope: str | None = None,
     claim_assessments: Sequence[ClaimAssessment] = (),
+    recipes: Sequence[str] | None = None,
 ) -> LearningObjectGenerationResult:
     """Generate one coherent learning-object note per eligible source record.
 
-    The profile's ``selected_recipes`` enable card semantic keys on each note;
+    The profile's ``selected_recipes`` (or a run-time recipe filter) enable card semantic keys on each note;
     they never change which note exists.  A manifest identity sequence is
     required only for profiles using the manifest source-identity strategy.
     """
@@ -170,7 +171,8 @@ def generate_learning_object_notes(
         for identity, count in Counter(identity for _, identity in resolved_records).items()
         if identity is not None and count > 1
     }
-    metadata = GenerationMetadata(profile_digest=profile_digest(profile))
+    render_profile = profile if recipes is None else profile.apply_overrides({"selected_recipes": tuple(recipes)})
+    metadata = GenerationMetadata(profile_digest=profile_digest(render_profile))
     notes: list[GeneratedNote] = []
     comparisons: list[PrincipalPartComparison] = []
     note_ids: set[str] = set()
@@ -289,7 +291,7 @@ def generate_learning_object_notes(
             record,
             parsed.value,
             source_identity,
-            profile=profile,
+            profile=render_profile,
             metadata=metadata,
             comparison=comparison,
         )

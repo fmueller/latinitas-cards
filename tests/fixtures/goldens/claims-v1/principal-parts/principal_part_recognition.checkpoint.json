@@ -8,7 +8,8 @@
       "card_keys": [
         "principal_part_completion:present_1s",
         "principal_part_completion:present_infinitive",
-        "principal_part_completion:perfect_1s"
+        "principal_part_completion:perfect_1s",
+        "principal_part_completion:supine"
       ],
       "latinitas_id": "latinitas-v2-ef1bd91fb6c7f75df07e9bbae02ac89b217f95997128edbd928f95de476e3063"
     }

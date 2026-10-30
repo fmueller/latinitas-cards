@@ -249,12 +249,12 @@ def _prepare(
         target_deck=target_deck,
         generated_note_type=generated_note_type,
         tags=tags,
-        recipes=recipes,
         terminology=terminology,
     )
     return prepare_principal_part_export(
         source_path,
         profile,
+        recipes=recipes,
         profile_path=profile_path,
         manifest_path=manifest_path,
         approve_new_scope=approve_new_scope,
@@ -272,7 +272,6 @@ def _effective_profile(
     target_deck: str | None,
     generated_note_type: str | None,
     tags: Sequence[str] | None,
-    recipes: Sequence[str] | None,
     terminology: str | None = None,
 ) -> DeckProfile:
     profile = load_profile(profile_path)
@@ -283,8 +282,6 @@ def _effective_profile(
         overrides["generated_note_type"] = generated_note_type
     if tags is not None:
         overrides["tags"] = tuple(tags)
-    if recipes is not None:
-        overrides["selected_recipes"] = tuple(recipes)
     if terminology is not None:
         overrides["morphology"] = {"terminology": {"language": terminology}}
     return resolve_profile(profile, overrides or None)
