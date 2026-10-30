@@ -26,10 +26,19 @@ This repository uses versioned specs under `specs/`.
   Native acceptance and final release readiness remain separate unfinished gates;
   T-173 is the blocked maintainer release gate. Blocked maintainer decisions do not
   relax the Fixed Contracts or authorize extra behavior.
-- `specs/v0.5.0.md` through `specs/v1.0.0.md` are planned, inactive release specs. They
-  preserve the agreed progression through corpus-first generation, grammar/syntax study,
+- `specs/v0.5.0.md` is planned and inactive. It adds low-review forms and controlled
+  phrase practice, the shared library/LLM verification and automatic-acceptance pipeline,
+  CLI orchestration, outcome reports, Anki acceptance metadata and morphology presentation.
+  Curated grammar rules and mnemonics retain their separate human-approval requirement.
+- `specs/v0.5.5.md` is planned and inactive, after v0.5.0 and before v0.6.0. It reuses
+  that pipeline for corpus sentence functions and constructions, both deck-driven examples
+  and reading-driven exercises, and optional syntax presentation. The boundary is controlled
+  pattern generation versus discovery in original passages, not single words versus phrases.
+- `specs/v0.6.0.md` through `specs/v1.0.0.md` remain planned, inactive release specs:
   optional direct Anki integration, reproducible projects, CLI/migration hardening,
-  release validation, and the v1 stable contract.
+  release validation, and the v1 stable contract. The v0.5.x drafts distinguish agreed
+  behavior from proposed technical contracts with unresolved design checkpoints; they are
+  not activation or implementation permission.
 - `specs/v0.2.1.md` adds short, reviewed combinations of existing deck vocabulary for
   translation and grammatical recognition, without waiting for corpus-first generation.
 - The `v0.1.0`, `v0.1.1`, `v0.2.0`, and `v0.2.1` tags record the released deck-first,
@@ -46,8 +55,9 @@ This repository uses versioned specs under `specs/`.
 5. `specs/v0.3.0.md`
 6. `specs/v0.4.0.md`
 7. `specs/v0.5.0.md`
-8. `specs/v0.6.0.md`
-9. `specs/v0.7.0.md`
-10. `specs/v0.8.0.md`
-11. `specs/v0.9.0.md`
-12. `specs/v1.0.0.md`
+8. `specs/v0.5.5.md`
+9. `specs/v0.6.0.md`
+10. `specs/v0.7.0.md`
+11. `specs/v0.8.0.md`
+12. `specs/v0.9.0.md`
+13. `specs/v1.0.0.md`
