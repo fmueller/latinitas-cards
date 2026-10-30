@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `corpus normalize --adapter tei --allow-unknown` rejects unknown elements in
+  omitted empty passages instead of silently dropping them.
 - `generate --recipe` and `preview --recipe` keep existing claim reviews when filtering
   output recipes. Editing recipes in a saved profile still requires renewed reviews.
 - Corpus phrase candidate reports omit exact word-token glosses, which remain available

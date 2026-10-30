@@ -390,7 +390,7 @@ def _resolve(items: list[_Passage | _Loose], texts: dict[int, str]) -> None:
         if isinstance(item, _Loose):
             loose = [item]
         else:
-            # Text spans and source_extra of an omitted passage cover no kept text; only empty spans move.
+            # Known text spans of an omitted passage cover no kept text; only empty spans move.
             empty = [entry for entry in item.markup if entry.element in _EMPTY]
             own: list[_Attachment] = [*item.headings, *item.notes, *empty]
             loose = [_Loose(entry, None if isinstance(entry, CorpusHeading) else item.part) for entry in own]
@@ -520,6 +520,9 @@ def build_tei(
         if content:
             texts[index] = content
         else:
+            if passage.extra:
+                names = ", ".join(sorted({entry.element for entry in passage.extra}))
+                raise _invalid(f"Unknown elements {names} in omitted passage {ref} have no canonical text position")
             warnings.append(
                 _warning(Code.SKIPPED_EMPTY_PASSAGE, f"Passage {ref} has no canonical text and is omitted", ref)
             )

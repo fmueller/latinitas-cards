@@ -1,12 +1,12 @@
 ---
 id: T-177-decide-where-allow-unknown-keeps-tei-elements
 title: Decide where --allow-unknown keeps TEI elements outside passage text
-status: blocked
+status: completed
 priority: medium
 spec_ref: specs/v0.4.0.md#tei-xml-adapter
 dependencies:
     - T-159-preserve-tei-notes-apparatus-and-editorial-markup
-updated_at: "2026-10-29T13:37:03Z"
+updated_at: "2026-10-30T21:47:05Z"
 ---
 
 # T-177-decide-where-allow-unknown-keeps-tei-elements Decide where --allow-unknown keeps TEI elements outside passage text
@@ -39,8 +39,21 @@ failure rule. That changes the Fixed Contracts, so it needs a maintainer decisio
 
 ## Verification Notes
 
-- Not started.
+- Verification passed at 2026-10-30T21:46:56Z after the mandatory ruff, mypy and
+  pytest chain (3192 passed, 7 skipped). The 119 TEI tests include twelve new
+  regression cases; RED reproduced six allow-mode silent-drop failures.
+- Dedicated simplification required no edits. Independent high-risk conventional
+  review used four specialist passes and three adversarial/overall checks, with
+  no findings or deferred fixes. Independent checkpoint QA ran 123 scenarios and
+  464 real CLI invocations against the frozen candidate, checking literal canonical
+  text, hashes and spans plus absent/existing output preservation.
+- Only lifecycle metadata and these notes changed after the reviewed/QA candidate;
+  implementation/tests diff SHA256 remained
+  `214b3210312f271c7e1720e654f12469db3e15757c78ef08b0db081f5f76515f`.
 
 ## Implementation Notes
 
 - 2026-10-29T13:37:03Z: maintainer decision: where --allow-unknown keeps unknown TEI elements without a canonical-text position (between textparts or lines, inside flattened notes, headings and variants, inside app or choice, or in omitted passages), which the Fixed Contracts TEI subset says are kept in source_extra but T-159 fails closed
+- 2026-10-30T21:24:06Z: Approved maintainer decision: fail clearly wherever unknown TEI cannot faithfully be represented at a canonical passage-text position, even with --allow-unknown; remove silent dropping in omitted passages; preserve real spans; no storage/schema redesign. Clarify source_extra and existing flattened markup/gap limitations narrowly.
+- 2026-10-30T21:46:56Z: verification pass
+- 2026-10-30T21:47:05Z: Approved decision implemented without schema redesign: omitted unknowns fail invalid_structure, genuine retained spans remain supported. RED/GREEN, dedicated simplifier, high-risk independent specialist/adversarial review with no findings, independent 464-call CLI QA, and full ruff/mypy/pytest chain passed (3192 passed, 7 skipped). Verification run 2026-10-30T21:46:56Z. Parent owns acceptance and advancement; no successor started.

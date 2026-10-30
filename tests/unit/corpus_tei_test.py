@@ -742,6 +742,32 @@ def test_allowed_unknown_elements_without_a_text_position_are_invalid(tmp_path: 
     assert not output.exists()
 
 
+@pytest.mark.parametrize("unknown", ["<foo/>", "<foo> \n </foo>", "<foo><bar/></foo>"])
+@pytest.mark.parametrize("verse", [False, True])
+@pytest.mark.parametrize("allow_unknown", [False, True])
+def test_unknown_in_omitted_passage_fails_without_replacing_output(
+    tmp_path: Path, unknown: str, verse: bool, allow_unknown: bool
+) -> None:
+    if verse:
+        edition = f'<div type="textpart" subtype="b" n="1"><l n="1">a</l><l n="2">{unknown}</l><l n="3">b</l></div>'
+    else:
+        edition = (
+            '<div type="textpart" subtype="s" n="1">a</div>'
+            f'<div type="textpart" subtype="s" n="2">{unknown}</div>'
+            '<div type="textpart" subtype="s" n="3">b</div>'
+        )
+    output = tmp_path / "out.jsonl"
+    output.write_bytes(b"existing output\n")
+    flags = ("--allow-unknown",) if allow_unknown else ()
+    result, _ = run_inline(tmp_path, document(edition), *flags)
+    assert result.exit_code == 3, result.output
+    code = "invalid_structure" if allow_unknown else "unknown_element"
+    assert diagnostics(result) == [(code, "error", None)]
+    if allow_unknown:
+        assert "no canonical text position" in result.stdout
+    assert output.read_bytes() == b"existing output\n"
+
+
 def test_between_line_items_attach_across_groups_and_unnumbered_lines(tmp_path: Path) -> None:
     edition = (
         '<div type="textpart" subtype="book" n="1"><lg><l n="1">a</l></lg><rdg>A</rdg><l><note>N</note></l><cb/>'

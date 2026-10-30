@@ -185,7 +185,10 @@ and `desc`) outside verse textparts, attach to the next passage, else to the las
 one. Other text outside lines fails `invalid_structure`. A passage whose canonical
 text is empty, such as a line consisting only of `del`, is omitted with a
 `skipped_empty_passage` warning naming its ref; its own notes, headings and empty
-spans attach as if they stood between passages, and its other spans are dropped.
+known-element spans attach as if they stood between passages, and its other
+known-element spans are dropped. Unknown elements in an omitted passage instead
+fail `invalid_structure` even with `--allow-unknown`, since no retained canonical
+passage-text position exists for them.
 An edition whose passages are all omitted fails `invalid_structure`.
 
 Text and markup:
@@ -212,7 +215,9 @@ Text and markup:
   element in passage text keeps its text and records its attributes and span in
   `source_extra`, and the same diagnostic is a warning. One outside passage text
   (between textparts or lines, inside flattened text, `app` or `choice`) still fails
-  `invalid_structure`, and one in an omitted passage is dropped.
+  `invalid_structure`, as does one in an omitted passage. An unknown element with
+  an empty span in a retained passage is supported; it is not moved to another
+  passage or assigned an invented attachment span.
 
 Citations use scheme `tei-cts`: one part per textpart `@subtype` (plus `line` for a
 line) with the raw NFC `@n` values, displayed joined with `.`; `native_ref` joins
