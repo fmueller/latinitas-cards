@@ -124,6 +124,7 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `gap_in_text` | 0 | Source text has an editorial gap |
 | `unmatched_translation` | 0 | Latin passage has no parallel translation |
 | `unmatched_parallel` | 0 | Parallel passage has no Latin passage |
+| `incomplete_provenance` | 0 | Source citation has missing metadata or no verified passage link |
 
 ## Contract command matrix
 

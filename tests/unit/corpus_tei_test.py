@@ -65,6 +65,68 @@ def diagnostics(result: Result) -> list[tuple[str, str, str | None]]:
     return [(d["code"], d["severity"], d["ref"]) for d in json.loads(result.stdout)["diagnostics"]]
 
 
+@pytest.mark.parametrize(
+    "body_base,edition_urn,expected",
+    [
+        ("urn:cts:latinLit:phi0448.phi001.perseus-lat2", "", "urn:cts:latinLit:phi0448.phi001.perseus-lat2"),
+        ("", "urn:cts:latinLit:phi0448.phi001.perseus-lat2", "urn:cts:latinLit:phi0448.phi001.perseus-lat2"),
+        (
+            "urn:cts:latinLit:phi0448.phi001.perseus-lat2",
+            "urn:cts:latinLit:phi0448.phi001.perseus-lat2",
+            "urn:cts:latinLit:phi0448.phi001.perseus-lat2",
+        ),
+        ("urn:cts:latinLit:phi0690.phi003.perseus-lat2", "urn:cts:latinLit:phi0448.phi001.perseus-lat2", None),
+        ("https://example.org/", "urn:cts:latinLit:phi0448.phi001.perseus-lat2", None),
+        ("urn:cts:latinLit:phi0448.phi001", "", None),
+        ("urn:cts:latinLit:phi0448.phi001.perseus-lat2:1.1.1", "", None),
+    ],
+)
+def test_verified_metadata_is_separate_from_local_work_identity(
+    tmp_path: Path, body_base: str, edition_urn: str, expected: str | None
+) -> None:
+    xml = document('<div type="textpart" subtype="section" n="1"><p>Gallia est.</p></div>', urn=edition_urn)
+    xml = xml.replace("<body>", f'<body xml:base="{body_base}">')
+    xml = xml.replace("<title>T</title>", "<title>De bello Gallico</title><author>Julius Caesar</author>")
+    descriptor = tmp_path / "descriptor.json"
+    descriptor.write_text(
+        json.dumps(
+            {
+                "format": "latinitas-corpus-descriptor",
+                "version": 1,
+                "revision": "upstream-123",
+                "url": "https://example.org/pinned.xml",
+            }
+        )
+    )
+    result, output = run_inline(tmp_path, xml, "--descriptor", str(descriptor), "--work", "local-work")
+    assert result.exit_code == 0, result.output
+    header, _, work, passage = rows(output)
+    assert header["revision"] == "upstream-123"
+    assert header["url"] == "https://example.org/pinned.xml"
+    assert work["author"] == "Julius Caesar"
+    assert work.get("edition_urn") == expected
+    assert work["work"] == passage["work"] == "local-work"
+    assert passage["passage_id"] == "test-corpus:1"
+    if expected is None:
+        assert "citation_mismatch" in [code for code, _, _ in diagnostics(result)]
+
+
+@pytest.mark.parametrize(
+    "authors,expected",
+    [
+        ("<author/><author>Julius Caesar</author>", "Julius Caesar"),
+        ("<author/><author> </author>", None),
+        ("<author>Julius Caesar</author><author>Aulus Hirtius</author>", None),
+    ],
+)
+def test_only_nonempty_unambiguous_authors_are_retained(tmp_path: Path, authors: str, expected: str | None) -> None:
+    xml = document('<div type="textpart" subtype="section" n="1"><p>Gallia est.</p></div>')
+    result, output = run_inline(tmp_path, xml.replace("<title>T</title>", "<title>T</title>" + authors))
+    assert result.exit_code == 0, result.output
+    assert rows(output)[2].get("author") == expected
+    assert ("citation_mismatch" in [code for code, _, _ in diagnostics(result)]) == ("Hirtius" in authors)
+
+
 def test_prose_fixture_matches_literal_expectations_and_golden(tmp_path: Path) -> None:
     output = tmp_path / "prose.jsonl"
     result = normalize(FIXTURES / "prose.xml", output)

@@ -10,6 +10,7 @@ import html
 from collections.abc import Iterable, Mapping
 
 from .cards import CardSlot
+from .corpus_citations import render_citation
 from .corpus_exercises import RECIPE_ORDER, SOURCE_SCOPE, Candidate
 from .corpus_facts import Morphology, PassageFacts
 from .corpus_profile import CorpusProfile
@@ -157,6 +158,8 @@ CORPUS_CARD_CSS = """\
 .corpus-gloss, .corpus-translation { font-size: 22px; font-weight: bold; }
 .corpus-analysis { margin: 0.3em 0; }
 .corpus-guidance, .corpus-self-assessment { margin-top: 0.4em; font-size: 15px; font-style: italic; }
+.corpus-provenance { margin-top: 0.5em; font-size: 14px; }
+.corpus-provenance pre { white-space: pre-wrap; }
 """
 
 
@@ -187,7 +190,7 @@ def render_corpus_note(candidate: Candidate, facts: PassageFacts, profile: Corpu
     fields = {
         "LatinitasID": candidate.latinitas_id,
         "Latin": latin,
-        "Citation": _escape(f"{passage.citation.display} ({passage.passage_id.partition(':')[0]})"),
+        "Citation": render_citation(facts, profile.target_language),
         "Passage": _escape(text),
         "Language": profile.target_language,
         "Source ID": passage.passage_id,

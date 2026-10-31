@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Corpus cards show German/English author, work and passage citations with expandable
+  source provenance, and verified Perseus links for Caesar BG 1.1.1 and Aeneid 1.11.
+
 ## [0.4.0] - 2026-10-31
 
 ### Fixed

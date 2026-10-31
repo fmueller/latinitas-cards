@@ -121,6 +121,18 @@
           "title": "Record",
           "type": "string"
         },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
         "source": {
           "$ref": "#/$defs/CorpusSource"
         },
@@ -493,6 +505,31 @@
     "CorpusWork": {
       "additionalProperties": false,
       "properties": {
+        "author": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "edition_urn": {
+          "anyOf": [
+            {
+              "pattern": "^urn:cts:[A-Za-z0-9_-]+:[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Edition Urn"
+        },
         "order": {
           "$ref": "#/$defs/PositiveOrder"
         },

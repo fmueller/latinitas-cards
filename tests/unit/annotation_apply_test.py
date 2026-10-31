@@ -51,6 +51,65 @@ def setup_plan(tmp: Path) -> tuple[Path, Path, Path, Path]:
     return corpus, sidecar, policy, plan
 
 
+@pytest.mark.parametrize("metadata,expected_exit", [("revision", 4), ("author", 0)])
+def test_source_metadata_preserves_existing_plan_binding_rules(
+    tmp_path: Path, metadata: str, expected_exit: int
+) -> None:
+    corpus, sidecar, policy, plan = setup_plan(tmp_path)
+    rows = [json.loads(line) for line in corpus.read_text().splitlines()]
+    record = rows[0] if metadata == "revision" else next(row for row in rows if row["record"] == "work")
+    record[metadata] = "Supplied metadata"
+    corpus.write_text("\n".join(canonical_json(row) for row in rows) + "\n")
+    before = sidecar.read_bytes()
+    result = invoke(
+        "apply",
+        str(plan),
+        "--corpus",
+        str(corpus),
+        "--sidecar",
+        str(sidecar),
+        "--policy",
+        str(policy),
+        "--timestamp",
+        TIMESTAMP,
+    )
+    assert result["exit_code"] == expected_exit, result
+    if expected_exit:
+        assert result["diagnostics"][0]["code"] == "binding_drift"
+        assert sidecar.read_bytes() == before
+        refreshed = tmp_path / "refreshed.json"
+        assert (
+            invoke(
+                "plan",
+                str(FIXTURES / "annotations/mixed-valid.patch.json"),
+                "--corpus",
+                str(corpus),
+                "--sidecar",
+                str(sidecar),
+                "--policy",
+                str(policy),
+                "--output",
+                str(refreshed),
+            )["exit_code"]
+            == 0
+        )
+        assert (
+            invoke(
+                "apply",
+                str(refreshed),
+                "--corpus",
+                str(corpus),
+                "--sidecar",
+                str(sidecar),
+                "--policy",
+                str(policy),
+                "--timestamp",
+                TIMESTAMP,
+            )["exit_code"]
+            == 0
+        )
+
+
 def test_mixed_partial_receipt_retry_and_replan(tmp_path: Path) -> None:
     corpus, sidecar, policy, plan = setup_plan(tmp_path)
     args = ("--corpus", str(corpus), "--sidecar", str(sidecar), "--policy", str(policy))

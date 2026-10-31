@@ -75,7 +75,8 @@
         "descriptor_override",
         "gap_in_text",
         "unmatched_translation",
-        "unmatched_parallel"
+        "unmatched_parallel",
+        "incomplete_provenance"
       ],
       "title": "Code",
       "type": "string"

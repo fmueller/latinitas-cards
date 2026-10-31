@@ -91,6 +91,7 @@ class Code(StrEnum):
     GAP_IN_TEXT = "gap_in_text"
     UNMATCHED_TRANSLATION = "unmatched_translation"
     UNMATCHED_PARALLEL = "unmatched_parallel"
+    INCOMPLETE_PROVENANCE = "incomplete_provenance"
 
 
 @dataclass(frozen=True)
@@ -172,6 +173,7 @@ DIAGNOSTIC_CODES: dict[Code, DiagnosticCode] = {
     Code.GAP_IN_TEXT: DiagnosticCode(0, "Source text has an editorial gap"),
     Code.UNMATCHED_TRANSLATION: DiagnosticCode(0, "Latin passage has no parallel translation"),
     Code.UNMATCHED_PARALLEL: DiagnosticCode(0, "Parallel passage has no Latin passage"),
+    Code.INCOMPLETE_PROVENANCE: DiagnosticCode(0, "Source citation has missing metadata or no verified passage link"),
     Code.NOTHING_TO_EXPORT: DiagnosticCode(1, "No eligible selected exercises to export"),
     Code.CARD_DRIFT: DiagnosticCode(1, "CSV differs from current reviewed exercises"),
 }

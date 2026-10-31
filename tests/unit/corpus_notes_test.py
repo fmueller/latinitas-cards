@@ -1,11 +1,13 @@
 """The corpus-v1 note type rendered from real normalized, segmented and reviewed corpora."""
 
 import csv
+import html
 import io
 import json
 import re
 import shutil
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +16,7 @@ from corpus_exercises_test import candidates, profile
 from corpus_facts_test import Fixture, morph, text
 
 from latinitas_cards.corpus_exercises import Candidate
+from latinitas_cards.corpus_model import Citation, CitationPart, latin_fold, passage_hash
 from latinitas_cards.corpus_notes import (
     CORPUS_CARD_CSS,
     CORPUS_STYLE_VERSION,
@@ -123,6 +126,102 @@ def panel(*parts: str, appearance: str = " corpus-light") -> str:
     return f'<div class="corpus-v1{appearance}">' + "".join(parts) + "</div>"
 
 
+@pytest.mark.parametrize("language", ["de", "en"])
+@pytest.mark.parametrize(
+    "work_id,author,title,ref,units,sha,expected",
+    [
+        (
+            "phi0448.phi001",
+            "Julius Caesar",
+            "De bello Gallico",
+            "1.1.1",
+            ["book", "chapter", "section"],
+            "15ec3ef2a36352742ddb75d4f7da23a143899b6b60ee3a7ca3192d4917ca1568",
+            {
+                "de": "Julius Caesar, Der Gallische Krieg, Buch 1, Kapitel 1, Abschnitt 1",
+                "en": "Julius Caesar, The Gallic War, Book 1, Chapter 1, Section 1",
+            },
+        ),
+        (
+            "phi0690.phi003",
+            "P. Vergilius Maro",
+            "Aeneid",
+            "1.11",
+            ["book", "line"],
+            "e639e6a0e27427ef28031850c4d73aa2b63b9f2cf8a5cf584b37685c52fb874c",
+            {"de": "Vergil, Aeneis, Buch 1, Vers 11", "en": "Virgil, Aeneid, Book 1, Line 11"},
+        ),
+    ],
+)
+def test_verified_citations_localize_only_display_and_reject_unverified_links(
+    reviewed: Fixture,
+    language: str,
+    work_id: str,
+    author: str,
+    title: str,
+    ref: str,
+    units: list[str],
+    sha: str,
+    expected: dict[str, str],
+) -> None:
+    chosen = profile(language)
+    candidate = next(c for c in candidates(reviewed, chosen) if not c.reasons and c.filtered is None)
+    facts = reviewed.view(language).passages[candidate.passage_id]
+    urn = f"urn:cts:latinLit:{work_id}.perseus-lat2"
+    reading_text = (
+        "Gallia est omnis divisa in partes tres, quarum unam incolunt Belgae, aliam Aquitani, "
+        "tertiam qui ipsorum lingua Celtae, nostra Galli appellantur."
+        if work_id == "phi0448.phi001"
+        else "impulerit. Tantaene animis caelestibus irae?"
+    )
+    passage = facts.passage.model_copy(
+        update={
+            "text": reading_text,
+            "norm": latin_fold(reading_text),
+            "passage_hash": passage_hash(reading_text),
+            "native_ref": ref,
+            "citation": Citation(
+                scheme="tei-cts",
+                display=ref,
+                parts=[CitationPart(unit=unit, value=value) for unit, value in zip(units, ref.split("."), strict=True)],
+            ),
+        }
+    )
+    source = facts.header.source.model_copy(update={"sha256": "sha256:" + sha})
+    header = facts.header.model_copy(update={"adapter": "tei/1", "source": source})
+    work = facts.work.model_copy(update={"author": author, "title": title, "edition_urn": urn})
+    bound = replace(facts, passage=passage, header=header, work=work)
+    citation = render_corpus_note(candidate, bound, chosen)["Citation"]
+    assert citation.startswith(f'<a href="https://scaife.perseus.org/reader/{urn}:{ref}/">{expected[language]}</a>')
+    match = re.search(r"<pre>(.*?)</pre>", citation)
+    assert match is not None
+    payload = json.loads(html.unescape(match[1]))
+    assert payload["derived_cts_reference"] == f"{urn}:{ref}"
+    assert payload["resolver"]["revision_matches_source"] is False
+    assert payload["work"]["author"] == author and payload["work"]["title"] == title
+    for unverified in (
+        replace(
+            bound,
+            header=header.model_copy(update={"source": source.model_copy(update={"sha256": "sha256:" + "0" * 64})}),
+        ),
+        replace(bound, work=work.model_copy(update={"title": "Other work"})),
+        replace(bound, work=work.model_copy(update={"edition_urn": None})),
+        replace(bound, passage=passage.model_copy(update={"native_ref": "2.99"})),
+        replace(bound, passage=passage.model_copy(update={"passage_hash": "sha256:" + "0" * 64})),
+        replace(
+            bound,
+            passage=passage.model_copy(
+                update={
+                    "citation": passage.citation.model_copy(update={"parts": [CitationPart(unit="other", value=ref)]})
+                }
+            ),
+        ),
+    ):
+        assert "href=" not in render_corpus_note(candidate, unverified, chosen)["Citation"]
+    unbound = replace(bound, header=header.model_copy(update={"adapter": "text/1"}))
+    assert f"{author}, {title}," in render_corpus_note(candidate, unbound, chosen)["Citation"]
+
+
 @pytest.mark.parametrize("language", ["en", "de", "en-GB"])
 def test_each_recipe_renders_one_enabled_latin_first_slot(reviewed: Fixture, language: str) -> None:
     # A primary subtag of en selects English; the Language field keeps the full tag.
@@ -173,8 +272,15 @@ def test_each_recipe_renders_one_enabled_latin_first_slot(reviewed: Fixture, lan
     actual = []
     for candidate, fields in eligible:
         assert tuple(fields) == FIELDS[:-1]
-        assert {name: fields[name] for name in FIELDS[2:12]} == {
-            "Citation": "p000001 (facts)",
+        assert fields["Citation"].startswith(
+            (
+                "Author not supplied, facts, Passage p000001"
+                if language.startswith("en")
+                else "Autor nicht angegeben, facts, Abschnitt p000001"
+            )
+            + '<details class="corpus-provenance">'
+        )
+        assert {name: fields[name] for name in FIELDS[3:12]} == {
             "Passage": "Marcus amicum videt. Amicus ridet.",
             "Language": language,
             "Source ID": "facts:p000001",
@@ -255,9 +361,10 @@ def test_hostile_text_and_controls_are_escaped(tmp_path: Path) -> None:
     latin = '<span class="corpus-target">Puer</span> &lt;b&gt;&amp;amp; ridet \\x07 bene.'
     for fields in notes.values():
         assert fields["Passage"] == "Puer &lt;b&gt;&amp;amp; ridet \\x07 bene."
-        assert fields["Citation"] == "&lt;i&gt;I&lt;/i&gt;&amp; (facts)"
+        assert fields["Citation"].startswith("Author not supplied, facts, Book &lt;i&gt;I&lt;/i&gt;&amp;<details")
         validate_managed_controls(fields)
         markup = re.sub(r'<(/?)(div|span)( class="[a-z0-9 -]+")?>|<br>', "", "".join(fields.values()))
+        markup = re.sub(r'<details class="corpus-provenance">|</?details>|</?(summary|p|pre)>', "", markup)
         assert "<" not in markup and ">" not in markup
     assert notes["corpus_lexical_recognition"]["Latin"] == latin
     assert (

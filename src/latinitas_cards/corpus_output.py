@@ -8,6 +8,7 @@ from pydantic import JsonValue
 from .annotation_sidecar import Annotation, read_sidecar
 from .atomic_io import reject_aliases, writer_lock
 from .cli_contract import Code, ContractError, Diagnostic
+from .corpus_citations import citation_label, source_provenance
 from .corpus_exercises import exercise_candidates
 from .corpus_facts import FactView, accepted_facts
 from .corpus_io import read_corpus
@@ -98,7 +99,17 @@ def load_output(
         if current is not None:
             candidate, passage = current
             fields = render_corpus_note(candidate, passage, profile)
-            citation = generated_html_to_text(fields["Citation"])
+            citation = citation_label(passage, profile.target_language)
+            limitations = source_provenance(passage)["limitations"]
+            if limitations:
+                diagnostics.append(
+                    Diagnostic(
+                        code=Code.INCOMPLETE_PROVENANCE,
+                        severity="warning",
+                        message=f"Source provenance limitations: {limitations}",
+                        ref=entry.passage_id,
+                    )
+                )
             latin = generated_html_to_text(fields["Latin"])
             passage_text = generated_html_to_text(fields["Passage"])
             slot = next(slot for slot in CORPUS_SLOTS if slot.recipe == entry.recipe)

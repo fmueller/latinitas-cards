@@ -93,6 +93,7 @@ def build_corpus(
             edition=descriptor.edition,
             publisher=descriptor.publisher,
             url=descriptor.url,
+            revision=descriptor.revision,
             license=descriptor.license,
         )
         metadata = CorpusMetadata(

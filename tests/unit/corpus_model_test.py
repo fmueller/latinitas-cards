@@ -53,6 +53,18 @@ def header_data() -> dict[str, object]:
     }
 
 
+def test_optional_source_metadata_preserves_legacy_serialization() -> None:
+    work = CorpusWork(work="local", order=1)
+    assert work.model_dump(mode="json") == {"record": "work", "work": "local", "title": None, "order": 1}
+    header = CorpusHeader.model_validate(header_data())
+    assert "revision" not in header.model_dump(mode="json")
+    assert header.model_dump(mode="json")["edition"] is None
+    descriptor = CorpusDescriptor(format="latinitas-corpus-descriptor", version=1)
+    assert "revision" not in descriptor.model_dump(mode="json")
+    assert descriptor.model_copy(update={"revision": "rev"}).model_dump(mode="json")["revision"] == "rev"
+    assert work.model_copy(update={"author": "A"}).model_dump(mode="json")["author"] == "A"
+
+
 @pytest.mark.parametrize("value", [1.0, True, "1", 2, 0])
 def test_strict_versions(value: object) -> None:
     cases: list[tuple[type[BaseModel], dict[str, object]]] = [

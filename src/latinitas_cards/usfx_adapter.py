@@ -362,6 +362,7 @@ def build_usfx(
                 edition=descriptor.edition,
                 publisher=descriptor.publisher,
                 url=descriptor.url,
+                revision=descriptor.revision,
                 license=descriptor.license,
             ),
             CorpusMetadata(

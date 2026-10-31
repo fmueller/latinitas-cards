@@ -23,6 +23,12 @@ in the header; title, period and register go in the corpus. They are null when
 absent. `--language TAG` accepts a two/three-letter language followed by optional
 hyphen-separated 2–8-character alphanumeric subtags.
 
+Descriptors also accept optional `revision`, passed unchanged to the header for
+all adapters. It records the supplied upstream revision, not proof that the
+download matches it; the raw-input SHA256 independently identifies the bytes.
+The new revision field is omitted when absent, preserving existing serialization
+and header digests. Older strict readers reject enriched records/descriptors.
+
 Passages carry `passage_id` (`corpus_id:native_ref`), work, 1-based order,
 citation (`scheme`, raw string `parts`, `display`), canonical text, text-only
 `passage_hash`, and matching-only `norm` (`latin-fold/1`). Optional translations,
@@ -239,6 +245,23 @@ the first `titleStmt/title`. The header supplies `edition`
 null when absent. A `--descriptor` value overrides these fields and the corpus
 title (the work title keeps the header value) and warns `descriptor_override` for
 each header value it replaces with a different one.
+
+TEI work records additionally retain the sole `titleStmt/author` and an actual
+edition-level CTS URN from edition `@n` and/or `body/@xml:base`. Nonempty URN
+candidates must all match `urn:cts:namespace:textgroup.work.edition` (ASCII
+letters, digits, underscore and hyphen in each component) and agree. Malformed
+or conflicting values warn `citation_mismatch` and suppress the edition URN;
+work-only and passage URNs are not edition identities. Multiple authors warn
+and omit the single-author field. Neither metadata field is inferred from the
+filename or corpus ID, and the existing work-ID fallback is unchanged.
+
+Absent new fields are omitted. Existing documents round-trip unchanged; TEI
+renormalization adds metadata where available, and older strict readers reject
+these enriched records even though corpus version remains 1. Header changes
+(including supplied revision) invalidate pending header-bound annotation plans:
+replan and obtain any required approval again. Work-only metadata changes do not.
+Unchanged passage/annotation content keeps its claims, exercise IDs, context
+digests and selections. No annotation or selection migration is performed.
 
 Like USFX, this adapter writes only the corpus and rejects `--manifest`, approval
 flags and `--citation-template` (exit 2). Regenerate the

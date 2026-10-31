@@ -17,7 +17,7 @@ from .annotation_state import annotation_states
 from .cli_contract import Diagnostic
 from .corpus_claims import current_annotations, join_corpus_decisions
 from .corpus_io import CorpusFinding, read_corpus
-from .corpus_model import CorpusPassage, CorpusRecord
+from .corpus_model import CorpusHeader, CorpusPassage, CorpusRecord, CorpusWork
 from .corpus_validation import validate_records
 from .terminology import FEATURE_VALUES
 
@@ -144,6 +144,8 @@ class PassageFacts:
     """One passage's current segmentation and its facts keyed by layer and exact anchor span."""
 
     passage: CorpusPassage
+    header: CorpusHeader
+    work: CorpusWork
     segmentation_id: str | None
     segmentation: Segmentation | None
     sentences: tuple[Sentence, ...]
@@ -203,11 +205,17 @@ def accepted_facts(corpus: Path, sidecar: Path, claims: Path, *, target_language
     else:
         statuses, diagnostics = join_corpus_decisions(corpus, sidecar, claims)
     passages: list[CorpusPassage] = []
+    headers: list[CorpusHeader] = []
+    works: dict[str, CorpusWork] = {}
 
     def corpus_rows() -> Iterator[CorpusRecord | CorpusFinding]:
         for row in read_corpus(corpus):
             if isinstance(row, CorpusPassage):
                 passages.append(row)
+            elif isinstance(row, CorpusHeader):
+                headers.append(row)
+            elif isinstance(row, CorpusWork):
+                works[row.work] = row
             yield row
 
     # Validate this read too: its passage text and hashes are what the view serves.
@@ -259,6 +267,8 @@ def accepted_facts(corpus: Path, sidecar: Path, claims: Path, *, target_language
                 facts.setdefault(key, []).append(_fact(row, key, _review_status(status), words, language))
         result[passage.passage_id] = PassageFacts(
             passage=passage,
+            header=headers[0],
+            work=works[passage.work],
             segmentation_id=record.annotation_id if record is not None else None,
             segmentation=segmentation,
             sentences=_sentences(segmentation),

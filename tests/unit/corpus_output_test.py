@@ -1,8 +1,10 @@
 """Public preview, initial export and inspection of reviewed corpus exercises."""
 
 import ast
+import html
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any, cast
 
@@ -13,10 +15,60 @@ from typer.testing import CliRunner
 
 from latinitas_cards import preview_export
 from latinitas_cards.annotation_sidecar import Annotation, read_sidecar
+from latinitas_cards.canonical import canonical_json
 from latinitas_cards.cli import app
 from latinitas_cards.review_inspection import read_export_csv
 
 RUNNER = CliRunner()
+
+
+@pytest.mark.parametrize("language,unit", [("de", "Abschnitt"), ("en", "Passage")])
+def test_source_provenance_survives_csv_without_changing_selection(tmp_path: Path, language: str, unit: str) -> None:
+    facts = selected(tmp_path, language)
+    selection = (tmp_path / "selection.json").read_bytes()
+    claims = Path(f"{facts.corpus}.claims.json").read_bytes()
+    sidecar = facts.sidecar.read_bytes()
+    before = invoke(tmp_path, facts, "preview")["result"]["exercises"]
+    lines = [json.loads(line) for line in facts.corpus.read_text().splitlines()]
+    revision = 'rev<&"\x7f\x85\u2028\u202e\\x7f\x00'
+    lines[0].update(revision=revision, url='javascript:alert("not a link")', edition="Test edition")
+    lines[2].update(author="Author </pre><script>alert(1)</script>", title='Work & "title"')
+    facts.corpus.write_text("\n".join(json.dumps(line) for line in lines) + "\n")
+    preview_result = invoke(tmp_path, facts, "preview")
+    preview = preview_result["result"]["exercises"]
+    assert [row["latinitas_id"] for row in preview] == [row["latinitas_id"] for row in before]
+    assert all(row["status"] == "eligible" and unit in row["citation"] for row in preview)
+    assert all("revision" not in row["citation"] for row in preview)
+    output = tmp_path / "provenance.csv"
+    exported = invoke(tmp_path, facts, "export", "--output", str(output))
+    reasons = ["missing_edition_urn", "missing_source_license", "no_verified_passage_link"]
+    for result in (preview_result, exported):
+        warnings = [row for row in result["diagnostics"] if row["code"] == "incomplete_provenance"]
+        assert len(warnings) == len(preview)
+        assert all(row["severity"] == "warning" for row in warnings)
+        assert all(row["ref"] == lines[3]["passage_id"] for row in warnings)
+        assert all(row["message"] == f"Source provenance limitations: {reasons}" for row in warnings)
+    for note in read_export_csv(output):
+        citation = note["Citation"]
+        assert '<details class="corpus-provenance">' in citation
+        assert "<script>" not in citation and "href=" not in citation
+        match = re.search(r"<pre>(.*?)</pre>", citation)
+        assert match is not None
+        serialized = html.unescape(match[1])
+        provenance = json.loads(serialized)
+        assert serialized == canonical_json(provenance).replace("\x7f", "\\u007f").replace("\x85", "\\u0085")
+        assert provenance["header"]["revision"] == revision
+        assert provenance["header"]["source"] == lines[0]["source"]
+        assert provenance["header"]["url"] == 'javascript:alert("not a link")'
+        assert provenance["work"]["author"] == lines[2]["author"]
+        assert provenance["passage"]["passage_id"] == note["Source ID"]
+        assert provenance["derived_cts_reference"] is None
+        assert provenance["resolver"] is None and provenance["limitations"] == reasons
+    invoke(tmp_path, facts, "inspect", "--check", str(output))
+    invoke(tmp_path, facts, "select", "--report", str(tmp_path / "report.json"))
+    assert (tmp_path / "selection.json").read_bytes() == selection
+    assert Path(f"{facts.corpus}.claims.json").read_bytes() == claims
+    assert facts.sidecar.read_bytes() == sidecar
 
 
 def invoke(root: Path, facts: Fixture, command: str, *flags: str, code: int = 0) -> dict[str, Any]:
@@ -309,7 +361,8 @@ def test_preview_and_claim_inspection_include_full_context(tmp_path: Path, surfa
     card = next(c for c in json.loads(result.output)["cards"] if c["eligible"])
     assert "Marcus amicum videt." in card["prompt"]
     assert "Rhinoceros purpureus dormit." in card["answer"]
-    assert "p000001 (facts)" in card["answer"]
+    assert "Author not supplied, facts, Passage p000001" in card["answer"]
+    assert '"source"' in card["answer"] and '"passage_hash"' in card["answer"]
     assert card["reasons"] == ["Artifact backing evidence is unverified without current source"]
 
 

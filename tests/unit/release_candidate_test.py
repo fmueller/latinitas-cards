@@ -289,7 +289,7 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v040_candidate() 
     assert project["project"]["version"] == "0.4.0"
     assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.4.0"
     assert re.search(r"^## \[0\.4\.0\] - \d{4}-\d{2}-\d{2}$", changelog, flags=re.MULTILINE)
-    assert changelog.split("## [Unreleased]", 1)[1].split("## [0.4.0]", 1)[0].strip() == ""
+    assert changelog.index("## [Unreleased]") < changelog.index("## [0.4.0]")
     assert "compare/v0.4.0...HEAD" in changelog
     assert "compare/v0.3.0...v0.4.0" in changelog
     assert "## [0.3.0] - 2026-10-20" in changelog

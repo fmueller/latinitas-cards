@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from .cli_contract import Code, ContractError, Diagnostic
 from .corpus_model import (
+    CTS_EDITION_PATTERN,
     Citation,
     CitationPart,
     CorpusDescriptor,
@@ -445,6 +446,25 @@ def _work_id(edition: _Element, filename: str | None, work: str | None, corpus_i
     return corpus_id
 
 
+def _bibliography(root: _Element, edition: _Element, warnings: list[Diagnostic]) -> tuple[str | None, str | None]:
+    statement = _child(_child(_child(root, "teiHeader"), "fileDesc"), "titleStmt")
+    authors = [text for author in _elements(statement, "author") if (text := _text(author))]
+    author = authors[0] if len(authors) == 1 else None
+    if len(authors) > 1:
+        warnings.append(_warning(Code.CITATION_MISMATCH, "Ambiguous titleStmt authors; no single author retained"))
+    body = _child(_child(root, "text"), "body")
+    candidates = [value for value in (edition.attrs.get("n"), body.attrs.get("xml:base") if body else None) if value]
+    edition_urn = None
+    if candidates:
+        if all(re.fullmatch(CTS_EDITION_PATTERN, value) for value in candidates) and len(set(candidates)) == 1:
+            edition_urn = candidates[0]
+        else:
+            warnings.append(
+                _warning(Code.CITATION_MISMATCH, "Invalid or conflicting CTS edition metadata; no edition URN retained")
+            )
+    return author, edition_urn
+
+
 def _edition(root: _Element) -> _Element:
     if root.name != "TEI" or len(_elements(root, "teiHeader")) != 1 or len(_elements(root, "text")) != 1:
         raise _invalid("The root must be TEI holding one teiHeader and one text")
@@ -537,6 +557,7 @@ def build_tei(
 
     work_id = _work_id(edition, filename, work, corpus_id)
     work_title = fields["title"]
+    author, edition_urn = _bibliography(root, edition, warnings)
     for name, value in fields.items():
         override = getattr(descriptor, name) if descriptor else None
         if override is not None:
@@ -560,6 +581,7 @@ def build_tei(
                 edition=fields["edition"],
                 publisher=fields["publisher"],
                 url=fields["url"],
+                revision=descriptor.revision if descriptor else None,
                 license=fields["license"],
             ),
             CorpusMetadata(
@@ -568,7 +590,7 @@ def build_tei(
                 period=descriptor.period if descriptor else None,
                 register=descriptor.register_ if descriptor else None,
             ),
-            CorpusWork(work=work_id, title=work_title, order=1),
+            CorpusWork(work=work_id, title=work_title, order=1, author=author, edition_urn=edition_urn),
         ]
         for index, passage in found:
             if index not in texts:

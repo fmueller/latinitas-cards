@@ -1,11 +1,11 @@
 ---
 id: T-182-separate-localized-citations-from-source-provenance
 title: Separate localized reader-facing citations from complete source provenance
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.4.0.md#tei-xml-adapter
 dependencies: []
-updated_at: "2026-10-31T15:42:15Z"
+updated_at: "2026-10-31T18:13:07Z"
 ---
 
 # T-182-separate-localized-citations-from-source-provenance Separate localized reader-facing citations from complete source provenance
@@ -104,13 +104,51 @@ Current source evidence at candidate
 
 ## Verification Notes
 
-- Not started. Task creation only; no implementation or behavioral verification.
+- Implementation and bounded independent acceptance passed on product tree
+  `28df85feffbf29fff2818bdae317e71e0e85a954` (planning state excluded).
+- TDD: initial nine target failures passed after implementation; author ambiguity
+  and review-found serialization/source-binding regressions were reproduced and
+  fixed. Deliberate disposable regressions confirmed the localization, citation
+  unit and warning assertions fail; restored checks passed.
+- Dedicated simplification and high-risk conventional review completed. Five
+  specialist lanes and four fresh adversarial lanes used one shared challenge
+  round and one materially-new-evidence follow-up. All confirmed code findings
+  were fixed and independently disposition-verified; no required finding remains.
+- Mandatory Ruff -> mypy -> pytest chain passed: 3232 passed, seven skipped.
+  Distribution build, sdist rebuild and artifact inspection passed. A final
+  post-note chain precedes lifecycle completion.
+- Independent public-CLI QA derived its oracle before reading implementation
+  reports. Fresh pinned sources passed both languages through normalization,
+  reviewed annotations/claims, selection, preview, export and inspection; IDs,
+  sticky selections, hostile metadata, corrected text and old-reader behavior
+  were checked. Six initial harness expectations were reconciled explicitly,
+  without changing product code or acceptance requirements.
+- Independent official native Anki 26.09.3 acceptance imported 16 fresh notes and
+  16 cards. All 24 exported fields per note matched CSV byte-for-byte, Tags
+  matched as sets and Personal Notes stayed empty. Four language/reading cases
+  rendered collapsed/expanded provenance and opened the exact source passages.
+  Actual Scaife edition, heading and Latin were inspected; online revision
+  equality is explicitly not claimed. Native CSS lost only its final newline.
+- Imported evidence hashes and four paired captures were checked locally. Both
+  pointer clips decoded cleanly; decoded frames/contact sheets were inspected
+  because direct video analysis was unavailable. Full source/native receipts
+  remain retained, separate from the later parent-owned final demo.
+- No release, tag, publication, deployment or T-173 lifecycle action occurred.
 
 ## Implementation Notes
 
 - Original pinned XML SHA256: Caesar
   `15ec3ef2a36352742ddb75d4f7da23a143899b6b60ee3a7ca3192d4917ca1568`;
   Aeneid `e639e6a0e27427ef28031850c4d73aa2b63b9f2cf8a5cf584b37685c52fb874c`.
-- Author/work/edition metadata ownership, exported provenance representation,
-  missing-value diagnostics and any schema compatibility decision remain open
-  engineering work. Do not infer their implementation from this task text.
+- The maintainer-approved spec amendment defines optional author, edition URN
+  and supplied revision fields; absent optional fields preserve existing bytes.
+  Enriched documents intentionally require the newer strict reader. Existing
+  identities, context digests, selection rules, CSV columns and template slots
+  are unchanged.
+- The existing Citation field now carries localized verified-source labels and
+  separate lossless source-provenance JSON. Exact links require the pinned source
+  metadata, citation structure and current passage hash; corrected readings and
+  unsupported sources remain nonclickable with explicit limitations. Source
+  rights and translation provenance remain separate.
+- 2026-10-31T18:13:07Z: verification pass
+- 2026-10-31T18:13:07Z: Final post-note Ruff/mypy/pytest chain passed (3232 passed, 7 skipped). Reviewed frozen product tree and independent CLI/native acceptance passed; T-173 stays blocked, with no release authorization.

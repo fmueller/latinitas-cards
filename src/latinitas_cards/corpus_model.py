@@ -13,8 +13,10 @@ from pydantic import (
     ConfigDict,
     Field,
     RootModel,
+    SerializerFunctionWrapHandler,
     ValidationInfo,
     field_validator,
+    model_serializer,
     model_validator,
 )
 
@@ -24,6 +26,8 @@ type CorpusId = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9-]{1,62}$")]
 type NativeRef = Annotated[str, Field(pattern=r"^(?:[A-Za-z0-9._-]|%[0-9A-F]{2})+$")]
 type Sha256 = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 type PositiveOrder = Annotated[int, Field(ge=1)]
+
+CTS_EDITION_PATTERN = r"^urn:cts:[A-Za-z0-9_-]+:[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$"
 
 _SAFE_REF_BYTES = frozenset(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
 
@@ -108,10 +112,15 @@ class CorpusDescriptor(VersionOne):
     edition: str | None = None
     publisher: str | None = None
     url: str | None = None
+    revision: str | None = None
     license: str | None = None
     title: str | None = None
     period: str | None = None
     register_: str | None = Field(default=None, alias="register")
+
+    @model_serializer(mode="wrap")
+    def omit_absent_revision(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        return {key: value for key, value in handler(self).items() if key != "revision" or value is not None}
 
 
 class CorpusSource(CorpusModel):
@@ -139,7 +148,12 @@ class CorpusHeader(VersionOne):
     edition: str | None = None
     publisher: str | None = None
     url: str | None = None
+    revision: str | None = None
     license: str | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_absent_revision(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        return {key: value for key, value in handler(self).items() if key != "revision" or value is not None}
 
     @field_validator("text_canon", mode="before")
     @classmethod
@@ -162,6 +176,16 @@ class CorpusWork(CorpusModel):
     work: str = Field(min_length=1)
     title: str | None = None
     order: PositiveOrder
+    author: str | None = None
+    edition_urn: Annotated[str, Field(pattern=CTS_EDITION_PATTERN)] | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_absent_bibliography(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in handler(self).items()
+            if key not in {"author", "edition_urn"} or value is not None
+        }
 
 
 class CitationPart(CorpusModel):

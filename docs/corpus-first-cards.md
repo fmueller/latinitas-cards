@@ -245,6 +245,63 @@ Only explicitly deselected anchored exercises propose retirement, which remains
 unsupported. Omission, an empty Enabled field or a retirement tag is not deletion
 or suspension. Manual initial import followed by adoption is not managed create.
 
+## Citations and source provenance
+
+The existing `Citation` field separates a readable author/work/passage label
+from an expandable source-provenance section. German examples are
+`Julius Caesar, Der Gallische Krieg, Buch 1, Kapitel 1, Abschnitt 1` and
+`Vergil, Aeneis, Buch 1, Vers 11`; English uses `The Gallic War`, `Virgil`,
+`Aeneid`, `Book`, `Chapter`, `Section` and `Line`. Names are localized only from
+verified work metadata; arbitrary supplied names remain literal. Missing authors
+are identified as missing, and missing work titles fall back to the local work ID.
+Normalized citation parts and identity fields are not translated.
+
+Open **Source provenance and limitations** (German: **Quellennachweis und Grenzen**)
+on an Anki answer to inspect HTML-escaped canonical JSON independently of the label.
+DEL/C1 characters use JSON Unicode escapes for safe field transport; decoding the
+JSON recovers the exact supplied values.
+It retains the supported header/work metadata, local passage/work IDs, native ref,
+raw citation parts and passage hash. The header includes the raw XML filename,
+byte count and SHA256, edition, publisher, source URL, supplied revision and source
+licence. Optional missing metadata stays absent/null, with explicit limitations
+and `incomplete_provenance` CLI warnings. Preview shows only the readable citation;
+the full provenance travels through CSV in `Citation`, without extra note fields.
+
+Exact online links are currently verified only for these pinned source readings:
+
+| Reading | Edition | Raw XML SHA256 |
+| --- | --- | --- |
+| Caesar BG 1.1.1 | `phi0448.phi001.perseus-lat2` | `15ec3ef2a36352742ddb75d4f7da23a143899b6b60ee3a7ca3192d4917ca1568` |
+| Aeneid 1.11 | `phi0690.phi003.perseus-lat2` | `e639e6a0e27427ef28031850c4d73aa2b63b9f2cf8a5cf584b37685c52fb874c` |
+
+The sources are from `PerseusDL/canonical-latinLit` revision
+`8b536bdf3ed1f43494055efe112433b4a58eab67`. Scaife reader URLs for these full CTS
+edition/passage references were verified in a browser on 2026-10-31, including
+Holmes's Oxford 1914 and Greenough's Boston 1881 edition descriptions. The online
+resolver uses its own revision: `revision_matches_source: false` explicitly avoids
+claiming byte/revision equality with the pinned XML. Link identity is identical
+in German and English. Generation makes no network request; future remote
+availability is not guaranteed. Other references, unknown editions or mismatched
+source bindings remain nonclickable, with a limitation instead of a guessed URL.
+The link also requires the current passage hash to match the independently measured
+pinned reading. Corrected text remains supported but loses this link when its text
+changes. Source-level verified names can still be localized for other passages.
+An arbitrary supplied source URL is retained as data, never injected into a link.
+
+Supply the pinned raw URL and revision via a descriptor when normalizing; neither
+is invented from the filename. A source-attested edition URN permits a separately
+marked derived CTS reference, not a claim of verified online resolution.
+Source licence/provenance does not cover translations: their annotation producers,
+review and rights must be considered separately. These records do not grant
+permission to redistribute corpora or translations.
+
+The note type, CSV columns, LatinitasIDs and sticky selections are unchanged.
+Existing normalized records remain readable; renormalize TEI to obtain new
+author/edition metadata. Older strict corpus readers reject enriched records.
+Metadata-only changes keep passage hashes and existing annotation claims; actual
+header changes require pending header-bound plans to be recreated/reapproved.
+Use the managed retained-content workflow to update an imported `Citation`.
+
 ## English and language changes
 
 Corpus profiles accept primary target languages `de` and `en`, including regional

@@ -89,17 +89,23 @@ def managed_plan(root: Path) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(result.output))
 
 
-def test_reviewed_correction_is_approvable_retained_update(tmp_path: Path) -> None:
+@pytest.mark.parametrize("change", ["translation", "citation"])
+def test_reviewed_correction_is_approvable_retained_update(tmp_path: Path, change: str) -> None:
     facts = selected(tmp_path)
     data = destination(tmp_path, facts)
-    original = next(
-        r
-        for r in read_sidecar(facts.sidecar)
-        if isinstance(r, Annotation) and r.layer == "translation" and r.anchor.span is None
-    )
-    facts.add(0, "translation", text("en", "Marcus watches a friend."), supersedes=original.annotation_id)
-    Path(f"{facts.corpus}.claims.json").unlink()
-    facts.decide("accepted", *current_annotations(facts.corpus, facts.sidecar))
+    if change == "translation":
+        original = next(
+            r
+            for r in read_sidecar(facts.sidecar)
+            if isinstance(r, Annotation) and r.layer == "translation" and r.anchor.span is None
+        )
+        facts.add(0, "translation", text("en", "Marcus watches a friend."), supersedes=original.annotation_id)
+        Path(f"{facts.corpus}.claims.json").unlink()
+        facts.decide("accepted", *current_annotations(facts.corpus, facts.sidecar))
+    else:
+        records = [json.loads(line) for line in facts.corpus.read_text().splitlines()]
+        records[2].update(author="Attested author", title="Attested work")
+        facts.corpus.write_text("\n".join(json.dumps(row) for row in records) + "\n")
     before = {p: p.read_bytes() for p in (tmp_path / "state.json", tmp_path / "snapshot.json", facts.corpus)}
     result = plan(tmp_path, facts)["result"]
     assert result["not_imported"] == []
@@ -107,9 +113,12 @@ def test_reviewed_correction_is_approvable_retained_update(tmp_path: Path) -> No
     assert request["snapshot"] == capture(data).payload
     planned = managed_plan(tmp_path)
     changes = [op for n in planned["notes"] for op in n["operations"]]
-    assert {op["field"] for op in changes} == {"CorpusSentenceAnswer", "CorpusAnalysisAnswer"}
+    assert {op["field"] for op in changes} == (
+        {"CorpusSentenceAnswer", "CorpusAnalysisAnswer"} if change == "translation" else {"Citation"}
+    )
     assert all(op["supported"] for op in changes)
-    operation = next(op["id"] for op in changes if op["field"] == "CorpusSentenceAnswer")
+    field = "CorpusSentenceAnswer" if change == "translation" else "Citation"
+    operation = next(op["id"] for op in changes if op["field"] == field)
     assert all(e["effect"] == "retain" for n in planned["notes"] for e in n["card_effects"])
     plan_path = tmp_path / "plan.json"
     plan_path.write_text(json.dumps(planned))
@@ -149,7 +158,10 @@ def test_reviewed_correction_is_approvable_retained_update(tmp_path: Path) -> No
     )
     assert emitted.exit_code == 0, emitted.output
     rows = read_export_csv(tmp_path / "updates.csv")
-    assert len(rows) == 1 and "Marcus watches a friend." in rows[0]["CorpusSentenceAnswer"]
+    assert len(rows) == 1
+    assert ("Marcus watches a friend." if change == "translation" else "Attested author, Attested work") in rows[0][
+        field
+    ]
     assert rows[0]["Tags"] == "user-tag"
     assert "Personal Notes" not in rows[0]
     assert (tmp_path / "snapshot.json").read_bytes() == before[tmp_path / "snapshot.json"]
@@ -229,7 +241,7 @@ def test_passage_correction_requires_review_and_context_confirmation(tmp_path: P
     invoke(tmp_path, facts, "select", "--report", str(tmp_path / "report.json"), "--confirm-context", sentence)
     plan(tmp_path, facts)
     changes = [op for n in managed_plan(tmp_path)["notes"] for op in n["operations"]]
-    assert {op["field"] for op in changes} == {"Latin", "Passage"}
+    assert {op["field"] for op in changes} == {"Latin", "Passage", "Citation"}
     assert all(op["supported"] for op in changes)
     assert next(op["value"] for op in changes if op["field"] == "Passage") == "Marcus amicum videt!"
 
