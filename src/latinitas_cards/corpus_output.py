@@ -9,12 +9,12 @@ from .annotation_sidecar import Annotation, read_sidecar
 from .atomic_io import reject_aliases, writer_lock
 from .cli_contract import Code, ContractError, Diagnostic
 from .corpus_exercises import exercise_candidates
-from .corpus_facts import FactView, Morphology, accepted_facts
+from .corpus_facts import FactView, accepted_facts
 from .corpus_io import read_corpus
 from .corpus_model import CorpusHeader
 from .corpus_notes import CORPUS_SLOTS, corpus_csv, render_corpus_note
 from .corpus_profile import CorpusProfile, load_corpus_profile, require_profile_corpora
-from .corpus_ranking import matching_lemma, rank_selection
+from .corpus_ranking import rank_selection
 from .corpus_selection import load_selection, reading_passages
 from .html_text import generated_html_to_text
 from .known_lemmas import load_known_lemmas
@@ -79,7 +79,7 @@ def load_output(
             Diagnostic(code=Code.INVALID_INPUT, severity="warning", message=skip.message, path=skip.location)
             for skip in known.skipped
         )
-    _, entries = rank_selection(profile, views, selection, reading, set(known.lemmas) if known else set(), set())
+    _, entries = rank_selection(profile, views, selection, reading, known.lemmas if known else {}, set())
     candidates = {
         candidate.latinitas_id: (candidate, view.passages[candidate.passage_id])
         for view in views.values()
@@ -94,7 +94,6 @@ def load_output(
             continue
         prompt = answer = citation = latin = passage_text = ""
         facts: list[JsonValue] = []
-        links: list[JsonValue] = []
         current = candidates.get(entry.latinitas_id)
         if current is not None:
             candidate, passage = current
@@ -118,13 +117,6 @@ def load_output(
                 for resolution in candidate.resolutions
                 for fact in resolution.facts
             ]
-            if known is not None:
-                lemma = next((r.value.lemma for r in candidate.resolutions if isinstance(r.value, Morphology)), None)
-                if lemma is not None:
-                    links = [
-                        {"identity": identity.value, "scope": identity.scope}
-                        for identity in known.lemmas.get(matching_lemma(lemma), ())
-                    ]
         exercises.append(
             {
                 "latinitas_id": entry.latinitas_id,
@@ -137,7 +129,7 @@ def load_output(
                 "status": "eligible" if entry.eligible else "withheld",
                 "reasons": list(entry.reasons),
                 "facts": facts,
-                "deck_links": links,
+                "deck_links": [link.model_dump(mode="json") for link in entry.deck_links],
             }
         )
     return CorpusOutput(profile, exercises, notes, diagnostics)

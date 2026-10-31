@@ -179,6 +179,10 @@ limit repetition. Supply both `--known-lemmas PROFILE` and
 read-only known-lemma source. Without that pair every word is unknown, so a low
 `max_unknown` can filter everything. Export/inspect have no known-lemma input;
 preview without that pair is the export eligibility view.
+Candidate reports and previews include `deck_links` for every matching deck
+source identity and its scope on an accepted target lemma. Nonmatching targets
+and phrase/sentence candidates have no links. These links never enter card fields
+or selection state, and no deck files are changed.
 
 The [agent contract](agent-cli-contract.md#ranked-corpus-selection) lists every
 outcome/withholding reason and their precedence. Reports retain ineligible

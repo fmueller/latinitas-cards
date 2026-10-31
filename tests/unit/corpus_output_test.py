@@ -11,6 +11,7 @@ from corpus_facts_test import Fixture, morph, text
 from typer.testing import CliRunner
 
 from latinitas_cards import preview_export
+from latinitas_cards.annotation_sidecar import Annotation, read_sidecar
 from latinitas_cards.cli import app
 from latinitas_cards.review_inspection import read_export_csv
 
@@ -49,6 +50,73 @@ def selected(root: Path, language: str = "en") -> Fixture:
     (root / "profile.json").write_text(profile(language).model_dump_json())
     invoke(root, facts, "select", "--report", str(root / "report.json"))
     return facts
+
+
+@pytest.mark.parametrize("known_word", ["AMĪCUS", "ignotus"])
+@pytest.mark.parametrize("featureless", [False, True])
+def test_known_deck_links_in_report_and_preview_only(tmp_path: Path, known_word: str, featureless: bool) -> None:
+    from known_lemmas_test import _csv, _profile
+
+    from latinitas_cards.manifest import CsvIdentityManifest
+
+    facts = selected(tmp_path)
+    if featureless:
+        old = next(
+            row for row in read_sidecar(facts.sidecar) if isinstance(row, Annotation) and row.layer == "morphology"
+        )
+        facts.retract(old)
+        facts.add(0, "morphology", morph("amicus"), (7, 13))
+        Path(f"{facts.corpus}.claims.json").unlink()
+        facts.decide(
+            "accepted",
+            *(row for row in read_sidecar(facts.sidecar) if isinstance(row, Annotation) and row != old),
+        )
+        invoke(tmp_path, facts, "select", "--report", str(tmp_path / "report.json"))
+    original_report = json.loads((tmp_path / "report.json").read_bytes())
+    original_preview = invoke(tmp_path, facts, "preview")["result"]["exercises"]
+    assert all(row["deck_links"] == [] for row in original_report["candidates"])
+    assert all(row["deck_links"] == [] for row in original_preview)
+    invoke(tmp_path, facts, "export", "--output", str(tmp_path / "before.csv"))
+    known, source = tmp_path / "known.json", tmp_path / "known.csv"
+    _profile(known)
+    _csv(source, [("friend", known_word), ("other-sense", known_word), ("unrelated", "legere")])
+    Path(f"{source}.latinitas.json").write_text(
+        CsvIdentityManifest.scoped(("ID", "Entry", "Forms", "Meaning"), "deck-scope").to_json()
+    )
+    protected = [
+        facts.corpus,
+        facts.sidecar,
+        Path(f"{facts.corpus}.claims.json"),
+        tmp_path / "profile.json",
+        known,
+        source,
+        Path(f"{source}.latinitas.json"),
+        tmp_path / "selection.json",
+    ]
+    before = {path: path.read_bytes() for path in protected}
+    flags = ("--known-lemmas", str(known), "--known-lemmas-source", str(source))
+    invoke(tmp_path, facts, "select", "--report", str(tmp_path / "report.json"), *flags)
+    report = json.loads((tmp_path / "report.json").read_bytes())
+    preview = invoke(tmp_path, facts, "preview", *flags)["result"]["exercises"]
+    expected = [{"identity": "friend", "scope": "deck-scope"}, {"identity": "other-sense", "scope": "deck-scope"}]
+    for row in report["candidates"]:
+        single = row["recipe"] in {"corpus_lexical_recognition", "corpus_guided_analysis"}
+        assert row["deck_links"] == (expected if single and known_word == "AMĪCUS" else [])
+        if featureless and row["recipe"] == "corpus_guided_analysis":
+            assert row["eligible"] is False and row["reasons"] == ["no_features"] and row["outcome"] == "kept"
+            assert row["factors"] is row["contributions"] is row["score"] is None
+    if featureless:
+        guided = next(row for row in preview if row["recipe"] == "corpus_guided_analysis")
+        assert guided["status"] == "withheld" and guided["reasons"] == ["no_features"] and not guided["answer"]
+    assert {row["latinitas_id"]: row["deck_links"] for row in preview} == {
+        row["latinitas_id"]: row["deck_links"] for row in report["candidates"]
+    }
+    assert {row["latinitas_id"]: {k: v for k, v in row.items() if k != "deck_links"} for row in preview} == {
+        row["latinitas_id"]: {k: v for k, v in row.items() if k != "deck_links"} for row in original_preview
+    }
+    invoke(tmp_path, facts, "export", "--output", str(tmp_path / "after.csv"))
+    assert (tmp_path / "after.csv").read_bytes() == (tmp_path / "before.csv").read_bytes()
+    assert before == {path: path.read_bytes() for path in protected}
 
 
 @pytest.mark.parametrize("language", ["de", "en"])

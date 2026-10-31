@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `corpus-cards select` candidate reports include matching known-lemma deck source
+  identities and scopes, as previews do, without changing card fields or deck files.
 - `annotations import-translations` rejects source corpora not labeled Latin with
   `unsupported_language` (exit 3), without changing output or review state.
 - `corpus normalize --adapter tei --allow-unknown` rejects unknown elements in

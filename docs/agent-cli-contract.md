@@ -319,6 +319,12 @@ they are read without writes. Without them every word is unknown and every lexic
 target is new. Single-word targets do not count toward unknown context words.
 Matching known/target lemmas strips a trailing ` (n)` homograph suffix; per-lemma
 exclusion keeps that suffix and folds only case/macrons, per `latin-fold/1`.
+Each candidate's `deck_links` lists matching target-lemma source records as
+`{"identity": "...", "scope": "..."}` (scope is null for unscoped sources).
+All matches are retained in source order. The list is empty without known-lemma
+inputs, without a match, or without an accepted target lemma, including phrase
+and sentence candidates. These links are informational, not selection state or
+card fields; the report's top-level `known_lemmas` retains the input digests.
 Near duplicates use folded word-token **multisets** of units (phrase spans for
 phrase translation), with intersection/union at least 4/5.
 
@@ -378,7 +384,8 @@ shows selected exercises as plain-text prompt, answer, Latin unit, full passage 
 with eligibility, withholding reasons and each fact's claim status and producer.
 The default limit is 20; accepted limits are 1 through 1000. The paired
 `--known-lemmas PROFILE --known-lemmas-source SOURCE` options add matching target
-lemma deck identities as preview provenance only, never as card fields.
+lemma `deck_links` with the same identity/scope shape as the candidate report,
+never as card fields.
 As at selection, known lemmas affect the `max_unknown` filter. Export and inspect
 have no known-lemma options and evaluate that filter without a known-lemma source;
 preview without these flags is the corresponding export view.

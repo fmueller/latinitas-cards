@@ -63,4 +63,35 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 
 ## Verification Notes
 
-- Not started.
+- 2026-10-30 attempt on accepted `origin/main`
+  `cfdd4e2ed24819438e5c6bd0bea553cd4f0f2a00`: setup passed; initial
+  Taskrail validation/status/selector confirmed this task plus blocked T-173
+  were the only open active-spec work. No parent-local state was transferred.
+- The documented TEI walkthrough ran outside the checkout and produced four
+  eligible recipes, individual claim acceptances, deselect/restore, initial
+  export and successful `inspect --check`. Plain-text normalization, validation,
+  segmentation, imported translation patch plus morphology/gloss/phrase facts,
+  plan/approve/apply and individual claim decisions also passed.
+- Blocker: adding the confirmed known-lemma fixture changes lexical/guided
+  novelty from 1 to 0 and scores from 220 to 200, but the candidate report has
+  no matching deck-source links. Preview with the same inputs reports
+  `friend` / `reviewed-fixture-scope` for both targets. Filed high-priority
+  T-180 against the real ranked-card anchor; no runtime repair attempted.
+- Release metadata test first failed as expected (`0.3.0` versus `0.4.0`).
+  All candidate metadata and test edits, including the draft semantic AST
+  no-grading guard, were then discarded before requeueing. The draft diff and
+  CLI transcripts remain in `/tmp/t172-evidence/` in this checkout's orb.
+- Full final ruff/mypy/pytest chain, `mise run check`, packaging/install checks,
+  candidate simplification/review and final candidate checkpoint were not
+  reached. No verify/complete, commit, push, tag or release occurred. The
+  independent blocker checkpoint is separate from candidate acceptance.
+- T-154 goldens match their introducing commit `681cf22e672ce595efeac418d859509569bc9807`
+  byte-for-byte; T-174's authorized filtered claims-v1 updates are a distinct
+  fixture set. No goldens were recaptured. Native Linux Anki Desktop acceptance
+  remains pending T-173; AnkiMobile remains unverified and outside that gate.
+
+## Implementation Notes
+
+- Requeued behind T-180; current-base lifecycle already records this task as
+  todo. Verification notes transferred from the retained T-172 checkout;
+  historical STATE and lifecycle timestamps were not applied.

@@ -25,6 +25,13 @@
             }
           ]
         },
+        "deck_links": {
+          "items": {
+            "$ref": "#/$defs/DeckLink"
+          },
+          "title": "Deck Links",
+          "type": "array"
+        },
         "eligible": {
           "title": "Eligible",
           "type": "boolean"
@@ -182,6 +189,32 @@
         "corpus_sentence_translation"
       ],
       "type": "string"
+    },
+    "DeckLink": {
+      "additionalProperties": false,
+      "properties": {
+        "identity": {
+          "title": "Identity",
+          "type": "string"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Scope"
+        }
+      },
+      "required": [
+        "identity",
+        "scope"
+      ],
+      "title": "DeckLink",
+      "type": "object"
     },
     "Factors": {
       "additionalProperties": false,

@@ -160,7 +160,7 @@ def test_homographs_known_lemmas_and_multiset_exclusions(tmp_path: Path) -> None
     lexical(facts, 3, "librum", "liber (2)")
     source, known = tmp_path / "known.csv", tmp_path / "known.json"
     _profile(known)
-    _csv(source, [("1", "līber"), ("2", "amat")])
+    _csv(source, [("1", "līber"), ("2", "amat"), ("3", "LIBER")])
     Path(f"{source}.latinitas.json").write_text(
         CsvIdentityManifest.scoped(("ID", "Entry", "Forms", "Meaning"), "scope").to_json()
     )
@@ -180,6 +180,10 @@ def test_homographs_known_lemmas_and_multiset_exclusions(tmp_path: Path) -> None
     # Accepted lemma is absent on each amat token; surface membership does not make it known.
     assert by_passage["facts:p000001"]["factors"]["unknown"] == -3
     assert report["known_lemmas"] is not None
+    assert all(
+        row["deck_links"] == [{"identity": "1", "scope": "scope"}, {"identity": "3", "scope": "scope"}]
+        for row in by_passage.values()
+    )
 
 
 @pytest.mark.parametrize("while_deselected", [False, True])

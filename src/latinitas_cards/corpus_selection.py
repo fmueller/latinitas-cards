@@ -114,6 +114,11 @@ class Factors(CorpusModel):
     coverage: int
 
 
+class DeckLink(CorpusModel):
+    identity: str
+    scope: str | None
+
+
 class CandidateEntry(CorpusModel):
     object_key: str | None
     latinitas_id: str | None
@@ -128,6 +133,7 @@ class CandidateEntry(CorpusModel):
     contributions: Factors | None
     score: int | None
     outcome: Literal["kept", "selected"] | Reason
+    deck_links: list[DeckLink] = Field(default_factory=list)
 
 
 class CorpusDigests(CorpusModel):
@@ -375,7 +381,7 @@ def select_corpus(
                 for skip in known.skipped
             )
         selection, entries = rank_selection(
-            profile, views, selection, reading, set(known.lemmas) if known else set(), set(confirm_context)
+            profile, views, selection, reading, known.lemmas if known else {}, set(confirm_context)
         )
         if not existed and selection.runs == previous_run:
             selection = selection.model_copy(update={"runs": previous_run + 1})

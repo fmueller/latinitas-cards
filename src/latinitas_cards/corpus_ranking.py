@@ -2,6 +2,7 @@
 
 import re
 from collections import Counter
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from .cli_contract import Code, ContractError
@@ -9,7 +10,8 @@ from .corpus_exercises import Candidate, exercise_candidates
 from .corpus_facts import FactView, Morphology, PassageFacts
 from .corpus_model import latin_fold
 from .corpus_profile import CorpusProfile
-from .corpus_selection import CandidateEntry, Factors, Reason, SelectedEntry, Selection
+from .corpus_selection import CandidateEntry, DeckLink, Factors, Reason, SelectedEntry, Selection
+from .identity import ResolvedSourceIdentity
 
 SINGLE_WORD = {"corpus_lexical_recognition", "corpus_guided_analysis"}
 
@@ -33,7 +35,7 @@ def _rank(
     facts: PassageFacts,
     profile: CorpusProfile,
     reading: set[str],
-    known: set[str],
+    known: Mapping[str, tuple[ResolvedSourceIdentity, ...]],
     stored: SelectedEntry | None,
 ) -> Ranked:
     corpus_id = candidate.passage_id.partition(":")[0]
@@ -125,6 +127,12 @@ def _rank(
             "contributions": contributions,
             "score": score,
             "outcome": reasons[0] if reasons else "selected",
+            "deck_links": [
+                DeckLink(identity=identity.value, scope=identity.scope)
+                for identity in known.get(matching_lemma(lemma), ())
+            ]
+            if lemma is not None
+            else [],
         }
     )
     if candidate.annotation_id is not None:
@@ -150,7 +158,7 @@ def rank_selection(
     views: dict[str, FactView],
     selection: Selection,
     reading: set[str],
-    known: set[str],
+    known: Mapping[str, tuple[ResolvedSourceIdentity, ...]],
     confirm: set[str],
 ) -> tuple[Selection, list[CandidateEntry]]:
     """Keep every selected identity, then apply exclusions to remaining eligible candidates."""
