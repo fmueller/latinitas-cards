@@ -33,8 +33,8 @@ Import approval permits an annotation write; it does not accept a linguistic cla
 Confidence and producer kind never grant acceptance. Reference translations are
 guidance for study, not grading keys or a test of a learner's wording. Review each
 translation and morphological assertion in its Latin context before accepting it.
-Current single-word translation glosses also appear as invalid phrase candidates
-(`invalid_span`); that does not invalidate their lexical-recognition use.
+Exact word-token glosses serve lexical recognition and are not phrase candidates.
+Other malformed phrase spans remain in the report as `invalid_span` entries.
 
 ## Runnable English walkthrough
 
@@ -158,9 +158,9 @@ uv run latinitas-cards corpus-cards inspect "$work/profile.json" \
   --corpus "$work/latin.jsonl" --selection "$work/selection.json" --check "$work/initial.csv" --json
 ```
 
-Expect four eligible exercises, one per recipe, and an additional invalid-span
-phrase candidate for the one-word gloss. An existing export path is rejected,
-even for identical bytes. Choose a new path for each initial export.
+Expect four eligible exercises, one per recipe, with no extra phrase candidate
+for the one-word gloss. An existing export path is rejected, even for identical
+bytes. Choose a new path for each initial export.
 
 ## Ranking and sticky selection
 

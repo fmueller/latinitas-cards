@@ -275,7 +275,7 @@ def test_release_candidate_managed_updates_preserve_user_owned_notes() -> None:
     assert changed.personal_notes == "Review this next week"
 
 
-def test_release_metadata_and_audit_snapshot_are_versioned_for_v030() -> None:
+def test_release_metadata_and_audit_snapshot_are_versioned_for_v040_candidate() -> None:
     with (ROOT / "pyproject.toml").open("rb") as project_file:
         project = tomllib.load(project_file)
     with (ROOT / "uv.lock").open("rb") as lock_file:
@@ -286,13 +286,16 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v030() -> None:
     audit = (ROOT / "docs" / "license-compatibility-audit.md").read_text(encoding="utf-8")
     notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
 
-    assert project["project"]["version"] == "0.3.0"
-    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.3.0"
+    assert project["project"]["version"] == "0.4.0"
+    assert next(package["version"] for package in lock["package"] if package["name"] == "latinitas-cards") == "0.4.0"
+    assert re.search(r"^## \[0\.4\.0\] - \d{4}-\d{2}-\d{2}$", changelog, flags=re.MULTILINE)
+    assert changelog.split("## [Unreleased]", 1)[1].split("## [0.4.0]", 1)[0].strip() == ""
+    assert "compare/v0.4.0...HEAD" in changelog
+    assert "compare/v0.3.0...v0.4.0" in changelog
     assert "## [0.3.0] - 2026-10-20" in changelog
     assert changelog.index("## [Unreleased]") < changelog.index("## [0.3.0]")
     assert "## [0.2.1] - 2026-10-14" in changelog
     assert "## [0.2.0] - 2026-10-08" in changelog
-    assert "compare/v0.3.0...HEAD" in changelog
     assert "compare/v0.2.1...v0.3.0" in changelog
     assert "compare/v0.2.0...v0.2.1" in changelog
     assert "compare/v0.1.1...v0.2.0" in changelog
@@ -305,7 +308,11 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v030() -> None:
         "[release readiness and limits]"
         "(https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)" in readme
     )
-    assert "release-v0.3.0.md" in release
+    assert "release-v0.4.0.md" in release
+    assert "release-v0.4.0.md" in readme
+    prepared = (ROOT / "docs" / "release-v0.4.0.md").read_text(encoding="utf-8")
+    assert "0.4.0" in prepared and "candidate" in prepared
+    assert "T-173" in prepared and "pending" in prepared
     current_candidate = (ROOT / "docs" / "release-v0.3.0.md").read_text(encoding="utf-8")
     assert "0.3.0" in current_candidate
     assert "candidate" in current_candidate

@@ -1,7 +1,7 @@
 ---
 id: T-172-validate-integrated-v0-4-0-workflows-offline-and
 title: Validate integrated v0.4.0 workflows offline and prepare the 0.4.0 candidate
-status: todo
+status: completed
 priority: low
 spec_ref: specs/v0.4.0.md#goals
 dependencies:
@@ -11,7 +11,7 @@ dependencies:
     - T-161-import-aligned-parallel-translations-as-annotation
     - T-169-plan-managed-updates-for-corpus-exercises
     - T-167-deselect-and-restore-selected-corpus-exercises
-updated_at: "2026-10-27T23:10:48Z"
+updated_at: "2026-10-31T10:29:56Z"
 ---
 
 # T-172-validate-integrated-v0-4-0-workflows-offline-and Validate integrated v0.4.0 workflows offline and prepare the 0.4.0 candidate
@@ -90,8 +90,140 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
   fixture set. No goldens were recaptured. Native Linux Anki Desktop acceptance
   remains pending T-173; AnkiMobile remains unverified and outside that gate.
 
+## Resumed candidate execution — 2026-10-31
+
+- Accepted cumulative base:
+  `3a20e48c7ad1bdee8550422482f85610b8ee8f80`, containing completed T-180
+  and dependency advancement `773664893a1f8c6705bc0ff9c6469a7e34f0119d`.
+  Compared delivered T-172/T-180 notes with retained local planning edits,
+  archived the obsolete duplicates, then fast-forwarded. No parent STATE was
+  transferred. Setup and the active-spec-only start guard passed: v0.4.0,
+  zero active, only T-172 todo and T-173 blocked open; off-spec T-128/T-179
+  were unchanged. Only T-172 was started.
+- Main walkthrough passed 89 persisted public CLI calls outside the checkout,
+  recorded under `/tmp/t172-evidence/resumed-journeys4/commands.json` with
+  the reproducer `/tmp/t172-evidence/walkthrough.py`. Both text and TEI
+  lanes validate and segment, import a parallel translation patch, add reviewed
+  morphology/gloss/phrase facts through plan/approve/apply, record individual
+  claims and select/preview all four recipes. Before claim acceptance all four
+  candidates were ineligible with `open_fact`; applying a patch alone was not
+  accepted as review.
+- Known-lemma inputs now produce matching `friend` /
+  `reviewed-fixture-scope` provenance in reports and previews. Rankings change,
+  while keyed exercise fields, eligibility and selection bytes stay unchanged;
+  copied known deck/profile/manifest bytes stay unchanged. Deselect/restore,
+  export and CSV inspection passed in both lanes. Tampered CSV inspection exits
+  1 with `card_drift`, French corpus profiles exit 3, and an unknown TEI element
+  exits 3. Corrected source facts were explicitly re-reviewed after archiving
+  obsolete claim decisions; the three unchanged exercise keys report
+  `context_changed`, not silently transferred context. The phrase target changes
+  identity when its folded wording changes, as specified.
+- Corpus planning uses explicitly synthetic offline snapshots, not native
+  evidence: public `managed adopt`, `corpus-cards plan` and `managed plan`
+  produce four retained effects with zero update operations on unchanged cards.
+  The English APKG deck profile preview shows English fixed labels. This proves
+  neither native import nor scheduling/personal-data preservation.
+- Metadata TDD was repeated on this base: updated release test failed on the old
+  `0.3.0`, then passed with project/lock `0.4.0`, dated changelog, empty
+  Unreleased, candidate readiness record and README pointer. The 91 non-project
+  lock records are unchanged. The walkthrough documentation now reflects T-175's
+  existing exclusion of exact token glosses from phrase candidates; no runtime
+  change was needed.
+- `UV_OFFLINE=1 bash scripts/check-dist.sh` passed. Wheel SHA-256:
+  `063e00e1408c394b5b1e76246183ca584a834c6d5868e199dc4037a42b3d9daf`;
+  sdist SHA-256:
+  `2d13068cab0d9cbd373d496ebaf57529b2a5803637648ebb80dbd3227254d77b`.
+  `bash scripts/check-install.sh "$(uv python find 3.14)"` passed both artifacts
+  on Python 3.14.7 outside the checkout: help/version, USFX normalize/validate,
+  and absence of optional CLTK/Stanza/Torch distributions. Distribution building
+  was offline; installation used the command's normal resolver/network policy,
+  not a claim of fully offline dependency installation.
+- Initial mandatory chain stopped at a missing type annotation in the new test
+  helper; corrected it and restarted the entire chain from Ruff. Final chain,
+  simplifier/review dispositions and frozen independent checkpoint are recorded
+  below when completed. No candidate acceptance is claimed by this intermediate
+  record; native evidence remains pending T-173.
+
+## Review and final independent checkpoint
+
+- Dedicated `code-simplifier` removed only the temporary-file round trip from
+  AST detector controls; all controls and source inventory remained intact.
+  Main rechecked Ruff, mypy and the 31 targeted corpus/release tests. The
+  source-wide guard examines all 97 Python modules; its 17 exact reviewed
+  equality occurrences are validation/conflict/drift/metadata checks, not
+  learner grading. Its nine injected positive/negative controls include a
+  renamed alias and string normalization. Arbitrary interprocedural dataflow
+  is explicitly outside this bounded guard.
+- Independent conventional review used a medium-risk coordinator. Nested
+  delegation was unavailable, so main relayed separate read-only General
+  (`code-review`), combined Python/test and substantive prose (`comment-audit`)
+  specialists back to the same coordinator. General and Python found no
+  defects. The sole prose finding was that "Source corrections retain identity"
+  failed to distinguish passage identity from target-dependent exercise IDs.
+  A fresh adversarial verifier confirmed that minor non-blocking finding and
+  challenged the overall verdict; no new findings emerged. Fixed the wording
+  and had the coordinator independently verify its disposition against spec
+  and source. No required findings remain. One challenge round, no reset or
+  follow-up challenge; wording-only readback, not a new specialist fan-out.
+- Optional tests for deliberately unsupported analyzer flows and another
+  changed-target identity case were not required fixes and were not added.
+  Existing identity vectors, main persisted phrase correction and independent
+  targeted identity checks cover the relevant contract; no runtime behavior
+  changed. There are no deferred required fixes or unimplemented successors.
+- Frozen cumulative review patch SHA-256:
+  `74666a5a734216c74e210e31ca806214e29f624fc7ef46adc649515995a32cdf`.
+  After the sole prose correction:
+  `926a84a2109b8b82d8920c12d2296910f45bdf8a35f9f9f7bf5cade39ece6903`;
+  corrected manifest SHA-256:
+  `ce5262ac468e9b22392995aedce6a37e1f9568ecf84b6250872264073e2bc753`.
+  All 11 actual files matched the corrected manifest. Later additions are
+  planning/evidence/lifecycle records only, separately reconciled before close.
+- A separate final QA subagent independently derived expectations before
+  execution and passed 157 persisted public-CLI calls: 106 source-executable,
+  33 fresh installed-wheel and 18 planning/correction calls. It used its own
+  `Puella rosam portat.` fixtures, hand-computed asymmetric weights/scores,
+  independently hashed identities and source-state/CSV byte comparisons. It
+  covered all required text/TEI journeys and negatives, known report/preview
+  provenance/invariance, accepted featureless guided morphology (`no_features`
+  with retained links; lexical eligible), and unresolved morphology with no
+  invented links. The source correction retained four keys as `context_changed`;
+  explicit confirmation restored eligibility. Zero live claim decisions were
+  deleted during the documented selective obsolete-decision migration.
+- Final QA independently installed the wheel outside the checkout, confirmed
+  its import path in site-packages and matched all 97 wheel Python files to
+  source. Its exported text CSV bytes match the source-executable journey.
+  Full report/reproducers are retained in `/tmp/t172-final-qa.at7ChW/`.
+  After the wording correction, the same QA verified the exact delta, reran
+  16 affected metadata/identity/context/planning tests and accepted the corrected
+  snapshot. It added zero journey calls; the original 157 remain applicable
+  because runtime, inputs and artifact are unchanged. Corrected QA archive
+  SHA-256: `3316ca8c523ae8ebe6495f912eae0664ec48d095efdc76cec8566ac3be9f60d9`.
+- The first full exact chain passed 3,212 tests, 7 skipped, one existing
+  serializer warning (461.68s). The pre-prose-fix final exact chain also passed
+  (480.30s). The post-fix exact chain and full mise gate results follow below;
+  neither independent review nor CLI QA substitutes for those gates. Native
+  Desktop acceptance remains pending T-173; AnkiMobile remains unverified.
+
+## Final gates
+
+- Post-fix exact chain passed in order: `uv run ruff check`, `uv run mypy`,
+  `uv run pytest -v`: 3,212 passed, 7 skipped, one existing Pydantic serializer
+  warning, 447.76 seconds. Full `mise run check` also passed, including format,
+  policy and synthetic package/publish guards (3,212 passed, 7 skipped).
+- `UV_OFFLINE=1 bash scripts/check-dist.sh` passed. Both wheel and sdist passed
+  `bash scripts/check-install.sh "$(uv python find 3.14)"` outside the checkout
+  on Python 3.14.7, with optional NLP distributions absent. Dependency install
+  used the normal network policy; this is not an offline dependency-install
+  claim. Distribution and install logs remain in `/tmp/t172-evidence/`.
+- Before verification, Taskrail validation passed and status remained pinned
+  to v0.4.0 with exactly this active task and blocked T-173 open. Off-spec
+  T-128/T-179 remain untouched. Remote main still matched the accepted base.
+  Runtime source, specs and T-154 goldens remain unchanged. No native acceptance,
+  release publication or successor work is included.
+
 ## Implementation Notes
 
 - Requeued behind T-180; current-base lifecycle already records this task as
   todo. Verification notes transferred from the retained T-172 checkout;
   historical STATE and lifecycle timestamps were not applied.
+- 2026-10-31T10:29:52Z: verification pass

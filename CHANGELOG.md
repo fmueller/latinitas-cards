@@ -4,6 +4,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-31
+
 ### Fixed
 
 - `corpus-cards select` candidate reports include matching known-lemma deck source
@@ -16,6 +18,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   output recipes. Editing recipes in a saved profile still requires renewed reviews.
 - Corpus phrase candidate reports omit exact word-token glosses, which remain available
   to lexical cards. Malformed phrase spans still appear as `invalid_span` entries.
+- Corpus commands report validation errors for deeply nested JSON instead of failing
+  with an internal error.
 
 ### Added
 
@@ -42,11 +46,6 @@ Notable user-facing changes to Latinitas Cards are documented here.
   `source_extra`.
 - `annotations import-translations` turns a translation corpus aligned by citation into a
   patch of passage translations to plan, approve and apply; it reports unmatched passages.
-
-### Fixed
-
-- Corpus commands report validation errors for deeply nested JSON instead of failing
-  with an internal error.
 
 ### Limitations
 
@@ -260,7 +259,8 @@ and export them for import into Anki, without modifying the source.
 - Legacy splitting/APKG mutation, annotation, Ollama analysis, and corpus cloze
   workflows remain experimental. This release is available on GitHub, not PyPI.
 
-[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/fmueller/latinitas-cards/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/fmueller/latinitas-cards/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fmueller/latinitas-cards/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/fmueller/latinitas-cards/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/fmueller/latinitas-cards/compare/v0.1.1...v0.2.0

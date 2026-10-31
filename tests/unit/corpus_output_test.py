@@ -1,5 +1,6 @@
 """Public preview, initial export and inspection of reviewed corpus exercises."""
 
+import ast
 import json
 import os
 from pathlib import Path
@@ -310,3 +311,130 @@ def test_preview_and_claim_inspection_include_full_context(tmp_path: Path, surfa
     assert "Rhinoceros purpureus dormit." in card["answer"]
     assert "p000001 (facts)" in card["answer"]
     assert card["reasons"] == ["Artifact backing evidence is unverified without current source"]
+
+
+def translation_equalities(source: str) -> list[tuple[str, str]]:
+    """Inventory payload equality and simple local aliases, not whole-program dataflow.
+
+    Translation.text feeds Fact/Resolution.value and rendered gloss/translation
+    answers. Generic text/value names deliberately overapproximate these owners.
+    No inference across helpers, closures, arbitrary containers or dynamic keys;
+    aliases are flow-insensitive and only common string transforms are followed.
+    """
+    payloads = {"text", "value", "translation", "reference_translation", "gloss", "answer", "candidate_text"}
+    scopes: dict[str, list[ast.AST]] = {}
+
+    def collect(node: ast.AST, owner: str = "") -> None:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+            owner = f"{owner}.{node.name}".strip(".")
+        scopes.setdefault(owner, []).append(node)
+        for child in ast.iter_child_nodes(node):
+            collect(child, owner)
+
+    collect(ast.parse(source))
+    found: list[tuple[str, str]] = []
+    for owner, nodes in scopes.items():
+        aliases = payloads.copy()
+
+        def is_payload(node: ast.AST, names: set[str]) -> bool:
+            if isinstance(node, ast.Name):
+                return node.id in names
+            if isinstance(node, ast.Attribute):
+                return node.attr in payloads
+            if isinstance(node, ast.Subscript):
+                return isinstance(node.slice, ast.Constant) and node.slice.value in payloads
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name) and node.func.id == "str" and node.args:
+                    return is_payload(node.args[0], names)
+                if isinstance(node.func, ast.Attribute):
+                    if node.func.attr in {"strip", "lower", "casefold", "replace"}:
+                        return is_payload(node.func.value, names)
+                    return (
+                        node.func.attr == "get"
+                        and bool(node.args)
+                        and isinstance(node.args[0], ast.Constant)
+                        and node.args[0].value in payloads
+                    )
+            return False
+
+        while True:
+            previous = aliases.copy()
+            for node in nodes:
+                if (
+                    isinstance(node, ast.Assign | ast.AnnAssign | ast.NamedExpr)
+                    and node.value is not None
+                    and is_payload(node.value, aliases)
+                ):
+                    targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                    aliases.update(target.id for target in targets if isinstance(target, ast.Name))
+            if aliases == previous:
+                break
+        found.extend(
+            (owner, ast.unparse(node))
+            for node in nodes
+            if isinstance(node, ast.Compare)
+            and any(isinstance(op, ast.Eq | ast.NotEq) for op in node.ops)
+            and any(is_payload(operand, aliases) for operand in [node.left, *node.comparators])
+        )
+    return found
+
+
+def test_no_translation_string_grading_in_source() -> None:
+    root = Path(__file__).resolve().parents[2] / "src"
+    found = [
+        (str(path.relative_to(root)), owner, expression)
+        for path in root.rglob("*.py")
+        for owner, expression in translation_equalities(path.read_text())
+    ]
+    # Exact expression/owner inventory, including counts: no module is exempt.
+    reviewed = [
+        # Persisted export drift, never learner-answer grading.
+        ("corpus_output.py", "inspect_corpus", "row.get(field) != value"),
+        ("review_inspection.py", "inspect_workspace", "current.get(field, '') != value"),
+        # Evidence freshness, corpus identity/NFC and required morphology validation.
+        ("principal_relationships.py", "compare_principal_parts", "item.claim.candidate_text != part.display"),
+        ("corpus_validation.py", "validate_records", "raw.get('corpus_id') != corpus_id"),
+        ("corpus_validation.py", "validate_records", "text != nfc"),
+        ("phrase_inputs.py", "bind_selections", "getattr(form.features, feature) != value"),
+        # Annotation conflicts and retained segmentation differences.
+        ("annotation_plans.py", "evaluate_operations", "row.value != record.value"),
+        ("commands/annotations.py", "segment.body.additions", "record.value != value"),
+        # Authored-import emptiness/conflicts and offline destination reconciliation.
+        ("authored_identity.py", "reconcile_authored_import", "value == ''"),
+        ("authored_identity.py", "reconcile_authored_import", "previous[0] != value"),
+        ("destination_reconciliation.py", "reconcile_values", "value != d"),
+        ("managed_plans.py", "compose_plan", "d == value"),
+        ("managed_plans.py", "compose_plan", "d == value"),
+        # Import controls, canonical role labels, XML dispatch and metadata conflicts.
+        (
+            "preview_export.py",
+            "_validate_import_metadata",
+            "encode_unsafe_controls(value, preserve_line_breaks=False) != value",
+        ),
+        ("claim_sidecar.py", "record_batch", "claim.value != base.feature"),
+        ("usfx_adapter.py", "legacy_projection", "initial_tag == 've'"),
+        ("tei_adapter.py", "build_tei", "value != override"),
+    ]
+    assert sorted(found) == sorted((f"latinitas_cards/{module}", owner, expr) for module, owner, expr in reviewed)
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ("return renamed.text == submitted", ["renamed.text == submitted"]),
+        (
+            "wording = candidate.resolutions[-1].value\ncopy = str(wording).casefold()\nreturn submitted != copy",
+            ["submitted != copy"],
+        ),
+        ("alias = record['value']['text']\nreturn alias == submitted", ["alias == submitted"]),
+        ("alias: str = record.get('text')\nreturn '' == alias == submitted", ["'' == alias == submitted"]),
+        ("return translation.language == 'en'", []),
+        ("return annotation.layer == 'translation'", []),
+        ("return len(translation) == 1", []),
+        ("return f'<div>{renamed.text}</div>'", []),
+        ("# translation == submitted\nreturn 'translation == submitted'", []),
+    ],
+)
+def test_translation_equality_controls(body: str, expected: list[str]) -> None:
+    source = "def grade(candidate, submitted):\n" + "\n".join(f"    {line}" for line in body.splitlines())
+    assert translation_equalities(source) == [("grade", expression) for expression in expected]

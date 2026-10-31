@@ -43,8 +43,9 @@ translations guide study, not automatic grading. Initial CSV import can create n
 managed CSV updates cannot create or retire them. See the
 [complete TEI subset and exclusions](https://github.com/fmueller/latinitas-cards/blob/main/docs/normalized-corpus.md#recognized-tei-elements)
 and [agent contract](https://github.com/fmueller/latinitas-cards/blob/main/docs/agent-cli-contract.md) for schemas, diagnostics and reasons.
-This is unreleased implementation work, not completed native acceptance or release
-readiness. The maintainer release gate remains blocked.
+The checkout prepares the unreleased 0.4.0 candidate; see its
+[offline validation and readiness limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.4.0.md).
+Native acceptance and publication remain pending the blocked maintainer release gate.
 
 Profiles select recipes explicitly; the approved representative profile uses
 `principal_part_completion` and `principal_part_recognition`. It uses the semantic role
