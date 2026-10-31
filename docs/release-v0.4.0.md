@@ -62,16 +62,60 @@ equality checks involving translation payloads, with exact reviewed exceptions
 for validation, conflict and drift checks and injected grading controls. It is
 a bounded architectural guard, not arbitrary whole-program dataflow proof.
 
-## Readiness limits and pending native evidence
+## Readiness evidence and limits
 
-All native rows in the [Linux Anki Desktop acceptance kit](native-v040-acceptance.md)
-remain **pending T-173**. Browser previews, synthetic snapshots, backend fixtures,
-CSV inspection and passing automated tests do not substitute for them. The gate
+The [Linux Anki Desktop acceptance kit](native-v040-acceptance.md) defines the
+required rows; formal gate disposition remains maintainer-owned. Browser previews,
+synthetic snapshots, backend fixtures, CSV inspection and passing automated tests
+do not substitute for actual native evidence. The gate
 requires manual corpus-v1 setup, German/English four-recipe import and re-import,
 first-field matching with Personal Notes unmapped, actual fronts/answers in
 light/dark/auto with light-night-light toggles, English deck-first samples,
 and real Perseus Caesar BG/Aeneid smoke runs. AnkiMobile is outside that gate
-and remains unverified, not compatible by assertion.
+and, together with real scheduled collections/history, explicitly out of scope
+for v0.4.0 release verification and readiness, not a blocker. Both remain
+unverified, not compatible or schedule-preserving by assertion. The required
+Desktop checks use isolated synthetic profiles without personal accounts or sync.
+
+### Candidate-bound verification, 2026-10-31
+
+The fetched `origin/main` candidate is
+[`041989c`](https://github.com/fmueller/latinitas-cards/commit/041989c54f32ed3a0ebc0481fd81776f2c368396),
+identical to the [native-tested revision](https://ampcode.com/threads/T-01a1919f-f44c-7114-99d0-a46e95a25537).
+That retained evidence records official Anki Desktop 26.09.3 on Debian 12 Wayland,
+342 inspected states, 12 synthetic notes and 19 new/unanswered cards. It includes
+import/update/repeat, Personal Notes and identity checks, and native theme toggles.
+It is reused evidence, not a fresh native rerun or proof about real review history.
+
+Real-source smoke tests used PerseusDL `canonical-latinLit` revision
+[`8b536bd`](https://github.com/PerseusDL/canonical-latinLit/tree/8b536bdf3ed1f43494055efe112433b4a58eab67):
+
+| Source | SHA256 of unmodified XML | Normalized passages |
+| --- | --- | ---: |
+| `data/phi0448/phi001/phi0448.phi001.perseus-lat2.xml` | `15ec3ef2a36352742ddb75d4f7da23a143899b6b60ee3a7ca3192d4917ca1568` | 2,150 |
+| `data/phi0690/phi003/phi0690.phi003.perseus-lat2.xml` | `e639e6a0e27427ef28031850c4d73aa2b63b9f2cf8a5cf584b37685c52fb874c` | 9,843 |
+
+Both `corpus normalize --adapter tei` and `corpus validate --json` exited 0.
+Use valid corpus IDs `phi0448-phi001` and `phi0690-phi003` (dots are not allowed).
+Independent XML extraction matched every canonical passage and reference. The
+Aeneid has 9,897 source lines: 54 editorially deleted lines are omitted from
+canonical passages with warnings and retained in notes. Source gaps at Caesar
+8.55.2 and Aeneid 12.732 also warn; neither passage is dropped.
+
+The corpus walkthrough and native/annotation fixtures use stipulated synthetic
+German/English translations, not an identified external translated edition.
+Mock fixture licence metadata is not rights evidence for a real edition.
+The downloaded Latin XML remains local test data, not bundled or redistributed:
+Caesar's header declares CC BY-SA 4.0; Aeneid has no licence element, so retain
+the repository's CC BY-SA 4.0 default and varying-rights caveat rather than infer
+blanket public domain. Future real parallel translations require their own
+translator, edition, source and rights review. This scoped review does not grant
+redistribution rights or certify linguistic accuracy.
+
+These observations supply test evidence, not human readiness approval or separate
+permission to publish. T-173 remains blocked and unchanged. Future release specs
+do not yet inherit a complete candidate-bound media/independent-QA approval process;
+that policy work needs a separately approved change, not an implied skill update.
 
 Other limits remain:
 

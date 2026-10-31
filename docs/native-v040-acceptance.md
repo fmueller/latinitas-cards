@@ -3,11 +3,15 @@
 ## Scope and evidence boundary
 
 This is offline preparation for [Native Acceptance](../specs/v0.4.0.md#native-acceptance),
-not a native result or release approval. All native rows below are **pending**.
+not a native result or release approval. The rows below define the checklist;
+candidate-bound results are recorded separately in the
+[readiness evidence](release-v0.4.0.md#candidate-bound-verification-2026-10-31).
 Browser previews and backend fixtures do not substitute for actual Linux Anki
-Desktop evidence. AnkiMobile is outside the gate and remains **unverified**;
-this is not a compatibility claim. Do not use a real profile, account, sync,
-device, scheduled collection or user data for this kit.
+Desktop evidence. AnkiMobile and real scheduled collections/history are explicitly
+**out of scope for v0.4.0 release verification and readiness**, not blockers.
+They remain unverified; this is not a compatibility or schedule-preservation claim.
+Do not use a real profile, account, sync, device, scheduled collection or user data
+for this kit.
 
 The structure follows the v0.2.1 [Desktop checklist](morphology-native-verification.md#desktop-checklist-recorded-2026-10-13-now-superseded-by-replay-3):
 pin source/setup, isolate synthetic data, import through the native dialog,
@@ -95,7 +99,7 @@ the other layouts use their current registered stylesheet. Delete any default
 Basic card type not in the registry. Record field/template/CSS hashes from the
 manifest and manually compare installed content. Do not rebind existing cards.
 
-## Pending native checklist
+## Native checklist
 
 Record source commit, manifest digest, date/time, Linux distribution, actual
 Anki Desktop version/build, installation method and evidence paths. Record
@@ -104,7 +108,8 @@ needed. Do not mark a row passed from browser screenshots or automated tests.
 
 1. **Manual corpus-v1 setup:** follow the exact fields, four guarded templates
    and CORPUS_CARD_CSS above in the isolated synthetic profile. Verify names,
-   order and hashes in the actual native editor. All setup evidence is pending.
+   order and hashes in the actual native editor. Record setup observations in
+   the candidate-bound report; this checklist itself records no pass or fail.
 2. **Initial German and English import:** import both light CSVs through the
    native dialog with comma delimiter, HTML enabled, the exact dedicated note
    type and deck directives, LatinitasID mapped to the first field, all managed

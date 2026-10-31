@@ -312,7 +312,9 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v040_candidate() 
     assert "release-v0.4.0.md" in readme
     prepared = (ROOT / "docs" / "release-v0.4.0.md").read_text(encoding="utf-8")
     assert "0.4.0" in prepared and "candidate" in prepared
-    assert "T-173" in prepared and "pending" in prepared
+    assert "T-173 remains blocked and unchanged" in prepared
+    assert "not human readiness approval or separate" in prepared
+    assert "real scheduled collections/history, explicitly out of scope" in prepared
     current_candidate = (ROOT / "docs" / "release-v0.3.0.md").read_text(encoding="utf-8")
     assert "0.3.0" in current_candidate
     assert "candidate" in current_candidate

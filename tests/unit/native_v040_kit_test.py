@@ -106,7 +106,10 @@ def test_offline_kit_retains_update_identity_and_covers_native_matrix(tmp_path: 
         assert hashlib.sha256((output / name).read_bytes()).hexdigest() == digest
     checklist = (output / "CHECKLIST.md").read_text()
     assert "AnkiMobile remains unverified" in checklist
-    assert "All native rows below are **pending**" in checklist
+    assert "candidate-bound results are recorded separately" in checklist
+    assert "release-v0.4.0.md#candidate-bound-verification-2026-10-31" in checklist
+    assert "out of scope for v0.4.0 release verification and readiness" in checklist
+    assert "not a compatibility or schedule-preservation claim" in checklist
     second = tmp_path / "second-kit"
     repeated = subprocess.run(
         [sys.executable, str(ROOT / "scripts/build-v040-native-kit.py"), str(second)],

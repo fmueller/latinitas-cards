@@ -55,6 +55,14 @@ alone as evidence.
 
 ## User review and native Anki boundary
 
+For v0.4.0, the [versioned acceptance scope](../specs/v0.4.0.md#native-acceptance)
+and [Linux kit](native-v040-acceptance.md) govern readiness instead of this legacy
+checklist. AnkiMobile and real scheduled collections/history are explicitly out
+of scope, not readiness blockers. They remain unverified; no compatibility or
+real-schedule preservation is asserted. Use isolated synthetic profiles, without
+personal accounts, sync or user data. Later releases must state their own scope;
+this clarification does not silently change future product contracts.
+
 Before publication, the user should perform the remaining manual review in a disposable
 Anki collection:
 
