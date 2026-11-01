@@ -1,7 +1,7 @@
 ---
 id: T-173-publish-v0-4-0-maintainer-release-gate
 title: Publish v0.4.0 (maintainer release gate)
-status: in_progress
+status: completed
 priority: low
 spec_ref: specs/v0.4.0.md#delivery-order
 dependencies:
@@ -24,7 +24,7 @@ dependencies:
     - T-169-plan-managed-updates-for-corpus-exercises
     - T-170-document-corpus-first-tei-and-english-workflows
     - T-171-prepare-the-v0-4-0-native-acceptance-kit
-updated_at: "2026-11-01T08:08:22Z"
+updated_at: "2026-11-01T09:59:55Z"
 ---
 
 # T-173-publish-v0-4-0-maintainer-release-gate Publish v0.4.0 (maintainer release gate)
@@ -52,9 +52,27 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 
 ## Verification Notes
 
-- Not started.
+- Publication succeeded. See `docs/release-v0.4.0.md` for candidate,
+  native/source boundaries, workflow, approval and every-file hash evidence.
+- Final evidence validation: exact Ruff, mypy, pytest chain passed with
+  3,232 tests passed, seven skipped and one existing serializer warning
+  (593.63 seconds). Independent review reported no remaining findings.
 
 ## Implementation Notes
 
 - 2026-10-27T23:11:02Z: maintainer release gate
 - 2026-11-01T08:08:22Z: 2026-11-01: maintainer authorized the full v0.4.0 release after all other active-spec tasks completed; confirmed current PyPI publisher fmueller/latinitas-cards release.yml environment pypi and approved README/docs corrections. Existing protected tag-only workflow remains mandatory.
+- Released candidate `3d51ee680ea68ef9d521970178706cc3eb977d57`; annotated tag
+  object `4e05ec66bf23f8f4e012b83767293ccc6b527f82` remains unchanged. All eight
+  candidate checks passed. Release run 41290520404 passed all five jobs,
+  including exact-version PyPI installation/help and absence of NLP extras.
+- The integration could not approve the environment (HTTP 403); the maintainer
+  reported personally approving it, then protected publication proceeded.
+  Approval-history API returned an empty list, not independent actor evidence.
+  Every PyPI wheel/sdist filename and SHA256 matched the reviewed build
+  artifact and independently downloaded registry bytes before GitHub release.
+- Maintainer accepted existing low-severity Dependabot alert 146 risk before
+  tagging. Its package/manifest/exposure remain unverified after API HTTP 403;
+  no dependency or alert state changed. No blanket safety claim is made.
+- 2026-11-01T09:59:55Z: verification pass
+- 2026-11-01T09:59:55Z: Published v0.4.0 on PyPI and GitHub after maintainer protected approval; exact artifact/registry file hashes match, full final validation and independent review passed, evidence recorded without moving tag. Existing low alert146 risk accepted with scope unverified; active spec stays v0.4.0.

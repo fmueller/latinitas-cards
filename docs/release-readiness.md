@@ -3,10 +3,9 @@
 This document records the technical release-candidate boundary. It is not a publication
 approval or a native Anki test report.
 
-Current candidate: [v0.4.0 readiness, accepted native evidence and limits](release-v0.4.0.md).
-Its scoped Linux Anki Desktop acceptance is recorded; publication remains pending
-the authorized T-173 release procedure, not further native testing.
-Current published release: [v0.3.0 publication evidence](release-v0.3.0.md).
+Current published release: [v0.4.0 publication, accepted native evidence and limits](release-v0.4.0.md).
+Its scoped Linux Anki Desktop acceptance and verified PyPI/GitHub publication
+are recorded separately from the historical v0.1.0 checks below.
 The historical v0.1.0 record below is unchanged.
 
 ## Version and candidate status

@@ -25,7 +25,8 @@ This repository uses versioned specs under `specs/`.
   runnable examples and the initial-import/adoption/managed-update boundary.
   Scoped Linux Anki Desktop acceptance and integrated readiness are accepted;
   [the evidence and limits](../docs/release-v0.4.0.md) distinguish their revisions.
-  Publication remains pending the maintainer-authorized T-173 release procedure.
+  v0.4.0 is released on PyPI and GitHub under the maintainer-authorized T-173
+  procedure; publication and artifact-hash evidence are recorded in that guide.
   This status does not relax the Fixed Contracts or activate a future spec.
 - `specs/v0.5.0.md` is planned and inactive. It adds low-review forms and controlled
   phrase practice, the shared library/LLM verification and automatic-acceptance pipeline,

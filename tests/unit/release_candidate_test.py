@@ -318,7 +318,10 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v040_candidate() 
     prepared = (ROOT / "docs" / "release-v0.4.0.md").read_text(encoding="utf-8")
     assert "0.4.0" in prepared and "candidate" in prepared
     assert "maintainer confirmed the current PyPI Trusted Publisher" in prepared
-    assert "no v0.4.0 tag or distribution has been published" in prepared
+    assert "**Published:**" in prepared
+    assert "https://github.com/fmueller/latinitas-cards/releases/tag/v0.4.0" in prepared
+    assert "https://pypi.org/project/latinitas-cards/0.4.0/" in prepared
+    assert "verify-pypi" in prepared
     assert "real scheduled collections/history, explicitly out of scope" in prepared
     current_candidate = (ROOT / "docs" / "release-v0.3.0.md").read_text(encoding="utf-8")
     assert "0.3.0" in current_candidate
@@ -331,6 +334,7 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v040_candidate() 
     assert "v0.2.1 is released" in spec_index
     assert "`specs/v0.3.0.md` defines the completed release spec" in spec_index
     assert "`specs/v0.4.0.md` is the active implementation spec" in spec_index
+    assert "v0.4.0 is released" in spec_index
     assert "v0.3.0 is released" in spec_index
     assert "it is not yet released" not in spec_index
     assert "**Published:**" in current_candidate

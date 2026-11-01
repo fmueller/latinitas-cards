@@ -1,14 +1,85 @@
-# v0.4.0 release preparation — 2026-11-01
+# v0.4.0 publication — 2026-11-01
 
-This is an **unreleased candidate**. The published package remains v0.3.0.
+**Published:** [GitHub release](https://github.com/fmueller/latinitas-cards/releases/tag/v0.4.0)
+and [PyPI 0.4.0](https://pypi.org/project/latinitas-cards/0.4.0/).
+
+## Publication receipt
+
+- Released candidate:
+  [`3d51ee6`](https://github.com/fmueller/latinitas-cards/commit/3d51ee680ea68ef9d521970178706cc3eb977d57).
+  Exact-head [Build](https://github.com/fmueller/latinitas-cards/actions/runs/41289777048)
+  and [CodeQL](https://github.com/fmueller/latinitas-cards/actions/runs/41289776580)
+  passed all eight checks, including Python 3.13/3.14 tests and packaging.
+- One annotated `v0.4.0` tag was pushed. Tag object
+  `4e05ec66bf23f8f4e012b83767293ccc6b527f82` peels to the candidate above;
+  the tag was not moved or recreated. Runtime source, project version and lock
+  remained unchanged from implementation base `bf1358a` during preparation.
+- [Release run 41290520404](https://github.com/fmueller/latinitas-cards/actions/runs/41290520404),
+  attempt 1, passed all five jobs: `build`, `verify (3.13)`, `verify (3.14)`,
+  `publish` and `verify-pypi`. The attempt-specific jobs endpoint and completed
+  job logs confirmed the final result; earlier reads briefly lacked the last
+  job and returned a PyPI 404, so those preliminary results were not accepted.
+- The integration's normal deployment approval POST returned HTTP 403. No
+  approval retry or protection bypass was attempted. The maintainer then
+  reported personally approving `pypi`; the pending deployment cleared and
+  publication proceeded under the unchanged required-reviewer/tag-only rules.
+  The approval-history API returned an empty list, so this record does not
+  claim that API independently identified the human approver.
+- `publish` used OIDC and the same verified `dist` artifact, without rebuilding.
+  [Artifact 13077152205](https://github.com/fmueller/latinitas-cards/actions/runs/41290520404/artifacts/13077152205)
+  was downloaded before approval; both package hashes matched the build logs.
+  Both actual workflow packages contain the tagged README byte-for-byte as
+  their Markdown long description.
+- `verify-pypi` installed exactly `latinitas-cards==0.4.0` from PyPI, ran CLI
+  help and passed the CLTK/Stanza/PyTorch absence assertions. Only afterward,
+  both PyPI files were independently downloaded and hashed. Their exact
+  filename set and SHA256 values equal the reviewed workflow artifact and
+  [PyPI JSON metadata](https://pypi.org/pypi/latinitas-cards/0.4.0/json):
+
+| File | SHA256: artifact = PyPI JSON = downloaded PyPI bytes |
+| --- | --- |
+| [Wheel](https://files.pythonhosted.org/packages/cd/12/2b984256fa2d84c1b270fd9542c80b953e173191aef71904d31c0211eef4/latinitas_cards-0.4.0-py3-none-any.whl) | `b549cf4850b199b79462f95d5090145f2cbecb04d6c2c9ed782953df99692403` |
+| [Source distribution](https://files.pythonhosted.org/packages/dd/5e/d5b48ec7df677a46ca36c06920962085bcecaf506bcc9031ac0c6943f64a/latinitas_cards-0.4.0.tar.gz) | `817c671513e75b7650369ec20af9173d214472e1bf3e6abb98caa39c8caa04de` |
+
+Every published wheel/sdist matched, with no extra files. The non-draft,
+non-prerelease GitHub release was created only after that comparison, at
+2026-11-01T09:45:06Z. No TestPyPI, manual upload, dispatch, republish, dependency
+change or protection change was used.
+
+The maintainer explicitly accepted the existing GitHub-reported low-severity
+[Dependabot alert 146](https://github.com/fmueller/latinitas-cards/security/dependabot/146)
+risk before tagging. The integration received HTTP 403 reading its details;
+the affected package, manifest and runtime exposure remain unverified. This
+is a scoped risk acceptance, not a fix, dismissal or assertion of no exposure.
+The dependency and alert state were not changed.
+
+Preparation validation on the released candidate passed the exact Ruff, mypy,
+pytest chain: 3,232 passed, seven skipped, one existing serializer warning
+(585.40 seconds). The main push's full pre-push suite also passed (584.27
+seconds). Independent general, release/prose and adversarial review resolved
+the adjacent installation-documentation test's obsolete v0.3.0 expectations;
+no findings remained. The installed-wheel README setup/preview/export/repeat
+flow ran on an isolated supplied APKG, with unchanged source and identical
+repeat CSV. CommonMark rendering and all 50 README repository links/anchors
+passed. These preparation checks are distinct from the final evidence-commit
+validation and CI.
+
+The follow-up evidence change passed the full Ruff, mypy and pytest chain:
+3,232 passed, seven skipped, one existing serializer warning (593.63 seconds).
+Dedicated simplification and independent general/prose/adversarial reviews
+reported no remaining findings. Evidence-commit CI belongs to that later main
+revision, not the unchanged released tag.
+
+## Authorization and preparation
+
 The maintainer authorized the T-173 gate and v0.4.0 publication on 2026-11-01,
 including release preparation, one annotated tag, protected-environment approval
-where permitted, and a publication evidence commit. Publication still requires
-the prerequisites and ordered checks in [the runbook](releasing.md).
+where permitted, and a publication evidence commit. The prerequisites and
+ordered checks follow [the runbook](releasing.md).
 The maintainer confirmed the current PyPI Trusted Publisher and approved the
 bounded README/docs refresh before continuing the release. At preparation time,
-no v0.4.0 tag or distribution has been published. T-173 completion requires
-successful publication and the follow-up evidence below, not authorization alone.
+no v0.4.0 tag or distribution existed. T-173 completion requires final evidence
+validation as well as publication, not authorization alone.
 
 ## Publication preflight, 2026-11-01
 
@@ -16,7 +87,7 @@ successful publication and the follow-up evidence below, not authorization alone
   initially clean. Taskrail 0.4.0 validation passed with `specs/v0.4.0.md` active
   and T-173 the only open task on that spec. Future-spec tasks remain excluded.
 - Read-only checks found no remote `v0.4.0` tag or GitHub release. The exact
-  PyPI 0.4.0 JSON endpoint returned 404; the project reports 0.3.0 as latest.
+  PyPI 0.4.0 JSON endpoint returned 404; the project reported 0.3.0 as latest.
 - GitHub environment `pypi` requires reviewer `fmueller`, permits self-review,
   disables administrator bypass, and has exactly one deployment policy:
   `v*` of type `tag`, with no branch policy. These settings were not changed.
@@ -37,8 +108,8 @@ The accepted implementation base is
 including readable localized source details and nested technical provenance.
 Release preparation changes documentation and release records, not runtime code.
 Package and project lock metadata are 0.4.0. The final tag candidate and its
-exact-head Build/CodeQL results must be recorded after preparation is committed;
-the implementation base is not a claim about that future candidate's CI.
+exact-head Build/CodeQL results are recorded above; the implementation base
+is not the release candidate's commit identity.
 
 v0.4.0 adds corpus-first generation with four reviewed context/translation
 recipes, deterministic ranked budgets and sticky selections, a bounded
