@@ -1,7 +1,7 @@
 ---
 id: T-173-publish-v0-4-0-maintainer-release-gate
 title: Publish v0.4.0 (maintainer release gate)
-status: blocked
+status: in_progress
 priority: low
 spec_ref: specs/v0.4.0.md#delivery-order
 dependencies:
@@ -24,7 +24,7 @@ dependencies:
     - T-169-plan-managed-updates-for-corpus-exercises
     - T-170-document-corpus-first-tei-and-english-workflows
     - T-171-prepare-the-v0-4-0-native-acceptance-kit
-updated_at: "2026-10-27T23:11:02Z"
+updated_at: "2026-11-01T08:08:22Z"
 ---
 
 # T-173-publish-v0-4-0-maintainer-release-gate Publish v0.4.0 (maintainer release gate)
@@ -57,3 +57,4 @@ Fixed Contracts in `specs/v0.4.0.md` are binding and take precedence over this n
 ## Implementation Notes
 
 - 2026-10-27T23:11:02Z: maintainer release gate
+- 2026-11-01T08:08:22Z: 2026-11-01: maintainer authorized the full v0.4.0 release after all other active-spec tasks completed; confirmed current PyPI publisher fmueller/latinitas-cards release.yml environment pypi and approved README/docs corrections. Existing protected tag-only workflow remains mandatory.

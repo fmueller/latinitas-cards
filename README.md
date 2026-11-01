@@ -4,19 +4,21 @@
 [![Python 3.13 | 3.14](https://img.shields.io/badge/python-3.13%20%7C%203.14-blue)](https://www.python.org/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-green)](https://github.com/fmueller/latinitas-cards/blob/main/LICENSE)
 
-Latinitas Cards is an offline-first CLI for turning an existing Latin Anki deck or
-CSV export into repeatable principal-part study cards. It inspects a source, saves a
-confirmed profile, previews generated cards, and writes a deterministic UTF-8 Anki
-text-import CSV without modifying the source.
+Latinitas Cards is an offline-first CLI for building Latin Anki study cards from
+existing decks or reviewed corpus annotations. It supports deck-first principal-part,
+phrase and form-parsing workflows, and corpus-first exercises with German or English
+study content. Confirm profiles and annotation claims, preview cards, then export
+repeatable UTF-8 Anki text-import CSVs without modifying source decks or texts.
 
-> **Current release:** [v0.3.0](https://github.com/fmueller/latinitas-cards/releases/tag/v0.3.0),
-> available on [PyPI](https://pypi.org/project/latinitas-cards/0.3.0/).
-> See [release readiness and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)
-> for the verified publication evidence and compatibility boundaries.
+> **This version:** 0.4.0. See
+> [release readiness and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.4.0.md)
+> for publication status, accepted Linux Anki Desktop evidence and compatibility boundaries.
+> Start with the [corpus-first walkthrough](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md)
+> or the [deck-first quick start](#quick-start).
 
 ## Workflow
 
-The released deck-generation workflow is **deck-first**:
+The **deck-first** workflow reuses your existing vocabulary:
 
 1. Inspect a CSV, APKG, or COLPKG source and confirm its field mapping.
 2. Save the human-readable, versioned profile and reuse it on later runs.
@@ -34,7 +36,7 @@ eligibility checks, deterministic approved CSV export and managed retained-slot 
 Initial creation is manual CSV import plus explicit adoption; withdrawal remains a
 blocked plan requiring reviewed manual resolution, not CSV omission or automatic retirement.
 
-The active v0.4.0 checkout also supports [corpus-first cards](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md):
+The **[corpus-first workflow](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md)** starts from reviewed Latin passages:
 normalize Latin text, USFX or a supported TEI edition, import aligned translations,
 review annotation claims, rank candidates and keep a sticky selection, then preview
 and export a new corpus CSV. The walkthrough covers all four recipes, English output,
@@ -43,9 +45,12 @@ translations guide study, not automatic grading. Initial CSV import can create n
 managed CSV updates cannot create or retire them. See the
 [complete TEI subset and exclusions](https://github.com/fmueller/latinitas-cards/blob/main/docs/normalized-corpus.md#recognized-tei-elements)
 and [agent contract](https://github.com/fmueller/latinitas-cards/blob/main/docs/agent-cli-contract.md) for schemas, diagnostics and reasons.
-The checkout prepares the unreleased 0.4.0 candidate; see its
-[offline validation and readiness limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.4.0.md).
-Native acceptance and publication remain pending the blocked maintainer release gate.
+Cards show readable author, work and passage citations, with expandable source details
+and lossless technical provenance. Verified links are limited to the supported Caesar
+and Aeneid editions/passages; an online passage link does not establish equality with
+the pinned source bytes or grant redistribution rights. See the
+[citation and provenance guide](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md#citations-and-source-provenance)
+and [v0.4.0 evidence and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.4.0.md).
 
 Profiles select recipes explicitly; the approved representative profile uses
 `principal_part_completion` and `principal_part_recognition`. It uses the semantic role
@@ -67,8 +72,9 @@ The default install needs no CLTK, Stanza or PyTorch.
 
 ### PyPI installation
 
-[Latinitas Cards 0.3.0 is published on PyPI](https://pypi.org/project/latinitas-cards/0.3.0/).
-Choose one isolated install:
+Choose one isolated install from [PyPI](https://pypi.org/project/latinitas-cards/).
+These commands install the latest published version; check `latinitas-cards --version`
+and the release record above when comparing it with this 0.4.0 documentation.
 
 ```bash
 uv tool install latinitas-cards
@@ -94,11 +100,11 @@ your own USFX path and optionally `--descriptor FILE` for corpus metadata.
 ### Git development checkout
 
 The development checkout remains available with [uv](https://docs.astral.sh/uv/).
-The command below checks out the published v0.3.0 tag. To work on the latest
-development version instead, clone without `--branch v0.3.0`.
+The command below checks out the v0.4.0 release tag once available. To work on
+the latest development version instead, clone without `--branch v0.4.0`.
 
 ```bash
-git clone --branch v0.3.0 --depth 1 https://github.com/fmueller/latinitas-cards.git
+git clone --branch v0.4.0 --depth 1 https://github.com/fmueller/latinitas-cards.git
 cd latinitas-cards
 uv sync --locked
 uv run latinitas-cards --help
@@ -140,18 +146,18 @@ resolution; use only trusted indexes and review the resolved packages.
 
 ## Quick start
 
-The repository's only deck fixture is a committed, sanitized APKG used for smoke
-tests. It is not a private university deck or a product-specific input. Replace the
-fixture path below with your own source when using the workflow:
+Use the installed CLI and your own Latin APKG, COLPKG or CSV source. Replace the
+example source path below; the package does not include repository test fixtures.
+For corpus inputs instead, follow the corpus-first walkthrough linked above.
 
 ```bash
 workdir="$(mktemp -d)"
 profile="$workdir/profile.json"
 output="$workdir/generated-principal-parts.csv"
-source="tests/fixtures/representative-university-latin.apkg"
+source="/path/to/your/latin-deck.apkg"
 
 # Propose, explicitly confirm, and save a reusable profile.
-uv run latinitas-cards setup \
+latinitas-cards setup \
   --input "$source" \
   --profile "$profile" \
   --recipe principal_part_completion \
@@ -161,7 +167,7 @@ uv run latinitas-cards setup \
   --json
 
 # Preview without writing the generated CSV.
-uv run latinitas-cards preview \
+latinitas-cards preview \
   --input "$source" \
   --profile "$profile" \
   --limit 2
@@ -169,7 +175,7 @@ uv run latinitas-cards preview \
 # Write deterministic UTF-8 Anki text-import CSV. The first export needs
 # --approve-fresh-import; later exports reuse the checkpoint state that is
 # saved next to the source as <source>.latinitas-cards.json.
-uv run latinitas-cards generate \
+latinitas-cards generate \
   --input "$source" \
   --profile "$profile" \
   --output "$output" \
@@ -186,7 +192,7 @@ prompt — before a profile can be saved. Repeat `--role` in semantic order when
 correcting a proposal, for example:
 
 ```bash
-uv run latinitas-cards setup \
+latinitas-cards setup \
   --input source.csv \
   --profile .latinitas/profile.json \
   --role present_infinitive \
@@ -383,6 +389,11 @@ re-extraction preserves keys and skip decisions and reports new/changed/missing 
 
 ## Documentation
 
+- [Corpus-first cards: reviewed inputs, ranking, selection and export](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md)
+- [v0.4.0 readiness, native acceptance, publication status and limits](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.4.0.md)
+- [Corpus citations and source provenance](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md#citations-and-source-provenance)
+- [Normalized corpus formats and supported TEI subset](https://github.com/fmueller/latinitas-cards/blob/main/docs/normalized-corpus.md)
+- [Agent CLI contract](https://github.com/fmueller/latinitas-cards/blob/main/docs/agent-cli-contract.md)
 - [Maintainer PyPI release runbook](https://github.com/fmueller/latinitas-cards/blob/main/docs/releasing.md)
 - [Changelog](https://github.com/fmueller/latinitas-cards/blob/main/CHANGELOG.md)
 - [v0.1.0 release readiness](https://github.com/fmueller/latinitas-cards/blob/main/docs/release-readiness.md)

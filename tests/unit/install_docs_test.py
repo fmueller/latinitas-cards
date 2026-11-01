@@ -21,10 +21,13 @@ def test_installation_guide() -> None:
         "pip install --upgrade latinitas-cards",
         "Python 3.13 or 3.14",
         "Linux and macOS are supported; Windows is not supported",
-        "https://pypi.org/project/latinitas-cards/0.3.0/",
+        "https://pypi.org/project/latinitas-cards/",
+        "These commands install the latest published version",
+        "latinitas-cards --version",
         "### PyPI installation\n",
         "development checkout",
-        "git clone --branch v0.3.0 --depth 1 https://github.com/fmueller/latinitas-cards.git",
+        "git clone --branch v0.4.0 --depth 1 https://github.com/fmueller/latinitas-cards.git",
+        "release tag once available",
         "default install needs no CLTK, Stanza or PyTorch",
         "Both `annotate` and `annotate-gpu` are experimental",
         "uv's CPU torch index and extra conflict do not transfer to pip",
@@ -44,7 +47,7 @@ def test_installation_guide() -> None:
         "After publication",
     ):
         assert obsolete not in readme, obsolete
-    assert "https://github.com/fmueller/latinitas-cards/releases/tag/v0.3.0" in readme
+    assert "https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.4.0.md" in readme
     documentation = readme.split("## Documentation\n", 1)[1]
     assert "https://github.com/fmueller/latinitas-cards/blob/main/docs/releasing.md" in documentation
     changelog = (ROOT / "CHANGELOG.md").read_text()

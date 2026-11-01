@@ -117,7 +117,7 @@ always compute to zero. New codes must be added to the enum, registry and table.
 | `nothing_to_export` | 1 | No eligible selected exercises to export |
 | `card_drift` | 1 | CSV differs from current reviewed exercises |
 | `unsupported_language` | 3 | Source language is unsupported |
-| `citation_mismatch` | 0 | Declared citation labels differ from the source structure |
+| `citation_mismatch` | 0 | Citation labels differ from source structure, authors are ambiguous, or edition URNs are invalid/conflicting |
 | `skipped_division` | 0 | Non-edition source division was skipped |
 | `skipped_empty_passage` | 0 | Source passage without canonical text was omitted |
 | `descriptor_override` | 0 | Descriptor value replaced a source header value |

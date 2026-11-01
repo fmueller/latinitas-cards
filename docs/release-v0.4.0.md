@@ -1,19 +1,44 @@
-# v0.4.0 candidate readiness — 2026-10-31
+# v0.4.0 release preparation — 2026-11-01
 
-This is an **unreleased candidate**, not publication approval or native Anki
-acceptance. The published package remains v0.3.0. T-173 is the blocked,
-maintainer-only release gate; this preparation does not unblock it, create a
-tag, publish a release or upload a distribution. Its date may be corrected by
-the maintainer before tagging.
+This is an **unreleased candidate**. The published package remains v0.3.0.
+The maintainer authorized the T-173 gate and v0.4.0 publication on 2026-11-01,
+including release preparation, one annotated tag, protected-environment approval
+where permitted, and a publication evidence commit. Publication still requires
+the prerequisites and ordered checks in [the runbook](releasing.md).
+The maintainer confirmed the current PyPI Trusted Publisher and approved the
+bounded README/docs refresh before continuing the release. At preparation time,
+no v0.4.0 tag or distribution has been published. T-173 completion requires
+successful publication and the follow-up evidence below, not authorization alone.
+
+## Publication preflight, 2026-11-01
+
+- Fetched `origin/main` equals implementation base `bf1358a`; the worktree was
+  initially clean. Taskrail 0.4.0 validation passed with `specs/v0.4.0.md` active
+  and T-173 the only open task on that spec. Future-spec tasks remain excluded.
+- Read-only checks found no remote `v0.4.0` tag or GitHub release. The exact
+  PyPI 0.4.0 JSON endpoint returned 404; the project reports 0.3.0 as latest.
+- GitHub environment `pypi` requires reviewer `fmueller`, permits self-review,
+  disables administrator bypass, and has exactly one deployment policy:
+  `v*` of type `tag`, with no branch policy. These settings were not changed.
+- The [license audit](license-compatibility-audit.md#bundled-corpus-provenance)
+  records the maintainer's 2026-10-20 Vulgate descriptor and eBible.org latVUC
+  derivation confirmations. The current bundled XML hash still matches the
+  audit. This is not an independent upstream byte comparison or clearance of
+  optional NLP distribution obligations.
+- The maintainer confirmed the current PyPI Trusted Publisher configuration:
+  tuple is owner `fmueller`, repository `latinitas-cards`, workflow `release.yml`,
+  environment `pypi`. This is current maintainer confirmation, not independent
+  access to private PyPI configuration or a test upload.
 
 ## Scope and provenance
 
-The accepted runtime base is
-[`3a20e48`](https://github.com/fmueller/latinitas-cards/commit/3a20e48c7ad1bdee8550422482f85610b8ee8f80),
-including the known-lemma report provenance repair and the dependency-only
-advancement. This candidate changes release metadata, documentation and tests,
-not runtime code. Package and project lock metadata are 0.4.0; the non-project
-dependency inventory stays unchanged from that base.
+The accepted implementation base is
+[`bf1358a`](https://github.com/fmueller/latinitas-cards/commit/bf1358acea8eebc50b69c8013a2942ce2a718208),
+including readable localized source details and nested technical provenance.
+Release preparation changes documentation and release records, not runtime code.
+Package and project lock metadata are 0.4.0. The final tag candidate and its
+exact-head Build/CodeQL results must be recorded after preparation is committed;
+the implementation base is not a claim about that future candidate's CI.
 
 v0.4.0 adds corpus-first generation with four reviewed context/translation
 recipes, deterministic ranked budgets and sticky selections, a bounded
@@ -77,15 +102,41 @@ for v0.4.0 release verification and readiness, not a blocker. Both remain
 unverified, not compatible or schedule-preserving by assertion. The required
 Desktop checks use isolated synthetic profiles without personal accounts or sync.
 
-### Candidate-bound verification, 2026-10-31
+### Cumulative acceptance evidence and revision boundaries
 
-The fetched `origin/main` candidate is
+The earlier native acceptance revision is
 [`041989c`](https://github.com/fmueller/latinitas-cards/commit/041989c54f32ed3a0ebc0481fd81776f2c368396),
-identical to the [native-tested revision](https://ampcode.com/threads/T-01a1919f-f44c-7114-99d0-a46e95a25537).
+recorded by the [native acceptance owner](https://ampcode.com/threads/T-01a1919f-f44c-7114-99d0-a46e95a25537).
 That retained evidence records official Anki Desktop 26.09.3 on Debian 12 Wayland,
 342 inspected states, 12 synthetic notes and 19 new/unanswered cards. It includes
 import/update/repeat, Personal Notes and identity checks, and native theme toggles.
 It is reused evidence, not a fresh native rerun or proof about real review history.
+
+The [T-183 implementation and acceptance record](https://ampcode.com/threads/T-01a1947b-9810-7027-aaff-212d65be4cda)
+binds the final presentation to implementation commit `bf1358a` and accepted
+product tree `c54166a5bb878d95437dee8841aedc694d07d3d7` (planning held at
+its base). Official Anki Desktop 26.09.3 inspected 24 final-CSS states:
+Caesar/Aeneid × German/English × three disclosure states × light/dark.
+Two actual-input clips and event receipts exercised pointer, Space, Enter and
+Tab, including neighboring Replay Audio; light-dark-light toggles passed.
+Actual imports updated eight German and eight English notes without creating
+notes. The quiescent audit covered all 16 notes/cards: nine localized fields,
+23 other exported fields and tags exact, canonical JSON and hrefs equal,
+IDs and all scheduling columns unchanged, and zero revlog rows. Citation HTML
+was entity-normalized by Anki, so byte identity is not claimed. Personal Notes
+were empty, not a test of preserving nonempty user notes. CSS differed only by
+the native editor's trimmed final newline.
+
+T-183's full local chain passed 3,232 tests with seven skips and one existing
+serializer warning. All eight checks passed on `bf1358a`:
+[Build](https://github.com/fmueller/latinitas-cards/actions/runs/41259760087)
+and [CodeQL](https://github.com/fmueller/latinitas-cards/actions/runs/41259759965).
+The earlier adversarial campaign was run on `6ce6095`, not `bf1358a`:
+320 public CLI calls, 388 checks and 204 supplemental tests reported clean.
+The [later film record](https://ampcode.com/threads/T-01a1947c-0432-75a9-98a1-41a66aef1d19)
+reports a fresh 113-second film on `bf1358a`, including real Scaife clickouts;
+decode, frame and ASR checks are not human listening or a new full acceptance run.
+These are cumulative, scoped receipts, not universal testing on one revision.
 
 Real-source smoke tests used PerseusDL `canonical-latinLit` revision
 [`8b536bd`](https://github.com/PerseusDL/canonical-latinLit/tree/8b536bdf3ed1f43494055efe112433b4a58eab67):
@@ -97,7 +148,10 @@ Real-source smoke tests used PerseusDL `canonical-latinLit` revision
 
 Both `corpus normalize --adapter tei` and `corpus validate --json` exited 0.
 Use valid corpus IDs `phi0448-phi001` and `phi0690-phi003` (dots are not allowed).
-Independent XML extraction matched every canonical passage and reference. The
+Fresh downloads of both pinned XML files on 2026-11-01 matched these hashes;
+normalization and validation rerun on implementation base `bf1358a` again
+exited 0 with 2,150 and 9,843 passages respectively. The earlier
+independent XML extraction matched every canonical passage and reference. The
 Aeneid has 9,897 source lines: 54 editorially deleted lines are omitted from
 canonical passages with warnings and retained in notes. Source gaps at Caesar
 8.55.2 and Aeneid 12.732 also warn; neither passage is dropped.
@@ -112,8 +166,8 @@ blanket public domain. Future real parallel translations require their own
 translator, edition, source and rights review. This scoped review does not grant
 redistribution rights or certify linguistic accuracy.
 
-These observations supply test evidence, not human readiness approval or separate
-permission to publish. T-173 remains blocked and unchanged. Future release specs
+These observations supply scoped test evidence; publication authorization is
+recorded separately above. Future release specs
 do not yet inherit a complete candidate-bound media/independent-QA approval process;
 that policy work needs a separately approved change, not an implied skill update.
 

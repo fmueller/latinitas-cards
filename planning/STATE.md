@@ -1,14 +1,13 @@
 ---
 schema_version: 1
-updated_at: "2026-11-01T00:59:14Z"
+updated_at: "2026-11-01T08:08:22Z"
 active_spec_version: v0.4.0
 active_spec_path: specs/v0.4.0.md
-current_task: ""
-current_task_title: ""
-status_summary: blocked
-blockers:
-    - 'T-173-publish-v0-4-0-maintainer-release-gate: maintainer release gate'
-next_action: Resolve blocker on T-173-publish-v0-4-0-maintainer-release-gate
+current_task: T-173-publish-v0-4-0-maintainer-release-gate
+current_task_title: Publish v0.4.0 (maintainer release gate)
+status_summary: in_progress
+blockers: []
+next_action: Implement T-173-publish-v0-4-0-maintainer-release-gate and run targeted tests
 last_verification_result: pass for T-183-show-readable-localized-source-details-before at 2026-11-01T00:59:14Z
 relevant_artifacts: []
 continuation_notes:
@@ -23,15 +22,16 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: none
+- Task: `T-173-publish-v0-4-0-maintainer-release-gate`
+- Title: Publish v0.4.0 (maintainer release gate)
 
 ## Status
 
-- blocked
+- in_progress
 
 ## Blockers
 
-- T-173-publish-v0-4-0-maintainer-release-gate: maintainer release gate
+- None
 
 ## Last Verification
 
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- Resolve blocker on T-173-publish-v0-4-0-maintainer-release-gate
+- Implement T-173-publish-v0-4-0-maintainer-release-gate and run targeted tests
 
 ## Relevant Artifacts
 
@@ -52,7 +52,7 @@ continuation_notes:
 ## Task Counts
 
 - todo: 2
-- in_progress: 0
+- in_progress: 1
 - completed: 180
-- blocked: 1
+- blocked: 0
 - cancelled: 0

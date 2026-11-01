@@ -302,18 +302,23 @@ def test_release_metadata_and_audit_snapshot_are_versioned_for_v040_candidate() 
     assert changelog.index("## [Unreleased]") < changelog.index("## [0.2.1]")
     assert "## [0.1.1] - 2026-10-04" in changelog
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "git clone --branch v0.3.0 --depth 1" in readme
-    assert "**Current release:** [v0.3.0]" in readme
+    assert "git clone --branch v0.4.0 --depth 1" in readme
+    assert "**This version:** 0.4.0" in readme
     assert (
         "[release readiness and limits]"
-        "(https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.3.0.md)" in readme
+        "(https://github.com/fmueller/latinitas-cards/blob/main/docs/release-v0.4.0.md)" in readme
     )
+    quick_start = readme.split("## Quick start\n", 1)[1].split("## ", 1)[0]
+    assert 'source="/path/to/your/latin-deck.apkg"' in quick_start
+    assert "latinitas-cards setup" in quick_start
+    assert "tests/fixtures/" not in quick_start
+    assert "uv run" not in quick_start
     assert "release-v0.4.0.md" in release
     assert "release-v0.4.0.md" in readme
     prepared = (ROOT / "docs" / "release-v0.4.0.md").read_text(encoding="utf-8")
     assert "0.4.0" in prepared and "candidate" in prepared
-    assert "T-173 remains blocked and unchanged" in prepared
-    assert "not human readiness approval or separate" in prepared
+    assert "maintainer confirmed the current PyPI Trusted Publisher" in prepared
+    assert "no v0.4.0 tag or distribution has been published" in prepared
     assert "real scheduled collections/history, explicitly out of scope" in prepared
     current_candidate = (ROOT / "docs" / "release-v0.3.0.md").read_text(encoding="utf-8")
     assert "0.3.0" in current_candidate

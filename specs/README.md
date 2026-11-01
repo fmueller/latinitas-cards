@@ -23,9 +23,10 @@ This repository uses versioned specs under `specs/`.
   Perseus/EpiDoc TEI adapter, parallel translation import, and German and English
   generated content. See the [corpus workflow](../docs/corpus-first-cards.md) for
   runnable examples and the initial-import/adoption/managed-update boundary.
-  Native acceptance and final release readiness remain separate unfinished gates;
-  T-173 is the blocked maintainer release gate. Blocked maintainer decisions do not
-  relax the Fixed Contracts or authorize extra behavior.
+  Scoped Linux Anki Desktop acceptance and integrated readiness are accepted;
+  [the evidence and limits](../docs/release-v0.4.0.md) distinguish their revisions.
+  Publication remains pending the maintainer-authorized T-173 release procedure.
+  This status does not relax the Fixed Contracts or activate a future spec.
 - `specs/v0.5.0.md` is planned and inactive. It adds low-review forms and controlled
   phrase practice, the shared library/LLM verification and automatic-acceptance pipeline,
   CLI orchestration, outcome reports, Anki acceptance metadata and morphology presentation.
