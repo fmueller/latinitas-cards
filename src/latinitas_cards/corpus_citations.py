@@ -141,16 +141,45 @@ def render_citation(facts: PassageFacts, language: str) -> str:
     payload = "".join(
         f"\\u{ord(char):04x}" if 0x7F <= ord(char) <= 0x9F else char for char in canonical_json(provenance)
     )
+    header, work = facts.header, facts.work
+    reading = _verified_source(facts)
+    title = card_text(f"citation_{reading.label_key}_work", language) if reading else work.title
+    fields = (
+        ("source_file", header.source.file_name),
+        ("work", title or work.work),
+        ("edition", header.edition),
+        ("edition_id", work.edition_urn),
+        ("passage", citation_label(facts, language)),
+        ("source_url", header.url),
+        ("revision", header.revision),
+        ("digest", header.source.sha256),
+        ("license", header.license),
+    )
+    readable = (
+        "<dl>"
+        + "".join(
+            "<dt>"
+            + _escape(card_text("citation_field_" + key, language))
+            + "</dt><dd>"
+            + _escape(value or card_text("citation_not_supplied", language))
+            + "</dd>"
+            for key, value in fields
+        )
+        + "</dl>"
+    )
     return (
         label
         + '<details class="corpus-provenance"><summary>'
         + _escape(card_text("citation_provenance", language))
         + "</summary>"
+        + readable
         + "<p>"
         + _escape("; ".join(notices))
-        + "</p><pre>"
+        + "</p><details><summary>"
+        + _escape(card_text("citation_technical", language))
+        + "</summary><pre>"
         + html.escape(payload, quote=True)
-        + "</pre></details>"
+        + "</pre></details></details>"
     )
 
 

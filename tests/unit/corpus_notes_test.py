@@ -199,6 +199,12 @@ def test_verified_citations_localize_only_display_and_reject_unverified_links(
     assert payload["derived_cts_reference"] == f"{urn}:{ref}"
     assert payload["resolver"]["revision_matches_source"] is False
     assert payload["work"]["author"] == author and payload["work"]["title"] == title
+    technical = "Technische Details" if language == "de" else "Technical details"
+    assert f"<details><summary>{technical}</summary><pre>" in citation
+    assert f"<dd>sha256:{sha}</dd>" in citation
+    assert f"<dd>{urn}</dd>" in citation
+    assert f"<dd>{expected[language]}</dd>" in citation
+    assert " open" not in citation
     for unverified in (
         replace(
             bound,
@@ -364,7 +370,7 @@ def test_hostile_text_and_controls_are_escaped(tmp_path: Path) -> None:
         assert fields["Citation"].startswith("Author not supplied, facts, Book &lt;i&gt;I&lt;/i&gt;&amp;<details")
         validate_managed_controls(fields)
         markup = re.sub(r'<(/?)(div|span)( class="[a-z0-9 -]+")?>|<br>', "", "".join(fields.values()))
-        markup = re.sub(r'<details class="corpus-provenance">|</?details>|</?(summary|p|pre)>', "", markup)
+        markup = re.sub(r'<details class="corpus-provenance">|</?details>|</?(summary|p|pre|dl|dt|dd)>', "", markup)
         assert "<" not in markup and ">" not in markup
     assert notes["corpus_lexical_recognition"]["Latin"] == latin
     assert (

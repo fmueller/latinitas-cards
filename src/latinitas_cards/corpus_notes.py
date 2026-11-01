@@ -159,6 +159,9 @@ CORPUS_CARD_CSS = """\
 .corpus-analysis { margin: 0.3em 0; }
 .corpus-guidance, .corpus-self-assessment { margin-top: 0.4em; font-size: 15px; font-style: italic; }
 .corpus-provenance { margin-top: 0.5em; font-size: 14px; }
+.corpus-provenance dl { font-style: normal; }
+.corpus-provenance dt { margin-top: 0.5em; font-weight: bold; }
+.corpus-provenance dd { margin-left: 0; }
 .corpus-provenance pre { white-space: pre-wrap; }
 """
 

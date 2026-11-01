@@ -52,6 +52,17 @@ def test_source_provenance_survives_csv_without_changing_selection(tmp_path: Pat
         citation = note["Citation"]
         assert '<details class="corpus-provenance">' in citation
         assert "<script>" not in citation and "href=" not in citation
+        technical = "Technische Details" if language == "de" else "Technical details"
+        source_label = "Quelldatei" if language == "de" else "Source file"
+        revision_label = "Revision (angegeben)" if language == "de" else "Revision (supplied)"
+        assert f"<dt>{source_label}</dt><dd>{html.escape(lines[0]['source']['file_name'])}</dd>" in citation
+        assert f"<dt>{revision_label}</dt><dd>" in citation
+        assert "<dd>Test edition</dd>" in citation
+        assert "<dd>Work &amp; &quot;title&quot;" in citation
+        assert "<dd>javascript:alert(&quot;not a link&quot;)</dd>" in citation
+        assert f"<details><summary>{technical}</summary><pre>" in citation
+        assert " open" not in citation
+        assert citation.index("<dl>") < citation.index(f"<summary>{technical}</summary>")
         match = re.search(r"<pre>(.*?)</pre>", citation)
         assert match is not None
         serialized = html.unescape(match[1])

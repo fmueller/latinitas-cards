@@ -257,7 +257,12 @@ are identified as missing, and missing work titles fall back to the local work I
 Normalized citation parts and identity fields are not translated.
 
 Open **Source provenance and limitations** (German: **Quellennachweis und Grenzen**)
-on an Anki answer to inspect HTML-escaped canonical JSON independently of the label.
+on an Anki answer for labeled source, work, edition, passage, supplied URL and
+revision, source-file digest and licence details. Missing values and limitations
+remain explicit. Supplied URLs are plain text, not verified passage links.
+Open the second, nested **Technical details** (**Technische Details**) disclosure
+to inspect the complete HTML-escaped canonical JSON independently of these labels.
+Both disclosures start closed.
 DEL/C1 characters use JSON Unicode escapes for safe field transport; decoding the
 JSON recovers the exact supplied values.
 It retains the supported header/work metadata, local passage/work IDs, native ref,
