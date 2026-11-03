@@ -18,7 +18,7 @@ This repository uses versioned specs under `specs/`.
   Anki-facing output or reopening v0.2.x native acceptance gates. The maintainer
   authorized the T-038 release gate after all other v0.3.0 tasks completed; its
   publication evidence is recorded in `docs/release-v0.3.0.md`.
-- `specs/v0.4.0.md` is the active implementation spec, activated through Taskrail. It
+- `specs/v0.4.0.md` defines the completed release spec. It
   adds corpus-first cards from reviewed sidecar annotations, ranked sticky selection, a
   Perseus/EpiDoc TEI adapter, parallel translation import, and German and English
   generated content. See the [corpus workflow](../docs/corpus-first-cards.md) for
@@ -28,10 +28,15 @@ This repository uses versioned specs under `specs/`.
   v0.4.0 is released on PyPI and GitHub under the maintainer-authorized T-173
   procedure; publication and artifact-hash evidence are recorded in that guide.
   This status does not relax the Fixed Contracts or activate a future spec.
-- `specs/v0.5.0.md` is planned and inactive. It adds low-review forms and controlled
+- `specs/v0.5.0.md` is the active spec, activated through Taskrail after maintainer
+  approval of the planning package. It adds low-review forms and controlled
   phrase practice, the shared library/LLM verification and automatic-acceptance pipeline,
   CLI orchestration, outcome reports, Anki acceptance metadata and morphology presentation.
   Curated grammar rules and mnemonics retain their separate human-approval requirement.
+  Its approved Taskrail decomposition is T-184–T-205, with blocked maintainer design and
+  publication gates. The delivery map ends with independent linguistic/native acceptance,
+  drift and gap audits, then release readiness. Activation does not resolve those gates
+  or authorize publication.
 - `specs/v0.5.5.md` is planned and inactive, after v0.5.0 and before v0.6.0. It reuses
   that pipeline for corpus sentence functions and constructions, both deck-driven examples
   and reading-driven exercises, and optional syntax presentation. The boundary is controlled

@@ -1,13 +1,15 @@
 ---
 schema_version: 1
-updated_at: "2026-11-01T09:59:55Z"
-active_spec_version: v0.4.0
-active_spec_path: specs/v0.4.0.md
+updated_at: "2026-11-03T07:27:12Z"
+active_spec_version: v0.5.0
+active_spec_path: specs/v0.5.0.md
 current_task: ""
 current_task_title: ""
-status_summary: idle
-blockers: []
-next_action: Select the next eligible task
+status_summary: blocked
+blockers:
+    - 'T-186-approve-v0-5-0-contracts-and-evaluation-policy: maintainer design approval: accept exact contract and independently judged evaluation revisions before consumers'
+    - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
+next_action: 'Start task T-184-design-v0-5-0-acceptance-and-pipeline-contracts: Design v0.5.0 acceptance and pipeline contracts'
 last_verification_result: pass for T-173-publish-v0-4-0-maintainer-release-gate at 2026-11-01T09:59:55Z
 relevant_artifacts: []
 continuation_notes:
@@ -18,7 +20,7 @@ continuation_notes:
 
 ## Active Spec
 
-- `specs/v0.4.0.md`
+- `specs/v0.5.0.md`
 
 ## Current Focus
 
@@ -26,11 +28,12 @@ continuation_notes:
 
 ## Status
 
-- idle
+- blocked
 
 ## Blockers
 
-- None
+- T-186-approve-v0-5-0-contracts-and-evaluation-policy: maintainer design approval: accept exact contract and independently judged evaluation revisions before consumers
+- T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required
 
 ## Last Verification
 
@@ -38,7 +41,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-184-design-v0-5-0-acceptance-and-pipeline-contracts: Design v0.5.0 acceptance and pipeline contracts
 
 ## Relevant Artifacts
 
@@ -50,8 +53,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 2
+- todo: 22
 - in_progress: 0
 - completed: 181
-- blocked: 0
+- blocked: 2
 - cancelled: 0

@@ -70,19 +70,21 @@ issue first, not necessarily a code regression.
 
 Planning and task state live in the repo, managed by the `taskrail` CLI.
 
-- `specs/` — versioned specs. Releases through v0.3.0 are complete;
-  `specs/v0.4.0.md` is active for corpus-first cards, ranked selection, TEI
-  ingestion, and German/English generated content. Activate later specs through
-  Taskrail.
+- `specs/` — versioned specs. Releases through v0.4.0 are complete;
+  `specs/v0.5.0.md` is active for low-review forms, controlled phrases, shared
+  evidence/acceptance, orchestration and curated mnemonics. Activate later specs
+  through Taskrail.
 - `planning/STATE.md` — current focus, blockers, next action.
 - `planning/tasks/` — one file per task, each linked to a spec heading via `spec_ref`.
 - `planning/artifacts/` — verification artifacts, gitignored.
 
-The v0.4.0 implementation loop follows the spec's Fixed Contracts and exclusions;
+The v0.5.0 loop follows the approved spec and its design/acceptance prerequisites.
+T-186 is a blocked maintainer-only contract/evaluation approval gate; implementation
+consumers remain unready until the maintainer approves the exact design revisions.
+T-205 is the blocked maintainer-only publication gate, not autonomous loop work.
+Only the maintainer unblocks these gates; activation does not authorize publication.
+Preserve v0.4.0's Fixed Contracts and exclusions for existing workflows;
 German deck-first output stays byte-identical to the T-154 characterization goldens.
-T-173 is a blocked maintainer-only release gate, not autonomous loop work.
-Only the maintainer unblocks it after all other v0.4.0 tasks are complete and
-authorizes release publication.
 
 ```bash
 taskrail status                 # current snapshot (read-only)
