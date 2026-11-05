@@ -37,6 +37,14 @@ This repository uses versioned specs under `specs/`.
   publication gates. The delivery map ends with independent linguistic/native acceptance,
   drift and gap audits, then release readiness. Activation does not resolve those gates
   or authorize publication.
+- `specs/v0.5.1.md` is an approved, inactive deck-workflow follow-up. The maintainer
+  approved its planning package and version slot on 2026-11-05 without activation.
+  It maps eight v0.4.0 user requests to nominal
+  lexical cards, cited morphology/calibration, individual review sheets, parsing/skip
+  reports, stable checkpoint/review continuity and CLI/profile setup improvements.
+  Approved tasks T-206–T-217 preserve the reported priorities, reuse v0.5.0 contracts
+  and include a blocked maintainer contract gate and independent native acceptance.
+  Planning approval does not change the active spec, approve contracts or authorize execution.
 - `specs/v0.5.5.md` is planned and inactive, after v0.5.0 and before v0.6.0. It reuses
   that pipeline for corpus sentence functions and constructions, both deck-driven examples
   and reading-driven exercises, and optional syntax presentation. The boundary is controlled
@@ -62,9 +70,10 @@ This repository uses versioned specs under `specs/`.
 5. `specs/v0.3.0.md`
 6. `specs/v0.4.0.md`
 7. `specs/v0.5.0.md`
-8. `specs/v0.5.5.md`
-9. `specs/v0.6.0.md`
-10. `specs/v0.7.0.md`
-11. `specs/v0.8.0.md`
-12. `specs/v0.9.0.md`
-13. `specs/v1.0.0.md`
+8. `specs/v0.5.1.md` (approved, inactive)
+9. `specs/v0.5.5.md`
+10. `specs/v0.6.0.md`
+11. `specs/v0.7.0.md`
+12. `specs/v0.8.0.md`
+13. `specs/v0.9.0.md`
+14. `specs/v1.0.0.md`

@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-03T07:27:12Z"
+updated_at: "2026-11-05T22:14:23Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -9,6 +9,7 @@ status_summary: blocked
 blockers:
     - 'T-186-approve-v0-5-0-contracts-and-evaluation-policy: maintainer design approval: accept exact contract and independently judged evaluation revisions before consumers'
     - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
+    - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
 next_action: 'Start task T-184-design-v0-5-0-acceptance-and-pipeline-contracts: Design v0.5.0 acceptance and pipeline contracts'
 last_verification_result: pass for T-173-publish-v0-4-0-maintainer-release-gate at 2026-11-01T09:59:55Z
 relevant_artifacts: []
@@ -34,6 +35,7 @@ continuation_notes:
 
 - T-186-approve-v0-5-0-contracts-and-evaluation-policy: maintainer design approval: accept exact contract and independently judged evaluation revisions before consumers
 - T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required
+- T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers
 
 ## Last Verification
 
@@ -53,8 +55,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 22
+- todo: 33
 - in_progress: 0
 - completed: 181
-- blocked: 2
+- blocked: 3
 - cancelled: 0
