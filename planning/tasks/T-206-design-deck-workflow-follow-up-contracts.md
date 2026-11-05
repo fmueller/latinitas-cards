@@ -30,6 +30,15 @@ approval/activation before execution.
 - Freeze review CSV schema/encoding, formula escaping with canonical bindings,
   verdict mapping, default audit reason, atomic validation and idempotence.
   Define parsing policies, preserved alternatives and complete JSON/table skips.
+- Approved expanded FR-4 amendment: define lexical/principal-field annotation
+  boundaries that preserve meaningful parentheses/alternatives, distinct compound
+  pipe versus pipe-alternative policies, German deponent/semi-deponent roles and
+  display versus canonical answer-equivalence representations. Verify the actual
+  answer surface; current reveal-only templates do not imply typed grading.
+  Resolve any typing/grading requirement explicitly before consumers.
+- Define per-source-note report aggregation and primary-code precedence, related
+  reasons/fragments, confirmed tag scope and full JSON/table/CSV output. Distinguish
+  unchanged-policy baseline counts from recovered/residual post-fix outcomes.
 - Define confirmed source-stream authority/continuity (GUID overlap is insufficient),
   checkpoint location/override precedence, atomic migration and valid review-state
   discovery/reattachment through approved decision adapters, never a second store.
