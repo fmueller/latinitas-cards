@@ -27,9 +27,9 @@ exercises:
     "reason": "Individually checked synthetic characterization evidence",
     "enabled": "1",
     "prompt": "cum amico\n\u00dcbersetze und vergleiche anschlie\u00dfend mit der Referenz.",
-    "answer": "Reviewed reference\nLesart 1: mit einem Freund / mit dem Freund\nDie Pr\u00e4position cum bestimmt hier den Kasus.\nSelbsteinsch\u00e4tzung: Vergleiche den Sinn, nicht den genauen Wortlaut.",
+    "answer": "Gepr\u00fcfte Referenz\nLesart 1: mit einem Freund / mit dem Freund\nDie Pr\u00e4position cum bestimmt hier den Kasus.\nSelbsteinsch\u00e4tzung: Vergleiche den Sinn, nicht den genauen Wortlaut.",
     "prompt_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">cum amico<br>\u00dcbersetze und vergleiche anschlie\u00dfend mit der Referenz.</div>",
-    "answer_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">Reviewed reference<br>Lesart 1: mit einem Freund / mit dem Freund<br>Die Pr\u00e4position cum bestimmt hier den Kasus.<br>Selbsteinsch\u00e4tzung: Vergleiche den Sinn, nicht den genauen Wortlaut.</div>",
+    "answer_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">Gepr\u00fcfte Referenz<br>Lesart 1: mit einem Freund / mit dem Freund<br>Die Pr\u00e4position cum bestimmt hier den Kasus.<br>Selbsteinsch\u00e4tzung: Vergleiche den Sinn, nicht den genauen Wortlaut.</div>",
     "readings": [
       {
         "translations": [
@@ -232,9 +232,9 @@ exercises:
     "reason": "Individually checked synthetic characterization evidence",
     "enabled": "1",
     "prompt": "cum amico\nBestimme amico [object]: Casus.",
-    "answer": "Reviewed reference\nLesart 1: mit einem Freund / mit dem Freund\nCasus: ablativus\nNumerus: singularis\nGenus: masculinum\nBegleitung; cum regiert den Ablativ.\nDie Pr\u00e4position cum bestimmt hier den Kasus.",
+    "answer": "Gepr\u00fcfte Referenz\nLesart 1: mit einem Freund / mit dem Freund\nCasus: ablativus\nNumerus: singularis\nGenus: masculinum\nBegleitung; cum regiert den Ablativ.\nDie Pr\u00e4position cum bestimmt hier den Kasus.",
     "prompt_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">cum amico<br>Bestimme amico [object]: Casus.</div>",
-    "answer_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">Reviewed reference<br>Lesart 1: mit einem Freund / mit dem Freund<br>Casus: ablativus<br>Numerus: singularis<br>Genus: masculinum<br>Begleitung; cum regiert den Ablativ.<br>Die Pr\u00e4position cum bestimmt hier den Kasus.</div>",
+    "answer_html": "<div class=\"morphology-v1 morphology-muted morphology-light\">Gepr\u00fcfte Referenz<br>Lesart 1: mit einem Freund / mit dem Freund<br>Casus: ablativus<br>Numerus: singularis<br>Genus: masculinum<br>Begleitung; cum regiert den Ablativ.<br>Die Pr\u00e4position cum bestimmt hier den Kasus.</div>",
     "readings": [
       {
         "translations": [

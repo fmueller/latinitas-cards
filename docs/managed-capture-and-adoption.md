@@ -135,6 +135,90 @@ The journal must be new; existing files (including corrupt/pending ones) are nev
 overwritten or resumed. Use `managed reconcile` for reviewed recovery and replan with
 new apply approval. Capture/adoption does not import a CSV or advance pending effects.
 
+## Refreshing German status text on imported notes
+
+The German status-text correction changes presentation, not linguistic evidence,
+LatinitasID, semantic card keys, eligibility or scheduling. Regenerate with the
+same source identities, confirmed profile, recipes and claim reviews; do not rerun
+setup or change the note type. Hidden `source-extraction` payloads may still contain
+English/JSON. Do not translate them or free-text source/reviewer evidence.
+
+For an already imported note, use the existing observed `baseline.json`; if none
+exists, capture and explicitly adopt the destination as described above first.
+The exact request/envelope formats are in the
+[file-transport guide](destination-snapshots-and-file-transport.md#managed-json-review-and-approval).
+
+1. Back up the full collection, verify recoverability, stop reviews/edits/sync on
+   every device, and capture a fresh closed copy with the original selection:
+
+   ```bash
+   uv run --with anki==26.9.3 latinitas-cards managed capture before.anki2 \
+     --selection selection.json --closed-backup --interval-confirmed > before.json
+   ```
+
+2. Build `request.json` with the original binding, `before.json` as `snapshot`, the
+   current journal as `baseline`, and the full unchanged `effective_profile`
+   (including `generated_note_type` and `target_deck`). Select the regenerated notes
+   as proposals using their complete managed fields, excluding Tags and Personal
+   Notes; preserve reviewed tag contributions. Run:
+
+   ```bash
+   uv run latinitas-cards managed plan request.json > plan.json
+   ```
+
+   Review the actual diff. Only translated `Principal Parts` and affected
+   `Completion*Prompt`, `Completion*Answer`, `Recognition*Answer` (or reference
+   presentation) fields should change. No create/retire/reactivate, identity,
+   eligibility, schema or card-set effect is part of this fix. Stop if any appear;
+   do not approve unsupported effects to force an import. Destination edits and keep
+   overrides still require their normal conflict review.
+3. Approve the exact supported field operation IDs from `plan.json`, repeating
+   `--operation` for each selected translation change. Presentation changes need
+   new apply approval, not renewed linguistic approval:
+
+   ```bash
+   uv run latinitas-cards managed approve plan.json \
+     --operation '<exact field operation ID from plan.json>' \
+     --review 'German status translation only; retained identities and cards' > approval.json
+   ```
+
+4. Assemble `handoff.json` from `binding`, fresh `snapshot`, `plan`, `approval`,
+   recoverable `backup` path, verified `recovery` instructions, `note_type` and
+   `deck`, then emit once:
+
+   ```bash
+   uv run latinitas-cards managed emit handoff.json --state baseline.json --output updates.csv
+   ```
+
+   In the bound Anki collection, import as **Update**, matching first-field
+   LatinitasID + Note Type and the emitted column mapping. Leave Personal Notes
+   unmapped. Do not delete/reimport notes or add cards. Retain the native report.
+5. Before any reviews/edits/sync, close Anki and capture the post-import closed copy
+   using the same selection and capture flags, writing `after.json`. Prepare
+   `observation.json` with `binding`, that snapshot, `plan_id` and the native `report`:
+
+   ```bash
+   uv run latinitas-cards managed observe observation.json --state baseline.json --interval-confirmed
+   ```
+
+   Check that every selected operation is observed and none remains unresolved.
+   Observation compares unchanged card/history and other preservation evidence;
+   emission alone does not prove scheduling preservation. Native client/settings
+   limits in the full file-transport checklist still apply.
+6. **Reconcile only for recovery**, not as an unconditional final step. For partial,
+   unknown or restored outcomes, reacquire a fresh snapshot and review ownership of
+   every observed note. Write `reconciliation.json` with `binding`, `snapshot`,
+   `ownership` (the adoption format) and an explicit `review`, then run:
+
+   ```bash
+   uv run latinitas-cards managed reconcile reconciliation.json --state baseline.json
+   ```
+
+   This accepts current anchors and abandons pending effects; it is not proof that
+   the update succeeded. Replan and obtain new approval for remaining writes.
+   Never replay the old CSV blindly. On complete successful observation, no
+   reconciliation or new scheduling is needed.
+
 ## Executable sanitized walkthrough
 
 From the checkout, run the README recipe:

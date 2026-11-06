@@ -80,19 +80,26 @@ def phrase_workspace(source: Path, selections: Path, recipes: Path) -> tuple[dic
         answer = claims_by_identity[(exercise.semantic_key, "answer")]
         reasons = []
         for bound in (combination, answer):
-            assessment = assess_claim(bound.claim, bound.decision)
+            assessment = assess_claim(bound.claim, bound.decision, language_tag=profile.language_tag)
             if assessment.status != "accepted":
-                reasons.append(f"{bound.feature}: {assessment.reason}")
+                label = card_text(f"phrase_{bound.feature}", profile.language_tag)
+                reasons.append(f"{label}: {assessment.reason}")
         try:
             reference = Reference.model_validate_json(answer.claim.value)
             corrected = exercise.model_copy(update={"reference": reference})
             result = render_exercise(candidate, corrected, profile, answer.decision, reference_claim=answer.claim)
         except ValueError as error:
-            reasons.append(f"answer: invalid authored reference: {error}")
+            diagnostics.append(Diagnostic("invalid-reference", f"{exercise.semantic_key}: {error}"))
+            reasons.append(
+                card_text("phrase_answer", profile.language_tag)
+                + ": "
+                + card_text("phrase_invalid_reference", profile.language_tag, error=error)
+            )
             result = render_exercise(candidate, exercise, profile)
         if (
             result["review_state"] == "withheld"
-            and result["reason"] != assess_claim(answer.claim, answer.decision).reason
+            and result["reason"]
+            != assess_claim(answer.claim, answer.decision, language_tag=profile.language_tag).reason
         ):
             reasons.append(result["reason"])
         eligible = not reasons and result["review_state"] == "reviewed"

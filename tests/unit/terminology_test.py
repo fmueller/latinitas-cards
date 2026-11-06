@@ -90,6 +90,43 @@ def test_every_fixed_card_string_has_german_and_english() -> None:
         assert all(text.strip() for text in texts.values()), key
 
 
+def test_every_german_terminology_string_is_translated() -> None:
+    # Shared grammatical terms and a proper name are intentionally identical.
+    identical = {
+        "feature lemma",
+        "feature person",
+        "value number.singularis",
+        "value number.pluralis",
+        "card citation_caesar_author",
+    }
+    english_markers = ("withheld", "required", "review", "source evidence")
+    rendered = [
+        (f"feature {key}", feature_name(key, USER, "de"), labels["en"]) for key, labels in FEATURE_NAMES.items()
+    ]
+    rendered += [
+        (f"value {feature}.{key}", feature_value(feature, key, USER, "de"), labels["en"])
+        for feature, values in FEATURE_VALUES.items()
+        for key, labels in values.items()
+    ]
+    rendered += [(f"role {key}", role_label(key, USER, "de"), labels["en"]) for key, labels in ROLE_LABELS.items()]
+    substitutions = {
+        "form": "FORM",
+        "target": "TARGET",
+        "distinction": "DISTINCTION",
+        "index": 2,
+        "reference": "en",
+        "language": "de",
+        "error": "DETAIL",
+    }
+    rendered += [
+        (f"card {key}", card_text(key, "de", **substitutions), card_text(key, "en", **substitutions))
+        for key in CARD_STRINGS
+    ]
+    for key, german, english in rendered:
+        assert (german == english) == (key in identical), key
+        assert not any(marker in german.casefold() for marker in english_markers), (key, german)
+
+
 @pytest.mark.parametrize(
     ("tag", "expected"),
     [

@@ -15,6 +15,7 @@ from typing import Literal
 
 from .profile import DeckProfile
 from .source_extraction import SourceExtraction
+from .terminology import card_text
 
 type ClaimKind = Literal["label", "segmentation", "explanation", "translation"]
 type ReviewStatus = Literal["accepted", "withheld"]
@@ -114,14 +115,14 @@ def review_claim(claim: Claim, *, status: ReviewStatus, reviewer: str, reason: s
     return ReviewDecision(claim.fingerprint, status, reviewer, reason)
 
 
-def assess_claim(claim: Claim, decision: ReviewDecision | None = None) -> ClaimAssessment:
+def assess_claim(claim: Claim, decision: ReviewDecision | None = None, *, language_tag: str = "en") -> ClaimAssessment:
     if decision is not None and decision.claim_fingerprint != claim.fingerprint:
-        return ClaimAssessment(claim, "withheld", "Stale or different claim review; renewed review required", decision)
+        return ClaimAssessment(claim, "withheld", card_text("claim_stale", language_tag), decision)
     if not claim.supported:
-        return ClaimAssessment(claim, "withheld", "Unsupported claim; supporting evidence required", decision)
+        return ClaimAssessment(claim, "withheld", card_text("claim_unsupported", language_tag), decision)
     if decision is not None:
         return ClaimAssessment(claim, decision.status, decision.reason, decision)
-    return ClaimAssessment(claim, "withheld", "No applicable calibration; explicit claim review required")
+    return ClaimAssessment(claim, "withheld", card_text("claim_uncalibrated", language_tag))
 
 
 def asserted_claims(assessments: Iterable[ClaimAssessment]) -> tuple[Claim, ...]:

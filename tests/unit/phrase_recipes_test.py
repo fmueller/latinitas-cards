@@ -56,7 +56,7 @@ def test_proposed_and_reviewed_references_and_terminology() -> None:
     proposed = render_exercise(phrase, selected, profile)
     assert proposed["review_state"] == "proposed"
     assert proposed["answer"].startswith(
-        "Proposed reference — not asserted\nLesart 1: mit einem Freund / mit dem Freund\n"
+        "Vorgeschlagene Referenz — nicht bestätigt\nLesart 1: mit einem Freund / mit dem Freund\n"
     )
     assert "amico" in proposed["prompt"] and "Casus" in proposed["prompt"]
     claim = contextual_claim(phrase, selected, profile)
@@ -82,7 +82,7 @@ def test_proposed_and_reviewed_references_and_terminology() -> None:
     assert "Case: Ablative" in english_card["answer"] and "Number: Singular" in english_card["answer"]
     assert english_card["semantic_key"] == reviewed["semantic_key"]
     stale = render_exercise(candidate("ad amico"), selected, profile, decision)
-    assert stale["review_state"] == "withheld" and "Stale" in stale["reason"]
+    assert stale["review_state"] == "withheld" and "Veraltete" in stale["reason"]
 
 
 def test_translation_is_latin_first_self_assessment_not_grading() -> None:
@@ -93,6 +93,28 @@ def test_translation_is_latin_first_self_assessment_not_grading() -> None:
     assert "Selbsteinschätzung" in result["answer"]
     assert "mit einem Freund" in result["answer"]
     assert result["grading"] == "self-assessment"
+
+
+@pytest.mark.parametrize("language", ["de", "en"])
+def test_generated_stale_reason_is_localized_but_authored_reason_is_not(language: str) -> None:
+    profile = PROFILE.apply_overrides({"language_tag": language})
+    selected = exercise() if language == "de" else in_english(exercise())
+    phrase = candidate()
+    claim = contextual_claim(phrase, selected, profile)
+    decision = review_claim(claim, status="withheld", reviewer="Teacher", reason="My review required more context")
+    authored = render_exercise(phrase, selected, profile, decision)
+    assert "My review required more context" in authored["answer"]
+    stale = render_exercise(candidate("ad amico"), selected, profile, decision)
+    expected = (
+        "Veraltete oder abweichende Belegprüfung; erneute Prüfung erforderlich"
+        if language == "de"
+        else "Stale or different claim review; renewed review required"
+    )
+    assert stale["reason"] == expected
+    assert expected in stale["answer_html"]
+    assert "My review required more context" not in stale["answer"]
+    assert stale["review_state"] == "withheld" and stale["enabled"] == ""
+    assert stale["semantic_key"] == authored["semantic_key"]
 
 
 ENGLISH = PROFILE.apply_overrides({"language_tag": "en-US", "morphology": {"terminology": {"language": "user"}}})
@@ -147,7 +169,8 @@ def test_english_cards_need_their_own_accepted_english_reference(recipe: str) ->
     # An English reference never appears on a German card either.
     swapped = render_exercise(phrase, english, PROFILE, accept(phrase, english, PROFILE))
     assert swapped["answer"] == (
-        "Withheld: Reference language 'en' differs from card language 'de'\nProposed reference — not asserted\n"
+        "Zurückgehalten: Referenzsprache 'en' weicht von der Kartensprache 'de' ab\n"
+        "Vorgeschlagene Referenz — nicht bestätigt\n"
     )
     # Tags other than en keep German, so a German reference stays valid on a French-tagged profile.
     french = render_exercise(phrase, german, FRENCH_LATIN, accept(phrase, german, FRENCH_LATIN))
@@ -186,7 +209,7 @@ def test_ambiguous_readings_retained_single_case_withheld() -> None:
     phrase["constituents"] = [{"role": "object", "form": {"text": "dona"}}]
     withheld = render_exercise(phrase, selected, PROFILE)
     assert withheld["review_state"] == "withheld"
-    assert "unresolved" in withheld["reason"]
+    assert "ungeklärt" in withheld["reason"]
     assert len(withheld["readings"]) == 3
     assert "nominativus" in withheld["answer"] and "accusativus" in withheld["answer"]
     assert withheld["enabled"] == ""

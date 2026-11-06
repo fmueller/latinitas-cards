@@ -323,7 +323,9 @@ def test_markup_only_sample_adjudications_keep_notes_and_omit_blank_answers() ->
             if line.split("</strong>")[-1].strip() != "—"
         ]
         assert eligible_answers[:2] == ["amāre", "amō"]
-        assert eligible_answers[2].startswith("amātum <em>(linguistic review required; target withheld)</em>")
+        assert eligible_answers[2].startswith(
+            "amātum <em>(sprachliche Prüfung erforderlich; Zielform zurückgehalten)</em>"
+        )
 
 
 def test_unsupported_and_ambiguous_sample_adjudications_match_the_matrix() -> None:

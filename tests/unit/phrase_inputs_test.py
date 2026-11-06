@@ -495,7 +495,7 @@ def test_explicit_recipe_plan_cli_preview_and_reproducibility(tmp_path: Path) ->
     assert "cum amico" in rendered["prompt"] and "mit dem Freund" in rendered["answer"]
     assert call("phrases", "preview", str(source), str(selections), str(plan)) == report
     result = runner.invoke(app, ["phrases", "preview", str(source), str(selections), str(plan)])
-    assert result.exit_code == 0 and "not asserted" in result.output
+    assert result.exit_code == 0 and "Vorgeschlagene Referenz" in result.output
     bad = chosen.model_copy(update={"target": "missing"})
     request.write_text(json.dumps({"version": 1, "max_exercises": 1, "exercises": [bad.model_dump(mode="json")]}))
     call("phrases", "recipes", str(source), str(selections), str(request), str(plan), success=False)
@@ -669,10 +669,14 @@ def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Pat
         "Reference checked",
     )
     answer_only = call("claims", "inspect", *args)["cards"][0]
-    assert not answer_only["eligible"] and any("combination" in r for r in answer_only["reasons"])
+    assert not answer_only["eligible"] and any("Kombination" in r for r in answer_only["reasons"])
+    assert (
+        "Kombination: Keine anwendbare Kalibrierung; ausdrückliche Belegprüfung erforderlich" in answer_only["answer"]
+    )
+    assert not any(marker in answer_only["answer"].casefold() for marker in ("withheld", "required", "review"))
     answer_preview = call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0]
     assert answer_preview["review_state"] == "withheld"
-    assert "combination" in answer_preview["reason"]
+    assert "Kombination" in answer_preview["reason"]
     assert 'class="morphology-v1 morphology-muted morphology-light"' in answer_preview["answer_html"]
     sidecar = Path(f"{plan}.claims.json")
     sidecar.unlink()
@@ -691,7 +695,7 @@ def test_phrase_review_independent_gates_corrections_and_staleness(tmp_path: Pat
         "Correct and natural",
     )
     combination_only = call("phrases", "preview", str(source), str(selections), str(plan))["exercises"][0]
-    assert not combination_only["eligible"] and any("answer" in r for r in combination_only["reasons"])
+    assert not combination_only["eligible"] and any("Antwort" in r for r in combination_only["reasons"])
     corrected = chosen.reference.model_dump(mode="json")
     corrected["readings"][0]["translations"] = ["in Begleitung eines Freundes"]
     batch = tmp_path / "batch.json"
@@ -1013,5 +1017,5 @@ def test_phrase_questions_keep_identity_and_review_across_presentation_changes(t
     assert sum(c["eligible"] for c in withheld["cards"]) == 2
     assert any("Needs another reading" in r for c in withheld["cards"] for r in c["reasons"])
     withheld_answer = next(c["answer"] for c in withheld["cards"] if not c["eligible"])
-    assert withheld_answer.count("Withheld:") == 1
+    assert withheld_answer.count("Zurückgehalten:") == 1
     assert withheld_answer.count("Needs another reading") == 1

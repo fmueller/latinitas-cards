@@ -635,7 +635,7 @@ def test_multiline_glosses_and_parts_render_single_line_prompts_with_br(tmp_path
     assert prompts
     assert all("\n" not in prompt for prompt in prompts)
     assert all("dīxī" not in prompt for prompt in prompts)
-    assert any("unresolved source evidence" in prompt for prompt in prompts)
+    assert any("Quellbeleg ungeklärt" in prompt for prompt in prompts)
     assert any("sagen<br>prüfen" in prompt for prompt in prompts)
     payload = deterministic_csv_bytes(result)
     data = payload.decode("utf-8").split("#columns")[1].split("\n", 1)[1]

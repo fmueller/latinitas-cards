@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-05T22:14:23Z"
+updated_at: "2026-11-06T22:42:54Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -10,8 +10,8 @@ blockers:
     - 'T-186-approve-v0-5-0-contracts-and-evaluation-policy: maintainer design approval: accept exact contract and independently judged evaluation revisions before consumers'
     - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
-next_action: 'Start task T-184-design-v0-5-0-acceptance-and-pipeline-contracts: Design v0.5.0 acceptance and pipeline contracts'
-last_verification_result: pass for T-173-publish-v0-4-0-maintainer-release-gate at 2026-11-01T09:59:55Z
+next_action: Resolve blocker on T-207-approve-deck-workflow-contract-and-calibration
+last_verification_result: pass for T-218-translate-german-card-status-text-and-document at 2026-11-06T22:42:54Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -39,11 +39,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-173-publish-v0-4-0-maintainer-release-gate at 2026-11-01T09:59:55Z
+- pass for T-218-translate-german-card-status-text-and-document at 2026-11-06T22:42:54Z
 
 ## Next Action
 
-- Start task T-184-design-v0-5-0-acceptance-and-pipeline-contracts: Design v0.5.0 acceptance and pipeline contracts
+- Resolve blocker on T-207-approve-deck-workflow-contract-and-calibration
 
 ## Relevant Artifacts
 
@@ -57,6 +57,6 @@ continuation_notes:
 
 - todo: 33
 - in_progress: 0
-- completed: 181
+- completed: 182
 - blocked: 3
 - cancelled: 0

@@ -99,8 +99,8 @@ ROLE_LABELS: dict[str, Labels] = {
 
 type CardLanguage = Literal["de", "en"]
 
-# Fixed generated-card text keyed by (string_key, language). German entries are the historical
-# strings, byte for byte. Latin-first prompts such as "Formam resolve." are not translated.
+# Fixed generated-card text keyed by (string_key, language).
+# Latin-first prompts such as "Formam resolve." are not translated.
 CARD_STRINGS: dict[str, dict[CardLanguage, str]] = {
     "absent_value": {"de": "— (Nicht vorhanden)", "en": "— (Not present)"},
     "withheld_value": {"de": "— (Zurückgehalten)", "en": "— (Withheld)"},
@@ -116,25 +116,25 @@ CARD_STRINGS: dict[str, dict[CardLanguage, str]] = {
         "en": "Not present; check the source or role profile.",
     },
     "role_unresolved": {
-        "de": "Unresolved source evidence; target withheld. Alternativen und Hinweise prüfen.",
+        "de": "Quellbeleg ungeklärt; Zielform zurückgehalten. Alternativen und Hinweise prüfen.",
         "en": "Unresolved source evidence; target withheld. Check alternatives and notes.",
     },
     "role_review_required": {
-        "de": "Linguistic review required; target withheld. Einzelne Rollenbelege ausdrücklich prüfen.",
+        "de": "Sprachliche Prüfung erforderlich; Zielform zurückgehalten. Einzelne Rollenbelege ausdrücklich prüfen.",
         "en": "Linguistic review required; target withheld. Explicitly check each role's evidence.",
     },
     "role_source_form": {
         "de": "Quellform im bestätigten Rollenprofil; Analyse benötigt gesonderte Prüfung.",
         "en": "Source form in the confirmed role profile; analysis needs separate review.",
     },
-    "blank_unresolved": {"de": "— (unresolved source evidence)", "en": "— (unresolved source evidence)"},
-    "blank_review_required": {"de": "— (linguistic review required)", "en": "— (linguistic review required)"},
+    "blank_unresolved": {"de": "— (Quellbeleg ungeklärt)", "en": "— (unresolved source evidence)"},
+    "blank_review_required": {"de": "— (sprachliche Prüfung erforderlich)", "en": "— (linguistic review required)"},
     "part_unresolved": {
-        "de": "(unresolved source evidence; target withheld)",
+        "de": "(Quellbeleg ungeklärt; Zielform zurückgehalten)",
         "en": "(unresolved source evidence; target withheld)",
     },
     "part_review_required": {
-        "de": "(linguistic review required; target withheld)",
+        "de": "(sprachliche Prüfung erforderlich; Zielform zurückgehalten)",
         "en": "(linguistic review required; target withheld)",
     },
     "phrase_translation_prompt": {
@@ -151,9 +151,38 @@ CARD_STRINGS: dict[str, dict[CardLanguage, str]] = {
         "de": "Selbsteinschätzung: Vergleiche den Sinn, nicht den genauen Wortlaut.",
         "en": "Self-assessment: compare the meaning, not the exact wording.",
     },
-    "reviewed_reference": {"de": "Reviewed reference", "en": "Reviewed reference"},
-    "proposed_reference": {"de": "Proposed reference — not asserted", "en": "Proposed reference — not asserted"},
-    "withheld": {"de": "Withheld: ", "en": "Withheld: "},
+    "reviewed_reference": {"de": "Geprüfte Referenz", "en": "Reviewed reference"},
+    "proposed_reference": {
+        "de": "Vorgeschlagene Referenz — nicht bestätigt",
+        "en": "Proposed reference — not asserted",
+    },
+    "withheld": {"de": "Zurückgehalten: ", "en": "Withheld: "},
+    "claim_stale": {
+        "de": "Veraltete oder abweichende Belegprüfung; erneute Prüfung erforderlich",
+        "en": "Stale or different claim review; renewed review required",
+    },
+    "claim_unsupported": {
+        "de": "Nicht gestützter Beleg; stützende Nachweise erforderlich",
+        "en": "Unsupported claim; supporting evidence required",
+    },
+    "claim_uncalibrated": {
+        "de": "Keine anwendbare Kalibrierung; ausdrückliche Belegprüfung erforderlich",
+        "en": "No applicable calibration; explicit claim review required",
+    },
+    "phrase_unresolved_distinction": {
+        "de": "Die geprüfte Unterscheidung ist in den angegebenen kontextuellen Lesarten ungeklärt.",
+        "en": "The tested distinction is unresolved in the supplied contextual readings.",
+    },
+    "phrase_reference_language_mismatch": {
+        "de": "Referenzsprache {reference!r} weicht von der Kartensprache {language!r} ab",
+        "en": "Reference language {reference!r} differs from card language {language!r}",
+    },
+    "phrase_combination": {"de": "Kombination", "en": "combination"},
+    "phrase_answer": {"de": "Antwort", "en": "answer"},
+    "phrase_invalid_reference": {
+        "de": "Ungültige verfasste Referenz; technische Details im Diagnosebericht.",
+        "en": "invalid authored reference: {error}",
+    },
     "corpus_lexical_prompt": {
         "de": "Was bedeutet das markierte Wort hier?",
         "en": "What does the highlighted word mean here?",

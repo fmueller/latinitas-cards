@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- German cards render withheld-status explanations, blank markers and reference
+  headings in German instead of mixing in English.
+
 ## [0.4.0] - 2026-11-01
 
 ### Fixed

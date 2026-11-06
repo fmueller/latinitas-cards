@@ -220,18 +220,20 @@ def render_exercise(
             distinction=distinction,
         )
     claim = reference_claim or contextual_claim(candidate, exercise, profile)
-    assessment = assess_claim(claim, decision)
+    assessment = assess_claim(claim, decision, language_tag=language_tag)
     state = "reviewed" if assessment.status == "accepted" else "proposed" if decision is None else "withheld"
     reason = assessment.reason
     if exercise.target and exercise.distinction != "analysis":
         values = {getattr(r.features[exercise.target], exercise.distinction) for r in exercise.reference.readings}
         if None in values or len(values) != 1:
-            state, reason = "withheld", "The tested distinction is unresolved in the supplied contextual readings."
+            state, reason = "withheld", card_text("phrase_unresolved_distinction", language_tag)
     # A reference in another language never reaches a card, even with an accepted decision.
     language = card_language(language_tag)
     mismatched = exercise.reference.language != language
     if mismatched:
-        mismatch = f"Reference language {exercise.reference.language!r} differs from card language {language!r}"
+        mismatch = card_text(
+            "phrase_reference_language_mismatch", language_tag, reference=exercise.reference.language, language=language
+        )
         # Keep an unresolved-distinction reason; a review decision's reason is superseded.
         reason = f"{reason} {mismatch}" if state == "withheld" and reason != assessment.reason else mismatch
         state = "withheld"

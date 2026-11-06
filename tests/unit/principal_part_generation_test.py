@@ -520,7 +520,7 @@ def test_generated_note_knowledge_uses_role_labels_for_every_confirmed_role() ->
         "<strong>Präsens, 1. Person Singular:</strong> ferō<br>"
         "<strong>Infinitiv:</strong> ferre<br>"
         "<strong>Perfekt, 1. Person Singular:</strong> tulī<br>"
-        "<strong>Supinum:</strong> lātum <em>(linguistic review required; target withheld)</em>"
+        "<strong>Supinum:</strong> lātum <em>(sprachliche Prüfung erforderlich; Zielform zurückgehalten)</em>"
     )
     assert (result.generated_count, result.skipped_count, result.generated_warning_count) == (1, 0, 1)
     assert [skip.code for skip in result.skips] == ["linguistic_review_required"]
@@ -528,14 +528,14 @@ def test_generated_note_knowledge_uses_role_labels_for_every_confirmed_role() ->
     assert result.skips[0].evidence.candidates is not None
     assert result.skips[0].evidence.candidates[-1] == ("lātum",)
     assert replace(result, source_entry_count=None).skipped_count == 0
-    assert all("Linguistic review required" in card.answer for card in result.notes[0].cards if card.eligible)
+    assert all("Sprachliche Prüfung erforderlich" in card.answer for card in result.notes[0].cards if card.eligible)
     completion_cards = [
         card for card in result.notes[0].cards if card.eligible and card.slot.recipe == "principal_part_completion"
     ]
     assert len(completion_cards) == 3
     for card in completion_cards:
-        assert "— (linguistic review required)" in card.prompt
-        assert "unresolved source evidence" not in card.prompt
+        assert "— (sprachliche Prüfung erforderlich)" in card.prompt
+        assert "Quellbeleg ungeklärt" not in card.prompt
 
 
 def _markup_only_profile() -> DeckProfile:
@@ -684,13 +684,13 @@ def test_unresolved_source_evidence_never_becomes_a_recipe_target(recipe: str) -
     for note in result.notes:
         assert 'class="source-extraction"' in note.content.principal_parts
     assert "amāre | amare" in result.notes[0].content.principal_parts
-    assert "unresolved" in result.notes[0].content.principal_parts
+    assert "Quellbeleg ungeklärt" in result.notes[0].content.principal_parts
     assert "poet." in result.notes[1].content.principal_parts
     if recipe == "principal_part_completion":
         for card in result.notes[0].cards:
             if card.eligible:
                 assert "amāre" not in card.prompt
-                assert "unresolved source evidence" in card.prompt
+                assert "Quellbeleg ungeklärt" in card.prompt
     conflict = next(skip for skip in result.skips if skip.code == "unconfirmed_source_evidence")
     assert conflict.evidence is not None
     assert conflict.evidence.raw == "dīcere, dīcō, dīxī, dictum<br>supine (not PPP)"

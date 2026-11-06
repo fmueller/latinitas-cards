@@ -484,13 +484,13 @@ def test_review_without_any_extraction_snapshot_cannot_assert_a_split() -> None:
 
 
 _FIXED_TEXT = {
-    # Expected literals are copied from the pre-localization sources, never read from CARD_STRINGS.
+    # Expected literals are independent of CARD_STRINGS; German includes the BUG-1 correction.
     "de": {
         "parts": "<strong>Präsens, 1. Person Singular:</strong> amō<br><strong>Infinitiv:</strong> amāre<br>"
         "<strong>Perfekt, 1. Person Singular:</strong> —<br>"
-        "<strong>Supinum:</strong> amātum | amatum <em>(unresolved source evidence; target withheld)</em>",
+        "<strong>Supinum:</strong> amātum | amatum <em>(Quellbeleg ungeklärt; Zielform zurückgehalten)</em>",
         "prompt": "<strong>Präsens, 1. Person Singular:</strong> ____<br><strong>Infinitiv:</strong> amāre<br>"
-        "<strong>Perfekt, 1. Person Singular:</strong> —<br><strong>Supinum:</strong> — (unresolved source evidence)",
+        "<strong>Perfekt, 1. Person Singular:</strong> —<br><strong>Supinum:</strong> — (Quellbeleg ungeklärt)",
         "answer": "Präsens, 1. Person Singular"
         '<section class="morphology-v1 morphology-muted morphology-light">'
         '<div>Lemma: <span class="morphology-lemma">amō</span></div>'
@@ -505,7 +505,7 @@ _FIXED_TEXT = {
         '<div class="morphology-role"><strong>Perfekt, 1. Person Singular:</strong> — (Nicht vorhanden) · '
         "Nicht vorhanden; Quelle oder Rollenprofil prüfen.</div>"
         '<div class="morphology-role"><strong>Supinum:</strong> — (Zurückgehalten) · '
-        "Unresolved source evidence; target withheld. Alternativen und Hinweise prüfen.</div></section></section>",
+        "Quellbeleg ungeklärt; Zielform zurückgehalten. Alternativen und Hinweise prüfen.</div></section></section>",
     },
     "en": {
         "parts": "<strong>Present, 1st person singular:</strong> amō<br><strong>Present infinitive:</strong> amāre<br>"
