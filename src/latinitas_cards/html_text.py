@@ -120,6 +120,67 @@ def generated_html_to_text(value: str) -> str:
     return decoded.text()
 
 
+class _SourceBoundaryExtractor(_SourceTextExtractor):
+    """Retain source offsets while hiding markup from delimiter recognition."""
+
+    def __init__(self, value: str, *, decode_parentheses: bool = True) -> None:
+        super().__init__(decode_entities=True)
+        self.boundaries = [" "] * len(value)
+        self._decode_parentheses = decode_parentheses
+        self.readable: list[tuple[str, int, int]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        super().handle_starttag(tag, attrs)
+        if tag in _BLOCK_TAGS:
+            self.readable.append(("\n", self._index, self._index))
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        super().handle_startendtag(tag, attrs)
+        if tag in _BLOCK_TAGS:
+            self.readable.append(("\n", self._index, self._index))
+
+    def handle_endtag(self, tag: str) -> None:
+        super().handle_endtag(tag)
+        if tag in _BLOCK_TAGS:
+            self.readable.append(("\n", self._index, self._index))
+
+    def handle_data(self, data: str) -> None:
+        if not self._inactive_depth:
+            self.boundaries[self._index : self._index + len(data)] = data
+            self.readable.extend(
+                (char, self._index + index, self._index + index + 1) for index, char in enumerate(data)
+            )
+
+    def _reference(self, body: str) -> str:
+        match = re.compile(f"{re.escape(body)};?").match(self.rawdata, self._index)
+        raw = match.group(0) if match else f"{body};"
+        if not self._inactive_depth:
+            # Only parentheses affect annotation boundaries. Keep other entities
+            # literal so decoding cannot introduce a new field separator.
+            decoded = html.unescape(raw)
+            self.readable.extend((char, self._index, self._index + len(raw)) for char in decoded)
+            syntax = decoded.ljust(len(raw)) if self._decode_parentheses and decoded in {"(", ")"} else raw
+            self.boundaries[self._index : self._index + len(raw)] = syntax
+        return raw
+
+
+def source_html_boundary_text(value: str) -> str:
+    """Return delimiter-readable text at raw offsets, not display text."""
+    parser = _SourceBoundaryExtractor(value)
+    parser.feed(value)
+    parser.close()
+    # Match the display normalizer's second parse of entity-exposed markup,
+    # but map hidden characters back to the original source offsets.
+    decoded_value = "".join(char for char, _, _ in parser.readable)
+    resolved = _SourceBoundaryExtractor(decoded_value, decode_parentheses=False)
+    resolved.feed(decoded_value)
+    resolved.close()
+    for character, (_, start, end) in zip(resolved.boundaries, parser.readable, strict=True):
+        if character == " ":
+            parser.boundaries[start:end] = " " * (end - start)
+    return "".join(parser.boundaries)
+
+
 def source_html_to_text(value: str) -> str:
     """Convert untrusted source HTML to readable plain text without active markup.
 
@@ -141,4 +202,4 @@ def source_html_to_text(value: str) -> str:
     return resolved.text()
 
 
-__all__ = ["generated_html_to_text", "source_html_to_text"]
+__all__ = ["generated_html_to_text", "source_html_boundary_text", "source_html_to_text"]

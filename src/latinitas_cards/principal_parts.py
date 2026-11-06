@@ -16,9 +16,9 @@ from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Literal
 
-from .html_text import source_html_to_text
+from .html_text import source_html_boundary_text, source_html_to_text
 from .profile import DeckProfile, PrincipalPartLayout
-from .source_extraction import SourceExtraction, extract_segments, separator_rules
+from .source_extraction import SourceExtraction, extract_segments, mask_parenthetical_notes, separator_rules
 from .sources import CanonicalSourceRecord
 
 ParseFailureStatus = Literal["incomplete", "unsupported", "ambiguous"]
@@ -316,9 +316,18 @@ def parse_principal_part_value(
 def _split_value(value: str, layout: PrincipalPartLayout) -> tuple[str, ...] | PrincipalPartParseFailure:
     expected_separator_count = len(layout.roles) - 1
     separators = layout.separators
+    try:
+        masked = mask_parenthetical_notes(source_html_boundary_text(value))
+    except ValueError:
+        return _failure(
+            "unsupported",
+            "unbalanced_parenthetical_note",
+            "parenthetical notes have balanced boundaries",
+            "The principal-parts value contains an unbalanced parenthetical note.",
+        )
     if len(separators) == 1:
         separator = separators[0]
-        occurrences = value.count(separator)
+        occurrences = masked.count(separator)
         if occurrences > expected_separator_count:
             return _failure(
                 "ambiguous",
@@ -328,10 +337,8 @@ def _split_value(value: str, layout: PrincipalPartLayout) -> tuple[str, ...] | P
                 observed_count=occurrences + 1,
                 expected_count=len(layout.roles),
             )
-        if occurrences < expected_separator_count:
-            if occurrences == expected_separator_count - 1:
-                return tuple(value.split(separator))
-            if _has_unconfigured_separator(value, separators):
+        if occurrences < expected_separator_count - 1:
+            if _has_unconfigured_separator(masked, separators):
                 return _failure(
                     "unsupported",
                     "separator_mismatch",
@@ -348,11 +355,11 @@ def _split_value(value: str, layout: PrincipalPartLayout) -> tuple[str, ...] | P
                 observed_count=occurrences + 1,
                 expected_count=len(layout.roles),
             )
-        return tuple(value.split(separator))
+        return _segment_value(value, (separator,) * occurrences, masked) or ()
 
-    segments = _segment_value(value, separators)
+    segments = _segment_value(value, separators, masked)
     if segments is None:
-        if _has_unconfigured_separator(value, separators):
+        if _has_unconfigured_separator(masked, separators):
             return _failure(
                 "unsupported",
                 "separator_mismatch",
@@ -368,7 +375,11 @@ def _split_value(value: str, layout: PrincipalPartLayout) -> tuple[str, ...] | P
             expected_count=len(layout.roles),
         )
 
-    if any(separator in segment for segment in segments for separator in separators):
+    if any(
+        separator in mask_parenthetical_notes(source_html_boundary_text(segment))
+        for segment in segments
+        for separator in separators
+    ):
         return _failure(
             "ambiguous",
             "extra_separator",
@@ -380,11 +391,11 @@ def _split_value(value: str, layout: PrincipalPartLayout) -> tuple[str, ...] | P
     return segments
 
 
-def _segment_value(value: str, separators: tuple[str, ...]) -> tuple[str, ...] | None:
+def _segment_value(value: str, separators: tuple[str, ...], masked: str) -> tuple[str, ...] | None:
     segments: list[str] = []
     start = 0
     for separator in separators:
-        position = value.find(separator, start)
+        position = masked.find(separator, start)
         if position < 0:
             return None
         segments.append(value[start:position])

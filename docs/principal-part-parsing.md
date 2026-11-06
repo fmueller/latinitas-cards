@@ -14,6 +14,7 @@ semantic contract for that source.
 | Deponent/exceptional layout | A profile may explicitly confirm a shorter layout, such as `present_1s`, `present_infinitive`, `perfect_1s` for `sequor — sequi — secutus sum`. The parser treats the third value as the confirmed third role; it does not detect “deponent” itself. | A four-role profile receiving three unmarked values is not treated as a deponent entry. It is ambiguous because the missing role is not identified. |
 | Reusable separator | A single configured literal separator is reused between every role, for example `(" — ",)` or `(", ")`. | Commas, semicolons, slashes, dashes, and newlines are not accepted as alternatives unless confirmed in the profile. |
 | Position-specific separators | Exactly `role_count - 1` configured literal separators, in order, for example `(", ", "; ", " / ")`. | The parser does not reorder or substitute separators. |
+| Parenthetical notes | Balanced parenthetical notes, including nested notes, are excluded from delimiter counting and form candidates. Raw segments retain them for review. Unbalanced notes are withheld. | Separators and alternatives inside notes never supply a form. |
 | Explicit omission | A blank delimited slot is preserved as an omitted role, for example `sum — esse — fui — `. Non-leading omissions return success with `display=None` and `comparison=None`. | The first two roles are required; an explicitly blank leading role returns `incomplete`. |
 | Normalized display | Semantic display text is normalized exactly once in the parser from the raw source value: source markup is flattened structurally, comments and active elements are dropped, entities are decoded exactly once, and whitespace is collapsed per the safe-HTML text contract. A value with no readable text (markup-only such as `<b></b>`, comment-only, or encoded-whitespace-only such as `&nbsp;`) is an omitted role exactly like an explicit blank slot. | Normalization never selects between alternatives, renames a role, or infers a missing form; rendering escapes this text again but never decodes entities a second time. |
 | Raw provenance | The raw unnormalized source segment is preserved separately on every `PrincipalPartValue.raw`, and the raw lexical entry on `ParsedPrincipalParts.raw_lexical_entry`, for provenance and review only. | Raw provenance never feeds display, comparison, eligibility, or identity. |
@@ -36,6 +37,15 @@ interchangeable with the approved sanitized-fixture role
 explicitly during profile confirmation; unsafe source or exercise assignments remain
 structured skip/review outcomes. Structural parser counts do not claim universal
 morphological coverage or prove eligible-verb coverage.
+
+Generation applies a separate eligibility gate: the lemma must have a plausible
+present or infinitive ending, and supplied `present_infinitive`, `present_1s`, and
+`perfect_1s` forms must match their role's endings. Comparisons ignore macrons and
+case. Infinitives allow `-re`, `-rī`, `-ī`, and `esse`; present forms allow `-ō`,
+`-or`, and `sum`; perfect forms allow `-ī` and `sum` (including deponent phrases).
+Failures withhold the whole entry as `not_a_verb_entry`. These are plausibility
+checks, not dictionary verification. An optional `include_source_tag` profile value
+also requires an exact source-tag match and is shown for confirmation during setup.
 
 ## Structured outcomes
 

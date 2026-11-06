@@ -337,6 +337,7 @@ class ProfileOverrides(_ProfileModel):
 
     source_identity: SourceIdentityOverrides | None = None
     note_type: str | None = Field(default=None, min_length=1)
+    include_source_tag: str | None = Field(default=None, min_length=1, pattern=r"^\S+$")
     fields: FieldOverrides | None = None
     principal_parts: PrincipalPartOverrides | None = None
     language_tag: str | None = Field(default=None, min_length=1)
@@ -378,6 +379,9 @@ class DeckProfile(_ProfileModel):
     schema_version: ProfileSchemaVersion
     source_identity: SourceIdentityConfig
     note_type: str = Field(min_length=1)
+    include_source_tag: str | None = Field(
+        default=None, min_length=1, pattern=r"^\S+$", exclude_if=lambda value: value is None
+    )
     fields: ProfileFields
     principal_parts: PrincipalPartLayout
     language_tag: str = DEFAULT_LANGUAGE_TAG

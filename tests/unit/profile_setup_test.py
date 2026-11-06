@@ -75,7 +75,10 @@ def test_representative_apkg_proposal_uses_approved_roles_and_shows_uncertainty(
     assert any(example.structural_status == "success" for example in proposal.examples)
 
 
-def test_setup_confirmed_csv_profile_is_saved_without_mutating_source_and_reports_json(tmp_path: Path) -> None:
+@pytest.mark.parametrize("include_tag", [False, True])
+def test_setup_confirmed_csv_profile_is_saved_without_mutating_source_and_reports_json(
+    tmp_path: Path, include_tag: bool
+) -> None:
     source = tmp_path / "source.csv"
     profile_path = tmp_path / "project" / "profile.json"
     _write_csv(source)
@@ -91,6 +94,7 @@ def test_setup_confirmed_csv_profile_is_saved_without_mutating_source_and_report
             "--non-interactive",
             "--confirm",
             "--json",
+            *(["--include-source-tag", "Verb"] if include_tag else []),
         ],
     )
 
@@ -99,8 +103,11 @@ def test_setup_confirmed_csv_profile_is_saved_without_mutating_source_and_report
     assert payload["status"] == "saved"
     assert payload["profile"]["source_identity"] == {"strategy": "source_id_field", "field": "Stable ID"}
     assert payload["effective_profile"]["language_tag"] == "de"
+    assert payload["effective_profile"].get("include_source_tag") == ("Verb" if include_tag else None)
     assert profile_path.exists()
-    assert DeckProfile.from_json(profile_path.read_text(encoding="utf-8")).fields.lexical_entry_field == "Lemma"
+    saved = DeckProfile.from_json(profile_path.read_text(encoding="utf-8"))
+    assert saved.fields.lexical_entry_field == "Lemma"
+    assert saved.include_source_tag == ("Verb" if include_tag else None)
     assert source.read_bytes() == source_before
 
 

@@ -69,6 +69,7 @@ def test_policy_stays_outside_claim_and_profile_contracts() -> None:
         "schema_version",
         "source_identity",
         "note_type",
+        "include_source_tag",
         "fields",
         "principal_parts",
         "language_tag",

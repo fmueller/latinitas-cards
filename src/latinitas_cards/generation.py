@@ -44,7 +44,7 @@ from .principal_parts import (
 from .principal_relationships import PrincipalPartComparison, compare_principal_parts
 from .profile import DeckProfile, tag_character_violation
 from .profile_setup import encode_unsafe_controls
-from .source_extraction import SourceExtraction
+from .source_extraction import SourceExtraction, mask_parenthetical_notes
 from .sources import CanonicalSourceRecord
 from .terminology import card_text
 
@@ -209,6 +209,30 @@ def generate_learning_object_notes(
             continue
 
         parsed = parse_principal_parts(record, profile)
+        lemma = source_html_to_text(record.fields.get(profile.fields.lexical_entry_field, ""))
+        if (
+            (profile.include_source_tag is not None and profile.include_source_tag not in record.source_tags)
+            or (lemma and not _names_multiple_lexemes(lemma) and not _plausible_verb_lemma(lemma))
+            or (
+                not isinstance(parsed, PrincipalPartParseFailure)
+                and any(
+                    not _plausible_verb_form(part.role, candidate)
+                    for part in parsed.value.parts
+                    for candidate in part.candidates
+                )
+            )
+        ):
+            skipped.append(
+                GenerationSkip(
+                    status="unsupported",
+                    code="not_a_verb_entry",
+                    message="The entry does not match the source-tag filter or plausible Latin verb forms.",
+                    source_identity=source_identity.value,
+                    source_location=record.provenance.location,
+                    evidence=parsed.evidence,
+                )
+            )
+            continue
         if isinstance(parsed, PrincipalPartParseFailure):
             skipped.append(_parse_failure_skip(parsed, record, source_identity.value))
             continue
@@ -318,6 +342,31 @@ def generate_learning_object_notes(
     )
 
 
+def _plausible_verb_form(role: str, value: str) -> bool:
+    if "|" in value:
+        return all(_plausible_verb_form(role, alternative) for alternative in value.split("|"))
+    text = normalize_principal_part_for_comparison(value.partition("\n")[0])
+    if role == "present_infinitive":
+        return text.endswith(("re", "ri", "i", "esse"))
+    if role == "present_1s":
+        return text.endswith(("o", "or", "sum"))
+    if role == "perfect_1s":
+        return text.endswith(("i", "sum"))
+    return True
+
+
+def _plausible_verb_lemma(value: str) -> bool:
+    try:
+        value = mask_parenthetical_notes(value)
+    except ValueError:
+        return False
+    return bool(value.strip()) and all(
+        _plausible_verb_form("present_1s", variant) or _plausible_verb_form("present_infinitive", variant)
+        for variant in _MULTI_OBJECT_SPLIT.split(value)
+        if variant.strip()
+    )
+
+
 def _parse_failure_skip(
     failure: PrincipalPartParseFailure,
     record: CanonicalSourceRecord,
@@ -341,6 +390,10 @@ def _names_multiple_lexemes(lemma_text: str) -> bool:
     distinct lemmas in one entry remain a review item instead of being merged.
     """
 
+    try:
+        lemma_text = mask_parenthetical_notes(lemma_text)
+    except ValueError:
+        return False
     segments = [segment.strip() for segment in _MULTI_OBJECT_SPLIT.split(lemma_text) if segment.strip()]
     comparisons = {normalize_principal_part_for_comparison(segment) for segment in segments}
     return len(comparisons) > 1

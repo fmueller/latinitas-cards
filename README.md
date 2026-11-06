@@ -209,6 +209,15 @@ before turning them on. Alternatives and hints are kept as source evidence, neve
 guessed into a single answer: unresolved forms are left off the cards and listed in the
 preview. Zero-card entries are not exported.
 
+Generation also requires plausible verb endings for the lemma and the configured
+infinitive, present first-person and perfect first-person roles. Non-verb entries
+are withheld as `not_a_verb_entry`; matching the role count alone is not enough.
+Parenthetical notes remain in source evidence but never become forms or alternatives.
+For a mixed deck with explicit word-class tags, add `--include-source-tag Verb`
+during `setup` and confirm the proposal. The saved `include_source_tag` requires an
+exact source tag match; it does not bypass the verb checks. CSV sources without
+source tags do not match this filter.
+
 Prepare the generated note type, fields, template, and HTML import setting before the
 first import; the note type keeps a user-owned `Personal Notes` field that generated CSVs
 never contain. For repeat imports, use the same note type with `LatinitasID` as the

@@ -21,6 +21,48 @@ UNIVERSITY_ROLES = (
 )
 
 
+@pytest.mark.parametrize(
+    ("lemma", "parts"),
+    [
+        ("nūllus", "nūllus, a, um (Pronominaladjektiv: Gen. Sg. nūllīus, Dat. nūllī)"),
+        ("domus", "domus, ūs f. (Sonderformen: Akk. domum, Gen. Pl. domōrum)"),
+        ("trēs", "trēs, trēs, tria (Gen. trium, Dat. tribus)"),
+        ("ūnus", "ūnus, a, um, Gen. ūnīus"),
+        ("servus", "servus, servī, m., Sklave"),
+        ("servus (Nomen, selten)", "servus, servī, m., Sklave"),
+        ("dīcō", "dīcere, a, dīxī, dictum"),
+        ("dīcō", "dīcere, dīcō, dictum, dictum"),
+        ("dīcō", "dictum, dīcō, dīxī, dictum"),
+    ],
+)
+def test_non_verbs_and_implausible_roles_withhold_the_whole_entry(lemma: str, parts: str) -> None:
+    result = _generate((_record(parts, lexical_entry=lemma),), _profile())
+
+    assert result.notes == ()
+    assert [skip.code for skip in result.skips] == ["not_a_verb_entry"]
+
+
+def test_source_tag_filter_requires_an_exact_tag_without_bypassing_morphology() -> None:
+    profile = DeckProfile.from_mapping(_profile().to_machine_readable() | {"include_source_tag": "Verb"})
+    records = (
+        _record("dīcere, dīcō, dīxī, dictum", source_identity="yes", source_tags=("Verb",)),
+        _record("dīcere, dīcō, dīxī, dictum", source_identity="no", source_tags=("Adverb",)),
+        _record("dīcere, dīcō, dīxī, dictum", source_identity="untagged"),
+        _record("dīcere, dīcō, dīxī, dictum", source_identity="case", source_tags=("verb",)),
+        _record("nūllus, a, um, nūllīus", lexical_entry="nūllus", source_identity="bad", source_tags=("Verb",)),
+    )
+
+    result = _generate(records, profile)
+
+    assert len(result.notes) == 1
+    assert [(skip.source_identity, skip.code) for skip in result.skips if skip.source_identity != "yes"] == [
+        ("no", "not_a_verb_entry"),
+        ("untagged", "not_a_verb_entry"),
+        ("case", "not_a_verb_entry"),
+        ("bad", "not_a_verb_entry"),
+    ]
+
+
 def _generate(
     records: tuple[CanonicalSourceRecord, ...],
     profile: DeckProfile,
@@ -76,17 +118,18 @@ def _record(
     )
 
 
-def test_one_source_note_yields_one_learning_object_note_with_knowledge_and_card_keys() -> None:
+@pytest.mark.parametrize("lemma", ["dīcō", "dīcō (Verb)", "dīcō (Verb, selten)"])
+def test_one_source_note_yields_one_learning_object_note_with_knowledge_and_card_keys(lemma: str) -> None:
     profile = _profile()
 
-    result = _generate((_record("dīcere, dīcō, dīxī, dictum", profile=profile),), profile)
+    result = _generate((_record("dīcere, dīcō, dīxī, dictum", lexical_entry=lemma, profile=profile),), profile)
 
     assert isinstance(result, LearningObjectGenerationResult)
     assert [skip.code for skip in result.skips] == ["linguistic_review_required"]
     assert len(result.notes) == 1
     note = result.notes[0]
     assert note.object_key == SINGLE_LEXEME_OBJECT_KEY
-    assert note.content.lemma == "dīcō"
+    assert note.content.lemma == lemma
     assert "<strong>Infinitiv:</strong> dīcere" in note.content.principal_parts
     assert note.content.meaning == "sagen"
     assert note.provenance.source_identity == "entry-17"

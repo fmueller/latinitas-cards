@@ -8,6 +8,10 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 - German cards render withheld-status explanations, blank markers and reference
   headings in German instead of mixing in English.
+- Principal-part generation withholds non-verb entries instead of enabling verb
+  cards from positional splits; parenthetical notes no longer become forms.
+- `setup --include-source-tag Verb` confirms an optional exact source-tag filter
+  for principal-part generation from mixed decks.
 
 ## [0.4.0] - 2026-11-01
 

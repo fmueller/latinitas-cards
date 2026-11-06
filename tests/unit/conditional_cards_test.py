@@ -349,12 +349,12 @@ def test_card_prompts_render_the_series_with_the_target_blanked() -> None:
 def test_card_content_is_escaped_and_guards_are_binary() -> None:
     profile = _profile()
 
-    note = _generate_one("ferō — ferre — tulī &amp; poët. — lātum", profile)
+    note = _generate_one("ferō — ferre — tulī — lātum", profile, meaning="tragen &amp; bringen")
 
     eligible = [card for card in note.cards if card.eligible]
     assert {card.guard for card in eligible} == {"1"}
     assert all("<b>" not in card.prompt and "<b>" not in card.answer for card in note.cards)
-    assert any("tulī &amp; poët." in card.prompt for card in eligible)
+    assert any("tragen &amp; bringen" in card.prompt for card in eligible)
 
 
 def test_note_identity_is_independent_of_recipe_selection_and_eligibility() -> None:

@@ -72,6 +72,23 @@ def test_regular_entry_maps_display_values_to_named_roles_without_losing_macrons
     assert parsed.source_identity == "entry-17"
 
 
+@pytest.mark.parametrize("separators", [(" — ",), (",",), (",", ";", " / ")])
+def test_parenthetical_notes_never_supply_parts_or_alternatives(separators: tuple[str, ...]) -> None:
+    boundaries = separators * 3 if len(separators) == 1 else separators
+    parts = ["dīcō (Verb, (unregelmäßig; selten / belegt))", "dīcere", "dīxī", "dictum (PPP, nicht: factum | actum)"]
+    value = parts[0] + "".join(separator + part for separator, part in zip(boundaries, parts[1:], strict=True))
+    result = parse_principal_parts(
+        _record(value),
+        _profile(separators=separators),
+    )
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    assert [part.display for part in result.value.parts] == ["dīcō", "dīcere", "dīxī", "dictum"]
+    assert result.value.parts[0].raw == parts[0]
+    assert result.evidence is not None
+    assert "PPP, nicht:" in result.evidence.raw
+
+
 def test_configured_position_specific_separators_are_preserved_as_one_layout() -> None:
     profile = _profile(separators=(", ", "; ", " / "))
 
@@ -82,6 +99,49 @@ def test_configured_position_specific_separators_are_preserved_as_one_layout() -
 
     assert isinstance(result, PrincipalPartParseSuccess)
     assert [part.display for part in result.value.parts] == ["amo", "amare", "amavi", "amatum"]
+
+
+@pytest.mark.parametrize(
+    "present",
+    [
+        '<span title="(">dīcō</span>',
+        "dīcō <!-- ( -->",
+        "dīcō &#40;rare, poetic&#41;",
+        '&lt;span title="("&gt;dīcō&lt;/span&gt;',
+        "dīcō &lt;!-- ( --&gt;",
+        '&lt;span title="("&gt;dīcō&lt;/span&gt; (rare, poetic)',
+        '&lt;sp<b>an</b> title="("&gt;dīcō&lt;/span&gt;',
+        "dīcō &lt;!<b>-- ( --</b>&gt;",
+    ],
+)
+def test_only_readable_parentheses_affect_boundaries(present: str) -> None:
+    result = parse_principal_parts(_record(f"{present},dīcere,dīxī,dictum"), _profile(separators=(",",)))
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    assert [part.display for part in result.value.parts] == ["dīcō", "dīcere", "dīxī", "dictum"]
+
+
+def test_annotation_and_confirmed_poet_hint_can_coexist() -> None:
+    profile = _profile()
+    profile = profile.model_copy(
+        update={"principal_parts": profile.principal_parts.model_copy(update={"trailing_poet_hint": True})}
+    )
+    result = parse_principal_parts(_record("dīcō — dīcere — dīxī (rare)<br>poet. — dictum"), profile)
+
+    assert isinstance(result, PrincipalPartParseSuccess)
+    assert result.value.by_role["perfect_1s"].display == "dīxī"
+    assert result.evidence is not None
+    assert result.evidence.hints[0].text == "poet."
+
+
+@pytest.mark.parametrize("note", ["(unclosed", "unopened)"])
+def test_unbalanced_parenthetical_notes_are_withheld(note: str) -> None:
+    result = parse_principal_parts(_record(f"dīcō — dīcere — dīxī — dictum {note}"), _profile())
+
+    assert isinstance(result, PrincipalPartParseFailure)
+    assert result.code == "unbalanced_parenthetical_note"
+    assert result.evidence is not None
+    assert note in result.evidence.raw
 
 
 def test_confirmed_three_role_layout_supports_deponent_entries_without_inference() -> None:

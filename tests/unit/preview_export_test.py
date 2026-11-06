@@ -739,7 +739,7 @@ def test_export_reports_source_entries_objects_cards_and_zero_eligible_notes_sep
         source,
         [
             ("entry-1", "dīcō", "dīcere, dīcō, dīxī, dictum", "sagen"),
-            ("entry-2", "sum", "sum, esse, fuī, ", "sein"),
+            ("entry-2", "sum", "esse, sum, fuī, ", "sein"),
             ("entry-3", "ferō", "ferre, ferō, tulī", "tragen"),
         ],
     )
@@ -794,7 +794,7 @@ def test_csv_export_omits_zero_eligible_notes_instead_of_blank_native_cards(tmp_
 def test_exported_rows_always_carry_at_least_one_enabled_card_guard(tmp_path: Path) -> None:
     result, _source, _state, _output = _committed_scoped_export(
         tmp_path,
-        rows=[("entry-1", "sum", "sum, esse, fuī, ", "sein")],
+        rows=[("entry-1", "sum", "esse, sum, fuī, ", "sein")],
     )
 
     header, rows, _metadata = _parse_export(deterministic_csv_bytes(result))

@@ -56,6 +56,10 @@ def setup(
         str | None,
         typer.Option(help="Explicit principal-parts field override"),
     ] = None,
+    include_source_tag: Annotated[
+        str | None,
+        typer.Option(help="Only generate from notes carrying this exact source tag, e.g. Verb"),
+    ] = None,
     meaning_field: Annotated[
         str | None,
         typer.Option(help="Explicit optional meaning or German-gloss field override"),
@@ -132,6 +136,7 @@ def setup(
             note_type=note_type,
             lexical_entry_field=lexical_entry_field,
             principal_parts_field=principal_parts_field,
+            include_source_tag=include_source_tag,
             meaning_field=meaning_field,
             without_meaning_field=without_meaning_field,
             separator=separator,
@@ -266,6 +271,7 @@ def _build_overrides(
     note_type: str | None,
     lexical_entry_field: str | None,
     principal_parts_field: str | None,
+    include_source_tag: str | None,
     meaning_field: str | None,
     without_meaning_field: bool,
     separator: list[str] | None,
@@ -311,6 +317,7 @@ def _build_overrides(
     if principal_parts:
         values["principal_parts"] = principal_parts
     for name, value in (
+        ("include_source_tag", include_source_tag),
         ("language_tag", language_tag),
         ("generated_note_type", generated_note_type),
         ("target_deck", target_deck),
@@ -413,6 +420,8 @@ def _print_proposal(proposal: ProfileSetupProposal, *, status: str) -> None:
     typer.echo(f"Profile {safe_source_value(status, 'status')}: inspected {proposal.record_count} record(s).")
     typer.echo(f"Source kind: {safe_source_value(proposal.source_kind, 'source kind')}")
     typer.echo(f"Note type: {safe_source_value(profile.note_type, 'note type')}")
+    if profile.include_source_tag is not None:
+        typer.echo(f"Required source tag: {safe_source_value(profile.include_source_tag, 'source tag')}")
     typer.echo(
         "Lexical-entry field: "
         + safe_source_value(profile.fields.lexical_entry_field, profile.fields.lexical_entry_field)

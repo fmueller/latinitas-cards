@@ -37,6 +37,23 @@ def separator_rules(layout: PrincipalPartLayout) -> tuple[str, ...]:
     return tuple(names.get(separator, f"literal {separator!r}") for separator in layout.separators)
 
 
+def mask_parenthetical_notes(value: str) -> str:
+    """Blank annotations without moving the raw source's role boundaries."""
+    depth = 0
+    masked: list[str] = []
+    for char in value:
+        if char == "(":
+            depth += 1
+        masked.append(" " if depth or char == ")" else char)
+        if char == ")":
+            depth -= 1
+            if depth < 0:
+                raise ValueError("Unbalanced parenthetical note")
+    if depth:
+        raise ValueError("Unbalanced parenthetical note")
+    return "".join(masked)
+
+
 def extract_segments(raw: str, segments: tuple[str, ...], layout: PrincipalPartLayout) -> SourceExtraction:
     """Retain ordered alternatives and only the explicitly confirmed poet. hint.
 
@@ -47,11 +64,19 @@ def extract_segments(raw: str, segments: tuple[str, ...], layout: PrincipalPartL
     candidates: list[tuple[str, ...]] = []
     hints: list[SourceHint] = []
     for position, segment in enumerate(segments, start=1):
-        text = source_html_to_text(segment)
+        try:
+            masked_text = mask_parenthetical_notes(source_html_to_text(segment))
+        except ValueError:
+            return SourceExtraction(raw, layout.roles, "unsupported", None, rules=("unbalanced parenthetical note",))
+        text = "\n".join(" ".join(line.split()) for line in masked_text.split("\n") if line.strip())
         lines = text.split("\n")
         if len(lines) > 1 and layout.trailing_poet_hint:
             raw_lines = re.split(r"<br\s*/?>|\n", segment, flags=re.IGNORECASE)
-            if len(raw_lines) != 2 or source_html_to_text(raw_lines[0]) != lines[0]:
+            if (
+                len(raw_lines) != 2
+                or re.sub(r"[^\S\n]+", " ", mask_parenthetical_notes(source_html_to_text(raw_lines[0]))).strip()
+                != lines[0]
+            ):
                 return SourceExtraction(
                     raw,
                     layout.roles,
@@ -60,8 +85,9 @@ def extract_segments(raw: str, segments: tuple[str, ...], layout: PrincipalPartL
                     rules=(*rules, "unconfirmed hint boundary", "withhold assignment"),
                 )
             hint_raw = raw_lines[1].strip()
-            hints.append(SourceHint(position, hint_raw, "\n".join(lines[1:])))
-            if position != 3 or layout.roles[position - 1] != "perfect_1s" or lines[1:] != ["poet."]:
+            hint_text = source_html_to_text(hint_raw)
+            hints.append(SourceHint(position, hint_raw, hint_text))
+            if position != 3 or layout.roles[position - 1] != "perfect_1s" or hint_text != "poet.":
                 return SourceExtraction(
                     raw,
                     layout.roles,
