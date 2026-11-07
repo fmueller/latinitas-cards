@@ -45,13 +45,19 @@ This repository uses versioned specs under `specs/`.
   Approved tasks T-206–T-217 preserve the reported priorities, reuse v0.5.0 contracts
   and include a blocked maintainer contract gate and independent native acceptance.
   Planning approval does not change the active spec, approve contracts or authorize execution.
-- `specs/v0.5.5.md` is planned and inactive, after v0.5.0 and before v0.6.0. It reuses
+- `specs/v0.5.5.md` is planned and inactive, after v0.5.1 and before v0.6.0. It reuses
   that pipeline for corpus sentence functions and constructions, both deck-driven examples
-  and reading-driven exercises, and optional syntax presentation. The boundary is controlled
-  pattern generation versus discovery in original passages, not single words versus phrases.
+  and reading-driven exercises, and optional syntax presentation. Its required morphology
+  matrix completes noun declensions, adjective gender/agreement/comparison and related forms
+  alongside verbs through shared recipes, with cited paradigm inventories and independent
+  coverage checks. The boundary is controlled generation versus discovery in original passages,
+  not single words versus phrases; missing evidence never licenses invented forms.
 - `specs/v0.6.0.md` through `specs/v1.0.0.md` remain planned, inactive release specs:
   optional direct Anki integration, reproducible projects, CLI/migration hardening,
-  release validation, and the v1 stable contract. The v0.5.x drafts distinguish agreed
+  release validation, and the v1 stable contract. v0.6.0 must preserve the v0.5.5 morphology
+  matrix, evidence and identities across file/direct Anki and advertised enriched formats,
+  with explicit capability/migration gates and no silent nominal-form loss.
+  The v0.5.x drafts distinguish agreed
   behavior from proposed technical contracts with unresolved design checkpoints; they are
   not activation or implementation permission.
 - `specs/v0.2.1.md` adds short, reviewed combinations of existing deck vocabulary for
