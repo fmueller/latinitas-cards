@@ -10,8 +10,52 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Select Build Checks
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+      planning: ${{ steps.scope.outputs.planning }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base=""
+          head="$GITHUB_SHA"
+          if [[ "$EVENT" == push ]]; then
+            base="$BEFORE"
+          elif [[ "$EVENT" == pull_request ]]; then
+            head="$PR_HEAD"
+            base="$(git merge-base "$PR_BASE" "$PR_HEAD" || true)"
+          fi
+          bash scripts/ci-scope.sh "$base" "$head" >> "$GITHUB_OUTPUT"
+
+  planning:
+    name: Taskrail Validation
+    needs: changes
+    if: needs.changes.outputs.planning == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install pinned toolchain
+        uses: jdx/mise-action@v3
+      - name: Validate planning and specs
+        run: taskrail validate
+
   lint-and-typecheck:
     name: Linting and Type Checking
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -36,11 +80,16 @@ jobs:
   # Local policy and infrastructure guards have their own fast regression suites.
   guards:
     name: Policy and Infrastructure Guards
-    needs: lint-and-typecheck
+    needs: [changes, lint-and-typecheck]
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+      - name: Install pinned toolchain
+        uses: jdx/mise-action@v3
+      - name: Check CI scope selection
+        run: bash scripts/check-ci-scope-test.sh
       - name: Check commit message policy
         run: bash scripts/check-commit-msg-test.sh
       - name: Check push message policy
@@ -58,7 +107,8 @@ jobs:
 
   unit-tests:
     name: Unit Tests (Python ${{ matrix.python-version }})
-    needs: lint-and-typecheck
+    needs: [changes, lint-and-typecheck]
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -86,7 +136,8 @@ jobs:
 
   package:
     name: Package (Python ${{ matrix.python-version }})
-    needs: lint-and-typecheck
+    needs: [changes, lint-and-typecheck]
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -109,3 +160,27 @@ jobs:
         run: bash scripts/check-dist.sh
       - name: Check installations
         run: bash scripts/check-install.sh "$(uv python find)"
+
+  build-result:
+    name: Build Result
+    if: always()
+    needs: [changes, planning, lint-and-typecheck, guards, unit-tests, package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require selected checks to pass
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -e '
+            .changes.result == "success" and
+            (.changes.outputs.full | IN("true", "false")) and
+            (.changes.outputs.planning | IN("true", "false")) and
+            (if .changes.outputs.planning == "true"
+             then .planning.result == "success"
+             else .planning.result == "skipped" end) and
+            (if .changes.outputs.full == "true"
+             then [."lint-and-typecheck", .guards, ."unit-tests", .package]
+                  | all(.result == "success")
+             else [."lint-and-typecheck", .guards, ."unit-tests", .package]
+                  | all(.result == "skipped") end)
+          '

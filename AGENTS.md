@@ -153,15 +153,37 @@ For non-trivial refactors (especially module splits), use red/green TDD:
 2. Implement the smallest refactor to make it pass (`GREEN`).
 3. Clean up while keeping tests green (`REFACTOR`).
 
-### Mandatory Validation After Code Changes
+### Local Validation During Development And Before Delivery
 
-Run this exact chain after code changes:
+During implementation and review fixes, run the affected tests and relevant lint,
+type or guard checks first. Do not rerun the whole suite after every edit,
+simplification pass, review comment or commit.
+
+Before declaring code changes ready to commit/push or running Taskrail
+`verify`/`complete`, run this exact chain on the final code state:
 
 1. `uv run ruff check`
 2. `uv run mypy`
 3. `uv run pytest -v`
 
-If any command fails, fix it and rerun the **full chain from the start**.
+If any command fails, fix it, run the affected checks, then rerun the **full chain
+from the start**. Later code, test, dependency or executable configuration changes
+invalidate that final result. Commit metadata and documentation/planning-only edits
+do not require repeating the full gate when its executable inputs are unchanged,
+but changed documentation/data consumed by tests invalidates those test results:
+rerun the affected contract tests before reusing the remaining evidence.
+Record which final code state was tested and distinguish passed from skipped checks.
+
+Documentation/planning-only work needs relevant structural checks and affected
+documentation/spec contract tests, not the entire Python suite. Run
+`git diff --check` and `taskrail validate` when planning, specs or Taskrail config
+changes. Changes to executable examples, fixtures, packaging or runtime inputs
+are not documentation-only merely because of their location.
+
+Pre-commit retains staged-file ruff/format checks, whole-project mypy for Python
+changes, Taskrail validation and policy guards. Pre-push checks attribution and
+author identity only; it does not rerun pytest. CI validates direct pushes to
+`main`, but runs after the push and does not replace the final local code gate.
 
 ## Commit & Pull Request Guidelines
 

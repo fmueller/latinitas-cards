@@ -63,4 +63,68 @@ if [[ "$output" != *"agent identity"* ]]; then
   fail "the scanner did not name the author policy: $output"
 fi
 
+# Exercise Lefthook's scheduling too: a correct scanner is useless if empty
+# commit pushes are skipped before it runs.
+lefthook="$(command -v lefthook)" || fail 'lefthook is required; run with mise exec --'
+git checkout -q --orphan empty-history
+git rm -qrf .
+mkdir -p scripts bin .lefthook/pre-push
+cp "$script_dir/../lefthook.yml" .
+cp "$script_dir"/check-{push-messages,author,attribution}.sh scripts/
+cp "$script_dir/../.lefthook/pre-push/message-policy.sh" .lefthook/pre-push/
+printf '#!/usr/bin/env bash\necho "unexpected uv invocation" >&2\nexit 97\n' > bin/uv
+chmod +x bin/uv
+export PATH="$repo/bin:$PATH"
+zero=0000000000000000000000000000000000000000
+
+push_hook() {
+  printf 'refs/heads/main %s refs/heads/main %s\n' "$1" "$2" |
+    "$lefthook" run pre-push origin "$tmp_dir/remote.git" --no-auto-install --no-tty 2>&1
+}
+
+git commit -q --no-verify --allow-empty -m 'chore: clean empty root'
+clean_empty="$(git rev-parse HEAD)"
+if ! output="$(push_hook "$clean_empty" "$zero")"; then
+  fail "a clean empty root was rejected: $output"
+fi
+git commit -q --no-verify --allow-empty --author='Amp <amp@ampcode.com>' -m 'chore: forbidden empty author'
+bad_empty="$(git rev-parse HEAD)"
+for remote in "$zero" "$clean_empty"; do
+  if output="$(push_hook "$bad_empty" "$remote")"; then
+    fail "an empty agent-authored push was accepted: $output"
+  fi
+  [[ "$output" == *"agent identity"* ]] || fail "empty push did not check author identity: $output"
+done
+
+git checkout -q --detach "$clean_empty"
+git commit -q --no-verify --allow-empty -m $'chore: forbidden empty attribution\n\nCo-authored-by: Agent <agent@example.com>'
+for remote in "$zero" "$clean_empty"; do
+  if output="$(push_hook "$(git rev-parse HEAD)" "$remote")"; then
+    fail "an empty attributed push was accepted: $output"
+  fi
+  [[ "$output" == *"automated-attribution"* ]] || fail "empty push did not check attribution: $output"
+done
+
+git checkout -q --detach "$clean_empty"
+git commit -q --no-verify --allow-empty -m 'chore: clean empty update'
+clean_update="$(git rev-parse HEAD)"
+for remote in "$zero" "$clean_empty" "$clean_update"; do
+  if ! output="$(push_hook "$clean_update" "$remote")"; then
+    fail "a clean empty update was rejected: $output"
+  fi
+done
+if ! output="$(push_hook "$zero" "$clean_empty")"; then
+  fail "a branch deletion was rejected: $output"
+fi
+
+commit 'chore: clean file update' changed
+if ! output="$(push_hook "$(git rev-parse HEAD)" "$clean_update")"; then
+  fail "a clean file-changing push was rejected or ran uv: $output"
+fi
+mv scripts/check-push-messages.sh scripts/missing-scanner.sh
+if output="$(push_hook "$clean_update" "$clean_empty")"; then
+  fail "a missing push-policy scanner was silently accepted: $output"
+fi
+[[ "$output" == *"check-push-messages.sh"* ]] || fail "missing scanner failure was not reported: $output"
+
 printf 'push message checks passed\n'

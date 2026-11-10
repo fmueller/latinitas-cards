@@ -37,7 +37,7 @@ pre-commit:
       glob: "{lefthook.yml,scripts/check-commit-msg.sh,scripts/check-attribution.sh,scripts/check-commit-msg-test.sh}"
       run: bash scripts/check-commit-msg-test.sh
     push-message-checker:
-      glob: "{lefthook.yml,scripts/check-push-messages.sh,scripts/check-attribution.sh,scripts/check-author.sh,scripts/check-push-messages-test.sh}"
+      glob: "{lefthook.yml,.lefthook/pre-push/message-policy.sh,scripts/check-push-messages.sh,scripts/check-attribution.sh,scripts/check-author.sh,scripts/check-push-messages-test.sh}"
       run: bash scripts/check-push-messages-test.sh
     author-checker:
       glob: "{lefthook.yml,scripts/check-author.sh,scripts/check-author-test.sh}"
@@ -49,12 +49,9 @@ commit-msg:
       run: bash scripts/check-commit-msg.sh {1}
 
 pre-push:
-  commands:
-    # The message guard runs before the suite: a push that has to be rewritten
-    # anyway should not first pay for the tests.
-    message-policy:
-      priority: 1
-      run: bash scripts/check-push-messages.sh
-    tests:
-      priority: 2
-      run: uv run pytest
+  scripts:
+    # Agents run the final local gate before delivery; do not repeat pytest here.
+    # Script hooks avoid the command runner's implicit changed-file filtering.
+    message-policy.sh:
+      runner: bash
+      use_stdin: true

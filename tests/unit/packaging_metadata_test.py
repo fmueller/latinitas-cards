@@ -64,7 +64,8 @@ def test_package_ci_is_build_only_and_guards_are_integrated() -> None:
     start = lines.index("  package:")
     end = next((i for i in range(start + 1, len(lines)) if re.match(r"^  [\w-]+:$", lines[i])), len(lines))
     package = lines[start:end]
-    assert "    needs: lint-and-typecheck" in package
+    assert "    needs: [changes, lint-and-typecheck]" in package
+    assert "    if: needs.changes.outputs.full == 'true'" in package
     assert '        python-version: ["3.13", "3.14"]' in package
     assert "      UV_PYTHON: ${{ matrix.python-version }}" in package
     assert "          python-version: ${{ matrix.python-version }}" in package
