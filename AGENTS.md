@@ -60,6 +60,8 @@ issue first, not necessarily a code regression.
 - `src/latinitas_cards/cli.py`: shared parsing/input/annotation/cloze logic
 - `src/latinitas_cards/commands/`: command callback modules
 - `tests/unit/`: unit tests
+- `tests/integration/`: in-process CLI and multi-component workflow tests
+- `tests/e2e/`: real CLI subprocess workflows and golden replays
 - `data/`: sample corpora/deck artifacts
 - `specs/`: versioned release specs (`specs/vX.Y.Z.md`, index in `specs/README.md`)
 - `planning/`: Taskrail tracked work (`STATE.md`, `tasks/`, `artifacts/`)
@@ -114,7 +116,10 @@ Use uv for environment and task execution. `mise.toml` pins the rest of the tool
 - `mise run check` (full local gate, mirrors CI)
 - `uv sync --locked --dev`
 - `uv run pytest -v`
-- `uv run pytest tests/unit/cli_test.py`
+- `uv run pytest -v tests/unit`
+- `uv run pytest -v tests/integration`
+- `uv run pytest -v tests/e2e`
+- `uv run pytest tests/integration/cli_test.py`
 - `uv run pytest -k "test_name"`
 - `uv run ruff check`
 - `uv run ruff check --fix`
@@ -136,7 +141,15 @@ Use uv for environment and task execution. `mise.toml` pins the rest of the tool
 
 - Framework: `pytest`. `pytest-cov` is not a dependency, so don't pass `--cov`; no custom
   markers (e.g. `pytest.mark.unit`) are registered, so don't add them.
-- Place tests under `tests/unit/`.
+- Put isolated parser/model/helper tests in `tests/unit/`, in-process CLI and
+  multi-component workflows in `tests/integration/`, and full CLI subprocess
+  workflows in `tests/e2e/`. Classify mixed modules by their broadest boundary;
+  a subprocess testing only a utility or import contract is integration, not E2E.
+- CI runs unit → integration → E2E on Python 3.13 and 3.14; a failed stage blocks
+  later stages. `uv run pytest -v` still runs all three locally once.
+- E2E tests use disposable inputs, exercise the real CLI, and check output content
+  and input preservation. Browser rendering and live Anki acceptance require
+  optional tooling and are not guaranteed by the offline E2E job.
 - Add regression coverage for:
   - USFX parsing and normalization,
   - APKG/COLPKG import/export behavior,

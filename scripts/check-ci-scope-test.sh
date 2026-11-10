@@ -118,11 +118,11 @@ for scope in docs planning full; do
       full: (if $scope == "full" then "true" else "false" end),
       planning: (if $scope == "docs" then "false" else "true" end)}},
     planning: {result: (if $scope == "docs" then "skipped" else "success" end)}
-  } + (["lint-and-typecheck", "guards", "unit-tests", "package"] | map({
+  } + (["lint-and-typecheck", "guards", "unit-tests", "integration-tests", "e2e-tests", "package"] | map({
     key: ., value: {result: (if $scope == "full" then "success" else "skipped" end)}
   }) | from_entries)')"
   assert_result pass "$results"
-  for job in changes planning lint-and-typecheck guards unit-tests package; do
+  for job in changes planning lint-and-typecheck guards unit-tests integration-tests e2e-tests package; do
     for status in failure cancelled; do
       assert_result fail "$(jq --arg job "$job" --arg status "$status" '.[$job].result=$status' <<< "$results")"
     done

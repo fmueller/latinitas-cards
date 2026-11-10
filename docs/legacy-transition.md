@@ -89,7 +89,7 @@ start, and only for data the owner confirms is disposable:
    it and never schedules cleanup); archive or delete it only under separate
    owner approval.
 
-The synthetic rehearsal in `tests/unit/legacy_transition_test.py`
+The synthetic rehearsal in `tests/integration/legacy_transition_test.py`
 (`test_synthetic_fresh_start_rehearsal_follows_the_documented_checklist`)
 walks this checklist end to end against synthetic evidence: it copies and
 verifies a synthetic collection backup, plans the transition of disposable,
@@ -119,10 +119,10 @@ models and stay in scope of the inventory:
 
 | Asset | Legacy relevance |
 | --- | --- |
-| `tests/unit/cli_test.py` | The experimental `split` path that mints `legacy-split-guid-v1-` clones (retained as legacy/experimental, not part of the transition workflow) |
+| `tests/integration/cli_test.py` | The experimental `split` path that mints `legacy-split-guid-v1-` clones (retained as legacy/experimental, not part of the transition workflow) |
 | `tests/unit/sources_test.py` | Legacy-schema COLPKG/SQLite source fixtures (`_write_legacy_database`) for the source adapters — reading old collections as sources, not converting them |
 | `tests/unit/manifest_test.py` | Legacy unscoped schema-1 CSV identity manifests, gated behind an explicit scope approval |
-| `tests/unit/preview_export_test.py` | Legacy unscoped manifest fresh start: the identity-state precedent for explicit re-confirmation |
+| `tests/integration/preview_export_test.py` | Legacy unscoped manifest fresh start: the identity-state precedent for explicit re-confirmation |
 | `tests/fixtures/extraction-review-corpus.csv`, `tests/fixtures/representative-university-latin.apkg` | Synthetic/sanitized sources; no legacy destination note model |
 | `docs/reference-note-type.md` | The new dedicated note type this policy requires for fresh starts; its import warnings (tag replacement, `Personal Notes` unmapped) apply unchanged |
 | `docs/principal-part-parsing.md` | The legacy `supine` profile default retained for compatibility |

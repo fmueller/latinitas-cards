@@ -36,7 +36,7 @@ def test_differential_legacy_projection(tmp_path: Path) -> None:
     paths = sorted(FIXTURES.rglob("*.xml"))
     assert paths
     # AST constants include Python's implicitly concatenated inline XML strings.
-    tree = ast.parse((ROOT / "tests/unit/cli_test.py").read_text())
+    tree = ast.parse((ROOT / "tests/integration/cli_test.py").read_text())
     inline = sorted(
         {
             node.value

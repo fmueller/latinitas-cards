@@ -196,7 +196,7 @@ PATCH [--timestamp T]` writes only a `latinitas-annotation-patch` and reports
 Unmatched refs warn on both sides; usage, language, artifact and lock exits are
 described in [annotation sidecars](annotation-sidecars.md#import-aligned-parallel-translations).
 
-The routing matrix lives in `tests/unit/annotation_routing_test.py`; lock contention
+The routing matrix lives in `tests/integration/annotation_routing_test.py`; lock contention
 and synchronized competing claims writers also run in `annotation_apply_test.py`.
 
 `corpus validate CORPUS [--json]` streams the input without modifying it. Its

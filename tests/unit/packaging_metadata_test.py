@@ -76,3 +76,19 @@ def test_package_ci_is_build_only_and_guards_are_integrated() -> None:
     assert "        run: bash scripts/check-dist-test.sh" in guards
     mise = tomllib.loads((ROOT / "mise.toml").read_text())
     assert "bash scripts/check-dist-test.sh" in mise["tasks"]["check"]["run"]
+
+
+def test_ci_test_stages_are_sequential_and_disjoint() -> None:
+    workflow = (ROOT / ".github/workflows/build.yml").read_text()
+    jobs = dict(re.findall(r"^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", workflow, re.MULTILINE | re.DOTALL))
+    for stage, predecessor in (
+        ("unit", "lint-and-typecheck"),
+        ("integration", "unit-tests"),
+        ("e2e", "integration-tests"),
+    ):
+        job = jobs[f"{stage}-tests"]
+        assert f"    needs: [changes, {predecessor}]\n" in job
+        assert f"        run: uv run pytest -v tests/{stage}\n" in job
+        assert '        python-version: ["3.13", "3.14"]' in job
+        assert "    if: needs.changes.outputs.full == 'true'\n" in job
+        assert f"{stage}-tests" in jobs["build-result"]

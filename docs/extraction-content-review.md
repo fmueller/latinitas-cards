@@ -25,7 +25,7 @@ Selection is reproducible: every entry carries a hand-derived recorded outcome
 (status plus skip code, derived from the documented matrix and safe-HTML
 contract, not from running the pipeline); entries are grouped by that recorded
 outcome, sorted by stable source ID, and the first two of each stratum are
-deep-reviewed. The committed test `tests/unit/extraction_content_review_test.py`
+deep-reviewed. The committed test `tests/integration/extraction_content_review_test.py`
 verifies that the pipeline reproduces every recorded outcome, that the selection
 is deterministic, and that this note states the same counts.
 

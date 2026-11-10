@@ -474,10 +474,10 @@ def test_published_docs_pin_the_consolidation_statement_and_inventory() -> None:
     published = " ".join(docs[begin:end].split())
     assert " ".join(CSV_CONSOLIDATION_HISTORY_STATEMENT.split()) in published
     for inventory_name in (
-        "tests/unit/cli_test.py",
+        "tests/integration/cli_test.py",
         "tests/unit/sources_test.py",
         "tests/unit/manifest_test.py",
-        "tests/unit/preview_export_test.py",
+        "tests/integration/preview_export_test.py",
         "docs/reference-note-type.md",
     ):
         assert inventory_name in docs

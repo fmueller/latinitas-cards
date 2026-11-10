@@ -93,7 +93,7 @@ def legacy_case(case: dict[str, Any], *, capture: bool, directory: Path | None =
         work = Path(temporary)
         shutil.copytree(directory / "inputs", work, dirs_exist_ok=True)
         if case.get("apkg"):
-            sys.path.insert(0, str(ROOT / "tests/unit"))
+            sys.path.insert(0, str(ROOT / "tests/integration"))
             from cli_test import _create_colpkg_with_anki2
 
             _create_colpkg_with_anki2(work / "input.apkg", [["amo", "I love", ""], ["sum", "I am", ""]])
@@ -330,7 +330,7 @@ def seed_legacy() -> None:
 def seed_claims() -> None:
     from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 
-    sys.path.insert(0, str(ROOT / "tests/unit"))
+    sys.path.insert(0, str(ROOT / "tests/integration"))
     from phrase_inputs_test import fixture, saved_example
     from phrase_recipes_test import exercise
     from review_commands_test import parsing_source
@@ -450,7 +450,7 @@ def seed_claims() -> None:
 def seed_v040() -> None:
     from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 
-    sys.path.insert(0, str(ROOT / "tests/unit"))
+    sys.path.insert(0, str(ROOT / "tests/integration"))
     from phrase_recipes_test import exercise
 
     if V040.exists():

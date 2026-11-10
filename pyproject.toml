@@ -81,6 +81,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 
 [tool.mutmut]
 source_paths = ["src/latinitas_cards/"]

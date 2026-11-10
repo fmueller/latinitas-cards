@@ -132,7 +132,61 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --dev
       - name: Run unit tests
-        run: uv run pytest -v
+        run: uv run pytest -v tests/unit
+
+  integration-tests:
+    name: Integration Tests (Python ${{ matrix.python-version }})
+    needs: [changes, unit-tests]
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --locked --dev
+      - name: Run integration tests
+        run: uv run pytest -v tests/integration
+
+  e2e-tests:
+    name: E2E Tests (Python ${{ matrix.python-version }})
+    needs: [changes, integration-tests]
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --locked --dev
+      - name: Run E2E tests
+        run: uv run pytest -v tests/e2e
 
   package:
     name: Package (Python ${{ matrix.python-version }})
@@ -164,7 +218,7 @@ jobs:
   build-result:
     name: Build Result
     if: always()
-    needs: [changes, planning, lint-and-typecheck, guards, unit-tests, package]
+    needs: [changes, planning, lint-and-typecheck, guards, unit-tests, integration-tests, e2e-tests, package]
     runs-on: ubuntu-latest
     steps:
       - name: Require selected checks to pass
@@ -178,9 +232,7 @@ jobs:
             (if .changes.outputs.planning == "true"
              then .planning.result == "success"
              else .planning.result == "skipped" end) and
-            (if .changes.outputs.full == "true"
-             then [."lint-and-typecheck", .guards, ."unit-tests", .package]
-                  | all(.result == "success")
-             else [."lint-and-typecheck", .guards, ."unit-tests", .package]
-                  | all(.result == "skipped") end)
+            ((if .changes.outputs.full == "true" then "success" else "skipped" end) as $expected
+             | [."lint-and-typecheck", .guards, ."unit-tests", ."integration-tests", ."e2e-tests", .package]
+             | all(.result == $expected))
           '
