@@ -35,8 +35,9 @@ spec activation. No autonomous loop may approve or unblock it.
 ## Verification Notes
 
 Inspect signed-off revisions and unresolved-decision lists, not status alone.
-Every implementation consumer depends transitively on this gate. Keep v0.4.0
-active until separate activation authorization.
+Every implementation consumer depends transitively on this gate. The maintainer
+separately authorized v0.5.0 activation on 2026-11-03; that activation does not
+approve these contracts or unblock this gate.
 
 ## Implementation Notes
 

@@ -29,8 +29,9 @@ output. Follow approved contracts and spec execution/validation requirements.
 - Preserve legitimate alternatives. No confidence/majority-vote shortcut or lowered
   standard for yield. Unresolved candidates stay outside default learning export;
   optional review cannot become mandatory homework or implicit approve-all.
-- Automatic evidence cannot bypass the separate human gates for curated pairs and
-  their actual rendered cards.
+- Automatic evidence cannot bypass human approval of curated rules/explanations and
+  actual rendered cards, or language-specific mnemonic approval whenever one is shown.
+  Rule-only cards do not require absent mnemonic content or approval.
 
 ## Verification Notes
 

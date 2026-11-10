@@ -25,7 +25,9 @@ blocks evidence. Use disposable data/profile; follow spec execution/validation r
   effective endpoints, request scope/permission, versions and limits without secrets.
   No fallback or repeated valid calls.
 - Exercise more-than-20 full output, optional batch reuse, every report outcome,
-  German/English and curated pair/rendered approvals with renewal after edits.
+  German/English and curated rule/rendered approvals, plus approval of any mnemonic
+  shown, with affected renewal after edits. Include rule-only export/import when no
+  mnemonic exists and English rule-only cards when only a German mnemonic is approved.
 - In native Desktop import/update mixed human/automatic cards. Inspect light/dark,
   collapsed/expanded evidence, actual keyboard/pointer and no front leakage. Preserve
   personal fields/tags, identities and conservative status summaries.

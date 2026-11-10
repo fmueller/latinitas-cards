@@ -33,8 +33,10 @@ separate planning approval and active v0.5.0 are required before execution.
   timeouts/retry/call/token limits, cancellation and unknown-call reconciliation.
 - Specify owned tags/fields, stable semantic identities, opt-in template migration,
   receipts and retained-field/manual ineligibility resolution. No CSV retirement.
-  Define curated pair/rendered approval fingerprints and presentation invalidation
-  separately from linguistic acceptance.
+  Define curated rule/rendered approval fingerprints, additional language-specific
+  mnemonic approval when used, and presentation invalidation separately from linguistic
+  acceptance. Support rule-only items and scope mnemonic changes to affected cards;
+  supply rule-only, mnemonic-bearing and missing-language-variant payload examples.
 - Supply valid/invalid payloads, migration/compatibility scenarios, check matrix
   by claim class and semantic comparison for legitimate alternatives. Identify
   consequential unresolved choices for the maintainer gate; do not approve them.

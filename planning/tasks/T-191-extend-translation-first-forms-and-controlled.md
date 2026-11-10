@@ -23,6 +23,21 @@ approved contracts and spec execution-isolation/final-validation requirements.
   pairs and declension/case/number, adjective agreement, preposition-noun, noun-genitive,
   adjective-noun and verb-noun mini-clauses. Government, agreement, sense and valency
   constrain generation; unsupported combinations are reported.
+- Require explicit opt-in conjugation and noun/adjective declension production recipes
+  in v0.5.0, selectable through profiles/CLI and usable in public preview/export.
+  Verb prompts specify person, number, tense, mood and voice; noun prompts specify
+  case/number, and adjective prompts also specify gender explicitly or via unambiguous
+  noun context. Learners supply the Latin form; recognition/translation alone does not
+  satisfy this requirement. Keep supported paradigms bounded; exhaustive morphology
+  coverage remains v0.5.5 scope. Apply shared evidence/acceptance checks to drills.
+- Make production recipes selectable by the saved grammar-study preset; T-197 owns
+  integration with its three curated rehearsal types. Preset selection is explicit
+  opt-in and retains production evidence checks, selection bounds and stable identities.
+- Demonstrate the spec's contrasting drill examples: amāre → amās/amant for second-person
+  singular/third-person plural present active indicative; puella → puellam/puellārum
+  for accusative singular/genitive plural; bonus → bonam/bona for feminine accusative
+  singular/neuter nominative plural. Do not reveal answers on prompts or silently
+  resolve underspecified targets. Missing/contradictory evidence cannot license forms.
 - Automatically generate and export isolated perfect passive participle (PPP)
   translation cards from confirmed source-deck PPP evidence when shared acceptance
   checks pass, without per-card human approval. PPP recognition is selectable;
@@ -45,6 +60,12 @@ approved contracts and spec execution-isolation/final-validation requirements.
 Exercise public preview/export with wrong government/agreement/valency, ambiguous
 prompts and default/opted-in recipes in German/English. Check semantic keys and
 existing characterization goldens. Run the mandatory validation chain.
+
+For conjugation and declension drills, use reference-backed expected forms for the
+contrasting examples above. Verify default exclusion, explicit profile/CLI opt-in,
+preview/export results and no implicit enabling of form clozes or unrelated recipes.
+Include unsupported/contradictory evidence and an underspecified verb prompt; preserve
+legitimate alternatives or withhold unanswerable distinctions rather than guess.
 
 For PPP, contrast confirmed PPP and supine profiles, an unconfirmed fourth principal
 part, and missing/contradictory evidence. Verify eligible PPP translation export and
