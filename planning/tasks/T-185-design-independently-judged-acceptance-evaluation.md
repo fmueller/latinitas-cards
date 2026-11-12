@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-12T22:10:22Z"
+updated_at: "2026-11-12T22:44:01Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -81,3 +81,44 @@ neither dependent implementation nor release readiness is established.
   release or German-card-video acceptance is claimed.
 - 2026-11-12T22:10:22Z: verification fail
 - 2026-11-12T22:10:22Z: Bounded feasibility pass lacks appointed independent Latin reference owner, confirmed evaluation rights/access and judgments, owner review, protected samples/pilot and justified numeric minima/thresholds; maintainer must resolve prerequisites and exact-revision T-186 policy before consumers.
+- 2026-11-12T22:35:09Z: Maintainer directs independent agent judges; reopen only the bounded protocol reconciliation, not evidence completion or T-186 approval.
+- Agent-judge reconciliation at base
+  0bddc4a6037e4eef93c0c2018a885072a84ee96c updates the protocol to SHA256
+  f5f8b287b653decdcb857ab5a9c381353eac03f28b100c39392b34a68d018df1.
+  The maintainer's direction resolves judge type: independent agent judges
+  may own references; human-only reference judging is not required by the
+  spec. Earlier missing-owner notes describe the earlier snapshot, not a
+  new human-only prerequisite. Task acceptance and spec/contract are unchanged.
+- Concrete logical roles are REF-A (reference owner), REF-B (independent
+  solve), ADJ (independent solve then evidence-based adjudication), with
+  overseer holdout custody. Actual run binding/competence remains pending.
+  Agent research records do not become legacy human decisions or curated
+  content approvals. Model agreement and self-confidence are not truth.
+- Section 7 supplies packet/record fields and judge/adjudication prompts,
+  source/target-language competence checks and protected-store requirements.
+  Proposed development bounds are one qualification packet of at most eight
+  tasks per judge and one feasibility packet of at most twelve source
+  clusters, not statistical minima or approved thresholds. The overseer
+  owns high-effort judging launches after review; none were launched here.
+- Dedicated simplifier clarified the reconciliation. Medium-risk independent
+  conventional review used general code-review, comment-audit/prompt and
+  custody lanes plus a fresh adversarial verifier, relayed by this agent
+  because the coordinator could not launch nested agents. One non-blocking
+  finding was fixed: fresh-context dispatch envelopes now explicitly carry
+  record fields, run metadata, scope defaulting to none, retained hashes
+  and missing-field rejection. All lanes and coordinator verified the fix;
+  no remaining findings. No claimed judge behavior was tested.
+- Final documentation checks on this hash: `git diff --check`, Taskrail
+  validation via `mise exec --`, local links/anchor and contract-hash
+  correspondence passed; `uv run pytest -q tests/unit/install_docs_test.py`
+  passed (3 tests of existing installation docs, not this protocol).
+  No runtime inputs changed; full ruff/mypy/pytest gate not run.
+- Acceptance still lacks actual source-cleared packets, evidence-backed
+  Latin/German/English agent qualification, independent judgments and owner
+  review, provisioned protected custody, measured pilot/acquisition evidence
+  and justified numerical criteria. Record a new failed verification and
+  block this revision. T-186 exact-revision approval, curated human approvals
+  and T-205 publication authority remain unchanged. No duplicate task or
+  successor was created; overseer should run the bounded section 7 handoff.
+- 2026-11-12T22:44:01Z: verification fail
+- 2026-11-12T22:44:01Z: Agent judge type resolved; still need actual run bindings and source-backed Latin/German/English qualification, cleared source packets, independent judgments and owner review, enforced protected custody, measured bounded pilot and justified numerical criteria. Overseer owns section 7 launches; T-186 exact-revision approval remains blocked.
