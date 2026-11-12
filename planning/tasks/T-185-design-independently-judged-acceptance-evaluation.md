@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-12T22:44:01Z"
+updated_at: "2026-11-12T23:50:38Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -122,3 +122,50 @@ neither dependent implementation nor release readiness is established.
   successor was created; overseer should run the bounded section 7 handoff.
 - 2026-11-12T22:44:01Z: verification fail
 - 2026-11-12T22:44:01Z: Agent judge type resolved; still need actual run bindings and source-backed Latin/German/English qualification, cleared source packets, independent judgments and owner review, enforced protected custody, measured bounded pilot and justified numerical criteria. Overseer owns section 7 launches; T-186 exact-revision approval remains blocked.
+- 2026-11-12T23:43:37Z: Authorized answer-free qualification evidence update only; no new packet, retry, consumer or T-186 approval.
+- Qualification evidence update at base
+  43bd6ecc52a7f192cb703b972dfd252739198334: protocol SHA256
+  6aee6794b870294eb867b385ac792107e06f76b9ada9115c9e6784958dcff3c5.
+  Section 8 supersedes earlier no-run statements for this later stage,
+  preserving the design/reconciliation history and unchanged contract hash.
+- Only two authorized answer-free records were downloaded from ADJ custody:
+  qualification report SHA256
+  9eb373da3f65006c3c3dbfbd6850cbb03c00ce07b12028505b28e1c466e3f266
+  and freeze receipt SHA256
+  b2648478cbc65f4d555748c0186b0c50d5592343ada2a828f95210fd40875f05.
+  Both matched expected bytes. No answers, source/task mappings or other
+  judge-workspace files were transferred. Answer-bearing references remain
+  isolated; this update records reported evidence, not a new adjudication.
+- Actual three requested-high-effort runs and source-based adjudication
+  support bounded tested slices only. Eight purposive probes in three
+  related clusters are not independent samples. The report audits 84
+  explicit propositions and ancillary prose across 24 task records;
+  104 citation definitions match excerpts, not proof of entailment.
+  Two explicit corrections and one additional ancillary finding retain
+  separate denominators (A 0/B 2/ADJ 1 total bounded findings).
+  Four unclosed evidence scopes and four final scoped-withholding records
+  remain; native abstention counts are not comparable rates. Same-model/
+  common-source dependence and missing provider telemetry bar reliability
+  claims. Original acquisition hashes cannot be rechecked from excerpts.
+- Full language/claim qualification and the conditional section-7 gate are
+  not established. ADJ lacked complete gate/cap text; its supported-slice
+  suggestion grants no authority. No pilot, candidate output, accepted-yield
+  measurement, protected heldout evaluation or numerical policy was run or
+  approved. No new packet, retry, successor or duplicate task was launched.
+  Recommend retaining blocked scope pending a concrete maintainer choice;
+  any future supported-slice study needs an explicit scope/protocol amendment,
+  source/correction dispositions and complete gate/cap context, not a bypass.
+- Dedicated simplifier and medium-risk independent conventional review
+  completed. General/code-review and comment-audit/evidence lanes plus a
+  fresh adversarial verifier found no defects; coordinator reconciled
+  their findings. Nested dispatch was unavailable, so lanes were relayed.
+  No fixes required. Review validates safe-report correspondence, not
+  underlying linguistic correctness or custody implementation.
+- Final docs-only checks passed: `git diff --check`, Taskrail validation
+  through `mise exec --`, links/anchor/hash correspondence, and
+  `uv run pytest -q tests/unit/install_docs_test.py` (3 passed; existing
+  installation docs only). Full Python gate not run for non-executable
+  prose. Record failed/incomplete verification and block T-185; T-186/T-205
+  and curated human-content approvals remain unchanged.
+- 2026-11-12T23:50:38Z: verification fail
+- 2026-11-12T23:50:38Z: Actual qualification supports tested slices, not complete language/claim cells; four evidence scopes unresolved. Section-7 gate unestablished; ADJ lacked complete gate/cap text. No feasibility/yield or justified numerical policy. Retain blocked pending maintainer decision; any supported-slice study needs explicit amended scope, no packet/retry authorized.
