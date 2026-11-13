@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-13T14:32:46Z"
+updated_at: "2026-11-13T15:36:43Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -223,3 +223,57 @@ neither dependent implementation nor release readiness is established.
   overseer owns the gated study launch after this amendment handoff.
 - 2026-11-13T14:32:46Z: verification fail
 - 2026-11-13T14:32:46Z: Authorized section-9 study not yet executed; reference/acquisition/custody feasibility and justified numerical sample/error/uncertainty criteria remain incomplete. Overseer owns gated fresh high-effort study launch; no qualification pass, consumer permission or T-186/T-205 waiver.
+- 2026-11-13T15:26:07Z: Authorized final answer-free recording of ended failed/insufficient study only; no adjudication, repair, replacement, new packet or retry.
+- Final study recording at accepted base
+  a4fdc7d2cfcc2eccb334526b8fd96f60762e9a8c adds protocol section 10 and
+  marks section 9's launch authority historical/exhausted. Reviewed protocol
+  SHA256 4b93f6f35002a666462b93aa5d233da11e2e9c60530505c92c652cbb0523da4b;
+  executed study protocol remains bound to its historical SHA256
+  6bc9cf35d4e55cf19c6ca03892c91b135aad8abe6038bf097c5883893148f259.
+  Contract, spec, acceptance and maintainer/human approval gates unchanged.
+- Only five authorized answer-free reports/receipts were transferred and
+  matched all supplied hashes; commitments are recorded in section 10.
+  No answers, serializers, packet/source maps or answer-bearing envelopes
+  entered this checkout. Original validation, citations, custody and gate
+  events are reported facts, not independently revalidated originals.
+- The one fixed study used two exposed clusters and four tasks per role;
+  16 requested propositions per role (12 eligible/four audit). All 12
+  role-task slots are consumed: three valid ADJ records and nine failed/
+  missing-valid records. No complete valid three-role task set exists.
+  REF-A's first size assertion preceded any saved JSON; its 33,410-byte
+  Python draft is not the lost JSON size. REF-B's four parsed originals
+  were all over the 32,768-byte cap; detached audit overrides provisional
+  flags without repair. ADJ has three valid originals and one lost-byte
+  failed slot. Its ten supported eligible propositions and 18 matching
+  citation definitions are initial self-report, not adjudication or proof
+  of entailment. Failure/withholding/proposition units are not pooled.
+- Prior gate failures for unbound peers remain preserved. Actual fresh
+  appointments/configuration were supplied and envelopes bound before
+  initial linguistic responses; prospective completion is the roles'
+  interpretation, not retroactive approval or independent compliance proof.
+  High effort/model configuration is attested; runtime revision, invocation
+  and cost are unavailable. No peer-answer exposure was reported.
+- Study ENDED failed/insufficient at output processing. Duplicated fields/
+  serialization inflation and lost in-memory originals limit harness/output
+  feasibility, not linguistic competence. No phase-two comparison, yield,
+  reliability, qualification or candidate inference follows. No candidate
+  exists. No new packet, judge, solve, repair/compression, reconstruction,
+  replacement, retry, expansion, implementation or successor is authorized
+  or performed here. Preserve the stop and blocked T-185 acceptance.
+- Dedicated simplifier and high-risk conventional review completed through
+  relayed general/code-review, evidence-integrity and comment-audit/request
+  lanes. Fresh evidence-boundary and separate overall-outcome adversarial
+  verifiers found no substantive documentary defects. All five safe hashes,
+  reported sizes and distinct units correspond. Review does not establish
+  original output validity, linguistic correctness, gate compliance or
+  actual custody enforcement. Final fail/block readback resolves the
+  temporary recording-only active state; no task completion is claimed.
+- Documentation-only checks use diff/staged checks, Taskrail validation,
+  local links/spec heading/hash correspondence and installation-doc tests
+  (three passed; not methodology validation). Full ruff/mypy/pytest is not
+  run for this non-executable prose update. Missing justified numerical
+  sample/error/uncertainty criteria and acquisition/custody/output feasibility
+  keep T-185 failed/incomplete; T-186/T-205 remain separately blocked.
+  This is final recording for the exhausted study, with no automatic retry.
+- 2026-11-13T15:36:43Z: verification fail
+- 2026-11-13T15:36:43Z: Study ended failed/insufficient at initial-output processing; allocation exhausted, no complete valid three-role task set, no adjudication, repair, reconstruction, replacement or retry authorized. Acquisition/custody/output feasibility and justified numerical criteria remain unmet; T-186/T-205 unchanged.
