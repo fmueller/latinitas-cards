@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-12T23:50:38Z"
+updated_at: "2026-11-13T14:32:46Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -169,3 +169,57 @@ neither dependent implementation nor release readiness is established.
   and curated human-content approvals remain unchanged.
 - 2026-11-12T23:50:38Z: verification fail
 - 2026-11-12T23:50:38Z: Actual qualification supports tested slices, not complete language/claim cells; four evidence scopes unresolved. Section-7 gate unestablished; ADJ lacked complete gate/cap text. No feasibility/yield or justified numerical policy. Retain blocked pending maintainer decision; any supported-slice study needs explicit amended scope, no packet/retry authorized.
+- 2026-11-13T14:18:24Z: Maintainer authorizes one bounded development study capped at twelve source clusters without waiving T-186; reopen for prerequisite protocol amendment only, no study launch.
+- Section-9 amendment at accepted base
+  c7da7258daa1bc2944b6c6f1f8963a5680802c5b records that authorization as
+  an exception to the old complete-qualification prerequisite for one
+  development study only. Reviewed protocol SHA256
+  6bc9cf35d4e55cf19c6ca03892c91b135aad8abe6038bf097c5883893148f259;
+  unchanged contract SHA256
+  aef0af7771c125998b4e3d8e3ae5cdb72d23823ab9a150ed24a51d27fe1bc27b.
+  Historical qualification findings, full acceptance, spec and human curated
+  approval/publication authority remain unchanged. No new task or successor.
+- Dispatch is limited to one frozen development packet: at most 12 source
+  clusters, two tasks per cluster, 24 tasks total, four requested atomic
+  propositions per task, one initial solve per role/task then one ADJ
+  comparison per task. At most 72 initial and 24 adjudication records;
+  32 KiB per task record and 64 KiB for the answer-free report. Failures
+  consume slots; no replacement, repeat qualification or repair campaign.
+  These cap study records, not provider requests, tokens, cost or runtime.
+- Affirmative reference scope is the demonstrated three-role intersection:
+  bounded German labels; bounded English labels, declared-convention
+  segmentation and explanations. A-only German explanations and English
+  translations remain audit/withheld at final-reference level; unresolved
+  cells and the four open scopes are not promoted. Isolated source-backed
+  errata must retain B's meaning omission, B/ADJ's support extensions and
+  ADJ's insufficient alternative/metadata issue without overwriting solves
+  or claiming false Latin, requalification or newly supported synonyms.
+- Overseer must review this exact amendment and satisfy the complete gate:
+  freeze permitted sources/rights, manifest/caps/scope, supply actual gate
+  text and record fields, enforce isolated custody and bind fresh distinct
+  requested-high-effort A/B/ADJ runs. Freeze every initial solve before
+  comparison and any generator exposure. This thread has prepared no sources
+  and launched no judges. The next study may measure reference yield,
+  citation/entailment failures, disagreement/abstention, acquisition/custody
+  feasibility and exposed elapsed/cost only. Candidate/card/accepted yield
+  remains unmeasured. No statistical release inference or numeric approval.
+- Dedicated simplifier completed. High-risk independent conventional review
+  used general/code-review, comment-audit, custody, measurement and separate
+  request-claims lanes, relayed because nested dispatch is unavailable.
+  Fine-grained slice descriptions and corrections were checked against the
+  permitted hash-matched answer-free report, not answer content. Fresh
+  authority/custody and bounds/measurement adversarial verifiers sustained
+  the documentary conclusions; no substantive findings or protocol fixes.
+  Temporary in-progress versus final blocked wording is resolved by the
+  supported final fail/block lifecycle and readback, not policy changes.
+  Review does not validate linguistic truth, actual rights or enforcement.
+- Documentation checks: `git diff --check`, Taskrail validation, protocol/
+  contract hashes and local links/anchor; installation-doc tests remain
+  three passing tests, not evaluation-methodology validation. Full Python
+  lint/type/test chain is not required for this non-executable prose scope.
+  Full T-185 acceptance still lacks study evidence and justified numerical
+  acquisition/sample/error/uncertainty criteria; preserve failed verification
+  and block. T-186 exact-revision approval and T-205 remain blocked. The
+  overseer owns the gated study launch after this amendment handoff.
+- 2026-11-13T14:32:46Z: verification fail
+- 2026-11-13T14:32:46Z: Authorized section-9 study not yet executed; reference/acquisition/custody feasibility and justified numerical sample/error/uncertainty criteria remain incomplete. Overseer owns gated fresh high-effort study launch; no qualification pass, consumer permission or T-186/T-205 waiver.
