@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-14T12:41:11Z"
+updated_at: "2026-11-14T14:01:59Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -335,3 +335,69 @@ neither dependent implementation nor release readiness is established.
   Subsequent edits are lifecycle/evidence notes only, not executable inputs.
 - 2026-11-14T12:41:11Z: verification fail
 - 2026-11-14T12:41:11Z: Harness prerequisite reviewed and tested; one separately authorized bounded attempt awaits actual pre-solve bindings/custody and feasibility evidence. Justified sample/error/uncertainty criteria and full evaluation acceptance remain unmet; no completion or T-186/T-205 waiver.
+- 2026-11-14T13:26:37Z: Maintainer authorizes comparison-harness prerequisite for remaining four comparisons in the SAME bounded attempt; no new study, judge launch, initial repair or gate waiver.
+- Comparison prerequisite for the same attempt adds separately versioned
+  `t185.comparison-binding.v1`, `t185.comparison.v1` and
+  `t185.comparison-capture.v1` in the existing capture script, with normative
+  `docs/evaluation-comparison-v1.md` and protocol section 12. Initial v1
+  behavior and frozen old binding/protocol commitments remain unchanged.
+  Raw bytes precede binding checks; three original/receipt/binding chains
+  are hash-checked and revalidated. Four exclusive output slots, mandatory
+  agreement audits, all-role source dispositions, eligibility intersection,
+  typed overlapping/unknown counts and derived reference commitments are
+  checked structurally. Actual chronology, sources and semantic adequacy
+  remain custodian/evaluation obligations; the later safe report is not
+  certified by comparison capture.
+- The overseer reports attempt-2 initial phase 12/12 complete valid records,
+  zero failures/retries, four records per fresh requested-high role, two
+  exposed clusters and 16 requests per role (12 eligible, four audit-only).
+  Originals remain privately frozen; this checkout has not inspected them.
+  No peer exposure/comparison or linguistic/qualification/reliability
+  inference is claimed. Earlier failed-study history is unchanged. Only
+  four already-authorized ADJ comparisons remain, with overseer-owned
+  checkpoint, actual binding/custody and dispatch prerequisites.
+- Synthetic TDD began with two positive comparison cases failing before
+  implementation; malformed/oversize cases already failed closed. Review
+  found ordered citation allowlist equality incorrectly rejected valid
+  reordered memberships. Regression RED: one failed, one passed; fixed
+  set equality without rewriting any frozen bytes or accepting differing
+  memberships. Focused GREEN: 79 passed, including all 40 initial tests.
+  The four-request comparison fixture is exactly 23,998 bytes, including
+  explicit unavailable observations, not universal truthful-output capacity.
+  No synthetic test consumed any study allocation.
+- Dedicated simplifier and high-risk independent conventional review used
+  relayed general, custody, Python/type and claims/comment-audit lanes. The
+  citation-order finding was fixed and coordinator-verified. Fresh custody
+  and schema adversaries found no remaining blocker; the latter traced the
+  old guard's RED versus the fix's GREEN, duplicate/membership rejection,
+  unchanged frozen synthetic files and overlapping/unknown accounting.
+  A distinct fresh overall verifier supported implementation readiness for
+  final validation, explicitly not immediate dispatch or T-185 acceptance.
+  Final coordinator reconciliation found no unresolved implementation issue.
+- Comparison candidate SHA256 commitments:
+  script `5ee928cc5740c95ac16675d85c5dc820b650d46a6d24388019ac9d2a2cebca5e`;
+  normative comparison schema/contract
+  `39a65f48cc85a0a028671de9261ab9c6695ee4c012c10ee70979d759659b12e5`;
+  protocol `b03cec6e45eba7359adb0f0e090849cc14f387ef3de938ac5c28d3292a74d4d1`;
+  comparison tests
+  `c4a26efe757db0768dff007b0aa84bc54105db5abc4bce654ae9cb58c907bd69`.
+  Old initial schema contract remains
+  `d4a823ab1759985e6694203e74c354e2bc967b65904148c410200362e57c4dfd`.
+- Final executable state at these hashes passed the exact ordered chain:
+  `uv run ruff check`; `uv run mypy` (202 files); `uv run pytest -v`
+  (3,344 passed, seven skipped, one existing Pydantic serializer warning,
+  463.57 seconds). Standalone strict mypy for script and both test modules,
+  targeted format checks, diff checks, hash readback and Taskrail validation
+  also passed. A prior 3,342-pass run overlapped the citation-order fix and
+  is not final-state evidence; the complete chain was restarted afterward.
+  Subsequent changes are evidence/lifecycle notes only.
+- Full acceptance still lacks completed source-based comparison/report
+  evidence and justified sample/error/uncertainty policy, independent owner
+  qualification and protected-held-out evaluation. Do not complete T-185.
+  The exact comparison candidate requires overseer checkpoint and actual
+  frozen custody binding before the remaining four ADJ comparisons. No new
+  study, replacement or successor was launched. T-186/T-205 and T-179 are
+  unchanged; existing tasks cover these prerequisites, so no duplicate
+  follow-up task was created.
+- 2026-11-14T14:01:59Z: verification fail
+- 2026-11-14T14:01:59Z: Comparison harness ready for overseer checkpoint, not dispatch acceptance. Remaining same-attempt comparisons/report, independent reference qualification and justified numerical evaluation policy are unmet; T-186/T-205 remain blocked.
