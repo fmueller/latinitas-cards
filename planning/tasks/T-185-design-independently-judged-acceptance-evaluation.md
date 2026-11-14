@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-14T14:01:59Z"
+updated_at: "2026-11-14T15:06:01Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -401,3 +401,58 @@ neither dependent implementation nor release readiness is established.
   follow-up task was created.
 - 2026-11-14T14:01:59Z: verification fail
 - 2026-11-14T14:01:59Z: Comparison harness ready for overseer checkpoint, not dispatch acceptance. Remaining same-attempt comparisons/report, independent reference qualification and justified numerical evaluation policy are unmet; T-186/T-205 remain blocked.
+- Final attempt-2 recording: the single authorized attempt is ENDED; all
+  four comparison slots consumed, no retry/repair/replacement/successor or
+  further study authorized. Protocol section 13 records the audited safe
+  evidence without changing any executed schema, cap or historical failure.
+  Comparison candidate fa338783746abcb5c6b7f5f26ffe08d71179f035 has green
+  exact-head CI and overseer-reported independent runtime checkpoint PASS.
+- Distinct outcomes: 12/12 initial records complete/structurally valid, once
+  per role/task; four comparison originals complete, three valid at
+  27,618/31,043/29,854 bytes, one invalid at 35,866 bytes (3,098 over the
+  32,768-byte cap). The oversized original remains intact; no repair/retry
+  or failed-slot reference commitment. Full comparison-output feasibility
+  FAIL is not linguistic incompetence or another lost-original event.
+- All 16 input triples available versus only 12 validated output tuples
+  (ten eligible, two audit-only), linked to 36 initial role positions. One
+  failed task slot affects four requests (two eligible, two audit-only);
+  its validated counts remain unavailable. Two valid-output withholdings,
+  no named disputes/current corrections or fresh semantic errors observed
+  are bounded ADJ self-reports, not independent correctness/reliability.
+- Exactly six permitted safe files were authenticated from isolated custody:
+  report, four receipts and audit receipt; each exact size/SHA256 verified
+  before strict JSON parsing. Protocol section 13 lists their commitments.
+  Report SHA256 c7b7eabe8e5d2d7e51cf81b7513b620407922f99cb52f8531ec83805b2b0b8d7;
+  audit SHA256 f6ae8ef281f08f0c69ff4c0a5a7750933f5d0290d77ce2a1cc8382b3889be268.
+  Custodian audit PASS covers safe-report/receipt structure, safety, typed
+  accounting and declarations. It locally rehashed the earlier 12 initial
+  chains, but did not acquire comparison originals/reference projections
+  or verify their preimages. Reference commitments matched declarations
+  only; "truthful detailed emissions" remains ADJ self-description.
+- No raw answers, projections, dictionaries, source/task maps or errata text
+  entered this checkout. The same two exposed-development clusters/four
+  tasks establish neither random sampling, protected holdout, accepted
+  yield nor justified numeric policy. T-185 stays failed/blocked on
+  acquisition/qualification, custody/output feasibility and numerical
+  sample/error/uncertainty prerequisites. T-186/T-205 remain unchanged.
+  Resumption requires an explicit maintainer decision on the unmet
+  prerequisites and exact policy revisions, plus separate bounded-work
+  authorization; do not reopen this exhausted attempt or loop autonomously.
+- 2026-11-14T15:03:02Z: Authorized final safe-evidence recording only; temporary lifecycle transition to refresh ended-attempt FAIL/block reason. No study, comparison, retry, repair or successor authorized.
+- 2026-11-14T15:03:11Z: Attempt-2 ENDED: all four comparison slots consumed; 3 valid and 1 intact over-cap output, full output feasibility FAIL. Qualification/acquisition/custody and justified sample/error/uncertainty prerequisites unmet. No further study/retry/repair/successor authorized; maintainer decision required.
+- Final recording review: dedicated simplifier made no edits. Medium-risk
+  independent conventional review used general-recording and claims/prose
+  lanes plus one fresh batched adversary. Narrative accounting/provenance
+  held; stale STATE pending-comparison wording was corrected through
+  supported recording-only transitions, then independently read back as
+  ended/blocked/no active task. No unresolved recording finding remained.
+- Documentation-only structural checks passed: six exact safe-file size/hash
+  commitments before strict JSON parsing, receipt arithmetic/count boundaries,
+  preserved historical byte prefixes, executed script/schema/test readback,
+  local links, `git diff --check` and Taskrail validation. Current protocol
+  SHA256 d9a441ec55b8009b8ba6d1fce5f77e003755c0ab85a914fec17203802e8666f5.
+  No test consumes the changed narrative paths; executable inputs, tests and
+  harness contracts are unchanged. The Python suite was not rerun for this
+  recording; the earlier full gate and green CI concern the executed harness,
+  not an independent verification of the ended study's semantic results.
+- 2026-11-14T15:06:01Z: verification fail
