@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-13T15:36:43Z"
+updated_at: "2026-11-14T12:41:11Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -277,3 +277,61 @@ neither dependent implementation nor release readiness is established.
   This is final recording for the exhausted study, with no automatic retry.
 - 2026-11-13T15:36:43Z: verification fail
 - 2026-11-13T15:36:43Z: Study ended failed/insufficient at initial-output processing; allocation exhausted, no complete valid three-role task set, no adjudication, repair, reconstruction, replacement or retry authorized. Acquisition/custody/output feasibility and justified numerical criteria remain unmet; T-186/T-205 unchanged.
+- 2026-11-14T12:01:26Z: Maintainer authorizes shared output harness fix and protocol prerequisite for one NEW bounded attempt without T-186 waiver; no judge launch or historical answer repair.
+- Harness prerequisite at base aa676fa5d33cfea6de383642f0f1d26794909eef:
+  `scripts/capture-evaluation.py` captures exact stdin bytes before validation,
+  with an inclusive 32,768-byte task cap and finite 1,048,576-byte retention
+  ceiling. Malformed/oversize originals remain hashable; incomplete prefixes
+  are failed and identified. Exclusive custody paths cannot be reused. No
+  repair, provider integration, judge launch or historical reconstruction.
+- Initial schema `t185.initial.v1`, binding `t185.binding.v1`, receipt
+  `t185.capture.v1`; normative shape and 20/25/11 correspondence are in
+  `docs/evaluation-harness-v1.md`. Immutable provenance/citations resolve via
+  separately preserved hash-bound dictionaries/envelopes; actual scoped checks
+  remain in outputs. The validator checks structure, not source authenticity,
+  meaningful/true judgments or launch-gate compliance. Comparison is rejected;
+  its full schema/gate remains required before any later authorized comparison.
+- Script SHA256: 80118bc8be3b888138625c47750bb4ca5632795832365bcb9e6f2583bc42508c.
+  Schema-contract SHA256: d4a823ab1759985e6694203e74c354e2bc967b65904148c410200362e57c4dfd.
+  Protocol SHA256: dedc05c5b515a2630b8cfe5d8b5645e9d83f1f8f32592bc005c4e16fb7920405.
+  Contract proposal remains aef0af7771c125998b4e3d8e3ae5cdb72d23823ab9a150ed24a51d27fe1bc27b.
+- Only five allowlisted answer-free interface files from isolated custody were
+  downloaded; all expected hashes matched. The proposed metadata schema passed
+  Draft 2020-12 schema validation, not actual envelope/source acceptance. No
+  answers, old serializers, packets/maps or answer-bearing envelopes entered
+  this checkout. No study slots were spent on synthetic harness validation.
+- TDD observed missing-harness RED, then focused GREEN. Required-observation
+  omissions and numeric overflow also failed before fixes. High-risk review
+  found conflated requested/judge-local IDs and unvalidated processing/count
+  types. Added RED cases (nine failed, one already rejected), fixed separate
+  assertion arrays, processing enum and named scoped integer/binary measures;
+  task-wide assertion uniqueness and overlapping measures remain distinct.
+  Final focused suite: 40 passed. Corrected populated four-proposition fixture
+  is exactly 32,563 bytes, not a promise every truthful response fits. Earlier
+  larger-field/untyped synthetic capacities are not evidence for this format.
+- Dedicated simplifier and independent conventional-review coordinator used
+  relayed general, custody, Python/type and claims/comment-audit lanes. A fresh
+  schema/custody adversary verified both fixes; a separate overall verifier
+  supported implementation/field correspondence within structural boundaries,
+  not actual frozen custody or immediate launch readiness. Both findings fixed;
+  no unresolved implementation finding. Python 3.13 synthetic capture and
+  malformed-value probes passed independently. Actual binding/rights/source
+  resolution, fresh peer appointments and pre-solve gate are still prerequisites.
+- Section 11 reserves `t185-supported-slice-v1-attempt-2`: one fixed development
+  packet, at most 12 clusters/24 tasks/two per cluster/four atomic requests per
+  task; prefer the unchanged two-cluster/four-task input as exposed development.
+  Fresh requested-high A/B/ADJ appointments must all be bound before solving.
+  No replacement, automatic retry, shortening or repair of a failed original.
+  This prerequisite does not execute that attempt or revive exhausted slots.
+  T-185 acceptance remains unmet pending actual feasibility and justified
+  sample/error/uncertainty criteria; T-186/T-205 and T-179 are unchanged.
+- Final executable state (script/schema/protocol hashes above) passed the exact
+  `uv run ruff check` then `uv run mypy` then `uv run pytest -v` chain:
+  3,305 passed, seven skipped, one existing Pydantic serializer warning;
+  mypy checked 201 source files. Separate strict mypy for the standalone script
+  and its tests passed. Format check, diff check and Taskrail validation passed.
+  An earlier suite overlapped schema edits and failed three superseded fixtures;
+  it is not final-state evidence. The full chain was restarted on final code.
+  Subsequent edits are lifecycle/evidence notes only, not executable inputs.
+- 2026-11-14T12:41:11Z: verification fail
+- 2026-11-14T12:41:11Z: Harness prerequisite reviewed and tested; one separately authorized bounded attempt awaits actual pre-solve bindings/custody and feasibility evidence. Justified sample/error/uncertainty criteria and full evaluation acceptance remain unmet; no completion or T-186/T-205 waiver.
