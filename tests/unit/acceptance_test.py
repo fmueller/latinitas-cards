@@ -426,6 +426,71 @@ def test_reference_constraints_are_strict_at_public_boundary(tmp_path: Path, sou
         assert reader.handoff(path, note_id="one", card_key="card") is not None
 
 
+@pytest.mark.parametrize("prefix", [b'"rule"', b"NaN", b"Infinity", b"-Infinity", b"1e999"])
+def test_duplicate_check_artifact_keys_withhold_at_public_boundary(tmp_path: Path, prefix: bytes) -> None:
+    import hashlib
+
+    from latinitas_cards.acceptance import load_stage
+    from latinitas_cards.acceptance_records import canonical
+
+    decision = candidate(tmp_path, human=True)
+    path = tmp_path / "accepted.json"
+    save_acceptance(path, decision)
+    reader = AcceptanceReader(tmp_path, decision.binding, decision.versions, decision.assertions, CELLS)
+    assert reader.export(path) == decision.assertions
+    stage = load_stage(tmp_path, "check")
+    assert stage.artifact is not None
+    artifact = tmp_path / stage.artifact
+    original = artifact.read_bytes()
+    malformed = b'{"method":' + prefix + b"," + original[1:]
+    artifact.write_bytes(malformed)
+    changed = stage.model_copy(update={"output_sha256": hashlib.sha256(malformed).hexdigest()})
+    (tmp_path / "stages/check.json").write_bytes(canonical(changed))
+    assert reader.preview(path)["state"] == "withheld"
+    with pytest.raises(ValueError, match="withheld"):
+        reader.export(path)
+    assert reader.handoff(path, note_id="one", card_key="card") is not None
+    artifact.write_bytes(original)
+    (tmp_path / "stages/check.json").write_bytes(canonical(stage))
+    assert reader.export(path) == decision.assertions
+    assert reader.handoff(path, note_id="one", card_key="card") is None
+
+
+@pytest.mark.parametrize(
+    ("data", "expected"),
+    [(b'{"ratio":0.125}', {"ratio": 0.125}), (b'[1,true,null,"NaN"]', [1, True, None, "NaN"]), (b"0.125", 0.125)],
+)
+def test_stage_artifact_preserves_generic_json(tmp_path: Path, data: bytes, expected: object) -> None:
+    import hashlib
+
+    from latinitas_cards.acceptance import load_stage, stage_artifact
+
+    candidate(tmp_path)
+    stage = load_stage(tmp_path, "check")
+    assert stage.artifact is not None
+    (tmp_path / stage.artifact).write_bytes(data)
+    stage = stage.model_copy(update={"output_sha256": hashlib.sha256(data).hexdigest()})
+    assert stage_artifact(tmp_path, stage) == expected
+
+
+@pytest.mark.parametrize(
+    "data",
+    [b"NaN", b"Infinity", b"-Infinity", b"1e999", b'{"nested":[NaN]}', b'{"nested":{"key":1,"key":2}}'],
+)
+def test_stage_artifact_rejects_ambiguous_or_nonfinite_json(tmp_path: Path, data: bytes) -> None:
+    import hashlib
+
+    from latinitas_cards.acceptance import load_stage, stage_artifact
+
+    candidate(tmp_path)
+    stage = load_stage(tmp_path, "check")
+    assert stage.artifact is not None
+    (tmp_path / stage.artifact).write_bytes(data)
+    stage = stage.model_copy(update={"output_sha256": hashlib.sha256(data).hexdigest()})
+    with pytest.raises(ValueError):
+        stage_artifact(tmp_path, stage)
+
+
 @pytest.mark.parametrize(
     "field",
     [

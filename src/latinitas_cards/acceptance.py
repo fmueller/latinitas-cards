@@ -7,7 +7,6 @@ copied from the stored decision. Eligibility authorizes content, not Anki writes
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -33,6 +32,7 @@ from .acceptance_records import (
     Stage,
     StageName,
     canonical,
+    decode_json,
 )
 from .acceptance_records import (
     Human as Human,
@@ -175,7 +175,7 @@ def stage_artifact(root: Path, record: Stage) -> object:
     data = _inside(root, record.artifact).read_bytes()
     if hashlib.sha256(data).hexdigest() != record.output_sha256:
         raise ValueError("stale_evidence: artifact digest mismatch")
-    return json.loads(data)
+    return decode_json(data)
 
 
 def reusable_stage(

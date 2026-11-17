@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#shared-evidence-and-automatic-acceptance
 dependencies:
     - T-186-approve-v0-5-0-contracts-and-evaluation-policy
-updated_at: "2026-11-17T05:37:57Z"
+updated_at: "2026-11-17T06:11:02Z"
 ---
 
 # T-187-implement-versioned-automatic-decisions-and-reuse Implement versioned automatic decisions and reuse bindings
@@ -80,3 +80,35 @@ installed content. Task-local completion does not imply independent integrated
 or release acceptance.
 - 2026-11-17T05:37:48Z: verification pass
 - 2026-11-17T05:37:57Z: Implementation and independent scoped review complete; verification passed at 2026-11-17T05:37:48Z. Final Ruff, mypy (209 files), pytest (3384 passed, 7 skipped), format and planning checks passed. Task-local completion only; no successor started, automatic policy enablement, empirical approval or publication.
+
+### Independent acceptance correction
+
+Integrated acceptance on f115e01 identified one remaining strict-reader defect:
+hash-consistent artifact bytes with duplicate JSON keys lost the contradictory
+value before schema validation. Shared decoding now applies the existing unique
+key mechanism to artifact bytes as well as records, before canonicalization.
+Nonfinite constants and float overflow also reject at that boundary; valid
+generic JSON arrays, scalars and finite floats retain their prior semantics.
+
+The public regression preserved decision/check/human commitments while changing
+artifact bytes and their exact hash. It failed before the fix and now withholds
+preview/export with manual handoff; restoring the original bytes restores export.
+Standalone artifact cases independently reject nonfinite values and nested
+duplicates. Red checks: 11 failed, 3 valid controls passed; affected green checks:
+118 passed. Public offline human/disabled-policy/freshness smoke remains green.
+
+Dedicated simplification found no further change. Scoped independent security
+and test verification confirmed the fix, including escaped-equivalent keys,
+nested duplicates, both overflow signs, generic finite values and unchanged
+record strictness. The coordinator closed the finding with no remaining scoped
+blocker. This consumed the reserved materially-new-evidence follow-up and fix
+round 2 of 2, without resetting the original high-risk review budget. T187 remains
+the same completed task; no successor, judge run or policy enablement was started.
+- 2026-11-17T06:11:02Z: verification pass
+
+Final correction gate on unchanged executable inputs passed: Ruff, mypy (209
+files), pytest (3398 passed, 7 intentional skips and one existing serializer
+warning), formatting (535 files), diff check and Taskrail validation. The
+supported verify command reconciled evidence on the completed task at the above
+timestamp without reopening it; independent integrated acceptance remains
+pending the overseer's exact-candidate recheck.

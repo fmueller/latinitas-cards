@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from datetime import datetime
 from typing import Annotated, Literal, Self, get_origin
 
@@ -33,6 +34,29 @@ def digest(value: object) -> str:
     return hashlib.sha256(canonical(value)).hexdigest()
 
 
+def decode_json(data: bytes | str) -> object:
+    """Decode generic JSON without losing duplicate keys or nonfinite numbers."""
+
+    def unique(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    def finite_float(raw: str) -> float:
+        value = float(raw)
+        if not math.isfinite(value):
+            raise ValueError("nonfinite JSON number")
+        return value
+
+    def reject_constant(raw: str) -> object:
+        raise ValueError(f"nonfinite JSON constant: {raw}")
+
+    return json.loads(data, object_pairs_hook=unique, parse_float=finite_float, parse_constant=reject_constant)
+
+
 class Record(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -54,15 +78,7 @@ class Record(BaseModel):
 
     @classmethod
     def read_json(cls, data: bytes | str) -> Self:
-        def unique(pairs: list[tuple[str, object]]) -> dict[str, object]:
-            result: dict[str, object] = {}
-            for key, value in pairs:
-                if key in result:
-                    raise ValueError("duplicate JSON key")
-                result[key] = value
-            return result
-
-        raw = json.loads(data, object_pairs_hook=unique)
+        raw = decode_json(data)
         if not isinstance(raw, dict) or set(raw) != set(cls.model_fields):
             raise ValueError("record requires exactly its versioned keys")
         return cls.model_validate_json(canonical(raw))
