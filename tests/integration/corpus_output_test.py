@@ -462,6 +462,8 @@ def test_no_translation_string_grading_in_source() -> None:
         ("corpus_validation.py", "validate_records", "raw.get('corpus_id') != corpus_id"),
         ("corpus_validation.py", "validate_records", "text != nfc"),
         ("phrase_inputs.py", "bind_selections", "getattr(form.features, feature) != value"),
+        ("deck_evidence.py", "_construction_issues", "getattr(form.features, feature) != value"),
+        ("latin_library.py", "LocalStanza.analyze", "words[0].text != text"),
         # Annotation conflicts and retained segmentation differences.
         ("annotation_plans.py", "evaluate_operations", "row.value != record.value"),
         ("commands/annotations.py", "segment.body.additions", "record.value != value"),

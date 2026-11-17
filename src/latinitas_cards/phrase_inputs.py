@@ -339,25 +339,8 @@ def bind_selections(work: PhraseWorkspace, request: SelectionRequest) -> tuple[d
             canonical_bindings.append(
                 binding.model_dump(mode="json") | {"source": asdict(work.identities[entry.identity])}
             )
-        if pattern.family == "adjective-noun" and {"head", "modifier"} <= forms.keys():
-            for feature in ("case", "number", "gender"):
-                if getattr(forms["head"].features, feature) != getattr(forms["modifier"].features, feature):
-                    reject("agreement", f"modifier/head disagree in {feature}")
-        if pattern.family == "verb-noun":
-            if {"subject", "verb"} <= forms.keys() and forms["subject"].features.number != forms[
-                "verb"
-            ].features.number:
-                reject("agreement", "subject/verb disagree in number")
-            if "verb" in senses:
-                valency = senses["verb"].valency
-                noun_roles = set(pattern.roles) - {"verb"}
-                if set(valency) != noun_roles:
-                    reject("valency", "sense arguments do not match pattern roles")
-                for role_name, case in valency.items():
-                    if role_name in pattern.roles and pattern.roles[role_name].requires.case != case:
-                        reject("valency", f"{role_name}: pattern government differs from sense")
-                    if role_name in forms and forms[role_name].features.case != case:
-                        reject("valency", f"{role_name}: sense governs {case}")
+        for code, message in construction_diagnostics(pattern, forms, senses):
+            reject(code, message)
         # The single-source note contract receives a composite, never an arbitrarily owned word.
         source_material = [{k: b[k] for k in ("role", "source")} for b in canonical_bindings]
         source_identity = "phrase-source-v1-" + hashlib.sha256(canonical(source_material).encode()).hexdigest()
@@ -375,6 +358,33 @@ def bind_selections(work: PhraseWorkspace, request: SelectionRequest) -> tuple[d
         "limits": request.limits.model_dump(),
         "selections": [unique[k] for k in sorted(unique)],
     }, diagnostics
+
+
+def construction_diagnostics(
+    pattern: Pattern,
+    forms: dict[str, Form],
+    senses: dict[str, Sense],
+) -> tuple[tuple[str, str], ...]:
+    """Shared construction rules, independent of legacy human-approval checks."""
+    issues: list[tuple[str, str]] = []
+    if pattern.family == "adjective-noun" and {"head", "modifier"} <= forms.keys():
+        for feature in ("case", "number", "gender"):
+            if getattr(forms["head"].features, feature) != getattr(forms["modifier"].features, feature):
+                issues.append(("agreement", f"modifier/head disagree in {feature}"))
+    if pattern.family == "verb-noun":
+        if {"subject", "verb"} <= forms.keys() and forms["subject"].features.number != forms["verb"].features.number:
+            issues.append(("agreement", "subject/verb disagree in number"))
+        if "verb" in senses:
+            valency = senses["verb"].valency
+            noun_roles = set(pattern.roles) - {"verb"}
+            if set(valency) != noun_roles:
+                issues.append(("valency", "sense arguments do not match pattern roles"))
+            for role_name, case in valency.items():
+                if role_name in pattern.roles and pattern.roles[role_name].requires.case != case:
+                    issues.append(("valency", f"{role_name}: pattern government differs from sense"))
+                if role_name in forms and forms[role_name].features.case != case:
+                    issues.append(("valency", f"{role_name}: sense governs {case}"))
+    return tuple(issues)
 
 
 def save_selections(output: Path, payload: dict[str, object], protected: tuple[Path, ...]) -> None:

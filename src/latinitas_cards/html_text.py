@@ -123,8 +123,8 @@ def generated_html_to_text(value: str) -> str:
 class _SourceBoundaryExtractor(_SourceTextExtractor):
     """Retain source offsets while hiding markup from delimiter recognition."""
 
-    def __init__(self, value: str, *, decode_parentheses: bool = True) -> None:
-        super().__init__(decode_entities=True)
+    def __init__(self, value: str, *, decode_parentheses: bool = True, decode_entities: bool = True) -> None:
+        super().__init__(decode_entities=decode_entities)
         self.boundaries = [" "] * len(value)
         self._decode_parentheses = decode_parentheses
         self.readable: list[tuple[str, int, int]] = []
@@ -157,7 +157,7 @@ class _SourceBoundaryExtractor(_SourceTextExtractor):
         if not self._inactive_depth:
             # Only parentheses affect annotation boundaries. Keep other entities
             # literal so decoding cannot introduce a new field separator.
-            decoded = html.unescape(raw)
+            decoded = html.unescape(raw) if self._decode_entities else raw
             self.readable.extend((char, self._index, self._index + len(raw)) for char in decoded)
             syntax = decoded.ljust(len(raw)) if self._decode_parentheses and decoded in {"(", ")"} else raw
             self.boundaries[self._index : self._index + len(raw)] = syntax
@@ -181,6 +181,25 @@ def source_html_boundary_text(value: str) -> str:
     return "".join(parser.boundaries)
 
 
+def source_html_readable_spans(value: str) -> list[tuple[str, int, int]]:
+    """Map readable characters to raw offsets, excluding both layers of markup."""
+    parser = _SourceBoundaryExtractor(value)
+    parser.feed(value)
+    parser.close()
+    decoded = "".join(char for char, _, _ in parser.readable)
+    resolved = _SourceBoundaryExtractor(decoded, decode_entities=False)
+    resolved.feed(decoded)
+    resolved.close()
+    result: list[tuple[str, int, int]] = []
+    for char, start, end in resolved.readable:
+        if start == end:
+            offset = parser.readable[start][1] if start < len(parser.readable) else len(value)
+            result.append((char, offset, offset))
+        else:
+            result.append((char, parser.readable[start][1], parser.readable[end - 1][2]))
+    return result
+
+
 def source_html_to_text(value: str) -> str:
     """Convert untrusted source HTML to readable plain text without active markup.
 
@@ -202,4 +221,4 @@ def source_html_to_text(value: str) -> str:
     return resolved.text()
 
 
-__all__ = ["generated_html_to_text", "source_html_boundary_text", "source_html_to_text"]
+__all__ = ["generated_html_to_text", "source_html_boundary_text", "source_html_readable_spans", "source_html_to_text"]
