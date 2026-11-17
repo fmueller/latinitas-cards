@@ -26,6 +26,11 @@ kit for P50-2 through P50-6, not publication. Follow spec execution/validation r
   lower LLM-off coverage, resources and declared data scope.
 - Explain upgrades/rollback, policy withdrawal/manual resolution, user ownership and
   opt-in templates. Omission is not retirement; configuration is not hosted permission.
+- Document disabled automatic policies, non-learning research artifacts and the
+  separate T-200 prerequisite/evaluation/enablement gates. Synthetic examples may
+  demonstrate engineering behavior but are not production policy or reference truth.
+  Preserve runnable human-reviewed/curated paths and state that engineering-only
+  completion is not acceptance of the original automatic release scope.
 - Prepare disposable Linux Desktop kit with expected results for both languages,
   light/dark/collapsed/expanded/keyboard, mixed statuses, import/update/withdrawal and
   scheduling/history checks. Exclude Mobile/existing scheduled-collection claims.

@@ -26,6 +26,14 @@ P50-1 contract and the spec's execution-isolation/final-validation requirements.
   affected results without discarding valid unrelated work.
 - Persist stage outcomes, alternatives, objections and evidence. Malformed, stale,
   failed or unknown records cannot authorize export or destination writes.
+- Implement the application-owned policy registry and strict support-registry
+  bindings from the accepted contract. Ship no enabled automatic policies before
+  T-200's separate empirical/maintainer gates. Disabled-policy all-checks-pass
+  decisions remain withheld through reload/reuse; forged accepted records and
+  requested profile policy tuples cannot grant authority. Recheck withdrawal.
+- Keep would-accept evaluation data in isolated non-learning artifacts. Positive
+  automatic tests use isolated synthetic registry fixtures, not a public bypass
+  or a production-enabled fixture. Human approvals keep their distinct bindings.
 - Strict deck/corpus readers consume only explicitly upgraded/adapted records.
   Preserve old valid human sidecars and unchanged deck/corpus output compatibility.
 

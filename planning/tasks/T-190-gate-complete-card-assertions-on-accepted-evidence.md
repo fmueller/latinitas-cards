@@ -20,9 +20,13 @@ output. Follow approved contracts and spec execution/validation requirements.
 
 ## Acceptance
 
-- A plausible supported entry can become exportable without human acceptance through
-  approved library-only or optional LLM-supported paths. All asserted labels,
-  translations, segmentations and explanations must be accepted.
+- Implement the no-human route through approved library-only or optional LLM-supported
+  policies, tested positively with an isolated synthetic application registry. All
+  asserted labels, translations, segmentations and explanations must be accepted.
+  With the production enabled set empty, even all-checks-pass automatic candidates
+  stay withheld and outside ordinary learning export/destination handoffs. Stored
+  acceptance, stage/export commands, resume and old batches cannot bypass authority.
+  Actual automatic enablement needs T-200 evidence and separate maintainer approval.
 - Matching answers with open objections, contradictions, unsupported explanations,
   malformed responses, stale bindings or failed checks withhold affected cards,
   leaving unrelated supported cards exportable.
@@ -36,7 +40,9 @@ output. Follow approved contracts and spec execution/validation requirements.
 ## Verification Notes
 
 Check public preview/export with mixed accepted/withheld siblings and the negative
-controls above. Include a no-human positive and a superficially agreeing unsupported
-negative. Run the full mandatory validation chain.
+controls above. Include an isolated-fixture no-human positive, an all-checks-pass but
+unenabled negative and a superficially agreeing unsupported negative. Synthetic
+policies must not ship enabled or count as linguistic evidence. Run the full mandatory
+validation chain.
 
 ## Implementation Notes

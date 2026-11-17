@@ -14,31 +14,42 @@ updated_at: "2026-11-14T15:06:01Z"
 ## Description
 
 P50-1 evaluation-design draft using the contract draft's claim classes. Own the
-proposed protocol and feasibility evidence; do not approve numeric policy or
-implement consumers. Follow the spec's execution-isolation and validation rules.
+forward evaluation method and unchanged historical feasibility evidence; do not
+approve numeric policy or implement consumers. Proposed sequencing amendment only:
+these revised criteria await maintainer adoption and do not change this task's
+blocked status or the outcome of an exhausted attempt.
 
 ## Acceptance
 
-- Identify an independent Latin reference-judgment owner, permissible sources and
-  access. Include classical/biblical and varied supported inputs, claim types,
-  recipes, ambiguous cases and counterexamples without a processing whitelist.
+- Specify reference-owner/adjudicator/custodian responsibilities, qualification
+  and permitted-source requirements. Include classical/biblical and varied
+  supported inputs, claim types, recipes, ambiguity and counterexamples without
+  making the evaluation frame a processing whitelist. Actual appointments,
+  qualification and acquisition remain explicit T-200 prerequisites.
 - Define development/held-out separation, adjudication, units/denominators for
   accepted errors, precision, coverage, withheld cases and processing failures,
   plus uncertainty reporting. Zero accepted items is not evaluable.
-- Propose justified minimum sample sizes and explicit pass/fail criteria by stratum
-  with source or measured pilot evidence. Account for correlated library/model
-  errors; agreement is not truth. Do not tune against held-out answers.
+- Define how development evidence must justify minimum evaluable sample/accepted
+  counts, error/coverage/uncertainty criteria and stopping rules by stratum before
+  maintainer acceptance and held-out exposure at T-200. Do not invent numerical
+  values or claim they are approved. Account for correlation; agreement is not truth.
 - Define handling of insufficient evidence and failed/inconclusive strata, narrower
   coverage or disabled automatic paths, including approval and evidence refresh.
-- Limit work to one documented feasibility/protocol pass. Missing independent
-  judgments, data permission or justified thresholds blocks the maintainer gate,
-  rather than prompting invented evidence or indefinite research.
+- Preserve every historical failed/inconclusive result, executed revision and
+  exhausted allocation. The forward plan must map missing rights/acquisition,
+  independent qualification, custody/output feasibility and numerical justification
+  to explicit ordered T-200 gates, not research before implementation approval.
+- Require withheld decisions/non-learning research artifacts until separate policy
+  enablement. Design completion may be verified only against adopted amended
+  criteria; it is not empirical success and authorizes no further judge run.
 
 ## Verification Notes
 
-Review provenance, rationale, holdout separation and competing wrong answers with
-the reference owner. Maintainer approval must cover this exact protocol revision;
-neither dependent implementation nor release readiness is established.
+Review the exact forward plan, historical accounting and acceptance-to-owner mapping.
+Missing empirical prerequisites must remain visible and block their later consumers.
+Maintainer adoption of amended criteria precedes any design-only re-verification or
+completion; preserve earlier failed verification and all Implementation Notes below.
+No lifecycle transition is performed by preparing these task-body amendments.
 
 ## Implementation Notes
 

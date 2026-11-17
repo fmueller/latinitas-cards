@@ -22,6 +22,14 @@ docs/releasing.md and spec execution-isolation/final-check requirements.
 - Confirm closed drift/gaps and exact candidate evidence for P50-1 through P50-6,
   held-out criteria, real library/authorized endpoints, native Desktop, compatibility
   and approved limitations. Missing prerequisites block readiness.
+- Confirm T-200's prerequisite/evaluation/enablement evidence for the original
+  automatic scope, or a separately adopted scope amendment with refreshed evidence.
+  Engineering completion or a disabled/human-only fallback is not full v0.5.0 acceptance.
+- Consolidate the requested bounded high-effort Sol 6.1 adversarial QA rounds and
+  medium-effort fix evidence, plus the final real-Anki Desktop feature video with
+  German cards on the verified candidate. A video is demonstration, not independent
+  linguistic reliability evidence. Voice-model downloads are authorized; this does
+  not grant hosted data processing or permission for additional reference-judge runs.
 - Verify package build/install and CLI smoke from disposable built artifacts, docs/
   examples/schema registry, runtime prerequisites, migration/manual resolution and
   rollback instructions. Record candidate/artifact hashes.
