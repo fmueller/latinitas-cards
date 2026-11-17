@@ -457,6 +457,8 @@ def test_no_translation_string_grading_in_source() -> None:
         ("review_inspection.py", "inspect_workspace", "current.get(field, '') != value"),
         # Evidence freshness, corpus identity/NFC and required morphology validation.
         ("principal_relationships.py", "compare_principal_parts", "item.claim.candidate_text != part.display"),
+        # Bind historical phrase combination approval to the same original context, never grade an answer.
+        ("acceptance_adapters.py", "_project", "base.claim.candidate_text == answer.claim.candidate_text"),
         ("corpus_validation.py", "validate_records", "raw.get('corpus_id') != corpus_id"),
         ("corpus_validation.py", "validate_records", "text != nfc"),
         ("phrase_inputs.py", "bind_selections", "getattr(form.features, feature) != value"),

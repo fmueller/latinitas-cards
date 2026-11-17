@@ -406,3 +406,69 @@ def test_view_validates_its_own_corpus_read(facts: Fixture, monkeypatch: pytest.
     monkeypatch.setattr(corpus_facts, "join_corpus_decisions", corrupting)
     with pytest.raises(ValueError, match="hash_mismatch"):
         facts.view()
+
+
+@pytest.mark.parametrize("agree", [False, True])
+@pytest.mark.parametrize("both", [False, True])
+def test_acceptance_projection_preserves_anchor_conflicts(
+    facts: Fixture, tmp_path: Path, agree: bool, both: bool
+) -> None:
+    from latinitas_cards.acceptance import AcceptanceReader, save_acceptance
+    from latinitas_cards.acceptance_adapters import adapt_corpus
+    from latinitas_cards.acceptance_policy import BOOTSTRAP
+    from latinitas_cards.acceptance_records import Binding, Versions, digest
+
+    first = facts.add(0, "morphology", morph("arma"), (0, 4))
+    other = facts.add(0, "morphology", morph("arma" if agree else "armum"), (0, 4), name="other")
+    facts.decide("accepted", first, other)
+    binding = Binding(
+        source_scope="corpus",
+        source_identity="facts:p000001",
+        source_sha256=digest(facts.corpus.read_text()),
+        extraction_sha256=digest(facts.sidecar.read_text()),
+        mapping_sha256=digest("mapping"),
+        task_sha256=digest("task"),
+        language="en",
+        config_sha256=digest("config"),
+    )
+    versions = Versions(
+        producer="1",
+        analyzer="1",
+        checker="1",
+        comparison="1",
+        policy="v050-disabled",
+        policy_sha256=digest(BOOTSTRAP),
+        proposal_prompt=None,
+        counter_prompt=None,
+        proposal_model=None,
+        counter_model=None,
+    )
+    selected = (first.annotation_id, other.annotation_id) if both else (first.annotation_id,)
+    root = tmp_path / "acceptance"
+    if not agree:
+        assert facts.view().passages["facts:p000001"].morphology(0).reason == "conflicting_facts"
+        with pytest.raises(ValueError, match="conflicting_facts"):
+            adapt_corpus(
+                root,
+                corpus=facts.corpus,
+                annotations=facts.sidecar,
+                sidecar=sidecar_path(facts.corpus),
+                annotation_ids=selected,
+                binding=binding,
+                versions=versions,
+            )
+        return
+    decision = adapt_corpus(
+        root,
+        corpus=facts.corpus,
+        annotations=facts.sidecar,
+        sidecar=sidecar_path(facts.corpus),
+        annotation_ids=selected,
+        binding=binding,
+        versions=versions,
+    )
+    path = root / "accepted.json"
+    save_acceptance(path, decision)
+    reader = AcceptanceReader(root, binding, versions, decision.assertions, ())
+    assert reader.preview(path)["state"] == "accepted"
+    assert len(reader.export(path)) == len(selected)

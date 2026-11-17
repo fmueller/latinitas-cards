@@ -1,12 +1,12 @@
 ---
 id: T-187-implement-versioned-automatic-decisions-and-reuse
 title: Implement versioned automatic decisions and reuse bindings
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#shared-evidence-and-automatic-acceptance
 dependencies:
     - T-186-approve-v0-5-0-contracts-and-evaluation-policy
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-17T05:37:57Z"
 ---
 
 # T-187-implement-versioned-automatic-decisions-and-reuse Implement versioned automatic decisions and reuse bindings
@@ -44,3 +44,39 @@ source/checker/policy/language, malformed/unsupported versions and unchanged reu
 Run the mandatory ruff, mypy, pytest chain before verify/complete.
 
 ## Implementation Notes
+
+Implemented separate strict acceptance/stage records, canonical noncircular
+commitments, immutable artifact storage and dependency-aware reuse. Public readers
+revalidate current bindings and authority for preview, export and manual handoff.
+Human approvals retain their own immutable checks and do not inherit automatic
+policy authority. Explicit deck/corpus adapters preserve historical human claims,
+authored corrections, decisions and source-sidecar bytes; existing readers and
+output paths remain unchanged.
+
+The application registry ships only v050-disabled revision 1 with no enabled
+scope. All-checks-pass automatic records still withhold on reload/export/handoff.
+Synthetic enabled policies are isolated test fixtures, not a public bypass.
+Model-check execution, linguistic rules and empirical enablement remain with
+later tasks; no empirical/reference/study or publication work was performed.
+
+TDD established missing-module failures and green public-interface coverage.
+Independent high-risk review reproduced five defects before fixes: corpus anchor
+conflicts, authored phrase combination approval, versioned projection identity,
+legacy artifact containment and malformed evidence. All five are independently
+verified fixed. Strengthened forgery/containment tests also failed under a
+temporary verification bypass and passed after restoration. Dedicated
+simplification and scoped fix review completed; no required finding remains.
+One adversarial round and one of two permitted fix rounds were used; the reserved
+materially-new-evidence follow-up remains unused.
+
+Focused tests passed (74). Independent adapter/corpus checks passed (43), with
+additional public probes confirming unchanged history, regeneration, human
+policy-only independence, malformed-record withholding and static symlink
+containment. Offline public smoke confirmed disabled automatic withholding,
+human export and language-drift rejection without provider/destination writes.
+Reload relies on caller-supplied current source/task bindings; static containment
+is not a race-resistant filesystem guarantee, and handoff does not repair
+installed content. Task-local completion does not imply independent integrated
+or release acceptance.
+- 2026-11-17T05:37:48Z: verification pass
+- 2026-11-17T05:37:57Z: Implementation and independent scoped review complete; verification passed at 2026-11-17T05:37:48Z. Final Ruff, mypy (209 files), pytest (3384 passed, 7 skipped), format and planning checks passed. Task-local completion only; no successor started, automatic policy enablement, empirical approval or publication.
