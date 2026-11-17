@@ -1,12 +1,12 @@
 ---
 id: T-185-design-independently-judged-acceptance-evaluation
 title: Design independently judged acceptance evaluation
-status: blocked
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-184-design-v0-5-0-acceptance-and-pipeline-contracts
-updated_at: "2026-11-14T15:06:01Z"
+updated_at: "2026-11-17T04:06:50Z"
 ---
 
 # T-185-design-independently-judged-acceptance-evaluation Design independently judged acceptance evaluation
@@ -467,3 +467,75 @@ No lifecycle transition is performed by preparing these task-body amendments.
   recording; the earlier full gate and green CI concern the executed harness,
   not an independent verification of the ended study's semantic results.
 - 2026-11-14T15:06:01Z: verification fail
+
+## Separate adoption and T-185 design-verification record
+
+- The maintainer explicitly adopted the exact eleven-file sequencing/engineering
+  package and authorized T-185 verification/completion against its amended
+  DESIGN-ONLY criteria. This later authorization supersedes the frozen package's
+  preparatory pending/proposed wording for adoption only. It does not execute
+  T-186 approval, start consumers or authorize a judge/reference/provider run.
+- Exact adoption commit: 568f02cf491e6252e795e10474833bd6a137fc21, based on
+  57bd835de4995bff73486500839eb02754a5429f. Source manifest SHA256:
+  b636f8192b6a4817ca7517acd2c1c7299da487ffe5eebd7e18fbaa69762de0f8.
+  Source archive SHA256:
+  9c8b51500ffbf600f634b80fa625d155abfddcbfbcd748befbd07533957fb22a.
+  All eleven file sizes/hashes were verified before exact adoption and again
+  against that commit. Source approval markers, seven task frontmatters and
+  complete historical Implementation Notes were not rewritten. This separate
+  record and subsequent supported lifecycle metadata are later recording deltas.
+- Design criterion 1: forward plan checkpoint 1 and historical protocol
+  sections 1–2 define qualified reference/adjudicator/custodian responsibilities,
+  permitted acquisition and varied classical/biblical/claim/recipe/language
+  strata. Actual appointments, rights and qualification remain T-200 gates.
+- Design criterion 2: forward checkpoints 2–5 and historical sections 3–4
+  define development/holdout isolation, source-grounded independent solving,
+  adjudication, separate source/task/assertion/card/role units, precision,
+  coverage, withholding/failure and uncertainty. Zero acceptance is not evaluable.
+- Design criterion 3: forward checkpoint 3 and historical section 5 define
+  development-grounded justification of minimum evaluable samples/accepted
+  counts, error/coverage/uncertainty criteria and stopping rules, accounting
+  for correlation. Exact criteria require maintainer acceptance before held-out
+  exposure at T-200; no numerical values or linguistic policy were approved here.
+- Design criterion 4: forward checkpoints 5–6 and historical section 6 retain
+  failed/inconclusive/insufficient outcomes, disabled affected paths and explicit
+  maintainer scope amendments with refreshed evidence instead of silent narrowing.
+- Design criterion 5: original protocol/harness/caps and historical task notes
+  remain intact. Attempt 2 stays ENDED: 12 valid initials, three valid comparisons
+  and one complete over-cap original; all allocations exhausted, no repair/retry.
+  Forward checkpoints 1–3 and amended T-200 place missing acquisition,
+  qualification, custody/output feasibility and numerical justification in
+  ordered later gates, not prerequisites for this adopted method-design closure.
+- Design criterion 6: spec design-isolation rules, contract section 4 and
+  forward checkpoint 6 require withheld automatic decisions/non-learning research
+  artifacts until separate policy enablement. Design completion does not establish
+  empirical success, consumer readiness, automatic export authority or release
+  acceptance. T-186 remains blocked for its separate owner; T-205 is unchanged.
+- Planning Gate 1/Gate 2 and one targeted correction recheck were already used
+  and passed for this package. Their remaining targeted recheck stays reserved;
+  task-local review did not reset that budget or redesign the approved content.
+- Exact adopted state passed the required ordered gate: `uv run ruff check`;
+  `uv run mypy` (202 files); `uv run pytest -v` (3,344 passed, seven skipped,
+  one existing Pydantic serializer warning, 409.75 seconds). Later changes are
+  this separately identified recording and supported lifecycle metadata only;
+  no tests consume these notes. Structural checks passed for all eleven source
+  identities, seven task metadata/history blocks, protected paths, eight local
+  links/anchors, canonical disabled-bootstrap digest, diff and Taskrail validation.
+- No study, judge/reference/provider run, private-answer acquisition,
+  repair/retry/replacement, successor, policy enablement or publication occurred.
+- 2026-11-17T04:06:50Z: Maintainer adopted exact eleven-file package at 568f02cf491e6252e795e10474833bd6a137fc21 and authorized amended DESIGN-ONLY verification/completion. Historical empirical failures remain unchanged; judges paused, T-186 blocked and no successor authorized.
+- 2026-11-17T04:06:50Z: verification pass
+- Design-only verification PASS and completion were recorded through supported
+  T-185 transitions at the timestamp above. This closes the amended method-design
+  deliverable only; it does not replace any historical empirical FAIL or qualify
+  references, output feasibility, numerical policy, held-out results or release.
+- Dedicated simplifier and scoped recording readback made no edits. Task-local
+  high-risk conventional review used general adoption, authority-boundary and
+  claims/criteria lanes, one fresh adversarial batch and a distinct overall
+  verifier. No material contradiction or unresolved finding remained; the exact
+  source commit and separately appended record were independently checked.
+  Existing planning gates were not reopened and their reserved recheck is unused.
+- Final lifecycle readback: T-185 completed, no active task or successor started;
+  T-186 remains blocked with its approved package body but unchanged lifecycle.
+  T-179/T-205, historical protocol/harness/caps and all exhausted allocations
+  remain unchanged. Judges and all new study/provider work remain paused.
