@@ -1,12 +1,12 @@
 ---
 id: T-191-extend-translation-first-forms-and-controlled
 title: Extend translation-first forms and controlled phrase recipes
-status: todo
+status: blocked
 priority: medium
 spec_ref: specs/v0.5.0.md#grammar-exercise-library
 dependencies:
     - T-190-gate-complete-card-assertions-on-accepted-evidence
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-18T12:39:59Z"
 ---
 
 # T-191-extend-translation-first-forms-and-controlled Extend translation-first forms and controlled phrase recipes
@@ -73,3 +73,5 @@ selectable recognition, default exclusion and explicit opt-in of production/cloz
 and withheld unsupported claims. No corpus construction discovery is required.
 
 ## Implementation Notes
+
+- 2026-11-18T12:39:59Z: Implementation cycle ended without an implementation candidate; full T-191 acceptance remains outstanding. No external prerequisite or contract blocker was established. Resume the same task, not a successor.
