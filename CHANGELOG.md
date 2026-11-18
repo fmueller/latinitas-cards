@@ -8,6 +8,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 - `pipeline` previews evidence-gated German/English form and controlled-phrase cards,
   with opt-in conjugation/declension drills, confirmed PPP cards and manual CSV export.
+- `pipeline export` supports optional receipt-bound batches, replay and explicit
+  reconciliation; default output includes every eligible card after suppression.
 
 ### Fixed
 

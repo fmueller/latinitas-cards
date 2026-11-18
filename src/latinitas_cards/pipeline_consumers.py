@@ -24,8 +24,9 @@ from .identity import ResolvedSourceIdentity, derive_latinitas_id, resolve_sourc
 from .manifest import CsvIdentityManifest, reconcile_csv_manifest
 from .phrase_inputs import EntryV2, Features, Form, FormV2, PhraseInputV2, Selection, Sense
 from .phrase_recipes import _CANONICAL, Reference, render_phrase_objective, render_phrase_text
+from .pipeline_batches import Batches, CardRef, Receipt, run_lock
 from .pipeline_profile import PipelineProfile, RecipeOverrides, load_pipeline_profile
-from .preview_export import commit_csv_artifacts, serialize_anki_csv
+from .preview_export import serialize_anki_csv
 from .principal_parts import PrincipalPartParseSuccess, parse_principal_parts
 from .profile import DeckProfile, load_profile
 from .sources import CanonicalSourceRecord, read_source_records
@@ -112,6 +113,7 @@ class Rendered:
     versions: Versions
     material: str
     analysis_path: Path
+    objective: FormObjective | PhraseObjective
 
 
 def _checked_file(base: Path, path: str, sha256: str) -> Path:
@@ -641,17 +643,22 @@ def current_cards(
     )
     selected.sort(
         key=lambda o: (
-            o.entry if isinstance(o, FormObjective) else canonical(o.selection).decode(),
+            o.entry if isinstance(o, FormObjective) else min(b.entry for b in o.selection.bindings),
+            "" if isinstance(o, FormObjective) else o.selection.pattern,
+            ""
+            if isinstance(o, FormObjective)
+            else canonical(sorted((b.role, b.form) for b in o.selection.bindings)).decode(),
             o.object_key,
-            o.recipe,
+            profile.recipes.index(o.recipe) if o.recipe in profile.recipes else len(profile.recipes),
             digest(o),
         )
     )
     limit = profile.processing.max_source_units
     rendered = []
     skipped: list[dict[str, str]] = []
-    seen: set[tuple[str, str]] = set()
+    seen: dict[tuple[str, str], tuple[object, ...]] = {}
     conflicted: set[tuple[str, str]] = set()
+    variants: dict[str, set[str]] = {}
     processed = 0
     for objective in selected:
         if objective.recipe not in profile.recipes:
@@ -689,6 +696,29 @@ def current_cards(
                 )
             else:
                 prompt, answer, assertions, material, identity = _render_phrase(source, objective, profile.language)
+                group = digest(
+                    (
+                        objective.selection.pattern,
+                        sorted((b.role, b.entry, b.sense) for b in objective.selection.bindings),
+                    )
+                )
+                variant = digest(
+                    sorted(
+                        (b.role, _form(source, _entry(source, b.entry, b.sense)[0], b.form).text)
+                        for b in objective.selection.bindings
+                    )
+                )
+                kept = variants.setdefault(group, set())
+                if variant not in kept and len(kept) >= profile.selection.variants_per_binding:
+                    skipped.append(
+                        {
+                            "object_key": objective.object_key,
+                            "candidate_key": digest(objective),
+                            "reason": "variant_limit",
+                        }
+                    )
+                    continue
+                kept.add(variant)
                 source_records = {b.entry: dict(source.records[b.entry].fields) for b in objective.selection.bindings}
                 target = {"role": objective.target}
             key = next(t.slot.semantic_key for t in GRAMMAR_LAYOUT if t.slot.recipe == objective.recipe)
@@ -706,10 +736,14 @@ def current_cards(
             )
             note_id = derive_latinitas_id(identity, exercise_object, source_scope=source.scope)
             ref = (note_id, key)
+            representation = (prompt, answer, assertions)
             if ref in seen:
+                if seen[ref] == representation:
+                    skipped.append({"object_key": objective.object_key, "reason": "duplicate_card_ref"})
+                    continue
                 conflicted.add(ref)
                 raise ValueError("duplicate semantic exercise")
-            seen.add(ref)
+            seen[ref] = representation
             evidence = tuple(e for a in assertions for e in a.evidence)
             assertions += (
                 _assertion("rendered", "label", canonical({"prompt": prompt, "answer": answer}).decode(), evidence),
@@ -718,7 +752,14 @@ def current_cards(
                 source_scope=source.scope,
                 source_identity=identity,
                 source_sha256=digest(source_records),
-                extraction_sha256=digest({"entries": source.data.entries, "patterns": source.data.patterns}),
+                extraction_sha256=digest(
+                    {
+                        "entries": tuple(e for e in source.data.entries if e.identity in source_records),
+                        "patterns": ()
+                        if isinstance(objective, FormObjective)
+                        else tuple(p for p in source.data.patterns if p.key == objective.selection.pattern),
+                    }
+                ),
                 mapping_sha256=digest(source.deck),
                 task_sha256=digest(objective),
                 language=profile.language,
@@ -747,7 +788,9 @@ def current_cards(
                 except (ValueError, OSError, TypeError):
                     pass
             rendered.append(
-                Rendered(objective.recipe, prompt, answer, claims, binding, versions, material, analysis_path)
+                Rendered(
+                    objective.recipe, prompt, answer, claims, binding, versions, material, analysis_path, objective
+                )
             )
         except (ValueError, KeyError) as exc:
             skipped.append({"object_key": objective.object_key, "reason": str(exc)})
@@ -785,10 +828,17 @@ def load_run(root: Path) -> Run:
     return Run.read_json((root / "run.json").read_bytes())
 
 
-def decide(root: Path) -> dict[str, object]:
+def decide(root: Path, profile_path: Path | None = None) -> dict[str, object]:
     """Project the complete current analysis through T190, not an accepted flag."""
+    with run_lock(root):
+        return _decide(root, profile_path)
+
+
+def _decide(root: Path, profile_path: Path | None) -> dict[str, object]:
     run = load_run(root)
-    cards, skipped = current_cards(Path(run.profile_path), run.profile, run.objectives, root)
+    path = profile_path or Path(run.profile_path)
+    profile = load_pipeline_profile(path) if profile_path else run.profile
+    cards, skipped = current_cards(path, profile, run.objectives, root)
     decisions = []
     errors = []
     for card in cards:
@@ -837,6 +887,8 @@ def preview(
     if overrides is not None:
         profile = profile.overridden(overrides)
     cards, skipped = current_cards(path, profile, run.objectives, root)
+    selected, suppressed = _selected(cards)
+    limit = profile.selection.output_limit
     return {
         "recipes": profile.recipes,
         "language": profile.language,
@@ -854,23 +906,142 @@ def preview(
             }
             for c in cards
         ],
+        "ranking": "selection-v1",
+        "selection": profile.selection.model_dump(mode="json"),
+        "suppressed": [*suppressed, *(s for s in skipped if s["reason"] in ("variant_limit", "duplicate_card_ref"))],
+        "accepted_unselected": [{"note_id": c.claims.note_id, "card_key": c.claims.card_key} for c in selected[limit:]]
+        if limit is not None
+        else [],
+        "deferred_source_work": [s for s in skipped if s["reason"] == "processing_limit"],
         "skipped": skipped,
         "grading": "self-assessment; translations are reference guidance",
     }
 
 
-def export(root: Path, output: Path) -> dict[str, object]:
-    if output.exists() or output.is_symlink() or output.resolve().is_relative_to(root.resolve()):
-        raise ValueError("choose a new output outside the evidence store")
+def _selected(cards: tuple[Rendered, ...]) -> tuple[list[Rendered], list[dict[str, str]]]:
+    accepted = {(c.note_id, c.card_key) for c in export_cards(tuple(c.claims for c in cards))}
+    ordered = sorted(
+        cards,
+        key=lambda c: (
+            c.binding.source_scope,
+            c.binding.source_identity,
+            c.objective.object_key,
+            c.recipe,
+            c.objective.target is not None,
+            canonical(c.objective.target).decode(),
+            c.objective.distinction,
+            digest(c.objective),
+        ),
+    )
+    selected = []
+    suppressed = []
+    seen: dict[str, Rendered] = {}
+    for card in ordered:
+        if (card.claims.note_id, card.claims.card_key) not in accepted:
+            continue
+        group = digest(
+            (
+                card.binding.source_scope,
+                card.binding.source_identity,
+                card.binding.language,
+                card.objective.object_key,
+                card.recipe,
+                card.objective.target,
+                card.objective.distinction,
+                sorted(digest(a) for a in card.claims.assertions),
+            )
+        )
+        retained = seen.get(group)
+        if retained is not None:
+            suppressed.append(
+                {
+                    "note_id": card.claims.note_id,
+                    "card_key": card.claims.card_key,
+                    "candidate_key": digest(card.objective),
+                    "reason": "redundant_variant",
+                    "retained_candidate_key": digest(retained.objective),
+                }
+            )
+            continue
+        selected.append(card)
+        seen[group] = card
+    return selected, suppressed
+
+
+def export(
+    root: Path,
+    output: Path,
+    *,
+    profile_path: Path | None = None,
+    output_limit: int | None = None,
+    after_receipt: str | None = None,
+    reconcile_receipt: str | None = None,
+) -> dict[str, object]:
+    with run_lock(root):
+        return _export(root, output, profile_path, output_limit, after_receipt, reconcile_receipt)
+
+
+def _export(
+    root: Path,
+    output: Path,
+    profile_path: Path | None,
+    output_limit: int | None,
+    after_receipt: str | None,
+    reconcile_receipt: str | None,
+) -> dict[str, object]:
+    if output.is_symlink() or output.resolve().is_relative_to(root.resolve()):
+        raise ValueError("choose an output outside the evidence store")
     run = load_run(root)
-    source = load_source(Path(run.profile_path), run.profile)
-    cards, skipped = current_cards(Path(run.profile_path), run.profile, run.objectives, root)
-    selected = {(c.note_id, c.card_key) for c in export_cards(tuple(c.claims for c in cards))}
-    eligible = [c for c in cards if (c.claims.note_id, c.claims.card_key) in selected]
-    if run.profile.selection.output_limit is not None:
-        eligible = eligible[: run.profile.selection.output_limit]
+    path = profile_path or Path(run.profile_path)
+    profile = load_pipeline_profile(path) if profile_path else run.profile
+    limit = profile.selection.output_limit if output_limit is None else output_limit
+    if limit is not None and limit <= 0:
+        raise ValueError("output_limit must be positive")
+    source = load_source(path, profile)
+    cards, skipped = current_cards(path, profile, run.objectives, root)
+    selected, suppressed = _selected(cards)
+    # Reconstruct the whole snapshot, not just this batch, before replay/publication.
+    repeated, repeated_skipped = current_cards(path, profile, run.objectives, root)
+    repeated_selected, repeated_suppressed = _selected(repeated)
+
+    def projection(items: list[Rendered]) -> object:
+        return [
+            (c.claims.note_id, c.claims.card_key, c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
+            for c in items
+        ]
+
+    if (projection(selected), skipped, suppressed) != (
+        projection(repeated_selected),
+        repeated_skipped,
+        repeated_suppressed,
+    ):
+        raise ValueError("eligibility changed before export")
+    snapshot = digest(
+        {
+            "ranking": "selection-v1",
+            "cards": projection(selected),
+            "skipped": skipped,
+            "suppressed": suppressed,
+            "selection": profile.selection.model_dump(exclude={"output_limit"}),
+            "recipes": profile.recipes,
+        }
+    )
+    batches = Batches(root, digest(str(root.resolve())))
+    batches.recover(snapshot)
+    request_id, replay, emitted = batches.request(
+        snapshot, limit, profile.layout.template_sha256, after_receipt, reconcile_receipt
+    )
+    if replay is not None:
+        return batches.result(replay)
+    if output.exists():
+        raise ValueError("choose a new output outside the evidence store")
+    refs = [CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key) for c in selected]
+    remaining = [c for c, ref in zip(selected, refs, strict=True) if ref not in emitted]
+    eligible = remaining if limit is None else remaining[:limit]
+    touched_notes = {c.claims.note_id for c in eligible}
+    carried = [c for c, ref in zip(selected, refs, strict=True) if ref in emitted and c.claims.note_id in touched_notes]
     notes: dict[str, dict[str, str]] = {}
-    for card in eligible:
+    for card in (*eligible, *carried):
         fields = notes.setdefault(card.claims.note_id, dict.fromkeys(COLUMNS, ""))
         fields["LatinitasID"] = card.claims.note_id
         fields["CardKey"] = " ".join(filter(None, (fields["CardKey"], card.claims.card_key)))
@@ -881,27 +1052,34 @@ def export(root: Path, output: Path) -> dict[str, object]:
         fields[slot.prompt_field] = render_phrase_text(card.prompt, source.deck)
         fields[slot.answer_field] = render_phrase_text(card.answer, source.deck)
     rows = tuple(tuple(fields[column] for column in COLUMNS) for fields in notes.values())
-    # Repeat current-source reconstruction and authority immediately before publication.
-    repeated, _ = current_cards(Path(run.profile_path), run.profile, run.objectives, root)
-    current = {(c.note_id, c.card_key) for c in export_cards(tuple(c.claims for c in repeated))}
-    current_renderings = {
-        (c.claims.note_id, c.claims.card_key): (c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
-        for c in repeated
-    }
-    if any(
-        (c.claims.note_id, c.claims.card_key) not in current
-        or current_renderings.get((c.claims.note_id, c.claims.card_key))
-        != (c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
-        for c in eligible
-    ):
-        raise ValueError("eligibility changed before export")
-    commit_csv_artifacts(
-        ((output, serialize_anki_csv(source.deck.generated_note_type, source.deck.target_deck, COLUMNS, tuple(rows))),)
-    )
-    return {
+    payload = serialize_anki_csv(source.deck.generated_note_type, source.deck.target_deck, COLUMNS, rows)
+    exported_refs = tuple(CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key) for c in eligible)
+    result: dict[str, object] = {
         "exported": len(eligible),
         "notes": len(rows),
-        "output": str(output),
+        "output": str(output.resolve()),
+        "cards": [r.model_dump() for r in exported_refs],
+        "carried_siblings": [
+            CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key).model_dump() for c in carried
+        ],
+        "selection_sha256": snapshot,
+        "ranking": "selection-v1",
+        "effective_profile": {
+            **profile.model_dump(mode="json"),
+            "selection": {**profile.selection.model_dump(mode="json"), "output_limit": limit},
+        },
+        "output_limit": {"value": limit, "source": "cli" if output_limit is not None else "profile"},
+        "suppressed": [*suppressed, *(s for s in skipped if s["reason"] in ("variant_limit", "duplicate_card_ref"))],
+        "accepted_unselected": [
+            CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key).model_dump()
+            for c in remaining[len(eligible) :]
+        ],
+        "deferred_source_work": [s for s in skipped if s["reason"] == "processing_limit"],
+        "reconciliation": {
+            "receipt_id": reconcile_receipt,
+            "retained": [r.model_dump() for r in emitted if r in refs],
+            "ineligible": [r.model_dump() for r in emitted if r not in refs],
+        },
         "skipped": skipped,
         "withheld": [
             {"note_id": c.claims.note_id, "card_key": c.claims.card_key, "reason": c.claims.assess().reason}
@@ -911,3 +1089,24 @@ def export(root: Path, output: Path) -> dict[str, object]:
         "requires": "explicit grammar-v1 new note type installation and manual import; "
         "no destination handoff/application",
     }
+    receipt = Receipt(
+        format="latinitas-selection-receipt",
+        version=1,
+        run_id=batches.run_id,
+        request_id=request_id,
+        selection_sha256=snapshot,
+        previous_receipt_id=after_receipt,
+        reconciled_receipt_id=reconcile_receipt,
+        ordered_card_refs_sha256=digest(refs),
+        emitted_cards=tuple(dict.fromkeys((*emitted, *exported_refs))),
+        output=str(output.resolve()),
+        output_sha256=hashlib.sha256(payload).hexdigest(),
+        result=result,
+    )
+    # Rendering/publication must not widen the authority checked above.
+    load_source(path, profile)
+    final_cards, final_skipped = current_cards(path, profile, run.objectives, root)
+    final_selected, final_suppressed = _selected(final_cards)
+    if (projection(final_selected), final_skipped, final_suppressed) != (projection(selected), skipped, suppressed):
+        raise ValueError("eligibility changed before export")
+    return batches.publish(receipt, payload)

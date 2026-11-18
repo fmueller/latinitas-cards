@@ -99,20 +99,38 @@ def preview_command(
 
 @app.command(name="export")
 def export_command(
-    run: RunOption, output: Annotated[Path, typer.Option("--output")], machine: JsonOption = False
+    run: RunOption,
+    output: Annotated[Path, typer.Option("--output")],
+    profile: Path | None = None,
+    output_limit: Annotated[int | None, typer.Option(min=1)] = None,
+    after_receipt: str | None = None,
+    reconcile_receipt: str | None = None,
+    machine: JsonOption = False,
 ) -> None:
-    """Write an initial manual-import CSV after fresh source and complete-card checks."""
+    """Export or replay a checked batch; advance only with its explicit receipt ID."""
     try:
-        _emit(export(run, output), machine)
+        _emit(
+            export(
+                run,
+                output,
+                profile_path=profile,
+                output_limit=output_limit,
+                after_receipt=after_receipt,
+                reconcile_receipt=reconcile_receipt,
+            ),
+            machine,
+        )
     except (OSError, ValueError) as error:
         _error(error, machine)
 
 
 @app.command(name="stage")
-def stage_command(name: Literal["decide"], run: RunOption, machine: JsonOption = False) -> None:
+def stage_command(
+    name: Literal["decide"], run: RunOption, profile: Path | None = None, machine: JsonOption = False
+) -> None:
     """Evaluate complete stored application analyses; never create semantic authority."""
     try:
-        _emit(decide(run), machine)
+        _emit(decide(run, profile), machine)
     except (OSError, ValueError) as error:
         _error(error, machine)
 

@@ -108,16 +108,65 @@ uv run latinitas-cards pipeline export --run run --output new-cards.csv --json
 ```
 
 Preview-only overrides never mutate an existing run. To export different recipe
-choices, adapt a new run using the saved profile. Explicit object keys and
+choices, supply the saved profile with `export --profile`; existing acceptance
+is reusable only where its linguistic binding is unchanged. Explicit object keys and
 recipe/target/distinction identify exercises; changing wording or authority does
 not allocate another semantic identity. Legacy v1 inputs, layouts, identities and
 German characterization outputs are unchanged.
 
 Each contrasting target is a distinct exercise note. Compatible recipe slots on
 one exercise note are merged into one CSV row; CardKey never substitutes for the
-first-field note identity. Processing ceilings count selected explicit objectives
-after filters. This consumer creates at most one surface per exact explicit
-binding; `variants_per_binding` never suppresses a different learning object.
+first-field note identity. A continuation row preserves currently eligible,
+previously emitted sibling slots on each touched note; `exported` counts only new
+CardRefs and `carried_siblings` lists those retained fields. Processing ceilings
+count selected objectives, including automatically enumerated source-form
+objectives, after filters. Supported phrase bindings are explicit, never a Cartesian product.
+The versioned `selection-v1` ranking visits source identities and patterns in lexical
+order, then role/form keys. `variants_per_binding` bounds supported alternatives
+within a pattern's entry/sense role tuple, not the number of standalone exercises.
+Duplicate CardRef pairs are suppressed; conflicting representations are withheld.
+After acceptance, equivalent assertion sets are suppressed only within the same
+source/object, recipe, target, language and tested distinction. Visible text alone
+never merges different learning objectives or source notes.
+
+### Full output and optional batches
+
+With sufficient processing limits, the default `selection.output_limit: null`
+exports all eligible selected cards, including more than 20. A positive
+`--output-limit` overrides the profile's output limit, after filtering, processing,
+acceptance and suppression. Legacy phrase `max_exercises` is not an output quota.
+Preview/export expose `suppressed`, `accepted_unselected` and
+`deferred_source_work` separately; deferred objectives are not linguistic rejections
+or counts of undiscovered candidates. Provider ceilings remain separate; these
+offline consumers never send requests or renew provider budgets.
+
+```bash
+uv run latinitas-cards pipeline export --run run --output batch-1.csv --output-limit 10 --json
+# Use the returned receipt_id, not an offset, to request the next batch:
+uv run latinitas-cards pipeline export --run run --output batch-2.csv --output-limit 10 \
+  --after-receipt RECEIPT_ID --json
+```
+
+Repeating either request replays its receipt and original files, even if a new
+output path is supplied. It never silently advances. Receipts bind ordered CardRef
+pairs, effective options, snapshot and output hashes; identical slot keys on
+different notes remain distinct. Every committed ancestor output is hash-checked
+on continuation, reconciliation and replay; retain those CSV files. Tampered output
+and foreign/stale predecessors are rejected. Files from another batch are never overwritten. Run-local locking
+rejects concurrent export/decision writers with `run_busy`; a durable staged
+publication recovers before another batch. Recovery rechecks current eligibility,
+and does not publish a staged batch after its snapshot becomes stale. A retained
+private stage establishes output ownership by file identity, not equal bytes;
+an unrelated destination is preserved and reported as a conflict.
+
+For renewed processing limits or confirmed source changes, pass an updated hashed
+`--profile` to preview, `stage decide` and export. Changed entries invalidate their
+dependent assertions, while unchanged entries retain valid decisions. A changed
+selection/eligibility snapshot requires `--reconcile-receipt RECEIPT_ID`, not
+`--after-receipt`. Reconciliation carries forward previously emitted pairs,
+separates retained from now-ineligible pairs, and selects only the remainder.
+This is local selection history, not an installed-card retirement or destination
+handoff. No source edit or batch can enable the disabled automatic policy.
 
 Complete application analyses can be placed in `run/analyses/` and projected
 through `pipeline stage decide --run run`. This consumes strict current bindings,

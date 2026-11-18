@@ -1,12 +1,12 @@
 ---
 id: T-192-select-full-eligible-output-with-resumable
 title: Select full eligible output with resumable optional batches
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.5.0.md#grammar-exercise-library
 dependencies:
     - T-191-extend-translation-first-forms-and-controlled
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-18T16:31:52Z"
 ---
 
 # T-192-select-full-eligible-output-with-resumable Select full eligible output with resumable optional batches
@@ -37,3 +37,6 @@ processing-limit interruption and source invalidation. Compare public identities
 captured transport counts. Run the mandatory validation chain.
 
 ## Implementation Notes
+
+- 2026-11-18T16:31:51Z: verification pass
+- 2026-11-18T16:31:52Z: Implemented all-eligible public selection with explicit receipt replay/continuation, reconciliation, source-local invalidation and safe CSV publication. Final Ruff -> mypy -> pytest passed: 3607 passed, 7 existing structural skips. Independent high-risk review and all fix dispositions passed after one fix round. Production automatic policy remains disabled; no empirical/native/integrated or release acceptance claimed.

@@ -14,7 +14,7 @@ from latinitas_cards.acceptance import check_envelope, save_stage
 from latinitas_cards.acceptance_records import Binding, Check, canonical, digest
 from latinitas_cards.claim_review import Evidence
 from latinitas_cards.cli import app
-from latinitas_cards.grammar_layout import LAYOUT_SHA256
+from latinitas_cards.grammar_layout import GRAMMAR_LAYOUT, LAYOUT_SHA256
 from latinitas_cards.phrase_inputs import PhraseInputV2
 from latinitas_cards.pipeline_consumers import Analysis, current_cards, input_binding
 from latinitas_cards.pipeline_profile import PipelineProfile, RecipeOverrides, resolve_recipes
@@ -1385,3 +1385,748 @@ def test_exact_conflicting_objectives_withhold_both_representations(tmp_path: Pa
     report = call("preview", "--run", str(root))
     assert report["cards"] == []
     assert any(item["reason"] == "duplicate semantic exercise" for item in report["skipped"])
+
+
+def many_fixture(root: Path) -> tuple[Path, Path, Path]:
+    profile, objectives, run = fixture(root)
+    data = json.loads((root / "inputs.json").read_text())
+    noun = data["entries"][1]
+    data["entries"] = [{**noun, "identity": f"n{i:02}"} for i in range(27)]
+    with (root / "deck.csv").open("w") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(("ID", "Lemma", "Parts", "Meaning"))
+        writer.writerows(
+            (f"n{i:02}", "puella", "puella — puellae — puellam — puellārum — puellā", "Mädchen") for i in range(27)
+        )
+    rebind(profile, data)
+    raw = json.loads(objectives.read_text())
+    noun_objective = raw["forms"][2]
+    raw["forms"] = [{**noun_objective, "entry": f"n{i:02}"} for i in reversed(range(27))]
+    write(objectives, raw)
+    return profile, objectives, run
+
+
+def test_full_output_and_receipt_bound_batches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from latinitas_cards.providers import HTTPTransport
+
+    requests: list[object] = []
+
+    def capture(*args: object, **kwargs: object) -> bytes:
+        requests.append((args, kwargs))
+        raise AssertionError("offline selection must never dispatch a provider request")
+
+    monkeypatch.setattr(HTTPTransport, "__call__", capture)
+    profile, objectives, root = many_fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    full = call("export", "--run", str(root), "--output", str(tmp_path / "full.csv"))
+    assert full["exported"] == 27
+    from latinitas_cards.pipeline_consumers import Objectives
+
+    current, _ = current_cards(
+        profile, PipelineProfile.read_json(profile.read_bytes()), Objectives.read_json(objectives.read_bytes()), root
+    )
+    identities = {c.claims.note_id: c.binding.source_identity for c in current}
+    assert [identities[c["note_id"]] for c in full["cards"]] == [f"n{i:02}" for i in range(27)]
+    batches: list[tuple[str, str]] = []
+    predecessor: list[str] = []
+    for index, count in enumerate((10, 10, 7)):
+        args = (
+            "export",
+            "--run",
+            str(root),
+            "--output",
+            str(tmp_path / f"batch-{index}.csv"),
+            "--output-limit",
+            "10",
+            *predecessor,
+        )
+        report = call(*args)
+        assert report["exported"] == count
+        assert len(report["accepted_unselected"]) == 27 - min(10 * (index + 1), 27)
+        payload = Path(report["output"]).read_bytes()
+        assert call(*args) == report  # Lost command response must not advance.
+        assert Path(report["output"]).read_bytes() == payload
+        batches.extend((c["note_id"], c["card_key"]) for c in report["cards"])
+        predecessor = ["--after-receipt", report["receipt_id"]]
+    assert len(set(batches)) == 27
+    assert len({key for _, key in batches}) == 1  # Slot keys are note-local.
+    assert batches == [(c["note_id"], c["card_key"]) for c in full["cards"]]
+    for name, count in (("full", 27), ("batch-0", 10), ("batch-1", 10), ("batch-2", 7)):
+        lines = (tmp_path / f"{name}.csv").read_text().splitlines()
+        columns = next(line.removeprefix("#columns:") for line in lines if line.startswith("#columns:")).split(",")
+        rows = [
+            dict(zip(columns, row, strict=True))
+            for row in csv.reader(line for line in lines if not line.startswith("#"))
+        ]
+        assert len(rows) == count
+        slot = next(t.slot for t in GRAMMAR_LAYOUT if t.slot.recipe == "noun_declension")
+        assert sum(row[slot.enabled_field] == "1" for row in rows) == count
+        start = 0 if name == "full" else int(name[-1]) * 10
+        assert [(row["LatinitasID"], row["CardKey"]) for row in rows] == [
+            (card["note_id"], card["card_key"]) for card in full["cards"][start : start + count]
+        ]
+    alternate = tmp_path / "alternate.csv"
+    assert call("export", "--run", str(root), "--output", str(alternate)) == full
+    assert not alternate.exists()
+    assert requests == []  # Captured transport count, including every replay, is zero.
+
+
+def test_batch_invalidation_reconciles_only_changed_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, objectives, root = many_fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "first.csv"), "--output-limit", "10")
+    before = call("preview", "--run", str(root))["cards"]
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    data["entries"][0]["evidence"][0]["text"] = "Changed extraction evidence"
+    rebind(profile, data)
+    after = call("preview", "--run", str(root), "--profile", str(profile))["cards"]
+    assert sum(c["state"] == "accepted" for c in after) == 26
+    assert [(c["note_id"], c["card_key"]) for c in before] == [(c["note_id"], c["card_key"]) for c in after]
+    args = [
+        "export",
+        "--run",
+        str(root),
+        "--profile",
+        str(profile),
+        "--output",
+        str(tmp_path / "next.csv"),
+        "--after-receipt",
+        first["receipt_id"],
+        "--json",
+    ]
+    failed = runner.invoke(app, ["pipeline", *args])
+    assert failed.exit_code != 0 and "reconciliation required" in failed.output
+    assert not (tmp_path / "next.csv").exists()
+    continued = call(
+        "export",
+        "--run",
+        str(root),
+        "--profile",
+        str(profile),
+        "--output",
+        str(tmp_path / "next.csv"),
+        "--reconcile-receipt",
+        first["receipt_id"],
+    )
+    assert continued["exported"] == 17
+    assert len(continued["reconciliation"]["retained"]) == 9
+    assert len(continued["reconciliation"]["ineligible"]) == 1
+
+
+def test_processing_limit_precedes_output_limit_and_resumes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, objectives, root = many_fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    raw = json.loads(profile.read_text())
+    raw["processing"]["max_source_units"] = 11
+    raw["selection"]["output_limit"] = 2
+    write(profile, raw)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "first.csv"), "--output-limit", "7")
+    assert first["exported"] == 7 and len(first["accepted_unselected"]) == 4
+    assert len(first["deferred_source_work"]) == 16
+    assert first["output_limit"] == {"source": "cli", "value": 7}
+    raw["processing"]["max_source_units"] = None
+    write(profile, raw)
+    resumed = call(
+        "export",
+        "--run",
+        str(root),
+        "--profile",
+        str(profile),
+        "--output",
+        str(tmp_path / "resumed.csv"),
+        "--reconcile-receipt",
+        first["receipt_id"],
+    )
+    assert resumed["exported"] == 2 and len(resumed["accepted_unselected"]) == 2
+    assert resumed["deferred_source_work"] == []
+    assert len(resumed["withheld"]) == 16  # Discovered but not yet checked, not rejected.
+    new_refs = {(c["note_id"], c["card_key"]) for c in resumed["withheld"]}
+    existing_analyses = {p: p.read_bytes() for p in (root / "analyses").glob("*.json")}
+    prove_cards(profile, objectives, root)
+    assert all(p.read_bytes() == content for p, content in existing_analyses.items())
+    call("stage", "decide", "--run", str(root), "--profile", str(profile))
+    completed = call(
+        "export",
+        "--run",
+        str(root),
+        "--profile",
+        str(profile),
+        "--output",
+        str(tmp_path / "completed.csv"),
+        "--output-limit",
+        "100",
+        "--reconcile-receipt",
+        resumed["receipt_id"],
+    )
+    completed_refs = {(c["note_id"], c["card_key"]) for c in completed["cards"]}
+    assert completed["exported"] == 18 and new_refs <= completed_refs
+    assert not completed_refs & {(c["note_id"], c["card_key"]) for c in [*first["cards"], *resumed["cards"]]}
+
+
+@pytest.mark.parametrize("invalidate_before_recovery", [False, True])
+def test_batch_publication_recovery_lock_and_hashes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, invalidate_before_recovery: bool
+) -> None:
+    from latinitas_cards import pipeline_batches as batches
+
+    profile, objectives, root = fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    output = tmp_path / "first.csv"
+    args = ["pipeline", "export", "--run", str(root), "--output", str(output), "--output-limit", "2", "--json"]
+    with batches.run_lock(root):
+        busy = runner.invoke(app, args)
+        assert busy.exit_code != 0 and "run_busy" in busy.output
+        busy = runner.invoke(app, ["pipeline", "stage", "decide", "--run", str(root), "--json"])
+        assert busy.exit_code != 0 and "run_busy" in busy.output
+        assert not output.exists()
+    atomic = batches._atomic
+
+    def interrupted(path: Path, payload: bytes) -> None:
+        if path.name == "index.json":
+            raise OSError("simulated lost publication response")
+        atomic(path, payload)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(batches, "_atomic", interrupted)
+        interrupted_result = runner.invoke(app, args)
+        assert interrupted_result.exit_code != 0
+    payload = output.read_bytes()
+    if invalidate_before_recovery:
+        pending = batches.Publication.read_json((root / "selection/pending.json").read_bytes())
+        decisions = {p: p.read_bytes() for p in (root / "decisions").rglob("*.json")}
+        for path in decisions:
+            path.unlink()
+        recovered_stale = call("export", "--run", str(root), "--output", str(tmp_path / "stale.csv"))
+        assert recovered_stale["exported"] == 0
+        assert not output.exists()  # An uncommitted, now-ineligible publication rolls back.
+        for path, content in decisions.items():
+            path.write_bytes(content)
+        output.write_bytes(payload)
+        orphan = runner.invoke(app, [*args[:-1], "--after-receipt", digest(pending.receipt), "--json"])
+        assert orphan.exit_code != 0 and "foreign predecessor" in orphan.output
+        return
+    recovered = call(*args[1:-1])
+    assert recovered["exported"] == 2 and output.read_bytes() == payload
+    assert call(*args[1:-1]) == recovered
+    foreign = runner.invoke(app, [*args[:-1], "--after-receipt", "0" * 64, "--json"])
+    assert foreign.exit_code != 0 and "foreign predecessor" in foreign.output
+    output.write_bytes(payload + b"tampered")
+    tampered = runner.invoke(app, args)
+    assert tampered.exit_code != 0 and "hash mismatch" in tampered.output
+
+
+def test_redundancy_and_duplicate_refs_do_not_consume_output_slots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile, objectives, root = fixture(tmp_path, preset=None)
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    noun = data["entries"][1]
+    noun["forms"].append({**noun["forms"][0], "key": "nom-alternative"})
+    rebind(profile, data)
+    raw = json.loads(objectives.read_text())
+    template = raw["forms"][2]
+    # Same object and assertion set; only the supplied form key differs. Another
+    # objective with identical visible text must survive semantic suppression.
+    raw["forms"] = [
+        {
+            **template,
+            "object_key": "same",
+            "recipe": "form_translation",
+            "form": form,
+            "anchors": [],
+            "target": noun["forms"][0]["features"],
+        }
+        for form in ("nom-alternative", "nom")
+    ]
+    raw["forms"] += [
+        {**raw["forms"][0], "context": "unused for translation"},
+        {**raw["forms"][0], "object_key": "different-objective"},
+    ]
+    write(objectives, raw)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    preview = call("preview", "--run", str(root))
+    assert {s["reason"] for s in preview["suppressed"]} == {"duplicate_card_ref", "redundant_variant"}
+    from latinitas_cards.pipeline_consumers import Objectives
+
+    parsed = Objectives.read_json(objectives.read_bytes())
+    expected_winner = min(digest(o) for o in parsed.forms if o.object_key == "same")
+    redundant = [s for s in preview["suppressed"] if s["reason"] == "redundant_variant"]
+    assert redundant and {s["retained_candidate_key"] for s in redundant} == {expected_winner}
+    reconstructed, _ = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), parsed, root)
+    object_keys = {c.claims.note_id: c.objective.object_key for c in reconstructed}
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "first.csv"), "--output-limit", "1")
+    assert first["exported"] == 1
+    # Automatically enumerated source cells remain separate objects as well.
+    remaining = len(first["accepted_unselected"])
+    second = call(
+        "export", "--run", str(root), "--output", str(tmp_path / "second.csv"), "--after-receipt", first["receipt_id"]
+    )
+    assert second["exported"] == remaining
+    assert not ({tuple(c.values()) for c in first["cards"]} & {tuple(c.values()) for c in second["cards"]})
+    survivors = [object_keys[c["note_id"]] for c in [*first["cards"], *second["cards"]]]
+    assert survivors.count("same") == survivors.count("different-objective") == 1
+
+
+def test_disabled_and_withdrawn_policies_cannot_replay_batches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, objectives, root = fixture(tmp_path)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    args = ("export", "--run", str(root), "--output", str(tmp_path / "disabled.csv"), "--output-limit", "2")
+    disabled = call(*args)
+    assert disabled["exported"] == 0
+    assert {w["reason"] for w in disabled["withheld"]} == {"policy_not_enabled"}
+    assert call(*args) == disabled
+    assert (
+        call(
+            "export",
+            "--run",
+            str(root),
+            "--output",
+            str(tmp_path / "disabled-next.csv"),
+            "--after-receipt",
+            disabled["receipt_id"],
+        )["exported"]
+        == 0
+    )
+    profile, objectives, root = fixture(tmp_path / "enabled")
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    args = ("export", "--run", str(root), "--output", str(tmp_path / "enabled.csv"), "--output-limit", "2")
+    enabled = call(*args)
+    entry = policies.PolicyRegistryEntry.read_json(vars(policies)["POLICY_REGISTRY"][0])
+    assert entry.authorization is not None
+    withdrawal = entry.authorization.model_copy(
+        update={"action": "withdraw", "supersedes": digest(entry.authorization)}
+    )
+    monkeypatch.setattr(policies, "AUTHORIZATION_HISTORY", (canonical(entry.authorization).decode(),))
+    monkeypatch.setattr(
+        policies,
+        "POLICY_REGISTRY",
+        (canonical(entry.model_copy(update={"state": "withdrawn", "authorization": withdrawal})).decode(),),
+    )
+    replay = runner.invoke(app, ["pipeline", *args, "--json"])
+    assert replay.exit_code != 0 and "reconciliation required" in replay.output
+    denied = call(
+        "export",
+        "--run",
+        str(root),
+        "--output",
+        str(tmp_path / "withdrawn.csv"),
+        "--reconcile-receipt",
+        enabled["receipt_id"],
+    )
+    assert denied["exported"] == 0
+    assert {w["reason"] for w in denied["withheld"]} == {"policy_withdrawn"}
+    assert len(denied["reconciliation"]["ineligible"]) == 2
+
+
+def test_pattern_ranking_counts_supported_distinct_surfaces_not_aliases(tmp_path: Path) -> None:
+    profile, objectives, root = phrase_fixture(tmp_path, "de", "preposition-noun")
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    noun = data["entries"][1]
+    ablative = next(f for f in noun["forms"] if f["key"] == "abl")
+    noun["forms"] += [{**ablative, "key": "a-alias"}, {**ablative, "key": "z-plain", "text": "puella"}]
+    rebind(profile, data)
+    raw = json.loads(objectives.read_text())
+    template = raw["phrases"][0]
+    raw["phrases"] = [
+        {
+            **template,
+            "object_key": key,
+            "selection": {**template["selection"], "bindings": [{**template["selection"]["bindings"][0], "form": key}]},
+        }
+        for key in ("z-plain", "abl", "a-alias")
+    ]
+    write(objectives, raw)
+    configured = json.loads(profile.read_text())
+    configured["selection"]["variants_per_binding"] = 2
+    write(profile, configured)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    report = call("preview", "--run", str(root))
+    assert len([c for c in report["cards"] if c["recipe"] == "phrase_translation"]) == 3
+    assert not any(s["reason"] == "variant_limit" for s in report["suppressed"])
+    configured["selection"]["variants_per_binding"] = 1
+    configured["selection"]["patterns"] = ["pattern"]
+    configured["selection"]["entries"] = ["n"]
+    write(profile, configured)
+    bounded = call("preview", "--run", str(root), "--profile", str(profile))
+    assert {s["object_key"] for s in bounded["suppressed"] if s["reason"] == "variant_limit"} == {"z-plain"}
+    for filters in ({"entries": ["v"], "patterns": ["pattern"]}, {"entries": ["n"], "patterns": ["excluded"]}):
+        configured["selection"].update(filters)
+        write(profile, configured)
+        excluded = call("preview", "--run", str(root), "--profile", str(profile))
+        assert excluded["cards"] == [] and excluded["deferred_source_work"] == []
+
+
+@pytest.mark.parametrize("stale", [False, True])
+def test_recovery_preserves_foreign_identical_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stale: bool
+) -> None:
+    from latinitas_cards import pipeline_batches as batches
+
+    profile, objectives, root = fixture(tmp_path)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    output = tmp_path / "foreign.csv"
+
+    def interrupted(self: object, publication: object) -> None:
+        raise OSError("crash before output publication")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(batches.Batches, "_finish", interrupted)
+        failed = runner.invoke(app, ["pipeline", "export", "--run", str(root), "--output", str(output)])
+        assert failed.exit_code != 0
+    pending = json.loads((root / "selection/pending.json").read_text())
+    payload = pending["csv"].encode()
+    output.write_bytes(payload)
+    inode = output.stat().st_ino
+    if stale:
+        raw = json.loads(profile.read_text())
+        raw["selection"]["entries"] = ["n"]
+        write(profile, raw)
+    failed = runner.invoke(
+        app,
+        ["pipeline", "export", "--run", str(root), "--profile", str(profile), "--output", str(tmp_path / "next.csv")],
+    )
+    assert failed.exit_code != 0 and "conflict" in failed.output
+    assert output.read_bytes() == payload and output.stat().st_ino == inode
+
+
+def test_selection_storage_does_not_follow_symlinks(tmp_path: Path) -> None:
+    profile, objectives, root = fixture(tmp_path)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    sentinel = tmp_path / "unrelated.txt"
+    sentinel.write_text("unrelated bytes")
+    store = root / "selection"
+    store.mkdir()
+    (store / "pending.staged").symlink_to(sentinel)
+    call("export", "--run", str(root), "--output", str(tmp_path / "safe.csv"))
+    assert sentinel.read_text() == "unrelated bytes"
+    external = tmp_path / "external"
+    store.rename(external)
+    store.symlink_to(external, target_is_directory=True)
+    before = {p.name: p.read_bytes() for p in external.iterdir() if p.is_file()}
+    failed = runner.invoke(app, ["pipeline", "export", "--run", str(root), "--output", str(tmp_path / "redirect.csv")])
+    assert failed.exit_code != 0 and "symlink" in failed.output
+    assert before == {p.name: p.read_bytes() for p in external.iterdir() if p.is_file()}
+
+
+def test_continuation_validates_all_committed_ancestors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, objectives, root = many_fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "first.csv"), "--output-limit", "10")
+    second_args = (
+        "export",
+        "--run",
+        str(root),
+        "--output",
+        str(tmp_path / "second.csv"),
+        "--output-limit",
+        "10",
+        "--after-receipt",
+        first["receipt_id"],
+    )
+    second = call(*second_args)
+    original = Path(first["output"]).read_bytes()
+    for missing in (False, True):
+        if missing:
+            Path(first["output"]).unlink()
+        else:
+            Path(first["output"]).write_text("not the published batch")
+        for args in (
+            second_args,
+            (
+                "export",
+                "--run",
+                str(root),
+                "--output",
+                str(tmp_path / "third.csv"),
+                "--after-receipt",
+                second["receipt_id"],
+            ),
+            (
+                "export",
+                "--run",
+                str(root),
+                "--output",
+                str(tmp_path / "reconcile.csv"),
+                "--reconcile-receipt",
+                second["receipt_id"],
+            ),
+        ):
+            failed = runner.invoke(app, ["pipeline", *args, "--json"])
+            assert failed.exit_code != 0 and "hash mismatch" in failed.output
+    Path(first["output"]).write_bytes(original)
+    nonclobber = runner.invoke(
+        app,
+        [
+            "pipeline",
+            "export",
+            "--run",
+            str(root),
+            "--output",
+            first["output"],
+            "--after-receipt",
+            second["receipt_id"],
+        ],
+    )
+    assert nonclobber.exit_code != 0
+    assert Path(first["output"]).read_bytes() == original
+
+
+def test_export_reconstructs_analysis_authority_after_rendering(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from latinitas_cards import pipeline_consumers as consumers
+    from latinitas_cards.phrase_recipes import render_phrase_text
+
+    profile, objectives, root = fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    cards, _ = current_cards(
+        profile, PipelineProfile.model_validate_json(profile.read_bytes()), consumers.load_run(root).objectives, root
+    )
+    assert cards[0].claims.assess().eligible
+    analysis = Analysis.read_json(cards[0].analysis_path.read_bytes())
+    changed = analysis.model_copy(
+        update={"checks": (analysis.checks[0].model_copy(update={"result": "unresolved"}), *analysis.checks[1:])}
+    )
+    Analysis.read_json(canonical(changed))
+
+    def replace_analysis(text: str, deck: DeckProfile) -> str:
+        cards[0].analysis_path.write_bytes(canonical(changed))
+        return render_phrase_text(text, deck)
+
+    monkeypatch.setattr(consumers, "render_phrase_text", replace_analysis)
+    output = tmp_path / "stale.csv"
+    failed = runner.invoke(app, ["pipeline", "export", "--run", str(root), "--output", str(output)])
+    assert failed.exit_code != 0 and "eligibility changed" in failed.output
+    assert not output.exists() and not (root / "selection/pending.json").exists()
+
+
+def test_sibling_continuation_preserves_eligible_note_fields(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, objectives, root = fixture(tmp_path, preset=None)
+    raw = json.loads(profile.read_text())
+    choices = RecipeOverrides(include=("form_recognition",), exclude=("ppp_translation", "phrase_translation"))
+    raw.update(recipe_overrides=choices.model_dump(), recipes=resolve_recipes(None, choices))
+    raw["selection"]["entries"] = ["n"]
+    write(profile, raw)
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    data["entries"][1]["forms"] = [data["entries"][1]["forms"][0]]
+    rebind(profile, data)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "first.csv"), "--output-limit", "1")
+    second = call(
+        "export",
+        "--run",
+        str(root),
+        "--output",
+        str(tmp_path / "second.csv"),
+        "--output-limit",
+        "1",
+        "--after-receipt",
+        first["receipt_id"],
+    )
+    assert first["exported"] == second["exported"] == 1
+    assert first["cards"][0]["note_id"] == second["cards"][0]["note_id"]
+    rows = []
+    for report in (first, second):
+        lines = Path(report["output"]).read_text().splitlines()
+        columns = next(line.removeprefix("#columns:") for line in lines if line.startswith("#columns:")).split(",")
+        rows.append(
+            dict(zip(columns, next(csv.reader(line for line in lines if not line.startswith("#"))), strict=True))
+        )
+    slot = next(t.slot for t in GRAMMAR_LAYOUT if t.slot.semantic_key == first["cards"][0]["card_key"])
+    for field in (slot.enabled_field, slot.prompt_field, slot.answer_field):
+        assert rows[0][field] and rows[1][field] == rows[0][field]
+
+
+def test_processing_ceiling_uses_resolved_recipe_order(tmp_path: Path) -> None:
+    profile, objectives, root = fixture(tmp_path, preset=None)
+    raw = json.loads(profile.read_text())
+    choices = RecipeOverrides(include=("form_recognition",), exclude=())
+    raw.update(recipe_overrides=choices.model_dump(), recipes=resolve_recipes(None, choices))
+    raw["selection"]["entries"] = ["n"]
+    raw["processing"]["max_source_units"] = 1
+    write(profile, raw)
+    empty = json.loads(objectives.read_text())
+    empty.update(forms=[], phrases=[])
+    write(objectives, empty)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    report = call("preview", "--run", str(root))
+    assert [c["recipe"] for c in report["cards"]] == ["form_translation"]
