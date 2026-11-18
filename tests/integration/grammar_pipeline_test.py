@@ -3,7 +3,11 @@
 import csv
 import hashlib
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Thread
 from typing import Any
 
 import pytest
@@ -11,12 +15,12 @@ from typer.testing import CliRunner
 
 from latinitas_cards import acceptance_policy as policies
 from latinitas_cards.acceptance import check_envelope, save_stage
-from latinitas_cards.acceptance_records import Binding, Check, canonical, digest
+from latinitas_cards.acceptance_records import Binding, Check, StageName, canonical, digest
 from latinitas_cards.claim_review import Evidence
 from latinitas_cards.cli import app
 from latinitas_cards.grammar_layout import GRAMMAR_LAYOUT, LAYOUT_SHA256
 from latinitas_cards.phrase_inputs import PhraseInputV2
-from latinitas_cards.pipeline_consumers import Analysis, current_cards, input_binding
+from latinitas_cards.pipeline_consumers import Analysis, Rendered, current_cards, input_binding
 from latinitas_cards.pipeline_profile import PipelineProfile, RecipeOverrides, resolve_recipes
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 
@@ -2130,3 +2134,630 @@ def test_processing_ceiling_uses_resolved_recipe_order(tmp_path: Path) -> None:
     )
     report = call("preview", "--run", str(root))
     assert [c["recipe"] for c in report["cards"]] == ["form_translation"]
+
+
+def test_orchestrated_offline_stages_and_replay(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    assert report["file_export"]["exported"] == 0
+    assert report["applied_to_anki"] is False
+    assert report["provider_calls"] == []
+    assert report["coverage_limit"]
+    assert set(report["stages"]) == {
+        "ingest",
+        "analyze",
+        "propose",
+        "counter_check",
+        "decide",
+        "select",
+        "render",
+        "export",
+    }
+    root = output / "run"
+    first = {p.name: p.read_bytes() for p in (root / "stages").glob("*.json")}
+    replay = call("resume", "--run", str(root))
+    assert replay["file_export"] == report["file_export"]
+    assert first == {p.name: p.read_bytes() for p in (root / "stages").glob("*.json")}
+    assert call("report", "--run", str(root))["run_id"] == report["run_id"]
+    assert call("stage", "select", "--run", str(root))["cards"]
+    call("cancel", "--run", str(root))
+    assert call("resume", "--run", str(root))["status"] == "cancelled"
+
+
+def provider_answer(body: dict[str, Any]) -> bytes:
+    task = json.loads(body["messages"][1]["content"])
+    answer = dict(
+        format="latinitas-model-answer",
+        version=1,
+        task_sha256=task["task_sha256"],
+        assertions=[
+            dict(
+                id="independent",
+                kind="label",
+                value="synthetic-only",
+                selected_sense=None,
+                alternatives=[],
+                evidence=[EVIDENCE],
+            )
+        ],
+        alternatives=[],
+        objections=[],
+    )
+    return canonical({"choices": [{"finish_reason": "stop", "message": {"content": canonical(answer).decode()}}]})
+
+
+@contextmanager
+def synthetic_pipeline_http() -> Iterator[tuple[str, list[dict[str, Any]], list[int]]]:
+    requests: list[dict[str, Any]] = []
+    status = [200]
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            requests.append(body)
+            payload = provider_answer(body)
+            self.send_response(status[0])
+            self.send_header("x-request-id", f"synthetic-{len(requests)}")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, format: str, *args: object) -> None:
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        # This controlled server's accounting is part of the fixture, not a
+        # qualification of a model label or a production-compatible endpoint.
+        from latinitas_cards import pipeline_orchestration as workflow
+
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(workflow, "input_token_bound", lambda endpoint: len)
+            yield f"http://127.0.0.1:{server.server_port}", requests, status
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+def configure_pipeline_http(profile: Path, url: str, *, calls: int = 200) -> None:
+    raw = json.loads(profile.read_text())
+    endpoint = dict(url=url, provider="openai", model="gpt-4o-mini-2024-07-18", locality="local", credential_ref=None)
+    raw["providers"] = dict(proposal=endpoint, counter_check=endpoint)
+    raw["selection"]["entries"] = ["n"]
+    raw["processing"].update(max_source_units=1, max_calls=calls)
+    write(profile, raw)
+
+
+def test_orchestrated_http_success_lost_response_resume_and_offline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from latinitas_cards import pipeline_orchestration as workflow
+
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    with synthetic_pipeline_http() as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        original = workflow._stage
+
+        def interrupt(
+            root: Path,
+            state: workflow.Execution,
+            card: Rendered,
+            name: StageName,
+            envelope: dict[str, object],
+        ) -> str:
+            if name == "propose":
+                raise KeyboardInterrupt
+            return original(root, state, card, name, envelope)
+
+        monkeypatch.setattr(workflow, "_stage", interrupt)
+        result = runner.invoke(
+            app,
+            [
+                "pipeline",
+                "run",
+                "--profile",
+                str(profile),
+                "--objectives",
+                str(objectives),
+                "--output",
+                str(output),
+                "--json",
+            ],
+        )
+        assert result.exit_code != 0 and len(requests) == 1
+        monkeypatch.setattr(workflow, "_stage", original)
+        root = output / "run"
+        report = call("resume", "--run", str(root))
+        assert len(requests) == 2 and report["file_export"]["exported"] == 0
+        assert [r["state"] for r in report["provider_calls"]] == ["succeeded", "succeeded"]
+        assert json.loads(requests[0]["messages"][1]["content"]) == json.loads(requests[1]["messages"][1]["content"])
+        assert "proposal/1" in requests[0]["messages"][0]["content"]
+        assert "blind/1" in requests[1]["messages"][0]["content"]
+        assert "synthetic-only" not in requests[1]["messages"][1]["content"]
+        call("resume", "--run", str(root))
+        call("resume", "--run", str(root), "--offline")
+        call("report", "--run", str(root))
+        call("preview", "--run", str(root))
+        call("validate", "--profile", str(profile))
+        assert len(requests) == 2
+
+
+def test_orchestrated_unknown_retrieval_and_budget(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    with synthetic_pipeline_http() as (url, requests, status):
+        configure_pipeline_http(profile, url)
+        status[0] = 503
+        report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+        root = output / "run"
+        assert len(requests) == 1
+        unknown = report["provider_calls"][0]
+        assert unknown["state"] == "unknown" and unknown["reserved_tokens"] > 2048
+        call("resume", "--run", str(root))
+        assert len(requests) == 1
+        response = tmp_path / "retrieved.json"
+        response.write_bytes(provider_answer(requests[0]))
+        reconciled = call(
+            "reconcile-call",
+            "--run",
+            str(root),
+            "--call-id",
+            unknown["call_id"],
+            "--response",
+            str(response),
+            "--request-sha256",
+            unknown["request_sha256"],
+            "--provider-request-id",
+            "synthetic-1",
+        )
+        assert reconciled["state"] == "succeeded"
+        status[0] = 200
+        finished = call("resume", "--run", str(root))
+        assert len(requests) == 2 and finished["file_export"]["exported"] == 0
+        assert sum(c["reserved_tokens"] for c in finished["provider_calls"]) > unknown["reserved_tokens"]
+        configure_pipeline_http(profile, url, calls=2)
+        changed = json.loads(profile.read_text())
+        changed["providers"]["counter_check"]["url"] += "/changed-checker"
+        write(profile, changed)
+        # A changed endpoint/ceiling preserves the proposal, not a fresh budget.
+        exhausted = call("resume", "--run", str(root), "--profile", str(profile))
+        assert len(requests) == 2 and exhausted["status"] == "deferred"
+        assert exhausted["stages"]["propose"][0]["state"] == "succeeded"
+        assert exhausted["stages"]["counter_check"][0]["reason"] == "budget_exhausted"
+
+
+def test_orchestrated_changed_source_reuses_unrelated_calls(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    with synthetic_pipeline_http() as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        raw = json.loads(profile.read_text())
+        raw["selection"]["entries"] = ["n", "v"]
+        raw["processing"]["max_source_units"] = 3
+        write(profile, raw)
+        output = tmp_path / "workflow"
+        first = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+        assert len(requests) == 6
+        data = json.loads((tmp_path / "inputs.json").read_text())
+        data["entries"][0]["senses"][0]["valency"]["subject"] = "accusative"
+        rebind(profile, data)
+        resumed = call(
+            "resume",
+            "--run",
+            str(output / "run"),
+            "--profile",
+            str(profile),
+            "--reconcile-receipt",
+            first["file_export"]["receipt_id"],
+        )
+        assert len(requests) == 8
+        assert len(resumed["provider_calls"]) == 8
+        assert resumed["file_export"]["exported"] == 0
+        assert {c["call_id"] for c in first["provider_calls"]} <= {c["call_id"] for c in resumed["provider_calls"]}
+
+
+def test_orchestrated_permission_exact_requests_and_renewal(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from latinitas_cards import pipeline_orchestration as workflow
+    from latinitas_cards.providers import Endpoint
+
+    profile, objectives, _ = fixture(tmp_path)
+    configure_pipeline_http(profile, "https://synthetic.invalid")
+    raw = json.loads(profile.read_text())
+    for endpoint in raw["providers"].values():
+        endpoint["locality"] = "hosted"
+    write(profile, raw)
+    output = tmp_path / "workflow"
+    prepared = call(
+        "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only"
+    )
+    disclosed = prepared["disclosure"][0]
+    now = datetime.now(UTC)
+    permission: dict[str, Any] = dict(
+        format="latinitas-hosted-permission",
+        version=1,
+        run_id=prepared["run_id"],
+        endpoint_sha256s=[digest(disclosed["endpoints"]["proposal"])],
+        config_sha256=disclosed["sent_task"]["binding"]["config_sha256"],
+        input_sha256s=[*disclosed["input_sha256s"], *disclosed["request_sha256s"]],
+        data_scope=disclosed["data_scope"],
+        max_calls=2,
+        max_tokens=200000,
+        timeout_seconds=60,
+        expires_at=(now + timedelta(hours=1)).isoformat().replace("+00:00", "Z"),
+        confirmed_by="synthetic operator",
+        confirmed_at=now.isoformat().replace("+00:00", "Z"),
+    )
+    permission["permission_id"] = digest(permission)
+    grant = tmp_path / "permission.json"
+    write(grant, permission)
+    sent: list[dict[str, Any]] = []
+
+    class ControlledTransport:
+        def __init__(self, credential: str | None = None) -> None:
+            pass
+
+        def __call__(self, endpoint: Endpoint, body: bytes, timeout: float, cancel: workflow.Cancellation) -> bytes:
+            decoded = json.loads(body)
+            sent.append(decoded)
+            return provider_answer(decoded)
+
+    monkeypatch.setattr(workflow, "HTTPTransport", ControlledTransport)
+    monkeypatch.setattr(workflow, "input_token_bound", lambda endpoint: len)
+    root = output / "run"
+    denied = call("resume", "--run", str(root))
+    assert sent == [] and denied["stages"]["propose"][0]["reason"] == "permission_or_scope"
+    permitted = call("resume", "--run", str(root), "--allow-hosted", str(grant))
+    assert len(sent) == 2 and len(permitted["provider_calls"]) == 2
+    assert (root / "permissions" / (permission["permission_id"] + ".json")).exists()
+    raw["providers"]["counter_check"]["url"] += "/new-scope"
+    write(profile, raw)
+    changed = call("resume", "--run", str(root), "--profile", str(profile), "--allow-hosted", str(grant))
+    assert len(sent) == 2 and changed["stages"]["counter_check"][0]["reason"] == "permission_or_scope"
+    permission.pop("permission_id")
+    permission["max_calls"] = 10
+    permission["permission_id"] = digest(permission)
+    write(grant, permission)
+    # A renewed ceiling still does not grant the changed endpoint/body.
+    call("resume", "--run", str(root), "--allow-hosted", str(grant))
+    assert len(sent) == 2
+    local = runner.invoke(app, ["pipeline", "resume", "--run", str(root), "--local-only", "--json"])
+    assert local.exit_code != 0 and "local_only" in local.stdout
+    assert call("resume", "--run", str(root), "--offline")["provider_calls"] == changed["provider_calls"]
+    assert len(sent) == 2
+
+
+def test_orchestrated_abandon_cancel_and_tampered_stages(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from latinitas_cards import pipeline_orchestration as workflow
+    from latinitas_cards.providers import Endpoint, TransportFailure
+
+    profile, objectives, _ = fixture(tmp_path)
+    configure_pipeline_http(profile, "http://127.0.0.1:1")
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only")
+    root = output / "run"
+    dispatches = []
+
+    class CancelTransport:
+        def __init__(self, credential: str | None = None) -> None:
+            pass
+
+        def __call__(self, endpoint: Endpoint, body: bytes, timeout: float, cancel: workflow.Cancellation) -> bytes:
+            dispatches.append(body)
+            workflow.cancel(root)
+            assert cancel.is_set()
+            raise TransportFailure("unknown", "interrupted-1")
+
+    monkeypatch.setattr(workflow, "HTTPTransport", CancelTransport)
+    monkeypatch.setattr(workflow, "input_token_bound", lambda endpoint: len)
+    cancelled = call("resume", "--run", str(root))
+    assert cancelled["status"] == "cancelled" and len(dispatches) == 1
+    unknown = cancelled["provider_calls"][0]
+    assert unknown["state"] == "unknown"
+    call("resume", "--run", str(root), "--continue-cancelled")
+    assert len(dispatches) == 1
+    call("reconcile-call", "--run", str(root), "--call-id", unknown["call_id"], "--abandon")
+    call("resume", "--run", str(root), "--retry-unknown")
+    assert len(dispatches) == 1
+    repeated = call("resume", "--run", str(root), "--retry-unknown", "--confirm-duplicate-billing")
+    assert len(dispatches) == 2 and len(repeated["provider_calls"]) == 2
+    assert all(c["reserved_tokens"] > 2048 for c in repeated["provider_calls"])
+    stage_id = repeated["stage_ids"]["ingest"]
+    stage = json.loads((root / "stages" / (stage_id + ".json")).read_text())
+    (root / stage["artifact"]).write_text("{}")
+    failed = runner.invoke(app, ["pipeline", "resume", "--run", str(root), "--continue-cancelled", "--json"])
+    assert failed.exit_code != 0 and "digest mismatch" in failed.stdout
+    assert len(dispatches) == 2
+
+
+def test_orchestrated_library_unavailable_and_independent_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from latinitas_cards.acceptance import save_acceptance
+    from latinitas_cards.acceptance_records import Human
+    from latinitas_cards.pipeline_consumers import Objectives
+
+    profile, objectives, _ = fixture(tmp_path / "human", preset=None)
+    output = profile.parent / "workflow"
+    call("run", "--profile", str(profile), "--output", str(output), "--prepare-only")
+    root = output / "run"
+    parsed = PipelineProfile.read_json(profile.read_bytes())
+    empty = Objectives(format="latinitas-grammar-objectives", version=1, forms=(), phrases=())
+    card = current_cards(profile, parsed, empty, root)[0][0]
+    envelope = check_envelope(card.binding, card.versions, "human", card.claims.assertions)
+    stage = save_stage(
+        root,
+        run_id="synthetic-review",
+        stage_id="review",
+        stage="analyze",
+        binding=card.binding,
+        versions=card.versions,
+        envelope=envelope,
+    )
+    check = Check(
+        id="review",
+        assertion_ids=tuple(a.id for a in card.claims.assertions),
+        method="human",
+        version=card.versions.checker,
+        result="pass",
+        evidence=(EVIDENCE,),
+        alternatives=(),
+        objections=(),
+        input_sha256=digest(envelope),
+    )
+    decision = card.claims.decisions[0].reader.decide(
+        checks=(check,),
+        origin="human",
+        stage_ids=(stage.stage_id,),
+        human=Human(
+            reviewer="synthetic operator",
+            reason="independent exact card review",
+            reviewed_sha256=digest({"binding": card.binding, "assertions": card.claims.assertions}),
+        ),
+    )
+    save_acceptance(card.claims.decisions[0].path, decision)
+    assert call("resume", "--run", str(root), "--offline")["file_export"]["exported"] == 1
+
+    library_output = profile.parent / "missing-library"
+    missing = call(
+        "run",
+        "--profile",
+        str(profile),
+        "--output",
+        str(library_output),
+        "--library-resources",
+        str(tmp_path / "absent-models"),
+    )
+    assert missing["status"] == "failed" and missing["provider_calls"] == []
+    assert any(r.get("reason") == "processing_unavailable" for r in missing["stages"]["analyze"])
+
+    profile2, objectives2, _ = fixture(tmp_path / "isolated")
+    install_synthetic(monkeypatch, profile2, objectives2, tmp_path / "unused")
+    output2 = profile2.parent / "workflow"
+    call(
+        "run", "--profile", str(profile2), "--objectives", str(objectives2), "--output", str(output2), "--prepare-only"
+    )
+    root2 = output2 / "run"
+    (root2 / "analyses").mkdir()
+    prove_cards(profile2, objectives2, root2)
+    positive = call("resume", "--run", str(root2))
+    assert positive["file_export"]["exported"] == 6
+    assert positive["provider_calls"] == [] and positive["applied_to_anki"] is False
+
+
+def test_orchestrated_completed_calls_need_no_runtime_credential(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    with synthetic_pipeline_http() as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        raw = json.loads(profile.read_text())
+        for endpoint in raw["providers"].values():
+            endpoint["credential_ref"] = "SYNTHETIC_T193_KEY"
+        write(profile, raw)
+        monkeypatch.setenv("SYNTHETIC_T193_KEY", "controlled-fixture-only")
+        output = tmp_path / "workflow"
+        first = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+        monkeypatch.delenv("SYNTHETIC_T193_KEY")
+        replay = call("resume", "--run", str(output / "run"))
+        assert len(requests) == 2 and replay["provider_calls"] == first["provider_calls"]
+        assert all(replay["stages"][s][0]["state"] == "succeeded" for s in ("propose", "counter_check"))
+
+
+def test_orchestrated_allocation_is_published_only_when_complete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from latinitas_cards.providers import ProviderRun
+
+    profile, _, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    initialize = ProviderRun.initialize
+
+    def interrupted(self: ProviderRun) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(ProviderRun, "initialize", interrupted)
+    result = runner.invoke(app, ["pipeline", "run", "--profile", str(profile), "--output", str(output)])
+    assert result.exit_code != 0 and not output.exists()
+    monkeypatch.setattr(ProviderRun, "initialize", initialize)
+    call("run", "--profile", str(profile), "--output", str(output), "--prepare-only")
+    (output / "run/providers/provider-ledger.json").unlink()
+    damaged = runner.invoke(app, ["pipeline", "resume", "--run", str(output / "run"), "--json"])
+    assert damaged.exit_code != 0 and "missing durable provider ledger" in damaged.stdout
+
+
+def test_orchestrated_transient_library_failure_is_retryable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    from latinitas_cards import pipeline_orchestration as workflow
+
+    profile, objectives, _ = fixture(tmp_path, preset=None)
+    raw = json.loads(profile.read_text())
+    raw["selection"]["entries"] = ["n"]
+    raw["processing"]["max_source_units"] = 1
+    overrides = RecipeOverrides(include=("form_recognition",), exclude=())
+    raw.update(recipe_overrides=overrides.model_dump(), recipes=resolve_recipes(None, overrides))
+    write(profile, raw)
+    monkeypatch.setattr(workflow, "LocalStanza", lambda path: SimpleNamespace(version="fixed-synthetic-version"))
+    attempted: list[int] = []
+
+    def analyze(*args: object, **kwargs: object) -> SimpleNamespace:
+        attempted.append(1)
+        return SimpleNamespace(state="unavailable" if len(attempted) == 1 else "unsupported", checks=())
+
+    monkeypatch.setattr(workflow, "analyze_deck", analyze)
+    output = tmp_path / "workflow"
+    first = call(
+        "run",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(output),
+        "--library-resources",
+        "unused",
+        "--offline",
+    )
+    assert first["status"] == "failed"
+    replay = call("resume", "--run", str(output / "run"))
+    assert len(attempted) == 2 and replay["stages"]["analyze"][0].get("state") != "failed"
+    call("resume", "--run", str(output / "run"))
+    assert len(attempted) == 2
+
+
+def test_orchestrated_partial_processing_and_decision_errors_are_explicit(tmp_path: Path) -> None:
+    from latinitas_cards.acceptance import load_stage
+
+    profile, objectives, _ = fixture(tmp_path)
+    raw = json.loads(profile.read_text())
+    raw["processing"]["max_source_units"] = 1
+    write(profile, raw)
+    output = tmp_path / "workflow"
+    report = call(
+        "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--offline"
+    )
+    assert any(s["reason"] == "processing_limit" for s in report["skipped"])
+    assert report["status"] == "deferred"
+    root = output / "run"
+    next((root / "analyses").glob("*.json")).write_text("{}")
+    failed = call("stage", "decide", "--run", str(root))
+    assert failed["stages"]["decide"][0]["analysis_errors"]
+    assert failed["status"] == "failed"
+    assert load_stage(root, failed["stage_ids"]["decide"]).state == "failed"
+
+
+def test_orchestrated_standalone_provider_requires_each_cards_analysis(tmp_path: Path) -> None:
+    from latinitas_cards.acceptance import load_stage, stage_artifact
+
+    profile, objectives, _ = fixture(tmp_path)
+    with synthetic_pipeline_http() as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        output = tmp_path / "workflow"
+        call(
+            "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only"
+        )
+        root = output / "run"
+        call("stage", "analyze", "--run", str(root))
+        raw = json.loads(profile.read_text())
+        raw["selection"]["entries"] = ["n", "v"]
+        raw["processing"]["max_source_units"] = 3
+        write(profile, raw)
+        proposed = call("stage", "propose", "--run", str(root), "--profile", str(profile))
+        assert len(requests) == 1
+        ready = [r for r in proposed["stages"]["propose"] if r["state"] == "succeeded"]
+        assert len(ready) == 1
+        assert sum(r.get("reason") == "prerequisite_analyze_incomplete" for r in proposed["stages"]["propose"]) == 2
+        stage = load_stage(root, ready[0]["execution_stage_id"])
+        assert stage.prerequisite_ids
+        stage_artifact(root, stage)
+
+
+def test_orchestrated_network_restrictions_survive_resume(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    with synthetic_pipeline_http() as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        output = tmp_path / "workflow"
+        call(
+            "run",
+            "--profile",
+            str(profile),
+            "--objectives",
+            str(objectives),
+            "--output",
+            str(output),
+            "--offline",
+            "--local-only",
+        )
+        replay = call("resume", "--run", str(output / "run"))
+        assert requests == [] and replay["network_policy"] == {"offline": True, "local_only": True}
+        raw = json.loads(profile.read_text())
+        for endpoint in raw["providers"].values():
+            endpoint.update(url="https://synthetic.invalid", locality="hosted")
+        write(profile, raw)
+        denied = runner.invoke(
+            app, ["pipeline", "resume", "--run", str(output / "run"), "--profile", str(profile), "--json"]
+        )
+        assert denied.exit_code != 0 and "local_only" in denied.stdout
+
+
+def test_orchestrated_unqualified_provider_labels_do_not_supply_token_bounds(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    configure_pipeline_http(profile, "http://127.0.0.1:1")
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    assert report["provider_calls"] == []
+    assert report["stages"]["propose"][0]["reason"] == "missing_token_bound"
+
+
+@pytest.mark.parametrize("damage", ["analysis", "proof", "ancestor"])
+def test_orchestrated_provider_validates_underlying_prerequisites(tmp_path: Path, damage: str) -> None:
+    from latinitas_cards.acceptance import load_stage
+    from latinitas_cards.pipeline_consumers import Objectives
+
+    profile, objectives, _ = fixture(tmp_path)
+    with synthetic_pipeline_http() as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        raw = json.loads(profile.read_text())
+        raw["selection"]["entries"] = ["n", "v"]
+        raw["processing"]["max_source_units"] = 3
+        write(profile, raw)
+        output = tmp_path / "workflow"
+        call(
+            "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only"
+        )
+        root = output / "run"
+        call("stage", "analyze", "--run", str(root))
+        cards, _ = current_cards(
+            profile,
+            PipelineProfile.read_json(profile.read_bytes()),
+            Objectives.read_json(objectives.read_bytes()),
+            root,
+        )
+        damaged = cards[0]
+        if damage == "ancestor":
+            call("stage", "propose", "--run", str(root))
+            assert len(requests) == 3
+        if damage == "proof":
+            analysis = Analysis.read_json(damaged.analysis_path.read_bytes())
+            proof = load_stage(root, analysis.stage_ids[0])
+            assert proof.artifact is not None
+            (root / proof.artifact).write_text("{}")
+        else:
+            damaged.analysis_path.write_text("{}")
+        before = len(requests)
+        stage = "counter_check" if damage == "ancestor" else "propose"
+        report = call("stage", stage, "--run", str(root))
+        assert len(requests) == before + 2
+        failed = [r for r in report["stages"][stage] if r["note_id"] == damaged.claims.note_id]
+        assert len(failed) == 1 and failed[0]["state"] == "failed"
+        assert failed[0]["reason"] == "prerequisite_artifact_invalid"
+        assert all(
+            json.loads(r["messages"][1]["content"])["task_sha256"] != damaged.binding.task_sha256
+            for r in requests[before:]
+        )

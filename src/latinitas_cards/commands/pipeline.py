@@ -8,13 +8,12 @@ import typer
 from ..acceptance_records import canonical
 from ..grammar_layout import GRAMMAR_FIELDS, GRAMMAR_LAYOUT, LAYOUT_SHA256
 from ..pipeline_consumers import adapt, decide, export, load_run, load_source, preview
+from ..pipeline_orchestration import cancel, execute, prepare, reconcile_call, report
 from ..pipeline_profile import PipelineProfile, RecipeOverrides, load_pipeline_profile, resolve_recipes
 from ..reference_templates import REFERENCE_CARD_CSS
 from .claims import JsonOption, _emit, _error
 
-app = typer.Typer(
-    help="Prepare, inspect and export evidence-gated grammar cards; never call providers or apply to Anki."
-)
+app = typer.Typer(help="Inspect or orchestrate evidence-gated grammar cards; explicit providers, never apply to Anki.")
 ProfileOption = Annotated[Path, typer.Option("--profile")]
 RunOption = Annotated[Path, typer.Option("--run")]
 
@@ -126,11 +125,141 @@ def export_command(
 
 @app.command(name="stage")
 def stage_command(
-    name: Literal["decide"], run: RunOption, profile: Path | None = None, machine: JsonOption = False
+    name: Literal["ingest", "analyze", "propose", "counter_check", "decide", "select", "render", "export"],
+    run: RunOption,
+    profile: Path | None = None,
+    allow_hosted: Path | None = None,
+    offline: bool = False,
+    local_only: bool = False,
+    machine: JsonOption = False,
 ) -> None:
-    """Evaluate complete stored application analyses; never create semantic authority."""
+    """Execute one stage; proposal/check stages may call configured providers, never grant acceptance authority."""
     try:
-        _emit(decide(run, profile), machine)
+        if (run / "execution.json").exists():
+            _emit(
+                execute(
+                    run,
+                    only=name,
+                    profile_path=profile,
+                    permission_path=allow_hosted,
+                    offline=offline,
+                    local_only=local_only,
+                    disclose=lambda text: typer.echo(text, err=True),
+                ),
+                machine,
+            )
+        elif name == "decide":
+            _emit(decide(run, profile), machine)
+        else:
+            raise ValueError("use pipeline run to prepare an orchestrated run")
+    except (OSError, ValueError) as error:
+        _error(error, machine)
+
+
+@app.command(name="run")
+def run_command(
+    profile: ProfileOption,
+    output: Annotated[Path, typer.Option("--output")],
+    objectives: Path | None = None,
+    library_resources: Path | None = None,
+    allow_hosted: Path | None = None,
+    offline: bool = False,
+    local_only: bool = False,
+    prepare_only: bool = False,
+    machine: JsonOption = False,
+) -> None:
+    """Emit files, report and stage data; prepare-only allocates a run without requests."""
+    try:
+        root = prepare(profile, output, objectives, library_resources, offline=offline, local_only=local_only)
+        _emit(
+            execute(
+                root,
+                only="ingest" if prepare_only else None,
+                permission_path=allow_hosted,
+                offline=offline,
+                local_only=local_only,
+                disclose=lambda text: typer.echo(text, err=True),
+            ),
+            machine,
+        )
+    except (OSError, ValueError) as error:
+        _error(error, machine)
+
+
+@app.command(name="resume")
+def resume_command(
+    run: RunOption,
+    profile: Path | None = None,
+    allow_hosted: Path | None = None,
+    offline: bool = False,
+    local_only: bool = False,
+    continue_cancelled: bool = False,
+    retry_unknown: bool = False,
+    confirm_duplicate_billing: bool = False,
+    reconcile_receipt: str | None = None,
+    machine: JsonOption = False,
+) -> None:
+    """Reuse validated successes with persisted network restrictions; relaxing them requires a new run."""
+    try:
+        _emit(
+            execute(
+                run,
+                profile_path=profile,
+                permission_path=allow_hosted,
+                offline=offline,
+                local_only=local_only,
+                continue_cancelled=continue_cancelled,
+                retry_unknown=retry_unknown,
+                confirm_duplicate_billing=confirm_duplicate_billing,
+                reconcile_receipt=reconcile_receipt,
+                disclose=lambda text: typer.echo(text, err=True),
+            ),
+            machine,
+        )
+    except (OSError, ValueError) as error:
+        _error(error, machine)
+
+
+@app.command(name="cancel")
+def cancel_command(run: RunOption, machine: JsonOption = False) -> None:
+    try:
+        _emit(cancel(run), machine)
+    except (OSError, ValueError) as error:
+        _error(error, machine)
+
+
+@app.command(name="report")
+def report_command(run: RunOption, machine: JsonOption = False) -> None:
+    """Read the stored execution report without contacting providers."""
+    try:
+        _emit(report(run), machine)
+    except (OSError, ValueError) as error:
+        _error(error, machine)
+
+
+@app.command(name="reconcile-call")
+def reconcile_command(
+    run: RunOption,
+    call_id: Annotated[str, typer.Option("--call-id")],
+    response: Path | None = None,
+    abandon: bool = False,
+    request_sha256: str | None = None,
+    provider_request_id: str | None = None,
+    machine: JsonOption = False,
+) -> None:
+    """Retain an identified retrieved response, or abandon without refunding its reservation."""
+    try:
+        _emit(
+            reconcile_call(
+                run,
+                call_id,
+                response=response,
+                abandon=abandon,
+                request_sha256=request_sha256,
+                provider_request_id=provider_request_id,
+            ),
+            machine,
+        )
     except (OSError, ValueError) as error:
         _error(error, machine)
 

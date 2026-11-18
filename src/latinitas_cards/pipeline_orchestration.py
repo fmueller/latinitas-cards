@@ -1,0 +1,813 @@
+"""Bounded pipeline-local execution over the existing evidence and batch stores.
+
+Transport results are inspectable hypotheses. Neither agreement nor this runner
+supplies missing class-specific evidence, human review, or curated approval.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import os
+from collections.abc import Callable
+from dataclasses import asdict
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from threading import Event
+from typing import Literal, cast
+from uuid import uuid4
+
+from pydantic import JsonValue
+
+from .acceptance import (
+    _immutable,
+    check_envelope,
+    load_stage,
+    reusable_stage,
+    save_stage,
+    save_stage_record,
+    stage_artifact,
+)
+from .acceptance_policy import SupportRegistry, implementation_digest
+from .acceptance_records import Binding, Check, Record, Stage, StageName, Text, canonical, decode_json, digest
+from .acceptance_registry import SUPPORT_REGISTRY
+from .claim_review import Evidence
+from .deck_evidence import CHECKER, DeckTask, analyze_deck
+from .html_text import source_html_to_text
+from .latin_library import LocalStanza
+from .pipeline_batches import _atomic, run_lock
+from .pipeline_consumers import (
+    Analysis,
+    FormObjective,
+    Objectives,
+    Rendered,
+    Run,
+    Source,
+    _cell,
+    _decide,
+    _entry,
+    _export,
+    _form,
+    _versions,
+    current_cards,
+    load_run,
+    load_source,
+    preview,
+)
+from .pipeline_profile import PipelineProfile, load_pipeline_profile
+from .providers import (
+    PROMPT_VERSIONS,
+    Endpoint,
+    HostedPermission,
+    HTTPTransport,
+    Limits,
+    ModelTask,
+    ProviderRun,
+    Role,
+    Scope,
+    Span,
+    compare_answers,
+)
+
+STAGES: tuple[StageName, ...] = (
+    "ingest",
+    "analyze",
+    "propose",
+    "counter_check",
+    "decide",
+    "select",
+    "render",
+    "export",
+)
+PREREQUISITES: dict[StageName, StageName] = {"analyze": "ingest", "propose": "analyze", "counter_check": "propose"}
+COVERAGE = (
+    "Only supplied, confirmed source cells and finite rule recipes are enumerated. "
+    "Library morphology is not full rendered-clause/translation entailment. Unsupported assertions remain withheld; "
+    "model agreement grants no authority. Human reviews remain separately bound; curated approvals require T196."
+)
+
+
+class Execution(Record):
+    format: Literal["latinitas-pipeline-execution"] = "latinitas-pipeline-execution"
+    version: Literal[1] = 1
+    run_id: Text
+    ledger_config_sha256: Text
+    output: Text
+    library_resources: Text | None
+    offline: bool = False
+    local_only: bool = False
+
+
+class RequestContext(Record):
+    endpoint: Endpoint
+    task: ModelTask
+    recipe: Text
+    scope: tuple[Scope, ...]
+
+
+class Cancellation(Event):
+    """The cancel command can interrupt HTTP polling without taking the writer lock."""
+
+    def __init__(self, root: Path) -> None:
+        super().__init__()
+        self.path = root / "cancelled"
+
+    def is_set(self) -> bool:
+        return super().is_set() or self.path.exists()
+
+
+def load_execution(root: Path) -> Execution:
+    return Execution.read_json((root / "execution.json").read_bytes())
+
+
+def _config(profile: PipelineProfile) -> str:
+    # Input commitments are checked per request, so editing a sibling does not
+    # invalidate unrelated completed calls. Permissions still bind exact bodies.
+    return digest(
+        {
+            "language": profile.language,
+            "layout": profile.layout,
+            "policy": profile.policy,
+            "checker": implementation_digest(),
+        }
+    )
+
+
+def _provider(root: Path, state: Execution, profile: PipelineProfile) -> ProviderRun:
+    return ProviderRun(
+        root / "providers",
+        run_id=state.run_id,
+        config_sha256=_config(profile),
+        ledger_config_sha256=state.ledger_config_sha256,
+        proposal=profile.providers.proposal,
+        counter_check=profile.providers.counter_check,
+        limits=Limits(**profile.processing.model_dump(exclude={"max_source_units"})),
+    )
+
+
+def prepare(
+    profile_path: Path,
+    output: Path,
+    objectives_path: Path | None = None,
+    library_resources: Path | None = None,
+    *,
+    offline: bool = False,
+    local_only: bool = False,
+) -> Path:
+    if output.exists():
+        raise ValueError("choose a new output directory; use resume for an existing run")
+    profile = load_pipeline_profile(profile_path)
+    objectives = (
+        Objectives.read_json(objectives_path.read_bytes())
+        if objectives_path
+        else Objectives(format="latinitas-grammar-objectives", version=1, forms=(), phrases=())
+    )
+    root = output / "run"
+    current_cards(profile_path, profile, objectives, root)
+    # Validate operational hard limits before allocating a run or dispatching.
+    Limits(**profile.processing.model_dump(exclude={"max_source_units"}))
+    if local_only and any(
+        e and e.locality != "local" for e in (profile.providers.proposal, profile.providers.counter_check)
+    ):
+        raise ValueError("local_only requires all endpoints and upstream processing to be local")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    # No public run exists until both manifests and its empty spending ledger
+    # are committed. A published run must never recreate a missing ledger.
+    with TemporaryDirectory(prefix=".pipeline-initializing-", dir=output.parent) as temporary:
+        staging = Path(temporary) / "output"
+        staged_root = staging / "run"
+        staging.mkdir(mode=0o700)
+        staged_root.mkdir(mode=0o700)
+        run_id = uuid4().hex
+        _atomic(
+            staged_root / "run.json",
+            canonical(
+                Run(
+                    format="latinitas-grammar-run",
+                    version=1,
+                    profile_path=str(profile_path.resolve()),
+                    profile=profile,
+                    objectives=objectives,
+                )
+            ),
+        )
+        state = Execution(
+            run_id=run_id,
+            ledger_config_sha256=digest({"run_id": run_id}),
+            output=str(output.resolve()),
+            library_resources=str(library_resources.resolve()) if library_resources else None,
+            offline=offline,
+            local_only=local_only,
+        )
+        _atomic(staged_root / "execution.json", canonical(state))
+        _provider(staged_root, state, profile).initialize()
+        staging.rename(output)
+    return root
+
+
+def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[ModelTask, tuple[Scope, ...]]:
+    objective = card.objective
+    bindings = (
+        ((objective.entry, objective.sense, objective.form, objective.anchors),)
+        if isinstance(objective, FormObjective)
+        else tuple((b.entry, b.sense, b.form, ()) for b in objective.selection.bindings)
+    )
+    evidence: list[Evidence] = []
+    scopes: list[Scope] = []
+    for identity, sense_key, form_key, anchors in bindings:
+        entry, sense = _entry(source, identity, sense_key)
+        record = source.records[identity]
+        fields = source.deck.fields
+        selected = []
+        lemma = record.fields.get(fields.lexical_entry_field, "")
+        if fields.meaning_field is None:
+            raise ValueError("confirmed meaning mapping required")
+        cells = [
+            _cell(record, (fields.lexical_entry_field,), lemma),
+            _cell(record, (fields.meaning_field,), sense.meaning),
+        ]
+        for key in (form_key,) if form_key else anchors:
+            form = _form(source, entry, key)
+            cells.append(_cell(record, (fields.lexical_entry_field, fields.principal_parts_field), form.text))
+        for cell in dict.fromkeys(cells):
+            text = cell.extract(record)
+            extracted = " ".join(source_html_to_text(record.fields[cell.field]).split())
+            start = extracted.find(text)
+            if start < 0:
+                raise ValueError("mapped span is absent from extracted field")
+            selected.append({"field": cell.field, "start": start, "end": start + len(text), "text": text})
+            scopes.append(
+                Scope(
+                    source_identity=identity,
+                    fields=(cell.field,),
+                    spans=(Span(start=start, end=start + len(text)),),
+                    language=profile.language,
+                )
+            )
+        evidence.append(
+            Evidence("confirmed-deck-mapping", source.scope + "/" + identity, "1", canonical(selected).decode())
+        )
+    registry = SupportRegistry.read_json(canonical(SUPPORT_REGISTRY))
+    keys = next(e.target for e in registry.entries if e.recipe == card.recipe)
+    features = objective.target if isinstance(objective, FormObjective) else None
+    if not isinstance(objective, FormObjective) and objective.target:
+        selected_binding = next(b for b in objective.selection.bindings if b.role == objective.target)
+        features = _form(
+            source, _entry(source, selected_binding.entry, selected_binding.sense)[0], selected_binding.form
+        ).features
+    feature_values = cast(dict[str, JsonValue], features.model_dump(exclude_none=True)) if features else {}
+    values: dict[str, JsonValue] = {
+        "meaning": profile.language,
+        "features": feature_values,
+        "context": objective.context if isinstance(objective, FormObjective) else "selected controlled phrase",
+        **feature_values,
+    }
+    target: dict[str, JsonValue] = {key: values[key] for key in keys}
+    binding = card.binding.model_copy(update={"config_sha256": _config(profile)})
+    request_objective = card.recipe
+    if not isinstance(objective, FormObjective):
+        pattern = next(p for p in source.data.patterns if p.key == objective.selection.pattern)
+        request_objective = canonical(
+            {
+                "recipe": card.recipe,
+                "family": pattern.family,
+                "function_words": pattern.function_words,
+                "bindings": objective.selection.bindings,
+                "target": objective.target,
+                "distinction": objective.distinction,
+            }
+        ).decode()
+    task = ModelTask(
+        format="latinitas-model-task",
+        version=1,
+        task_sha256=binding.task_sha256,
+        binding=binding,
+        objective=request_objective,
+        target=target,
+        source_evidence=tuple(evidence),
+        reference_constraints=(),
+    )
+    task.validate_recipe(card.recipe)
+    return task, tuple(scopes)
+
+
+def _stage(root: Path, state: Execution, card: Rendered, name: StageName, envelope: dict[str, object]) -> str:
+    identity = digest({"stage": name, "binding": card.binding, "versions": card.versions, "envelope": envelope})
+    return save_stage(
+        root,
+        run_id=state.run_id,
+        stage_id=identity,
+        stage=name,
+        binding=card.binding,
+        versions=card.versions,
+        envelope=envelope,
+    ).stage_id
+
+
+def _analyze(root: Path, state: Execution, card: Rendered, source: Source) -> dict[str, object]:
+    library = LocalStanza(Path(state.library_resources)) if state.library_resources else None
+    context = digest((card.binding, card.versions, card.claims.assertions, library.version if library else None))
+    metadata_path = root / "analysis-contexts" / card.analysis_path.name
+    if metadata_path.exists():
+        metadata = decode_json(metadata_path.read_bytes())
+        if not isinstance(metadata, dict):
+            raise ValueError("invalid analysis context")
+        if metadata.get("context") == context:
+            if hashlib.sha256(card.analysis_path.read_bytes()).hexdigest() != metadata["analysis_digest"]:
+                raise ValueError("analysis artifact digest mismatch")
+            old = Analysis.read_json(card.analysis_path.read_bytes())
+            for identity in old.stage_ids:
+                stage_artifact(root, load_stage(root, identity))
+            cached = cast(dict[str, object], metadata["outcome"])
+            if cached.get("state") != "failed":
+                return cached
+    constraints: tuple[Evidence, ...] = ()
+    library_state = "not_configured"
+    if library and isinstance(card.objective, FormObjective) and card.objective.form:
+        objective = card.objective
+        entry, sense = _entry(source, objective.entry, objective.sense)
+        assert objective.form is not None
+        form = _form(source, entry, objective.form)
+        meaning_field = source.deck.fields.meaning_field
+        if meaning_field is None:
+            raise ValueError("confirmed meaning mapping required")
+        try:
+            analysis = analyze_deck(
+                root,
+                record=source.records[entry.identity],
+                profile=source.deck,
+                source_scope=source.scope,
+                task=DeckTask(
+                    form=_cell(
+                        source.records[entry.identity],
+                        (source.deck.fields.principal_parts_field, source.deck.fields.lexical_entry_field),
+                        form.text,
+                    ),
+                    meaning=_cell(source.records[entry.identity], (meaning_field,), sense.meaning),
+                    pos=entry.pos,
+                    features=form.features,
+                    source_role=form.source_role,
+                    selected_sense=sense.key,
+                    preposition=None,
+                    extra_assertions=(),
+                ),
+                versions=card.versions.model_copy(update={"analyzer": library.version, "checker": CHECKER}),
+                library=library,
+            )
+            library_state = analysis.state
+            constraints = tuple(dict.fromkeys(e for check in analysis.checks for e in check.evidence))
+        except ValueError:
+            library_state = "unsupported_library_task"
+    stages, checks = [], []
+    for assertion in card.claims.assertions:
+        envelope = check_envelope(card.binding, card.versions, "rule", (assertion,), reference_constraints=constraints)
+        stages.append(_stage(root, state, card, "analyze", envelope))
+        checks.append(
+            Check(
+                id=assertion.id,
+                assertion_ids=(assertion.id,),
+                method="rule",
+                version=card.versions.checker,
+                result="not_applicable",
+                evidence=constraints,
+                alternatives=(),
+                objections=(
+                    "processing_unavailable" if library_state == "unavailable" else "requires_separate_assertion_check",
+                ),
+                input_sha256=digest(envelope),
+            )
+        )
+    result = Analysis(
+        format="latinitas-grammar-analysis",
+        version=1,
+        binding=card.binding,
+        versions=card.versions,
+        assertions=card.claims.assertions,
+        checks=tuple(checks),
+        stage_ids=tuple(stages),
+    )
+    card.analysis_path.parent.mkdir(exist_ok=True, mode=0o700)
+    # Independent analyses still pass through the full public decision reader.
+    if card.analysis_path.exists() and not metadata_path.exists():
+        old = Analysis.read_json(card.analysis_path.read_bytes())
+        if old.binding == card.binding and old.versions == card.versions and old.assertions == card.claims.assertions:
+            for stage_id in old.stage_ids:
+                stage = load_stage(root, stage_id)
+                if stage.binding != card.binding or stage.versions != card.versions:
+                    raise ValueError("stale analysis stage context")
+                stage_artifact(root, stage)
+            result = old
+    _atomic(card.analysis_path, canonical(result))
+    outcome: dict[str, object] = {
+        "analysis": str(card.analysis_path),
+        "library": library_state,
+        "coverage_limit": COVERAGE,
+    }
+    if library_state == "unavailable":
+        outcome.update(state="failed", reason="processing_unavailable")
+    metadata_path.parent.mkdir(exist_ok=True, mode=0o700)
+    _atomic(
+        metadata_path,
+        canonical(
+            {
+                "context": context,
+                "analysis_digest": hashlib.sha256(card.analysis_path.read_bytes()).hexdigest(),
+                "outcome": outcome,
+            }
+        ),
+    )
+    return outcome
+
+
+def _summary(
+    root: Path,
+    state: Execution,
+    source: Source,
+    profile: PipelineProfile,
+    name: StageName,
+    rows: list[dict[str, object]],
+    *,
+    binding: Binding | None = None,
+    prerequisites: tuple[str, ...] = (),
+) -> str:
+    binding = binding or Binding.model_validate(source.data.binding)
+    versions = _versions(profile)
+    envelope = {
+        "effective_profile": profile,
+        "outcomes": rows,
+        "prerequisite_output_sha256s": tuple(load_stage(root, p).output_sha256 for p in prerequisites),
+    }
+    identity = digest({"stage": name, "binding": binding, "versions": versions, "envelope": envelope})
+    failure = next((r for r in rows if r.get("state") in ("unknown", "failed", "deferred", "cancelled")), None)
+    if failure is not None:
+        status = cast(Literal["unknown", "failed", "deferred", "cancelled"], failure["state"])
+        save_stage_record(
+            root,
+            Stage(
+                run_id=state.run_id,
+                stage_id=identity,
+                stage=name,
+                binding=binding,
+                versions=versions,
+                prerequisite_ids=prerequisites,
+                state=status,
+                input_sha256=digest(envelope),
+                output_sha256=None,
+                artifact=None,
+                call_ids=tuple(str(r["call_id"]) for r in rows if r.get("call_id")),
+                reason=str(failure.get("reason", status)),
+                started_at=None,
+                finished_at=None,
+            ),
+        )
+    else:
+        save_stage(
+            root,
+            run_id=state.run_id,
+            stage_id=identity,
+            stage=name,
+            binding=binding,
+            versions=versions,
+            envelope=envelope,
+            prerequisite_ids=prerequisites,
+        )
+    return identity
+
+
+def _card_key(card: Rendered, name: StageName) -> str:
+    return name + "/" + digest((card.claims.note_id, card.claims.card_key))
+
+
+def _prerequisite(root: Path, index: dict[str, JsonValue], card: Rendered, name: StageName) -> str | None:
+    identity = index.get(_card_key(card, name))
+    if not isinstance(identity, str):
+        return None
+    stage = load_stage(root, identity)
+    if stage.state != "succeeded" or stage.binding != card.binding or stage.versions != card.versions:
+        return None
+    reusable_stage(root, identity, binding=card.binding, versions=card.versions, input_sha256=stage.input_sha256)
+    # Wrapper integrity alone does not validate the mutable analysis files it
+    # commits. Follow ancestors even when their IDs left the current index.
+    pending, visited = [stage], set[str]()
+    while pending:
+        current = pending.pop()
+        if current.stage_id in visited:
+            continue
+        visited.add(current.stage_id)
+        envelope = cast(dict[str, object], stage_artifact(root, current))
+        for row in cast(list[dict[str, object]], envelope.get("outcomes", [])):
+            if "analysis" not in row:
+                continue
+            data = Path(str(row["analysis"])).read_bytes()
+            if hashlib.sha256(data).hexdigest() != row["analysis_sha256"]:
+                raise ValueError("analysis prerequisite digest mismatch")
+            analysis = Analysis.read_json(data)
+            assertions = {a.id: a for a in analysis.assertions}
+            if (
+                analysis.binding != card.binding
+                or analysis.versions != card.versions
+                or any(assertions.get(a.id) != a for a in card.claims.assertions)
+            ):
+                raise ValueError("stale analysis prerequisite")
+            # Independent proofs retain their own run identities; they are
+            # separately validated roots, not foreign orchestration children.
+            for proof_id in analysis.stage_ids:
+                proof = load_stage(root, proof_id)
+                reusable_stage(
+                    root, proof_id, binding=card.binding, versions=card.versions, input_sha256=proof.input_sha256
+                )
+        pending.extend(load_stage(root, p) for p in current.prerequisite_ids)
+    return identity
+
+
+def cancel(root: Path) -> dict[str, object]:
+    state = load_execution(root)
+    _atomic(root / "cancelled", b"cancelled\n")
+    return {"run_id": state.run_id, "status": "cancelled", "applied_to_anki": False}
+
+
+def execute(
+    root: Path,
+    *,
+    profile_path: Path | None = None,
+    only: StageName | None = None,
+    permission_path: Path | None = None,
+    offline: bool = False,
+    local_only: bool = False,
+    continue_cancelled: bool = False,
+    retry_unknown: bool = False,
+    confirm_duplicate_billing: bool = False,
+    disclose: Callable[[str], None] | None = None,
+    reconcile_receipt: str | None = None,
+) -> dict[str, object]:
+    with run_lock(root):
+        state = load_execution(root)
+        saved = load_run(root)
+        path = profile_path or Path(saved.profile_path)
+        profile = load_pipeline_profile(path) if profile_path else saved.profile
+        source = load_source(path, profile)
+        cards, skipped = current_cards(path, profile, saved.objectives, root)
+        provider = _provider(root, state, profile)
+        offline = offline or state.offline
+        local_only = local_only or state.local_only
+        if local_only and any(e and e.locality != "local" for e in provider.endpoints.values()):
+            raise ValueError("local_only requires all endpoints and upstream processing to be local")
+        # Invocation restrictions can only narrow this run. Start a new run to
+        # relax them; neither profile replacement nor a hosted grant does so.
+        if (offline, local_only) != (state.offline, state.local_only):
+            state = state.model_copy(update={"offline": offline, "local_only": local_only})
+            _atomic(root / "execution.json", canonical(state))
+        permission = HostedPermission.read_json(permission_path.read_bytes()) if permission_path else None
+        if permission is not None:
+            if permission.run_id != state.run_id:
+                raise ValueError("hosted permission belongs to another run")
+            _immutable(root / "permissions" / (permission.permission_id + ".json"), canonical(permission))
+        if profile_path:
+            _atomic(
+                root / "run.json",
+                canonical(saved.model_copy(update={"profile_path": str(path.resolve()), "profile": profile})),
+            )
+        cancellation = Cancellation(root)
+        if continue_cancelled:
+            cancellation.path.unlink(missing_ok=True)
+        report: dict[str, object] = {
+            "run_id": state.run_id,
+            "effective_profile": profile.model_dump(mode="json"),
+            "status": "cancelled" if cancellation.is_set() else "completed",
+            "coverage_limit": COVERAGE,
+            "applied_to_anki": False,
+            "skipped": skipped,
+            "network_policy": {"offline": offline, "local_only": local_only},
+        }
+        if not cancellation.is_set() and any(s["reason"] == "processing_limit" for s in skipped):
+            report["status"] = "deferred"
+        outcomes: dict[str, list[dict[str, object]]] = {}
+        index_path = root / "stage-index.json"
+        index = decode_json(index_path.read_bytes()) if index_path.exists() else {}
+        if not isinstance(index, dict):
+            raise ValueError("invalid stage index")
+        for identity in index.values():
+            stage = load_stage(root, str(identity))
+            if stage.state == "succeeded":
+                stage_artifact(root, stage)
+        llm_off = offline or not any(provider.endpoints.values())
+        disclosures: list[object] = []
+        tasks: dict[tuple[str, str], tuple[ModelTask, tuple[Scope, ...]]] = {}
+        if not llm_off:
+            for card in cards:
+                task, scope = _task(card, source, profile)
+                tasks[card.claims.note_id, card.claims.card_key] = task, scope
+                disclosures.append(decode_json(provider.disclosure(task, scope, recipe=card.recipe)))
+            disclosure_text = canonical(
+                {"run_id": state.run_id, "config_sha256": _config(profile), "tasks": disclosures}
+            ).decode()
+            _atomic(root / "disclosure.json", disclosure_text.encode())
+            if disclose:
+                disclose(disclosure_text)
+        status_rank = {"completed": 0, "succeeded": 0, "deferred": 1, "failed": 2, "unknown": 3, "cancelled": 4}
+        for name in (only,) if only else STAGES:
+            if cancellation.is_set():
+                report["status"] = "cancelled"
+                break
+            rows: list[dict[str, object]] = []
+            children: list[str] = []
+            if name in ("ingest", "analyze", "propose", "counter_check"):
+                for card in cards:
+                    if cancellation.is_set():
+                        report["status"] = "cancelled"
+                        break
+                    required = PREREQUISITES.get(name)
+                    problem = None
+                    try:
+                        previous = _prerequisite(root, index, card, required) if required else None
+                    except (OSError, ValueError, KeyError, TypeError) as error:
+                        previous, problem = None, str(error)
+                    if problem is not None:
+                        row: dict[str, object] = {
+                            "state": "failed",
+                            "reason": "prerequisite_artifact_invalid",
+                            "detail": problem,
+                        }
+                    elif required and previous is None and not (name in ("propose", "counter_check") and llm_off):
+                        row = {
+                            "state": "deferred",
+                            "reason": "prerequisite_" + required + "_incomplete",
+                        }
+                    elif name == "ingest":
+                        row = {"stage_id": _stage(root, state, card, name, {"binding": card.binding})}
+                    elif name == "analyze":
+                        row = _analyze(root, state, card, source)
+                        row["analysis_sha256"] = hashlib.sha256(card.analysis_path.read_bytes()).hexdigest()
+                    elif llm_off:
+                        row = {"state": "not_requested", "reason": "LLM-off"}
+                    else:
+                        task, scope = tasks[card.claims.note_id, card.claims.card_key]
+                        role: Role = "proposal" if name == "propose" else "counter_check"
+                        endpoint = provider.endpoints[role]
+                        credential = (
+                            os.environ.get(endpoint.credential_ref) if endpoint and endpoint.credential_ref else None
+                        )
+                        proposal = provider.completed("proposal", task, scope) if role == "counter_check" else None
+                        completed = provider.completed(role, task, scope)
+                        if role == "counter_check" and proposal is None:
+                            row = {"state": "deferred", "reason": "prerequisite_proposal_incomplete"}
+                        elif completed is None and endpoint and endpoint.credential_ref and not credential:
+                            row = {"state": "deferred", "reason": "missing_runtime_credential"}
+                        else:
+                            assert endpoint is not None
+                            context = RequestContext(endpoint=endpoint, task=task, recipe=card.recipe, scope=scope)
+                            _immutable(root / "request-contexts" / (digest(context) + ".json"), canonical(context))
+                            bound = input_token_bound(endpoint)
+                            result = completed or provider.request(
+                                role,
+                                task,
+                                recipe=card.recipe,
+                                scope=scope,
+                                prompt_version=PROMPT_VERSIONS[role],
+                                transport=HTTPTransport(credential),
+                                token_bound=bound,
+                                permission=permission,
+                                cancel=cancellation,
+                                retry_unknown=retry_unknown,
+                                duplicate_warning_confirmed=confirm_duplicate_billing,
+                            )
+                            row = asdict(result)
+                            if result.answer is not None:
+                                row["reason"] = "transport_only_not_acceptance"
+                                row["stage_id"] = _stage(
+                                    root,
+                                    state,
+                                    card,
+                                    name,
+                                    {"task": task, "result": result.answer, "call_id": result.call_id},
+                                )
+                                if role == "counter_check":
+                                    row["authority"] = "transport_only_not_acceptance"
+                                    assert proposal is not None and proposal.answer is not None
+                                    row["comparison"] = asdict(compare_answers(proposal.answer, result.answer))
+                    prerequisites: tuple[str, ...] = (previous,) if previous else ()
+                    if isinstance(row.get("stage_id"), str):
+                        prerequisites += (str(row["stage_id"]),)
+                    execution_stage = _summary(
+                        root,
+                        state,
+                        source,
+                        profile,
+                        name,
+                        [row],
+                        binding=card.binding,
+                        prerequisites=prerequisites,
+                    )
+                    index[_card_key(card, name)] = execution_stage
+                    if load_stage(root, execution_stage).state == "succeeded":
+                        children.append(execution_stage)
+                    # Persist per-card progress before processing another card.
+                    _atomic(index_path, canonical(index))
+                    rows.append(
+                        {
+                            "note_id": card.claims.note_id,
+                            "card_key": card.claims.card_key,
+                            **row,
+                            "execution_stage_id": execution_stage,
+                        }
+                    )
+            elif name == "decide":
+                rows = [_decide(root, None)]
+                if rows[0]["analysis_errors"]:
+                    rows[0].update(state="failed", reason="analysis_processing_failed")
+            elif name in ("select", "render"):
+                rows = [preview(root)]
+            elif name == "export":
+                if cancellation.is_set():
+                    report["status"] = "cancelled"
+                    break
+                output = Path(state.output) / ("cards-" + digest(preview(root)) + ".csv")
+                exported = _export(root, output, None, None, None, reconcile_receipt)
+                report["file_export"] = exported
+                rows = [exported]
+            outcomes[name] = rows
+            # Decision/selection/export validate their independent proof and
+            # eligibility stores directly, so unrelated provider failures do
+            # not bar valid human/library-supported cards.
+            index[name] = _summary(root, state, source, profile, name, rows, prerequisites=tuple(children))
+            _atomic(index_path, canonical(index))
+            for row in rows:
+                status = str(row.get("state", "completed"))
+                if status_rank.get(status, 0) > status_rank.get(str(report["status"]), 0):
+                    report["status"] = status
+        report["stages"] = outcomes
+        report["stage_ids"] = index
+        report["disclosure"] = disclosures
+        report["provider_calls"] = [c.model_dump(mode="json") for c in provider.calls()]
+        if only in ("select", "render"):
+            report.update(preview(root))
+        _atomic(Path(state.output) / "report.json", canonical(report))
+        return cast(dict[str, object], decode_json(canonical(report)))
+
+
+def input_token_bound(endpoint: Endpoint) -> Callable[[bytes], int] | None:
+    """No installed adapter qualifies complete service-side input accounting.
+
+    Compatible model labels do not establish tokenizer/framing bounds. New
+    dispatch fails closed; controlled engineering tests inject their own bound.
+    Completed exact calls remain reusable without this dispatch prerequisite.
+    """
+    return None
+
+
+def reconcile_call(
+    root: Path,
+    call_id: str,
+    *,
+    response: Path | None,
+    abandon: bool,
+    request_sha256: str | None,
+    provider_request_id: str | None,
+) -> dict[str, object]:
+    with run_lock(root):
+        state, saved = load_execution(root), load_run(root)
+        provider = _provider(root, state, saved.profile)
+        if abandon:
+            if response is not None:
+                raise ValueError("choose response retrieval or abandonment, not both")
+            provider.abandon(call_id)
+            return {
+                "call_id": call_id,
+                "state": "abandoned",
+                "warning": "reservation retained; retry may duplicate billing",
+            }
+        if response is None or request_sha256 is None or provider_request_id is None:
+            raise ValueError("response, original request digest and provider request ID are required")
+        call = next((c for c in provider.calls() if c.call_id == call_id), None)
+        if call is None:
+            raise ValueError("unknown call ID")
+        for path in (root / "request-contexts").glob("*.json"):
+            context = RequestContext.read_json(path.read_bytes())
+            if path.stem != digest(context):
+                raise ValueError("request context digest mismatch")
+            if digest(context.endpoint) == call.endpoint_sha256 and context.task.task_sha256:
+                try:
+                    result = provider.reconcile(
+                        call_id,
+                        endpoint=context.endpoint,
+                        task=context.task,
+                        request_sha256=request_sha256,
+                        provider_request_id=provider_request_id,
+                        response=response.read_bytes(),
+                        credential=os.environ.get(context.endpoint.credential_ref)
+                        if context.endpoint.credential_ref
+                        else None,
+                    )
+                except ValueError as error:
+                    if str(error) == "reconciliation task mismatch":
+                        continue
+                    raise
+                return cast(dict[str, object], decode_json(canonical(asdict(result))))
+        raise ValueError("original request context is unavailable")
+
+
+def report(root: Path) -> dict[str, object]:
+    state = load_execution(root)
+    result = decode_json((Path(state.output) / "report.json").read_bytes())
+    if not isinstance(result, dict):
+        raise ValueError("invalid report")
+    return result

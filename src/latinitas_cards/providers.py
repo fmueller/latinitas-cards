@@ -418,10 +418,13 @@ class ProviderRun:
         proposal: Endpoint | None,
         counter_check: Endpoint | None,
         limits: Limits | None = None,
+        ledger_config_sha256: str | None = None,
     ) -> None:
         self.root = root
         self.run_id = run_id
         self.config_sha256 = config_sha256
+        self.ledger_config_sha256 = ledger_config_sha256 or config_sha256
+        self.require_ledger = ledger_config_sha256 is not None
         self.endpoints: dict[Role, Endpoint | None] = {"proposal": proposal, "counter_check": counter_check}
         self.limits = limits or Limits()
 
@@ -442,21 +445,44 @@ class ProviderRun:
 
     def _load(self) -> Ledger:
         path = self.root / "provider-ledger.json"
+        if self.require_ledger and not path.exists():
+            raise ValueError("missing durable provider ledger; cannot reset spending")
         ledger = (
             Ledger.read_json(path.read_bytes())
             if path.exists()
-            else Ledger(run_id=self.run_id, config_sha256=self.config_sha256, calls=(), abandoned=())
+            else Ledger(run_id=self.run_id, config_sha256=self.ledger_config_sha256, calls=(), abandoned=())
         )
-        if (ledger.run_id, ledger.config_sha256) != (self.run_id, self.config_sha256):
+        if (ledger.run_id, ledger.config_sha256) != (self.run_id, self.ledger_config_sha256):
             raise ValueError("run/config mismatch; copying a run cannot reset its budget")
         return ledger
 
     def _save(self, ledger: Ledger) -> None:
         _write(self.root / "provider-ledger.json", canonical(ledger))
 
+    def initialize(self) -> None:
+        """Allocate the durable ledger before a run is disclosed for permission."""
+        with self._lock():
+            if (self.root / "provider-ledger.json").exists():
+                self._load()
+            else:
+                self._save(Ledger(run_id=self.run_id, config_sha256=self.ledger_config_sha256, calls=(), abandoned=()))
+
     def calls(self) -> tuple[Call, ...]:
         with self._lock():
             return self._load().calls
+
+    def completed(self, role: Role, task: ModelTask, scope: tuple[Scope, ...]) -> Result | None:
+        """Validate an exact completed invocation without dispatch or renewed spending."""
+        endpoint = self.endpoints[role]
+        if endpoint is None:
+            return None
+        body = _request(endpoint, task, PROMPT_VERSIONS[role], self.limits.max_output_tokens)
+        identity = digest({"role": role, "endpoint": endpoint, "body": decode_json(body), "scope": scope})
+        with self._lock():
+            for call in reversed(self._load().calls):
+                if call.stage_id == identity and call.state == "succeeded":
+                    return self._completed(endpoint, task, scope, call)
+        return None
 
     def disclosure(
         self, task: ModelTask, scope: tuple[Scope, ...], *, recipe: str, retention: str = "provider policy unknown"
@@ -494,9 +520,14 @@ class ProviderRun:
         permission: HostedPermission | None,
         request_sha256: str,
     ) -> bool:
-        if not scope or any(
-            s.source_identity != task.binding.source_identity or s.language != task.binding.language for s in scope
-        ):
+        identities = {task.binding.source_identity}
+        prefix = task.binding.source_scope + "/"
+        identities.update(
+            e.reference.removeprefix(prefix)
+            for e in task.source_evidence
+            if e.source == "confirmed-deck-mapping" and e.reference.startswith(prefix)
+        )
+        if not scope or any(s.source_identity not in identities or s.language != task.binding.language for s in scope):
             return False
         if task.binding.config_sha256 != self.config_sha256:
             return False

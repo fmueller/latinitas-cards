@@ -58,11 +58,11 @@ class Selection(Record):
 
 
 class Processing(Record):
-    max_source_units: int | None = Field(gt=0)
-    max_calls: int = Field(gt=0)
-    max_tokens: int = Field(gt=0)
-    timeout_seconds: int = Field(gt=0)
-    retries: int = Field(ge=0)
+    max_source_units: int | None = Field(default=None, gt=0)
+    max_calls: int = Field(default=200, gt=0)
+    max_tokens: int = Field(default=200000, gt=0)
+    timeout_seconds: int = Field(default=60, gt=0, le=60)
+    retries: int = Field(default=1, ge=0, le=1)
 
 
 class Providers(Record):

@@ -10,6 +10,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   with opt-in conjugation/declension drills, confirmed PPP cards and manual CSV export.
 - `pipeline export` supports optional receipt-bound batches, replay and explicit
   reconciliation; default output includes every eligible card after suppression.
+- `pipeline run` orchestrates inspectable stages with resumable provider journals,
+  scoped hosted permission and cancellation; CSV files never apply changes to Anki.
 
 ### Fixed
 
@@ -19,6 +21,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
   cards from positional splits; parenthetical notes no longer become forms.
 - `setup --include-source-tag Verb` confirms an optional exact source-tag filter
   for principal-part generation from mixed decks.
+
+### Limitations
+
+- `pipeline run` defers new provider requests without qualified token accounting;
+  no production deployment is qualified yet. Offline/local-only restrictions persist on resume.
 
 ## [0.4.0] - 2026-11-01
 
