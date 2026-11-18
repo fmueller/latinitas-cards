@@ -4,6 +4,11 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `pipeline` previews evidence-gated German/English form and controlled-phrase cards,
+  with opt-in conjugation/declension drills, confirmed PPP cards and manual CSV export.
+
 ### Fixed
 
 - German cards render withheld-status explanations, blank markers and reference

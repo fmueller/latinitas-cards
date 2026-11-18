@@ -1,12 +1,12 @@
 ---
 id: T-191-extend-translation-first-forms-and-controlled
 title: Extend translation-first forms and controlled phrase recipes
-status: blocked
+status: completed
 priority: medium
 spec_ref: specs/v0.5.0.md#grammar-exercise-library
 dependencies:
     - T-190-gate-complete-card-assertions-on-accepted-evidence
-updated_at: "2026-11-18T12:39:59Z"
+updated_at: "2026-11-18T15:08:16Z"
 ---
 
 # T-191-extend-translation-first-forms-and-controlled Extend translation-first forms and controlled phrase recipes
@@ -75,3 +75,6 @@ and withheld unsupported claims. No corpus construction discovery is required.
 ## Implementation Notes
 
 - 2026-11-18T12:39:59Z: Implementation cycle ended without an implementation candidate; full T-191 acceptance remains outstanding. No external prerequisite or contract blocker was established. Resume the same task, not a successor.
+- 2026-11-18T13:38:58Z: Maintainer explicitly authorized full-scope resumption in the same task/thread; prior failed-cycle note retained. No scope reduction or new gate approval.
+- 2026-11-18T15:08:03Z: verification pass
+- 2026-11-18T15:08:16Z: Implemented full bounded T191 engineering scope; verification run2026-11-18T15:08:03Z passed final Ruff/mypy/pytest3592 passed7 existing skips. High-risk independent dispositions verified, both fix/recheck rounds and closing challenge budget consumed. Production automatic policy remains disabled; judges, empirical/native/integrated acceptance and publication remain outside this task. Prior failed-cycle note retained. No successor selected or started.

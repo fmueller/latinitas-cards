@@ -168,6 +168,48 @@ def canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
 
+class FormV2(Form):
+    source_role: Literal["present_1s", "present_infinitive", "perfect_1s", "supine", "ppp", "other"]
+    role_evidence: tuple[Evidence, ...]
+
+    @model_validator(mode="after")
+    def confirmed_role(self) -> FormV2:
+        if self.source_role != "other" and not self.role_evidence:
+            raise ValueError("named source role needs explicit role evidence")
+        return self
+
+
+class EntryV2(Entry):
+    forms: tuple[FormV2, ...] = ()
+
+
+class PhraseInputV2(Model):
+    """Explicit opt-in input; v1 readers never silently accept its extra facts."""
+
+    version: Literal[2]
+    source: str = Field(min_length=1)
+    profile: str = Field(min_length=1)
+    manifest: str | None
+    entries: tuple[EntryV2, ...] = Field(min_length=1, max_length=1000)
+    patterns: tuple[Pattern, ...] = Field(max_length=100)
+    example_selection: SelectionRequest | None
+    binding: dict[str, str]
+    registry_version: Literal["v050-support/1"]
+
+    @model_validator(mode="after")
+    def coherent(self) -> PhraseInputV2:
+        from .acceptance_records import Binding as SourceBinding
+
+        SourceBinding.model_validate(self.binding)
+        for keys in ([e.identity for e in self.entries], [p.key for p in self.patterns]):
+            if len(keys) != len(set(keys)):
+                raise ValueError("duplicate entry/pattern keys")
+        senses = {f"{e.identity}/{s.key}" for e in self.entries for s in e.senses}
+        if any(s not in senses for p in self.patterns for r in p.roles.values() for s in r.senses):
+            raise ValueError("pattern compatibility names an unknown entry/sense")
+        return self
+
+
 @dataclass(frozen=True)
 class PhraseWorkspace:
     data: PhraseInput

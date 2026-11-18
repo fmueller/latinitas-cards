@@ -16,8 +16,18 @@ AUTHORIZATION_HISTORY: tuple[str, ...] = ()
 SUPPORT_REGISTRY = {
     "version": "v050-support/1",
     "entries": (
-        {"recipe": "form_translation", "materials": ("source-form/1",), "roles": ("other",), "target": ("meaning",)},
-        {"recipe": "form_recognition", "materials": ("source-form/1",), "roles": ("other",), "target": ("features",)},
+        {
+            "recipe": "form_translation",
+            "materials": ("source-form/1",),
+            "roles": ("other", "present_1s", "present_infinitive", "perfect_1s"),
+            "target": ("meaning",),
+        },
+        {
+            "recipe": "form_recognition",
+            "materials": ("source-form/1",),
+            "roles": ("other", "present_1s", "perfect_1s"),
+            "target": ("features",),
+        },
         {"recipe": "ppp_translation", "materials": ("confirmed-ppp/1",), "roles": ("ppp",), "target": ("meaning",)},
         {"recipe": "ppp_recognition", "materials": ("confirmed-ppp/1",), "roles": ("ppp",), "target": ("features",)},
         {
@@ -46,14 +56,14 @@ SUPPORT_REGISTRY = {
         },
         {
             "recipe": "adjective_declension",
-            "materials": ("source-form/1",),
-            "roles": ("other",),
+            "materials": ("source-form/1", "confirmed-ppp/1"),
+            "roles": ("other", "ppp"),
             "target": ("case", "number", "gender"),
         },
         {
             "recipe": "form_cloze",
             "materials": ("target-cloze/1",),
-            "roles": ("other",),
+            "roles": ("other", "present_1s", "perfect_1s", "ppp"),
             "target": ("features", "context"),
         },
         {

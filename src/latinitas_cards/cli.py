@@ -2390,6 +2390,7 @@ def _register_commands() -> None:
     from .commands.inspect import inspect
     from .commands.managed import app as managed_app
     from .commands.phrases import app as phrases_app
+    from .commands.pipeline import app as pipeline_app
     from .commands.policy import app as policy_app
     from .commands.preview import preview
     from .commands.setup import setup
@@ -2416,6 +2417,7 @@ def _register_commands() -> None:
     app.add_typer(policy_app, name="policy")
     app.add_typer(corpus_cards_app, name="corpus-cards")
     app.add_typer(phrases_app, name="phrases")
+    app.add_typer(pipeline_app, name="pipeline")
     app.add_typer(terminology_app, name="terminology")
 
 

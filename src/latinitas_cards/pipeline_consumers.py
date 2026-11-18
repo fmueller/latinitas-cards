@@ -1,0 +1,913 @@
+"""Stored, source-rebound grammar consumers; no inference, approval or Anki writes.
+
+Adaptation persists explicit objectives, not accepted cards. Preview reconstructs
+assertions from current inputs. Export repeats that reconstruction and the shared
+full-card gate at the actual writer boundary.
+"""
+
+from __future__ import annotations
+
+import hashlib
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Literal
+
+from .acceptance import AcceptanceReader, save_acceptance
+from .acceptance_policy import ScopeCell, implementation_digest
+from .acceptance_records import Assertion, Binding, Check, Record, Text, Versions, canonical, decode_json, digest
+from .card_acceptance import CardClaims, DecisionSource, export_cards
+from .claim_review import Evidence
+from .deck_evidence import SourceCell, _construction_issues
+from .form_recipes import RULE_VERSION, derive_form, form_translations
+from .grammar_layout import COLUMNS, GRAMMAR_LAYOUT, LAYOUT_SHA256
+from .identity import ResolvedSourceIdentity, derive_latinitas_id, resolve_source_identities
+from .manifest import CsvIdentityManifest, reconcile_csv_manifest
+from .phrase_inputs import EntryV2, Features, Form, FormV2, PhraseInputV2, Selection, Sense
+from .phrase_recipes import _CANONICAL, Reference, render_phrase_objective, render_phrase_text
+from .pipeline_profile import PipelineProfile, RecipeOverrides, load_pipeline_profile
+from .preview_export import commit_csv_artifacts, serialize_anki_csv
+from .principal_parts import PrincipalPartParseSuccess, parse_principal_parts
+from .profile import DeckProfile, load_profile
+from .sources import CanonicalSourceRecord, read_source_records
+from .terminology import feature_name, feature_value
+
+
+class FormObjective(Record):
+    object_key: Text
+    entry: Text
+    sense: Text
+    form: Text | None
+    anchors: tuple[Text, ...]
+    recipe: Literal[
+        "form_translation",
+        "form_recognition",
+        "ppp_translation",
+        "ppp_recognition",
+        "verb_production",
+        "noun_declension",
+        "adjective_declension",
+        "form_cloze",
+    ]
+    target: Features
+    distinction: Literal["analysis", "case", "number", "gender", "person", "tense", "mood", "voice"]
+    context: str
+    translations: tuple[Text, ...]
+    explanation: str
+    caveats: tuple[Text, ...]
+    evidence: tuple[Evidence, ...]
+
+
+class PhraseObjective(Record):
+    object_key: Text
+    selection: Selection
+    recipe: Literal["phrase_translation", "phrase_recognition", "phrase_form_cloze"]
+    target: Text | None
+    distinction: Literal["meaning", "analysis", "case", "number", "gender", "person", "tense", "mood", "voice"]
+    reference: Reference
+
+
+class Objectives(Record):
+    format: Literal["latinitas-grammar-objectives"]
+    version: Literal[1]
+    forms: tuple[FormObjective, ...]
+    phrases: tuple[PhraseObjective, ...]
+
+
+class Run(Record):
+    format: Literal["latinitas-grammar-run"]
+    version: Literal[1]
+    profile_path: Text
+    profile: PipelineProfile
+    objectives: Objectives
+
+
+class Analysis(Record):
+    """Complete application analysis, never a run-supplied policy or approval."""
+
+    format: Literal["latinitas-grammar-analysis"]
+    version: Literal[1]
+    binding: Binding
+    versions: Versions
+    assertions: tuple[Assertion, ...]
+    checks: tuple[Check, ...]
+    stage_ids: tuple[Text, ...]
+
+
+@dataclass(frozen=True)
+class Source:
+    data: PhraseInputV2
+    deck: DeckProfile
+    records: dict[str, CanonicalSourceRecord]
+    identities: dict[str, ResolvedSourceIdentity]
+    scope: str
+
+
+@dataclass(frozen=True)
+class Rendered:
+    recipe: str
+    prompt: str
+    answer: str
+    claims: CardClaims
+    binding: Binding
+    versions: Versions
+    material: str
+    analysis_path: Path
+
+
+def _checked_file(base: Path, path: str, sha256: str) -> Path:
+    result = (base / path).resolve()
+    if hashlib.sha256(result.read_bytes()).hexdigest() != sha256:
+        raise ValueError(f"changed profile/input: {path}")
+    return result
+
+
+def load_source(profile_path: Path, profile: PipelineProfile) -> Source:
+    base = profile_path.resolve().parent
+    deck_path = _checked_file(base, profile.deck_profile.path, profile.deck_profile.sha256)
+    deck = load_profile(deck_path)
+    if deck.language_tag != profile.language:
+        raise ValueError("source and output language differ; confirm the effective deck profile")
+    inputs = [(item, _checked_file(base, item.path, item.sha256)) for item in profile.inputs]
+    phrase_paths = [path for item, path in inputs if item.kind == "phrases"]
+    if len(phrase_paths) != 1:
+        raise ValueError("one explicitly upgraded phrase input is required")
+    path = phrase_paths[0]
+    data = PhraseInputV2.model_validate(decode_json(path.read_bytes()))
+    if (path.parent / data.profile).resolve() != deck_path:
+        raise ValueError("phrase input uses another deck profile")
+    source_path = (path.parent / data.source).resolve()
+    if source_path not in [p for item, p in inputs if item.kind == "deck"]:
+        raise ValueError("confirmed source must be a hashed deck input")
+    records = read_source_records(source_path, source_id_field=deck.source_identity.field, note_type=deck.note_type)
+    scope: str | None = None
+    manifest_ids: tuple[str | None, ...] | None = None
+    if source_path.suffix.lower() == ".csv":
+        manifest_path = path.parent / data.manifest if data.manifest else Path(f"{source_path}.latinitas.json")
+        manifest = CsvIdentityManifest.load(manifest_path)
+        if not manifest.is_scoped:
+            raise ValueError("confirmed source scope required")
+        scope = manifest.source_scope
+        if deck.source_identity.strategy == "manifest":
+            reconciled = reconcile_csv_manifest(records, manifest)
+            if reconciled.reviews:
+                raise ValueError("source identity reconciliation required")
+            manifest_ids = tuple(reconciled.identities_by_row.get(i) for i in range(len(records)))
+    identities = resolve_source_identities(records, deck, source_scope=scope, manifest_identities=manifest_ids)
+    by_id = {i.value: r for i, r in zip(identities, records, strict=True)}
+    if len(by_id) != len(records) or any(e.identity not in by_id for e in data.entries):
+        raise ValueError("missing or ambiguous source identity")
+    supplied = Binding.model_validate(data.binding)
+    expected = input_binding(data, deck, source_path.read_bytes(), scope or supplied.source_scope)
+    if supplied != expected:
+        raise ValueError("stale phrase input binding")
+    return Source(data, deck, by_id, {i.value: i for i in identities}, expected.source_scope)
+
+
+def input_binding(data: PhraseInputV2, deck: DeckProfile, source_bytes: bytes, scope: str) -> Binding:
+    """Exact v2 input commitment, excluding its own envelope to avoid a cycle."""
+    return Binding(
+        source_scope=scope,
+        source_identity="phrase-input-v2",
+        source_sha256=hashlib.sha256(source_bytes).hexdigest(),
+        extraction_sha256=digest({"entries": data.entries, "patterns": data.patterns}),
+        mapping_sha256=digest(deck.model_dump()),
+        task_sha256=digest({"kind": "phrase-input-v2", "registry": data.registry_version}),
+        language="de" if deck.language_tag == "de" else "en",
+        config_sha256=digest({"registry": data.registry_version}),
+    )
+
+
+def _cell(record: CanonicalSourceRecord, fields: tuple[str, ...], text: str) -> SourceCell:
+    for field in fields:
+        raw = record.fields.get(field, "")
+        start = raw.find(text)
+        while start >= 0:
+            cell = SourceCell(field=field, start=start, end=start + len(text))
+            try:
+                if cell.extract(record) == text:
+                    return cell
+            except ValueError:
+                pass
+            start = raw.find(text, start + 1)
+    raise ValueError(f"form/meaning absent from confirmed source mapping: {text}")
+
+
+def _entry(source: Source, identity: str, sense_key: str) -> tuple[EntryV2, Sense]:
+    entry = next((e for e in source.data.entries if e.identity == identity), None)
+    if entry is None:
+        raise ValueError("missing source entry")
+    sense = next((s for s in entry.senses if s.key == sense_key), None)
+    if sense is None or not sense.evidence or not entry.evidence or not source.deck.fields.meaning_field:
+        raise ValueError("missing confirmed sense/evidence")
+    record = source.records[identity]
+    if source.deck.include_source_tag and source.deck.include_source_tag not in record.source_tags:
+        raise ValueError("source entry outside confirmed source-tag filter")
+    _cell(record, (source.deck.fields.meaning_field,), sense.meaning)
+    return entry, sense
+
+
+def _form(source: Source, entry: EntryV2, key: str) -> FormV2:
+    form = next((f for f in entry.forms if f.key == key), None)
+    if form is None:
+        raise ValueError("missing confirmed source form")
+    record = source.records[entry.identity]
+    fields = (
+        (source.deck.fields.principal_parts_field,)
+        if form.source_role != "other"
+        else (
+            source.deck.fields.lexical_entry_field,
+            source.deck.fields.principal_parts_field,
+        )
+    )
+    cell = _cell(record, fields, form.text)
+    if form.source_role != "other":
+        parsed = parse_principal_parts(record, source.deck)
+        if not isinstance(parsed, PrincipalPartParseSuccess):
+            raise ValueError("unconfirmed source role")
+        part = parsed.value.by_role.get(form.source_role)
+        if (
+            part is None
+            or part.unresolved
+            or part.is_omitted
+            or part.display != form.text
+            or cell.field != source.deck.fields.principal_parts_field
+        ):
+            raise ValueError("source role mismatch; supine/fourth position cannot establish PPP")
+    return form
+
+
+def _features(features: Features, deck: DeckProfile) -> str:
+    return "; ".join(
+        f"{feature_name(k, deck.morphology.terminology, deck.language_tag)}: "
+        f"{feature_value(k, _CANONICAL[k][v], deck.morphology.terminology, deck.language_tag)}"
+        for k, v in features.model_dump(exclude_none=True).items()
+    )
+
+
+def _assertion(
+    identity: str,
+    kind: Literal["label", "translation", "segmentation", "explanation"],
+    value: str,
+    evidence: tuple[Evidence, ...],
+    *,
+    sense: str | None = None,
+    alternatives: tuple[str, ...] = (),
+) -> Assertion:
+    return Assertion(
+        id=identity,
+        kind=kind,
+        value=value,
+        selected_sense=sense,
+        alternatives=tuple(dict.fromkeys(alternatives)),
+        evidence=tuple(dict.fromkeys(evidence)),
+    )
+
+
+def _render_form(
+    source: Source, objective: FormObjective, language: str
+) -> tuple[str, str, tuple[Assertion, ...], str, str]:
+    entry, sense = _entry(source, objective.entry, objective.sense)
+    selected = _form(source, entry, objective.form) if objective.form else None
+    anchors = tuple(_form(source, entry, key) for key in objective.anchors)
+    evidence = (
+        entry.evidence
+        + sense.evidence
+        + objective.evidence
+        + tuple(e for f in (*anchors, *((selected,) if selected else ())) for e in f.role_evidence)
+    )
+    if not evidence:
+        raise ValueError("missing evidence")
+    ppp = selected is not None and selected.source_role == "ppp"
+    if objective.recipe.startswith("ppp_") and not ppp:
+        raise ValueError("confirmed PPP required")
+    if ppp and (
+        selected is None
+        or selected.features.tense != "perfect"
+        or selected.features.voice != "passive"
+        or any(getattr(selected.features, k) is None for k in ("case", "number", "gender"))
+    ):
+        raise ValueError("incomplete or contradictory PPP analysis")
+    if selected and entry.pos == "verb" and selected.features.case and not ppp:
+        raise ValueError("nominal verb form requires confirmed PPP evidence")
+    if selected and selected.source_role == "supine":
+        raise ValueError("supine not in the standalone PPP/form subset")
+    material = "confirmed-ppp/1" if ppp else "source-form/1"
+    production = objective.recipe in ("verb_production", "noun_declension", "adjective_declension")
+    target = objective.target
+    derived = None
+    if production:
+        expected_pos = {"verb_production": "verb", "noun_declension": "noun", "adjective_declension": "adjective"}[
+            objective.recipe
+        ]
+        if entry.pos != expected_pos and not (ppp and objective.recipe == "adjective_declension"):
+            raise ValueError("unsupported production POS")
+        if ppp and objective.recipe == "adjective_declension":
+            assert selected is not None
+            if (
+                not selected.text.endswith("us")
+                or selected.features.case != "nominative"
+                or selected.features.number != "singular"
+                or selected.features.gender != "masculine"
+            ):
+                raise ValueError("unsupported PPP derivation anchor")
+            base = selected.text[:-2]
+            derived = derive_form("adjective", (base + "us", base + "a", base + "um"), target)
+            surface = derived.surface
+            evidence += (derived.evidence,)
+        elif anchors:
+            if entry.pos == "verb" and tuple(f.source_role for f in anchors) != ("present_1s", "present_infinitive"):
+                raise ValueError("verified principal-part anchors required")
+            if entry.pos == "verb" and anchors[0].features != Features(
+                person="1", number="singular", tense="present", mood="indicative", voice="active"
+            ):
+                raise ValueError("contradictory verb anchor analysis")
+            if entry.pos == "noun" and tuple(f.features for f in anchors) != (
+                Features(case="nominative", number="singular", gender=entry.gender),
+                Features(case="genitive", number="singular", gender=entry.gender),
+            ):
+                raise ValueError("contradictory nominative/genitive anchors")
+            if entry.pos == "adjective" and tuple(f.features for f in anchors) != tuple(
+                Features(case="nominative", number="singular", gender=gender)
+                for gender in ("masculine", "feminine", "neuter")
+            ):
+                raise ValueError("contradictory adjective gender anchors")
+            derived = derive_form(entry.pos, tuple(f.text for f in anchors), target)
+            surface = derived.surface
+            evidence += (derived.evidence,)
+        elif selected and selected.features == target:
+            required = (
+                ("person", "number", "tense", "mood", "voice") if entry.pos == "verb" else ("case", "number", "gender")
+            )
+            if any(getattr(target, k) is None for k in required):
+                raise ValueError("incomplete production target")
+            surface = selected.text
+        else:
+            raise ValueError("missing applicable source cell/derivation")
+        if entry.pos == "noun" and target.gender != entry.gender:
+            raise ValueError("contradictory noun gender")
+        if entry.pos == "verb" and len(anchors) == 2:
+            cue = anchors[1].text
+        elif anchors:
+            cue = anchors[0].text
+        else:
+            cue = source.records[entry.identity].fields[source.deck.fields.lexical_entry_field]
+        prompt = (
+            "Bilde die lateinische Form" if language == "de" else "Supply the Latin form"
+        ) + f": {cue}\n{_features(target, source.deck)}"
+        if ppp:
+            prompt += "\n" + (
+                "PPP (Partizip Perfekt Passiv)" if language == "de" else "PPP (perfect passive participle)"
+            )
+        answer = surface
+        if surface in prompt:
+            raise ValueError("answer revealed by production prompt")
+    else:
+        if selected is None:
+            raise ValueError("explicit source form required")
+        surface = selected.text
+        target = selected.features
+        if objective.recipe.endswith("translation"):
+            prompt = surface + "\n" + ("Übersetze." if language == "de" else "Translate.")
+            translations = objective.translations or form_translations(
+                entry.pos, target, sense.meaning, language, selected.source_role
+            )
+            answer = " / ".join(translations)
+            answer += "\n" + (
+                "Referenz als Orientierung; Selbstbeurteilung."
+                if language == "de"
+                else "Reference guidance; self-assessment."
+            )
+        elif objective.recipe.endswith("recognition"):
+            matching_forms = tuple(f for f in entry.forms if f.text == surface)
+            readings = tuple(dict.fromkeys(_features(f.features, source.deck) for f in matching_forms))
+            if not readings or any(not f.features.model_dump(exclude_none=True) for f in matching_forms):
+                raise ValueError("incomplete recognition readings")
+            if objective.distinction != "analysis":
+                values = {getattr(f.features, objective.distinction) for f in matching_forms}
+                if None in values or len(values) != 1:
+                    raise ValueError("ambiguous recognition distinction")
+            prompt = (
+                surface
+                + "\n"
+                + (
+                    "Bestimme die Form; mögliche Lesarten angeben."
+                    if language == "de"
+                    else "Analyze the form; give possible readings."
+                )
+            )
+            answer = "\n".join(readings)
+            if ppp:
+                answer = "PPP — " + answer
+        elif objective.recipe == "form_cloze":
+            if objective.context.count("____") != 1 or surface in objective.context:
+                raise ValueError("cloze needs one explicit blank without the answer")
+            required = (
+                ("case", "number", "gender")
+                if ppp or entry.pos != "verb"
+                else ("person", "number", "tense", "mood", "voice")
+            )
+            if any(getattr(target, key) is None for key in required):
+                raise ValueError("complete cloze target features required")
+            prompt = objective.context + "\n" + _features(target, source.deck)
+            cue = source.records[entry.identity].fields[source.deck.fields.lexical_entry_field]
+            if surface in cue or surface in sense.meaning:
+                raise ValueError("cloze cue reveals the target")
+            prompt += "\n" + cue + " — " + sense.meaning
+            answer = surface
+            material = "target-cloze/1"
+        else:
+            raise ValueError("unsupported form recipe")
+    assertions = [
+        _assertion("source", "label", canonical({"entry": entry, "sense": sense}).decode(), evidence),
+        _assertion(
+            "target",
+            "label",
+            canonical(
+                {
+                    "surface": surface,
+                    "features": target,
+                    "source_role": selected.source_role if selected else "derived",
+                    "anchors": anchors,
+                    "rule": derived.rule if derived else None,
+                }
+            ).decode(),
+            evidence,
+        ),
+    ]
+    if objective.recipe.endswith("translation"):
+        assertions.append(
+            _assertion(
+                "translation",
+                "translation",
+                " / ".join(translations),
+                evidence,
+                sense=sense.key,
+                alternatives=translations[1:],
+            )
+        )
+    if derived:
+        answer += "\n" + ("Stamm/Basis: " if language == "de" else "Stem/base: ") + derived.stem
+        assertions.append(_assertion("stem", "segmentation", derived.stem, evidence))
+    if objective.explanation:
+        answer += "\n" + objective.explanation
+        assertions.append(_assertion("explanation", "explanation", objective.explanation, evidence))
+    for index, caveat in enumerate(objective.caveats):
+        answer += "\n" + caveat
+        assertions.append(_assertion(f"caveat-{index}", "explanation", caveat, evidence))
+    return prompt, answer, tuple(assertions), material, entry.identity
+
+
+def _render_phrase(
+    source: Source, objective: PhraseObjective, language: str
+) -> tuple[str, str, tuple[Assertion, ...], str, str]:
+    pattern = next((p for p in source.data.patterns if p.key == objective.selection.pattern), None)
+    if pattern is None or set(pattern.roles) != {b.role for b in objective.selection.bindings}:
+        raise ValueError("unsupported pattern/bindings")
+    forms: dict[str, Form] = {}
+    senses: dict[str, Sense] = {}
+    evidence = pattern.evidence + objective.reference.evidence
+    components = {}
+    for binding in objective.selection.bindings:
+        entry, sense = _entry(source, binding.entry, binding.sense)
+        form = _form(source, entry, binding.form)
+        role = pattern.roles[binding.role]
+        if entry.pos != role.pos or f"{entry.identity}/{sense.key}" not in role.senses:
+            raise ValueError("sense outside pattern compatibility")
+        required = (
+            ("person", "number", "tense", "mood", "voice") if entry.pos == "verb" else ("case", "number", "gender")
+        )
+        if any(getattr(form.features, k) is None for k in required) or (
+            entry.pos == "noun" and form.features.gender != entry.gender
+        ):
+            raise ValueError("incomplete/contradictory constituent morphology")
+        forms[binding.role], senses[binding.role] = form, sense
+        evidence += entry.evidence + sense.evidence + form.role_evidence
+        components[binding.role] = {
+            "identity": asdict(source.identities[entry.identity]),
+            "entry": entry,
+            "sense": sense,
+            "form": form,
+        }
+    issues, unsupported = _construction_issues(pattern, forms, senses)
+    if issues or unsupported:
+        raise ValueError("; ".join(issues))
+    if objective.reference.language != language or not pattern.evidence:
+        raise ValueError("missing matching language/pattern evidence")
+    readings = objective.reference.readings
+    for reading in readings:
+        if set(reading.features) != set(forms) or any(reading.features[r] != f.features for r, f in forms.items()):
+            raise ValueError("contextual reference contradicts bound morphology")
+    order = {
+        "preposition-noun": ("object",),
+        "noun-genitive": ("head", "dependent"),
+        "adjective-noun": ("head", "modifier"),
+        "verb-noun": ("subject", "object", "verb"),
+    }[pattern.family]
+    words = [*pattern.function_words, *(forms[r].text for r in order if r in forms)]
+    text = " ".join(words)
+    assertions = [
+        _assertion(
+            "construction", "label", canonical({"pattern": pattern, "components": components}).decode(), evidence
+        )
+    ]
+    target = objective.target
+    if objective.recipe == "phrase_translation":
+        if target is not None or objective.distinction != "meaning":
+            raise ValueError("translation has no designated target")
+    else:
+        if target not in forms or objective.distinction == "meaning":
+            raise ValueError("explicit recognition/cloze target required")
+        assert target is not None
+        if (
+            objective.distinction != "analysis"
+            and len({getattr(r.features[target], objective.distinction) for r in readings}) != 1
+        ):
+            raise ValueError("ambiguous distinction")
+    prompt, lines = render_phrase_objective(
+        text,
+        {r: f.text for r, f in forms.items()},
+        objective.recipe,
+        target,
+        objective.distinction,
+        objective.reference,
+        source.deck,
+    )
+    if objective.recipe == "phrase_form_cloze":
+        assert target is not None
+        target_binding = next(b for b in objective.selection.bindings if b.role == target)
+        cue = source.records[target_binding.entry].fields[source.deck.fields.lexical_entry_field]
+        if forms[target].text in cue:
+            cue = senses[target].meaning
+        if forms[target].text in cue:
+            raise ValueError("cloze cue reveals the target")
+        prompt += "\n" + cue
+        lines.insert(0, forms[target].text)
+    answer = "\n".join(lines)
+    for index, reading in enumerate(readings):
+        translation = " / ".join(reading.translations)
+        assertions.extend(
+            (
+                _assertion(
+                    f"translation-{index}",
+                    "translation",
+                    translation,
+                    evidence,
+                    sense=canonical({r: s.key for r, s in senses.items()}).decode(),
+                    alternatives=reading.translations[1:],
+                ),
+                _assertion(f"explanation-{index}", "explanation", reading.explanation, evidence),
+                _assertion(f"roles-{index}", "explanation", canonical(reading.contributions).decode(), evidence),
+            )
+        )
+    identity = "phrase-source-v2-" + digest(
+        {b.role: asdict(source.identities[b.entry]) for b in objective.selection.bindings}
+    )
+    return (
+        prompt,
+        answer,
+        tuple(assertions),
+        "target-cloze/1" if objective.recipe.endswith("cloze") else pattern.family + "/1",
+        identity,
+    )
+
+
+def _versions(profile: PipelineProfile) -> Versions:
+    current = implementation_digest()
+    return Versions(
+        producer="grammar-recipes/1:" + current,
+        analyzer=RULE_VERSION,
+        proposal_prompt=None,
+        counter_prompt=None,
+        checker="grammar-card/1:" + current,
+        comparison="structured/1",
+        policy=profile.policy.id,
+        policy_sha256=profile.policy.sha256,
+        proposal_model=None,
+        counter_model=None,
+    )
+
+
+def _automatic_objectives(source: Source, recipes: tuple[str, ...]) -> tuple[FormObjective, ...]:
+    result = []
+    for entry in sorted(source.data.entries, key=lambda e: e.identity):
+        if len(entry.senses) != 1:
+            continue
+        for form in sorted(entry.forms, key=lambda f: f.key):
+            if form.source_role == "supine":
+                continue
+            choices: tuple[
+                Literal["ppp_translation", "ppp_recognition", "form_translation", "form_recognition"], ...
+            ] = (
+                ("ppp_translation", "ppp_recognition")
+                if form.source_role == "ppp"
+                else ("form_translation", "form_recognition")
+            )
+            for recipe in choices:
+                if recipe not in recipes:
+                    continue
+                if form.source_role == "present_infinitive" and recipe == "form_recognition":
+                    continue
+                result.append(
+                    FormObjective(
+                        object_key="form:" + form.key,
+                        entry=entry.identity,
+                        sense=entry.senses[0].key,
+                        form=form.key,
+                        anchors=(),
+                        recipe=recipe,
+                        target=form.features,
+                        distinction="analysis",
+                        context="",
+                        translations=(),
+                        explanation="",
+                        caveats=(),
+                        evidence=entry.evidence,
+                    )
+                )
+    return tuple(result)
+
+
+def current_cards(
+    profile_path: Path, profile: PipelineProfile, objectives: Objectives, root: Path
+) -> tuple[tuple[Rendered, ...], tuple[dict[str, str], ...]]:
+    if (profile.layout.id, profile.layout.version, profile.layout.template_sha256) != ("grammar-v1", 1, LAYOUT_SHA256):
+        raise ValueError("explicit grammar-v1 layout installation/migration required")
+    source = load_source(profile_path, profile)
+    versions = _versions(profile)
+    selected: list[FormObjective | PhraseObjective] = [*objectives.forms, *objectives.phrases]
+    explicit = {(o.entry, o.form, o.recipe) for o in objectives.forms}
+    selected.extend(
+        o for o in _automatic_objectives(source, profile.recipes) if (o.entry, o.form, o.recipe) not in explicit
+    )
+    selected.sort(
+        key=lambda o: (
+            o.entry if isinstance(o, FormObjective) else canonical(o.selection).decode(),
+            o.object_key,
+            o.recipe,
+            digest(o),
+        )
+    )
+    limit = profile.processing.max_source_units
+    rendered = []
+    skipped: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    conflicted: set[tuple[str, str]] = set()
+    processed = 0
+    for objective in selected:
+        if objective.recipe not in profile.recipes:
+            continue
+        if (
+            isinstance(objective, FormObjective)
+            and profile.selection.entries
+            and objective.entry not in profile.selection.entries
+        ):
+            continue
+        if (
+            isinstance(objective, PhraseObjective)
+            and profile.selection.patterns
+            and objective.selection.pattern not in profile.selection.patterns
+        ):
+            continue
+        if (
+            isinstance(objective, PhraseObjective)
+            and profile.selection.entries
+            and any(b.entry not in profile.selection.entries for b in objective.selection.bindings)
+        ):
+            continue
+        if limit is not None and processed >= limit:
+            skipped.append({"object_key": objective.object_key, "reason": "processing_limit"})
+            continue
+        processed += 1
+        try:
+            if isinstance(objective, FormObjective):
+                prompt, answer, assertions, material, identity = _render_form(source, objective, profile.language)
+                source_records = {identity: dict(source.records[identity].fields)}
+                target = (
+                    objective.target.model_dump(exclude_none=True)
+                    if objective.recipe in ("verb_production", "noun_declension", "adjective_declension")
+                    else {"form": objective.form}
+                )
+            else:
+                prompt, answer, assertions, material, identity = _render_phrase(source, objective, profile.language)
+                source_records = {b.entry: dict(source.records[b.entry].fields) for b in objective.selection.bindings}
+                target = {"role": objective.target}
+            key = next(t.slot.semantic_key for t in GRAMMAR_LAYOUT if t.slot.recipe == objective.recipe)
+            exercise_object = "grammar-object-v1-" + digest(
+                {
+                    "object": objective.object_key,
+                    "target": target,
+                    "distinction": objective.distinction,
+                    "language": profile.language,
+                    "senses": objective.sense
+                    if isinstance(objective, FormObjective)
+                    else {b.role: b.sense for b in objective.selection.bindings},
+                    "pattern": objective.selection.pattern if isinstance(objective, PhraseObjective) else None,
+                }
+            )
+            note_id = derive_latinitas_id(identity, exercise_object, source_scope=source.scope)
+            ref = (note_id, key)
+            if ref in seen:
+                conflicted.add(ref)
+                raise ValueError("duplicate semantic exercise")
+            seen.add(ref)
+            evidence = tuple(e for a in assertions for e in a.evidence)
+            assertions += (
+                _assertion("rendered", "label", canonical({"prompt": prompt, "answer": answer}).decode(), evidence),
+            )
+            binding = Binding(
+                source_scope=source.scope,
+                source_identity=identity,
+                source_sha256=digest(source_records),
+                extraction_sha256=digest({"entries": source.data.entries, "patterns": source.data.patterns}),
+                mapping_sha256=digest(source.deck),
+                task_sha256=digest(objective),
+                language=profile.language,
+                config_sha256=digest(
+                    {"language": profile.language, "layout": profile.layout, "registry": source.data.registry_version}
+                ),
+            )
+            cells = tuple(
+                ScopeCell(claim_class=a.kind, recipe=objective.recipe, language=profile.language, material=material)
+                for a in assertions
+            )
+            reader = AcceptanceReader(root, binding, versions, assertions, cells, profile.policy.version)
+            reference = digest({"note": note_id, "card": key})
+            analysis_path = root / "analyses" / (reference + ".json")
+            revision = (
+                hashlib.sha256(analysis_path.read_bytes()).hexdigest() if analysis_path.exists() else "unanalysed"
+            )
+            path = root / "decisions" / reference / (revision + ".json")
+            claims = CardClaims(note_id, key, assertions, (DecisionSource(reader, path),))
+            human_path = path.with_name("unanalysed.json")
+            if human_path.exists():
+                try:
+                    decision, eligibility = reader.read(human_path)
+                    if decision.origin == "human" and eligibility.eligible:
+                        claims = CardClaims(note_id, key, assertions, (DecisionSource(reader, human_path),))
+                except (ValueError, OSError, TypeError):
+                    pass
+            rendered.append(
+                Rendered(objective.recipe, prompt, answer, claims, binding, versions, material, analysis_path)
+            )
+        except (ValueError, KeyError) as exc:
+            skipped.append({"object_key": objective.object_key, "reason": str(exc)})
+    rendered = [r for r in rendered if (r.claims.note_id, r.claims.card_key) not in conflicted]
+    available = {r.recipe for r in rendered}
+    skipped.extend(
+        {"object_key": recipe, "reason": "missing_content_evidence_or_approval"}
+        for recipe in profile.recipes
+        if recipe not in available
+    )
+    return tuple(rendered), tuple(skipped)
+
+
+def adapt(
+    profile_path: Path, objectives_path: Path, root: Path, effective_profile: PipelineProfile | None = None
+) -> None:
+    if root.exists():
+        raise ValueError("choose a new run directory")
+    profile = effective_profile or load_pipeline_profile(profile_path)
+    objectives = Objectives.read_json(objectives_path.read_bytes())
+    # Validate current inputs/targets before persisting, without allocating source identities.
+    current_cards(profile_path, profile, objectives, root)
+    run = Run(
+        format="latinitas-grammar-run",
+        version=1,
+        profile_path=str(profile_path.resolve()),
+        profile=profile,
+        objectives=objectives,
+    )
+    root.mkdir(parents=True)
+    (root / "run.json").write_bytes(canonical(run))
+
+
+def load_run(root: Path) -> Run:
+    return Run.read_json((root / "run.json").read_bytes())
+
+
+def decide(root: Path) -> dict[str, object]:
+    """Project the complete current analysis through T190, not an accepted flag."""
+    run = load_run(root)
+    cards, skipped = current_cards(Path(run.profile_path), run.profile, run.objectives, root)
+    decisions = []
+    errors = []
+    for card in cards:
+        destination = card.claims.decisions[0]
+        path = card.analysis_path
+        if not path.exists() or destination.path.name == "unanalysed.json":
+            continue
+        try:
+            analysis = Analysis.read_json(path.read_bytes())
+            if analysis.binding != card.binding or analysis.versions != card.versions:
+                raise ValueError("stale analysis context")
+            current = {a.id: a for a in analysis.assertions}
+            if any(current.get(a.id) != a for a in card.claims.assertions):
+                raise ValueError("analysis assertion mismatch")
+            decision = destination.reader.decide_automatic(checks=analysis.checks, stage_ids=analysis.stage_ids)
+            if destination.path.exists():
+                stored, _ = destination.reader.read(destination.path)
+                if stored.checks != decision.checks or stored.stage_ids != decision.stage_ids:
+                    raise ValueError("stored decision differs from current analysis")
+            else:
+                save_acceptance(destination.path, decision)
+        except (ValueError, OSError, TypeError) as error:
+            errors.append({"note_id": card.claims.note_id, "card_key": card.claims.card_key, "reason": str(error)})
+            continue
+        decisions.append(
+            {
+                "note_id": card.claims.note_id,
+                "card_key": card.claims.card_key,
+                "state": decision.state,
+                "reason": decision.reason,
+            }
+        )
+    return {"decisions": decisions, "skipped": skipped, "analysis_errors": errors}
+
+
+def preview(
+    root: Path,
+    profile_path: Path | None = None,
+    overrides: RecipeOverrides | None = None,
+    *,
+    effective_profile: PipelineProfile | None = None,
+) -> dict[str, object]:
+    run = load_run(root)
+    path = profile_path or Path(run.profile_path)
+    profile = effective_profile or (load_pipeline_profile(path) if profile_path else run.profile)
+    if overrides is not None:
+        profile = profile.overridden(overrides)
+    cards, skipped = current_cards(path, profile, run.objectives, root)
+    return {
+        "recipes": profile.recipes,
+        "language": profile.language,
+        "preset": profile.preset,
+        "cards": [
+            {
+                "note_id": c.claims.note_id,
+                "card_key": c.claims.card_key,
+                "recipe": c.recipe,
+                "prompt": c.prompt,
+                "answer": c.answer,
+                "state": "accepted" if c.claims.assess().eligible else "withheld",
+                "reason": c.claims.assess().reason,
+                "assertions": [a.model_dump(mode="json") for a in c.claims.assertions],
+            }
+            for c in cards
+        ],
+        "skipped": skipped,
+        "grading": "self-assessment; translations are reference guidance",
+    }
+
+
+def export(root: Path, output: Path) -> dict[str, object]:
+    if output.exists() or output.is_symlink() or output.resolve().is_relative_to(root.resolve()):
+        raise ValueError("choose a new output outside the evidence store")
+    run = load_run(root)
+    source = load_source(Path(run.profile_path), run.profile)
+    cards, skipped = current_cards(Path(run.profile_path), run.profile, run.objectives, root)
+    selected = {(c.note_id, c.card_key) for c in export_cards(tuple(c.claims for c in cards))}
+    eligible = [c for c in cards if (c.claims.note_id, c.claims.card_key) in selected]
+    if run.profile.selection.output_limit is not None:
+        eligible = eligible[: run.profile.selection.output_limit]
+    notes: dict[str, dict[str, str]] = {}
+    for card in eligible:
+        fields = notes.setdefault(card.claims.note_id, dict.fromkeys(COLUMNS, ""))
+        fields["LatinitasID"] = card.claims.note_id
+        fields["CardKey"] = " ".join(filter(None, (fields["CardKey"], card.claims.card_key)))
+        slot = next(t.slot for t in GRAMMAR_LAYOUT if t.slot.recipe == card.recipe)
+        if fields[slot.enabled_field]:
+            raise ValueError("conflicting objectives for one note/template slot")
+        fields[slot.enabled_field] = "1"
+        fields[slot.prompt_field] = render_phrase_text(card.prompt, source.deck)
+        fields[slot.answer_field] = render_phrase_text(card.answer, source.deck)
+    rows = tuple(tuple(fields[column] for column in COLUMNS) for fields in notes.values())
+    # Repeat current-source reconstruction and authority immediately before publication.
+    repeated, _ = current_cards(Path(run.profile_path), run.profile, run.objectives, root)
+    current = {(c.note_id, c.card_key) for c in export_cards(tuple(c.claims for c in repeated))}
+    current_renderings = {
+        (c.claims.note_id, c.claims.card_key): (c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
+        for c in repeated
+    }
+    if any(
+        (c.claims.note_id, c.claims.card_key) not in current
+        or current_renderings.get((c.claims.note_id, c.claims.card_key))
+        != (c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
+        for c in eligible
+    ):
+        raise ValueError("eligibility changed before export")
+    commit_csv_artifacts(
+        ((output, serialize_anki_csv(source.deck.generated_note_type, source.deck.target_deck, COLUMNS, tuple(rows))),)
+    )
+    return {
+        "exported": len(eligible),
+        "notes": len(rows),
+        "output": str(output),
+        "skipped": skipped,
+        "withheld": [
+            {"note_id": c.claims.note_id, "card_key": c.claims.card_key, "reason": c.claims.assess().reason}
+            for c in cards
+            if not c.claims.assess().eligible
+        ],
+        "requires": "explicit grammar-v1 new note type installation and manual import; "
+        "no destination handoff/application",
+    }

@@ -176,6 +176,64 @@ def render_phrase_text(text: str, profile: DeckProfile) -> str:
     return panel + escape(text).replace("\n", "<br>") + "</div>"
 
 
+def render_phrase_objective(
+    text: str,
+    roles: dict[str, str],
+    recipe: str,
+    target: str | None,
+    distinction: str,
+    reference: Reference,
+    profile: DeckProfile,
+) -> tuple[str, list[str]]:
+    """Shared one-objective text renderer; acceptance is the consumer's responsibility."""
+    settings, language_tag = profile.morphology.terminology, profile.language_tag
+    if recipe == "phrase_translation":
+        prompt = text + "\n" + card_text("phrase_translation_prompt", language_tag)
+    else:
+        if target not in roles:
+            raise ValueError("Designated target is not a constituent")
+        assert target is not None
+        if recipe == "phrase_form_cloze":
+            words = text.split(" ")
+            if words.count(roles[target]) != 1:
+                raise ValueError("cloze target must occur exactly once")
+            prompt = " ".join("____" if word == roles[target] else word for word in words)
+            features = reference.readings[0].features[target].model_dump(exclude_none=True)
+            prompt += "\n" + "; ".join(
+                f"{feature_name(f, settings, language_tag)}: "
+                f"{feature_value(f, _CANONICAL[f][v], settings, language_tag)}"
+                for f, v in features.items()
+            )
+        else:
+            label = (
+                card_text("analysis", language_tag)
+                if distinction == "analysis"
+                else feature_name(distinction, settings, language_tag)
+            )
+            prompt = (
+                text
+                + "\n"
+                + card_text(
+                    "phrase_recognition_prompt", language_tag, form=roles[target], target=target, distinction=label
+                )
+            )
+    lines = []
+    for index, reading in enumerate(reference.readings, 1):
+        lines.append(card_text("reading", language_tag, index=index) + " / ".join(reading.translations))
+        if target:
+            features = reading.features[target].model_dump(exclude_none=True)
+            lines.extend(
+                f"{feature_name(f, settings, language_tag)}: "
+                f"{feature_value(f, _CANONICAL[f][v], settings, language_tag)}"
+                for f, v in features.items()
+            )
+            lines.append(reading.contributions[target])
+        lines.append(reading.explanation)
+    if recipe == "phrase_translation":
+        lines.append(card_text("self_assessment", language_tag))
+    return prompt, lines
+
+
 def render_exercise(
     candidate: dict[str, object],
     exercise: Exercise,
@@ -200,25 +258,16 @@ def render_exercise(
         raise ValueError("Designated target is not a constituent of the phrase")
     if any(set(r.features) != set(roles) for r in exercise.reference.readings):
         raise ValueError("Each contextual reading must describe exactly the phrase's constituent roles")
-    settings = profile.morphology.terminology
     language_tag = profile.language_tag
-    prompt = str(candidate["text"]) + "\n"
-    if exercise.recipe == "phrase_translation":
-        prompt += card_text("phrase_translation_prompt", language_tag)
-    else:
-        assert exercise.target is not None
-        distinction = (
-            card_text("analysis", language_tag)
-            if exercise.distinction == "analysis"
-            else feature_name(exercise.distinction, settings, language_tag)
-        )
-        prompt += card_text(
-            "phrase_recognition_prompt",
-            language_tag,
-            form=roles[exercise.target],
-            target=exercise.target,
-            distinction=distinction,
-        )
+    prompt, lines = render_phrase_objective(
+        str(candidate["text"]),
+        roles,
+        exercise.recipe,
+        exercise.target,
+        exercise.distinction,
+        exercise.reference,
+        profile,
+    )
     claim = reference_claim or contextual_claim(candidate, exercise, profile)
     assessment = assess_claim(claim, decision, language_tag=language_tag)
     state = "reviewed" if assessment.status == "accepted" else "proposed" if decision is None else "withheld"
@@ -237,20 +286,8 @@ def render_exercise(
         # Keep an unresolved-distinction reason; a review decision's reason is superseded.
         reason = f"{reason} {mismatch}" if state == "withheld" and reason != assessment.reason else mismatch
         state = "withheld"
-    lines = []
-    for index, reading in enumerate(() if mismatched else exercise.reference.readings, 1):
-        lines.append(card_text("reading", language_tag, index=index) + " / ".join(reading.translations))
-        if exercise.target:
-            features = reading.features[exercise.target].model_dump(exclude_none=True)
-            lines.extend(
-                f"{feature_name(f, settings, language_tag)}: "
-                f"{feature_value(f, _CANONICAL[f][v], settings, language_tag)}"
-                for f, v in features.items()
-            )
-            lines.append(reading.contributions[exercise.target])
-        lines.append(reading.explanation)
-    if exercise.recipe == "phrase_translation" and not mismatched:
-        lines.append(card_text("self_assessment", language_tag))
+    if mismatched:
+        lines = []
     heading = card_text("reviewed_reference" if state == "reviewed" else "proposed_reference", language_tag)
     answer = heading + "\n" + "\n".join(lines)
     if state == "withheld":
