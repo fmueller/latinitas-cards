@@ -2470,8 +2470,10 @@ def test_orchestrated_abandon_cancel_and_tampered_stages(tmp_path: Path, monkeyp
     stage_id = repeated["stage_ids"]["ingest"]
     stage = json.loads((root / "stages" / (stage_id + ".json")).read_text())
     (root / stage["artifact"]).write_text("{}")
-    failed = runner.invoke(app, ["pipeline", "resume", "--run", str(root), "--continue-cancelled", "--json"])
-    assert failed.exit_code != 0 and "digest mismatch" in failed.stdout
+    failed = call("resume", "--run", str(root), "--continue-cancelled")
+    assert failed["status"] == "unknown"
+    assert any(r["stage_id"] == stage_id and "digest mismatch" in r["detail"] for r in failed["invalid_stages"])
+    assert failed["stage_ids"]["ingest"] == stage_id
     assert len(dispatches) == 2
 
 
@@ -2761,3 +2763,76 @@ def test_orchestrated_provider_validates_underlying_prerequisites(tmp_path: Path
             json.loads(r["messages"][1]["content"])["task_sha256"] != damaged.binding.task_sha256
             for r in requests[before:]
         )
+
+
+@pytest.mark.parametrize("reselect", [False, True], ids=["healthy-siblings", "unrelated-selection"])
+def test_orchestrated_corrupt_wrapper_is_branch_local(tmp_path: Path, reselect: bool) -> None:
+    from latinitas_cards.acceptance import load_stage
+    from latinitas_cards.pipeline_consumers import Objectives
+
+    profile, objectives, _ = fixture(tmp_path)
+    with synthetic_pipeline_http() as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        raw = json.loads(profile.read_text())
+        raw["selection"]["entries"] = ["n", "a"]
+        raw["processing"]["max_source_units"] = None
+        write(profile, raw)
+        output = tmp_path / "workflow"
+        prepared = call(
+            "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only"
+        )
+        root = output / "run"
+        cards, _ = current_cards(
+            profile,
+            PipelineProfile.read_json(profile.read_bytes()),
+            Objectives.read_json(objectives.read_bytes()),
+            root,
+        )
+        damaged = next(c for c in cards if c.objective.model_dump().get("entry") == "n")
+        wrapper = next(
+            r
+            for r in prepared["stages"]["ingest"]
+            if (r["note_id"], r["card_key"]) == (damaged.claims.note_id, damaged.claims.card_key)
+        )
+        identity = wrapper["execution_stage_id"]
+        stage = load_stage(root, identity)
+        assert stage.artifact is not None
+        artifact = root / stage.artifact
+        artifact.write_text("{}")
+        record = (root / "stages" / (identity + ".json")).read_bytes()
+        if reselect:
+            raw["selection"]["entries"] = ["v"]
+            write(profile, raw)
+            ingested = call("stage", "ingest", "--run", str(root), "--profile", str(profile))
+            assert ingested["stages"]["ingest"]
+            assert all(
+                load_stage(root, r["execution_stage_id"]).state == "succeeded" for r in ingested["stages"]["ingest"]
+            )
+        analyzed = call("stage", "analyze", "--run", str(root))
+        assert analyzed["invalid_stages"]
+        healthy = [r for r in analyzed["stages"]["analyze"] if r.get("state") != "failed"]
+        assert healthy
+        if not reselect:
+            failed = [r for r in analyzed["stages"]["analyze"] if r.get("state") == "failed"]
+            assert len(failed) == 1 and failed[0]["note_id"] == damaged.claims.note_id
+            assert failed[0]["reason"] == "prerequisite_artifact_invalid"
+        proposed = call("stage", "propose", "--run", str(root))
+        assert len(requests) == len(healthy)
+        if not reselect:
+            blocked = [r for r in proposed["stages"]["propose"] if r["note_id"] == damaged.claims.note_id]
+            assert len(blocked) == 1 and blocked[0]["state"] == "deferred"
+            assert blocked[0]["reason"] == "prerequisite_analyze_incomplete"
+        assert all(
+            json.loads(r["messages"][1]["content"])["task_sha256"] != damaged.binding.task_sha256 for r in requests
+        )
+        assert sum(r.get("state") == "succeeded" for r in proposed["stages"]["propose"]) == len(healthy)
+        resumed = call("resume", "--run", str(root))
+        count = len(requests)
+        assert count == 2 * len(healthy)
+        replay = call("resume", "--run", str(root))
+        assert len(requests) == count
+        assert replay["file_export"] == resumed["file_export"]
+        assert replay["file_export"]["exported"] == 0 and replay["applied_to_anki"] is False
+        assert artifact.read_text() == "{}"
+        assert (root / "stages" / (identity + ".json")).read_bytes() == record
+        assert identity in json.loads((root / "stage-index.json").read_text()).values()

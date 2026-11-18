@@ -6,7 +6,7 @@ priority: medium
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-192-select-full-eligible-output-with-resumable
-updated_at: "2026-11-18T18:42:52Z"
+updated_at: "2026-11-18T21:54:52Z"
 ---
 
 # T-193-orchestrate-inspectable-stages-with-bounded-resume Orchestrate inspectable stages with bounded resume
@@ -41,3 +41,4 @@ cancellation and permission controls. Run the mandatory chain.
 
 - 2026-11-18T18:42:52Z: verification pass
 - 2026-11-18T18:42:52Z: Implemented focused pipeline run/resume/stage/cancel/report/reconcile-call with per-card validated dependencies, durable spending and unknown-call reconciliation, persistent locality, explicit failure/deferred outcomes and existing final acceptance/export authority. Final Ruff, mypy and full pytest chain passed: 3624 passed, 7 existing skips; 17 focused orchestration tests plus public controlled HTTP and offline scenarios passed. Independent high-risk review and dedicated simplification complete with no retained findings; all bounded review rounds used. New production dispatch remains deferred without qualified token accounting. Shipped disabled registry unchanged. Task-local implementation only; outer-loop integrated acceptance and T200/T201 qualification remain separate. No successor started.
+- 2026-11-18T21:54:52Z: verification pass

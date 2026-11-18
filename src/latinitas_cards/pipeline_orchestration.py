@@ -585,10 +585,20 @@ def execute(
         index = decode_json(index_path.read_bytes()) if index_path.exists() else {}
         if not isinstance(index, dict):
             raise ValueError("invalid stage index")
-        for identity in index.values():
-            stage = load_stage(root, str(identity))
-            if stage.state == "succeeded":
-                stage_artifact(root, stage)
+        invalid_stages: dict[str, str] = {}
+        for key, identity in index.items():
+            try:
+                stage = load_stage(root, str(identity))
+                if stage.state == "succeeded":
+                    stage_artifact(root, stage)
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                invalid_stages[key] = str(error)
+        report["invalid_stages"] = [
+            {"index_key": key, "stage_id": index[key], "state": "failed", "detail": detail}
+            for key, detail in invalid_stages.items()
+        ]
+        if invalid_stages and not cancellation.is_set():
+            report["status"] = "failed"
         llm_off = offline or not any(provider.endpoints.values())
         disclosures: list[object] = []
         tasks: dict[tuple[str, str], tuple[ModelTask, tuple[Scope, ...]]] = {}
@@ -617,10 +627,17 @@ def execute(
                         break
                     required = PREREQUISITES.get(name)
                     problem = None
+                    invalid_current = False
                     try:
-                        previous = _prerequisite(root, index, card, required) if required else None
+                        _prerequisite(root, index, card, name)
                     except (OSError, ValueError, KeyError, TypeError) as error:
-                        previous, problem = None, str(error)
+                        invalid_current, problem = True, str(error)
+                    previous = None
+                    if problem is None:
+                        try:
+                            previous = _prerequisite(root, index, card, required) if required else None
+                        except (OSError, ValueError, KeyError, TypeError) as error:
+                            problem = str(error)
                     if problem is not None:
                         row: dict[str, object] = {
                             "state": "failed",
@@ -697,7 +714,10 @@ def execute(
                         binding=card.binding,
                         prerequisites=prerequisites,
                     )
-                    index[_card_key(card, name)] = execution_stage
+                    # Retain the damaged commitment: replay cannot replace it
+                    # with a failure wrapper and then treat the branch as fresh.
+                    if not invalid_current:
+                        index[_card_key(card, name)] = execution_stage
                     if load_stage(root, execution_stage).state == "succeeded":
                         children.append(execution_stage)
                     # Persist per-card progress before processing another card.
@@ -728,7 +748,8 @@ def execute(
             # Decision/selection/export validate their independent proof and
             # eligibility stores directly, so unrelated provider failures do
             # not bar valid human/library-supported cards.
-            index[name] = _summary(root, state, source, profile, name, rows, prerequisites=tuple(children))
+            if name not in invalid_stages:
+                index[name] = _summary(root, state, source, profile, name, rows, prerequisites=tuple(children))
             _atomic(index_path, canonical(index))
             for row in rows:
                 status = str(row.get("state", "completed"))
