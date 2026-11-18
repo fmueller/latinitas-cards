@@ -6,10 +6,19 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from card_acceptance_test import install_policy
 
-from latinitas_cards.acceptance import load_acceptance, load_stage, reusable_stage, save_acceptance, stage_artifact
-from latinitas_cards.acceptance_policy import BOOTSTRAP
+from latinitas_cards.acceptance import (
+    AcceptanceReader,
+    load_acceptance,
+    load_stage,
+    reusable_stage,
+    save_acceptance,
+    stage_artifact,
+)
+from latinitas_cards.acceptance_policy import BOOTSTRAP, ScopeCell
 from latinitas_cards.acceptance_records import Assertion, Versions, digest
+from latinitas_cards.card_acceptance import CardClaims, DecisionSource, export_cards, preview_cards
 from latinitas_cards.claim_review import Evidence
 from latinitas_cards.deck_evidence import DeckAnalysis, DeckTask, SourceCell, analyze_construction, analyze_deck
 from latinitas_cards.latin_library import LibraryReading, LocalStanza, ProcessingUnavailable
@@ -113,6 +122,65 @@ def test_government_disambiguates_without_blanket_source_authority(tmp_path: Pat
     assert report["library_version"] == "synthetic/1"
     assert report["source"]["meaning"] == "Freund"
     assert report["checks"][0]["result"] == "pass"
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_deck_evidence_feeds_independent_card_decisions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, enabled: bool
+) -> None:
+    explanation = Assertion(
+        id="explanation",
+        kind="explanation",
+        value="This form has an independently unsupported derivation.",
+        selected_sense=None,
+        alternatives=(),
+        evidence=(Evidence("source", "amicus", "1", "amicō"),),
+    )
+    versions = install_policy(monkeypatch, VERSIONS) if enabled else VERSIONS
+    analysis = analyze_deck(
+        tmp_path,
+        record=source(),
+        profile=PROFILE,
+        source_scope="deck",
+        task=task(extra_assertions=(explanation,)),
+        versions=versions,
+        library=Library(),
+    )
+    assert [c.result for c in analysis.checks] == ["pass", "pass", "not_applicable"]
+    decision = analysis.decision
+    cards = []
+    for key, assertions in (
+        ("recognition", decision.assertions[:2]),
+        ("label-only", decision.assertions[:1]),
+        ("explanation", decision.assertions),
+    ):
+        cells = tuple(
+            ScopeCell(claim_class=a.kind, recipe="form_recognition", language="de", material="source-form/1")
+            for a in assertions
+        )
+        reader = AcceptanceReader(tmp_path, decision.binding, versions, assertions, cells)
+        decided = reader.decide_automatic(checks=analysis.checks, stage_ids=decision.stage_ids)
+        path = tmp_path / f"{key}-decision.json"
+        save_acceptance(path, decided)
+        cards.append(CardClaims("source-note", key, assertions, (DecisionSource(reader, path),)))
+    assert decision.state == "withheld"  # An aggregate is never reinterpreted as accepted.
+    assert [p["state"] for p in preview_cards(cards)] == (
+        ["accepted", "accepted", "withheld"] if enabled else ["withheld"] * 3
+    )
+    assert [c.card_key for c in export_cards(cards)] == (["recognition", "label-only"] if enabled else [])
+    if not enabled:
+        assert {p["reason"] for p in preview_cards(cards)} == {"policy_not_enabled"}
+    else:
+        # An unrelated report is not a prerequisite of these card checks.
+        assert analysis.stage.artifact is not None
+        (tmp_path / analysis.stage.artifact).write_text("corrupt unrelated report")
+        assert [c.card_key for c in export_cards(cards)] == ["recognition", "label-only"]
+        # The shared source really is a prerequisite, even though the fresh
+        # decision's top-level stage IDs contain only its matching check stages.
+        ingest = load_stage(tmp_path, decision.stage_ids[0])
+        assert ingest.artifact is not None
+        (tmp_path / ingest.artifact).write_text("corrupt required source")
+        assert export_cards(cards) == ()
 
 
 @pytest.mark.parametrize(

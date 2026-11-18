@@ -1,13 +1,13 @@
 ---
 id: T-190-gate-complete-card-assertions-on-accepted-evidence
 title: Gate complete card assertions on accepted evidence
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#shared-evidence-and-automatic-acceptance
 dependencies:
     - T-188-check-mapped-deck-evidence-with-latin-rules-and
     - T-189-add-explicit-providers-and-blind-linguistic
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-18T07:08:44Z"
 ---
 
 # T-190-gate-complete-card-assertions-on-accepted-evidence Gate complete card assertions on accepted evidence
@@ -46,3 +46,33 @@ policies must not ship enabled or count as linguistic evidence. Run the full man
 validation chain.
 
 ## Implementation Notes
+
+- Added the opt-in `card_acceptance` library boundary: current full assertion
+  matching, complete decision coverage, human/automatic/mixed provenance,
+  independent sibling selection and optional unresolved inspection. Inspection
+  grants no approval and unresolved cards stay outside learning selection.
+- `AcceptanceReader.decide_automatic` consumes the complete source-analysis check
+  set to create fresh card-specific automatic decisions. Every intersecting check
+  remains relevant; checks spanning omitted assertions cannot be sliced. Original
+  check envelopes and recursive prerequisite commitments remain mandatory.
+  Stored aggregate decisions and human attestations remain atomic.
+- Independent high-risk review reproduced shared-analysis over-withholding. The
+  actual deck-analysis regression now exports supported recognition/label siblings
+  under an isolated synthetic policy while withholding an unsupported explanation.
+  Production-disabled authority withholds all automatic cards. Unrelated report
+  corruption does not veto supported siblings; required source corruption does.
+- Synthetic fixtures cover every assertion class, matching-but-unsupported answers,
+  relevant objections, missing/ambiguous artifacts, stale bindings, old-batch
+  withdrawal and human-sibling survival. They are engineering tests, not linguistic
+  evidence. Production policy records remain unchanged with no enabled scope.
+- Consumers must supply current bindings/assertions/versions and enumerate every
+  rendered linguistic claim, with the complete analysis check set. T-191–T-193 own
+  concrete recipe/rendering/orchestration writes and repeat validation at output
+  and destination handoff. Retained readers do not rediscover changed source data.
+- Generic curated attestations are denied rather than substituted for rule,
+  rendered-card or language-specific mnemonic fingerprint approvals. T-196 owns
+  that dedicated adapter; rule-only content does not gain a mnemonic requirement.
+  Model-method acceptance is not implemented by this library-only route. T-200
+  empirical/enablement and T-201 real-model/native gates remain unsatisfied.
+- 2026-11-18T07:08:44Z: verification pass
+- 2026-11-18T07:08:44Z: Task-local library-only implementation verified after independent high-risk review and final Ruff/mypy/pytest gate (3514 passed, 7 skipped). Production policy remains disabled; no empirical, integrated or release acceptance claimed. No successor selected.

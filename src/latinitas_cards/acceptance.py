@@ -255,6 +255,10 @@ def assess(
                 c.language != binding.language for c in cells
             ):
                 return result("unsupported_policy_scope")
+        if any(c.material == "curated/1" for c in cells):
+            # Generic claim attestation is not a rule, rendered-card or
+            # language-specific mnemonic fingerprint approval.
+            return result("human_approval_required")
         if decision.state != "accepted":
             return result(decision.reason)
         stages = {identity: load_stage(root, identity) for identity in decision.stage_ids}
@@ -282,7 +286,7 @@ def assess(
         covered: set[str] = set()
         for check in decision.checks:
             if check.method not in ("rule", "library", "human"):
-                # T190 supplies blind-request and post-solve comparison validation.
+                # This library-only route cannot authorize model-method checks.
                 return result("unrepresentable_claim")
             if check.method == "human" and decision.origin != "human":
                 return result("origin_mismatch")
@@ -326,6 +330,32 @@ class AcceptanceReader:
     assertions: tuple[Assertion, ...]
     cells: tuple[ScopeCell, ...]
     policy_revision: str = "1"
+
+    def decide_automatic(self, *, checks: tuple[Check, ...], stage_ids: tuple[str, ...]) -> Acceptance:
+        """Evaluate an analysis for this card without inheriting an aggregate decision.
+
+        Callers supply current card assertions/context and the complete analysis
+        check set. Retain every check affecting those assertions. A cross-assertion
+        check cannot be trimmed; human attestations are never projected here.
+        """
+        required = {a.id for a in self.assertions}
+        relevant = tuple(c for c in checks if required.intersection(c.assertion_ids))
+        if any(not set(c.assertion_ids) <= required for c in relevant):
+            return self.decide(checks=(), origin="automatic", human=None, stage_ids=())
+        inputs = {c.input_sha256 for c in relevant}
+        selected = []
+        for identity in stage_ids:
+            try:
+                stage = load_stage(self.root, identity)
+            except (ValueError, OSError):
+                # Missing required proofs fail coverage/artifact validation below;
+                # an unrelated analysis branch is not this card's prerequisite.
+                continue
+            if stage.input_sha256 in inputs:
+                selected.append(identity)
+        # assess/reusable_stage validates each selected proof's full recursive
+        # prerequisite closure, even when it is absent from this top-level list.
+        return self.decide(checks=relevant, origin="automatic", human=None, stage_ids=tuple(selected))
 
     def decide(
         self,
