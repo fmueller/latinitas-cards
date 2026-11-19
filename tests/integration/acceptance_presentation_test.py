@@ -2,8 +2,11 @@
 
 import csv
 import hashlib
+import io
 import json
 import sqlite3
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -486,3 +489,34 @@ def test_combined_opt_in_profiles_remain_independently_confirmed(
         str(tmp_path / "production.csv"),
     )
     assert result["exported"] == 1 and result["production"]["exported"] > 0
+
+
+def test_disposable_example_preserves_user_tags_and_single_field_update(tmp_path: Path) -> None:
+    repo = Path(__file__).resolve().parents[2]
+    output = tmp_path / "example"
+    subprocess.run([sys.executable, "docs/examples/v050_disposable.py", str(output)], cwd=repo, check=True)
+    for language in ("de", "en"):
+        controls = []
+        for name in ("initial", "update", "omission"):
+            lines = (output / language / f"display-{name}.csv").read_text().splitlines()
+            columns = next(csv.reader([next(line[9:] for line in lines if line.startswith("#columns:"))]))
+            records = csv.reader(io.StringIO("\n".join(line for line in lines if not line.startswith("#"))))
+            controls.append([dict(zip(columns, row, strict=True)) for row in records])
+        initial, updated, omitted = controls
+        assert [row["LatinitasID"] for row in initial] == [
+            f"T199-display-{language}-mixed",
+            f"T199-display-{language}-human",
+        ]
+        for row in initial:
+            assert {"User::Keep", "SourceCase"} <= set(row["Tags"].split())
+            assert "Personal Notes" not in row
+        assert sum(row.get(f"Grammar{i}Enabled") == "1" for row in initial for i in range(12, 21)) == 3
+        assert "latinitas::acceptance::mixed" in initial[0]["Tags"].split()
+        assert [card["acceptance"] for card in json.loads(initial[0]["Acceptance Data"])["cards"]] == [
+            "human",
+            "automatic",
+        ]
+        expected = [dict(row) for row in initial]
+        expected[0]["Grammar12Answer"] = "Controlled correction: " + initial[0]["Grammar12Answer"]
+        assert updated == expected
+        assert omitted == initial[1:]

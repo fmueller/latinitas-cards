@@ -16,6 +16,12 @@ repeatable UTF-8 Anki text-import CSVs without modifying source decks or texts.
 > Start with the [corpus-first walkthrough](https://github.com/fmueller/latinitas-cards/blob/main/docs/corpus-first-cards.md)
 > or the [deck-first quick start](#quick-start).
 
+For unreleased v0.5.0 work, see the [development workflows](https://github.com/fmueller/latinitas-cards/blob/main/docs/v0.5.0-workflows.md)
+for disposable offline examples, resumable stages, exact curated approvals and
+CSV/manual handoffs, and the [planned Linux Desktop kit](https://github.com/fmueller/latinitas-cards/blob/main/docs/native-v050-acceptance.md).
+Automatic learning export remains disabled; synthetic engineering checks are not
+linguistic, model or native acceptance. Configuration is not hosted permission.
+
 ## Workflow
 
 The **deck-first** workflow reuses your existing vocabulary:

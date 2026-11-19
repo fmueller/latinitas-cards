@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-19T09:13:30Z"
+updated_at: "2026-11-19T10:40:07Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -10,7 +10,7 @@ blockers:
     - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
 next_action: Resolve blocker on T-207-approve-deck-workflow-contract-and-calibration
-last_verification_result: pass for T-198-present-acceptance-evidence-and-morphology-without at 2026-11-19T09:12:59Z
+last_verification_result: pass for T-199-document-v0-5-0-workflows-and-reconcile-cli at 2026-11-19T10:39:53Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -37,7 +37,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-198-present-acceptance-evidence-and-morphology-without at 2026-11-19T09:12:59Z
+- pass for T-199-document-v0-5-0-workflows-and-reconcile-cli at 2026-11-19T10:39:53Z
 
 ## Next Action
 
@@ -53,8 +53,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 19
+- todo: 18
 - in_progress: 0
-- completed: 203
+- completed: 204
 - blocked: 2
 - cancelled: 0

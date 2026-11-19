@@ -38,7 +38,9 @@ def test_documented_tei_elements_match_recognized_subset() -> None:
 
 
 def test_registry_matches_documentation() -> None:
-    rows = (ROOT / "docs/agent-cli-contract.md").read_text().splitlines()
+    document = (ROOT / "docs/agent-cli-contract.md").read_text()
+    table = document.split("## Closed diagnostic registry\n", 1)[1].split("\n## ", 1)[0]
+    rows = table.splitlines()
     documented = {row.split("|")[1].strip(" `"): int(row.split("|")[2]) for row in rows if row.startswith("| `")}
     assert set(Code) == set(DIAGNOSTIC_CODES) == set(documented)
     assert {code: entry.exit_code for code, entry in DIAGNOSTIC_CODES.items()} == documented

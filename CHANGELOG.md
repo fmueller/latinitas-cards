@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- A disposable offline walkthrough covers resumable grammar runs, curated review
+  and CSV handoffs; a separate Linux Desktop acceptance kit lists unexecuted steps.
 - Opt-in `acceptance-1` answers show per-card review origin and collapsible evidence
   in German/English; migration proposals never replace installed templates.
 - `curated` previews German/English rule-application, formation, component and opt-in

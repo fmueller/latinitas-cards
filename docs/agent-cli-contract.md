@@ -452,3 +452,66 @@ Structured hashes use UTF-8 canonical JSON (sorted keys, Unicode preserved,
 compact separators, no floats) and a `sha256:` prefix. Regenerate registered
 schemas with `uv run python scripts/export-json-schemas.py`; tests check drift
 and exercise the exporter in a temporary directory, never rewriting committed files.
+
+## v050 command and schema boundaries
+
+The preceding envelope/exit/diagnostic registry belongs to the envelope commands,
+not every command added after v0.3. `pipeline` and `curated` do **not** emit
+`latinitas-cli-result`. Do not parse their success or outcome as that envelope.
+See [development workflows](v0.5.0-workflows.md) for runnable inputs and
+[the approved strict contracts](v0.5.0-contract-proposal.md) for record fields.
+
+| Surface | Actual interface |
+| --- | --- |
+| `pipeline validate/adapt/preview/export/handoff` | `--json` selects JSON; default is readable key/value output. Callback input/filesystem failures emit `diagnostics` with `code`, `item`, `message`, exit 1. There is no `ok`/`exit_code` envelope. |
+| `pipeline run/resume/stage/cancel/reconcile-call` | Same JSON option; execution problems can be reported inside a successful callback. Inspect status, stages, processing outcomes and `complete`, not exit 0 alone. |
+| `pipeline report` | Reads saved execution JSON; `outcome_report` wraps `schema_version: 1`, strict `record` and `details`. Readable mode groups reasons. Historical snapshots without outcomes stay legacy, not invented v1 records. |
+| `pipeline migration-plan/confirm-layout` | Same JSON option; migration is data, confirmation an explicit installation attestation, neither an Anki write or verification. |
+| `curated validate` | Text validation summary; not export authorization. |
+| `curated preview/export` | JSON on stdout without `--json`; failures use escaped `Curated input error:` on stderr and exit 1, not structured envelope diagnostics. |
+| `curated review` | Text without `--plan` (intake decisions only); JSON with `--plan` (rendered decisions supported). Same callback error behavior as preview/export. |
+| Click/Typer usage | Parse errors exit 2 before callbacks; do not expect JSON. |
+
+Authoritative version sources (package version is independent of document version):
+
+| Data | Version and source |
+| --- | --- |
+| Deck profile | Existing `DeckProfile` in `profile.py`; do not upgrade a historical profile implicitly. |
+| Pipeline profile | `latinitas-pipeline-profile` v1, `pipeline_profile.PipelineProfile`; hashes bind deck profile and input bytes, resolved recipes must match preset/overrides. |
+| Phrase inputs | Legacy v1 unchanged; explicit v2 adds binding, role evidence and `v050-support/1`, `phrase_inputs.PhraseInputV2`. |
+| Explicit objectives | `latinitas-grammar-objectives` v1, `pipeline_consumers.Objectives`; not approval or provider response. |
+| Acceptance/stages | `latinitas-acceptance`/`latinitas-stage` v1, `acceptance_records.Acceptance`/`Stage`; binding and version validity precede semantic eligibility. |
+| Policy/support | `acceptance_registry.POLICY_REGISTRY`, `AUTHORIZATION_HISTORY`, `SUPPORT_REGISTRY`; installed policy `v050-disabled` revision `1`, empty scope; support `v050-support/1`. No run file registers authority. |
+| Report | `latinitas-pipeline-report` v1, `pipeline_reporting.PipelineReport`; wrapper `Reporting` has schema_version 1, not another CLI envelope. |
+| Receipt | `latinitas-export-receipt` v1, `export_receipts.ExportReceipt`; selection receipts are separate `pipeline_batches.Receipt` v1. Card identity is `(note_id, card_key)`, not card_key alone. |
+| Curated | `latinitas-curated`, `latinitas-curated-permission`, `latinitas-curated-approval`, `latinitas-curated-recipes`, all v1; models `curated.CuratedInput/Permission/Approval`, `curated_cards.RecipePlan`. |
+| Layout | Grammar defaults to `grammar-v1` v1; curated defaults to `curated-v1` (`curated_cards.TEMPLATE_SHA256`). Both support explicit family-specific `acceptance-1` v1 with exact digest; this is not a profile schema upgrade or installed template migration. |
+
+`json_schemas.SCHEMAS` is the authoritative **published schema registry**. Its
+exporter currently includes the curated formats but not the pipeline profile,
+acceptance, stages, objectives, report or receipt models. Obtain those schemas
+from the named model's `model_json_schema()`, not a guessed committed filename.
+The disposable runner writes both registry schemas and the profile/report/wrapper
+schemas to its own `schemas/` directory without extending the published registry.
+Validate wire JSON through `read_json`/`model_validate_json`; strict Python models
+use tuples internally, while JSON arrays remain arrays on the wire. Schemas alone
+cannot validate binding freshness, evidence applicability, permission or authority.
+
+Unlike the envelope-era `sha256:` hashes described above, the v050 strict records
+use **bare 64-character lowercase SHA-256 hex** (`acceptance_records.Hash`). Their
+structured digest is canonical UTF-8 JSON with sorted keys and preserved Unicode;
+file references hash actual bytes. Do not add/remove a prefix across formats.
+
+`cli_contract.Code` remains the closed envelope diagnostic registry; it is not an
+outcome-reason registry. `pipeline_reporting.OutcomeClass` has exactly
+`not_generated`, `deferred`, `withheld`, `processing_failed`,
+`accepted_unselected`, `exported`. `StageState` has `pending`, `running`,
+`succeeded`, `failed`, `cancelled`, `unknown`, `deferred`. Outcome `reason` is a
+nonempty string, **not a closed enum**: preserve unknown reasons and associated
+IDs instead of silently mapping them to rejection. For example
+`missing_token_bound` is deferred processing, `policy_not_enabled` is withholding,
+and `acceptance_or_rendering_changed` is an installed-material handoff reason.
+`exported` means selected into a receipt-backed CSV, never imported into Anki.
+An optional processing failure may coexist with independent eligible authority;
+inspect `details.processing_outcomes` even when cards exported. Read-only reports
+do not reset budgets, renew approval or perform native resolution.

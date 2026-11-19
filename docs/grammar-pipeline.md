@@ -1,5 +1,9 @@
 # Bounded grammar cards
 
+For a runnable disposable setup, stage/run/resume commands and the distinction
+between processing limits and output batches, see [v0.5.0 workflows](v0.5.0-workflows.md).
+The [native kit](native-v050-acceptance.md) is planned acceptance, not an executed result.
+
 `pipeline` is an opt-in consumer of the shared evidence store. Preview/export and
 reporting are offline; orchestration requires explicitly configured providers and
 qualified token accounting before dispatch. No production deployment is qualified
