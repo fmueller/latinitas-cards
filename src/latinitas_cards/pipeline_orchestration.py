@@ -49,6 +49,7 @@ from .pipeline_consumers import (
     _form,
     _versions,
     current_cards,
+    form_rule_checks,
     load_run,
     load_source,
     preview,
@@ -82,6 +83,8 @@ STAGES: tuple[StageName, ...] = (
 PREREQUISITES: dict[StageName, StageName] = {"analyze": "ingest", "propose": "analyze", "counter_check": "propose"}
 COVERAGE = (
     "Only supplied, confirmed source cells and finite rule recipes are enumerated. "
+    "Automatic rule checks verify mapped present_1s role consistency only, not independent "
+    "paradigm applicability or generated-cell correctness. "
     "Library morphology is not full rendered-clause/translation entailment. Unsupported assertions remain withheld; "
     "model agreement grants no authority. Human reviews remain separately bound; curated approvals require T196."
 )
@@ -359,21 +362,25 @@ def _analyze(root: Path, state: Execution, card: Rendered, source: Source) -> di
         except ValueError:
             library_state = "unsupported_library_task"
     stages, checks = [], []
-    for assertion in card.claims.assertions:
-        envelope = check_envelope(card.binding, card.versions, "rule", (assertion,), reference_constraints=constraints)
+    for assertion, rule_check in zip(card.claims.assertions, form_rule_checks(source, card), strict=True):
+        evidence = tuple(dict.fromkeys((*rule_check.evidence, *constraints)))
+        envelope = check_envelope(card.binding, card.versions, "rule", (assertion,), reference_constraints=evidence)
         stages.append(_stage(root, state, card, "analyze", envelope))
+        check_result, objections = rule_check.result, rule_check.objections
+        if library_state == "unavailable":
+            check_result, objections = "unresolved", ("processing_unavailable",)
+        elif check_result == "pass" and library_state == "contradiction":
+            check_result, objections = "fail", ("library_contradiction",)
         checks.append(
             Check(
                 id=assertion.id,
                 assertion_ids=(assertion.id,),
                 method="rule",
                 version=card.versions.checker,
-                result="not_applicable",
-                evidence=constraints,
+                result=check_result,
+                evidence=evidence,
                 alternatives=(),
-                objections=(
-                    "processing_unavailable" if library_state == "unavailable" else "requires_separate_assertion_check",
-                ),
+                objections=objections,
                 input_sha256=digest(envelope),
             )
         )

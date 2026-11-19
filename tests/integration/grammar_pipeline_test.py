@@ -2293,6 +2293,316 @@ def test_processing_ceiling_uses_resolved_recipe_order(tmp_path: Path) -> None:
     assert [c["recipe"] for c in report["cards"]] == ["form_translation"]
 
 
+def test_source_bound_rule_producer_keeps_production_policy_disabled(tmp_path: Path) -> None:
+    """Disposable source mappings exercise rules, not empirical qualification."""
+    from latinitas_cards.acceptance import load_stage, stage_artifact
+    from latinitas_cards.pipeline_consumers import _analysis_decision, load_run
+
+    profile, objectives, _ = fixture(tmp_path, preset=None)
+    settings = json.loads(profile.read_text())
+    overrides = RecipeOverrides(include=("form_recognition",), exclude=())
+    settings.update(recipe_overrides=overrides, recipes=resolve_recipes(None, overrides))
+    write(profile, settings)
+    raw = json.loads(objectives.read_text())
+    template = raw["forms"][0]
+    raw["forms"] = [
+        {**template, "recipe": recipe, "form": "present", "anchors": [], "target": {}}
+        for recipe in ("form_recognition", "form_translation")
+    ]
+    raw["forms"][0]["explanation"] = "Every Latin verb is regular."
+    write(objectives, raw)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    cards, _ = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)
+    selected = [c for c in cards if c.objective.object_key == "production"]
+    assert len(selected) == 2
+    for card in selected:
+        analysis = Analysis.read_json(card.analysis_path.read_bytes())
+        checks = {c.assertion_ids: c for c in analysis.checks}
+        target = checks[("target",)]
+        assert target.result == "pass"
+        assert {e.source for e in target.evidence} >= {
+            "confirmed-deck-mapping",
+            "latinitas-principal-part-rules",
+        }
+        assert any("amō" in e.text and "present_1s" in e.text for e in target.evidence)
+        assert checks[("source",)].result != "pass"  # Includes unverified sense/valency claims.
+        if ("translation",) in checks:
+            assert checks[("translation",)].result == "not_applicable"
+        if ("explanation",) in checks:
+            assert checks[("explanation",)].result == "not_applicable"
+        assert set(a.id for a in analysis.assertions) == {i for c in analysis.checks for i in c.assertion_ids}
+        envelopes = [stage_artifact(root, load_stage(root, identity)) for identity in analysis.stage_ids]
+        for assertion, check in zip(analysis.assertions, analysis.checks, strict=True):
+            envelope = check_envelope(
+                analysis.binding, analysis.versions, "rule", (assertion,), reference_constraints=check.evidence
+            )
+            assert json.loads(canonical(envelope)) in envelopes and digest(envelope) == check.input_sha256
+        assert _analysis_decision(card).reason == "policy_not_enabled"
+    before = {p: p.read_bytes() for p in [*(root / "stages").glob("*.json"), *(c.analysis_path for c in selected)]}
+    call("resume", "--run", str(root))
+    assert all(p.read_bytes() == content for p, content in before.items())
+    assert report["provider_calls"] == []
+    assert report["file_export"]["exported"] == 0
+    assert call("export", "--run", str(root), "--output", str(tmp_path / "denied"))["exported"] == 0
+
+
+@pytest.mark.parametrize("mutation", ["wrong-feature", "wrong-form", "extra-clause", "extra-alternative"])
+def test_source_bound_rule_rejects_candidate_claims(tmp_path: Path, mutation: str) -> None:
+    from dataclasses import replace
+
+    from latinitas_cards.acceptance import load_stage, stage_artifact
+    from latinitas_cards.pipeline_consumers import load_run, load_source
+    from latinitas_cards.pipeline_orchestration import _analyze, load_execution
+
+    profile, objectives, _ = fixture(tmp_path, preset=None)
+    raw = json.loads(objectives.read_text())
+    raw["forms"] = [{**raw["forms"][0], "recipe": "form_translation", "form": "present", "anchors": []}]
+    write(objectives, raw)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    parsed = PipelineProfile.read_json(profile.read_bytes())
+    card = next(
+        c
+        for c in current_cards(profile, parsed, load_run(root).objectives, root)[0]
+        if c.objective.object_key == "production"
+    )
+    target = next(a for a in card.claims.assertions if a.id == "target")
+    value = json.loads(target.value)
+    if mutation == "wrong-feature":
+        value["features"]["person"] = "3"
+    elif mutation == "wrong-form":
+        value["surface"] = "amant"
+    elif mutation == "extra-clause":
+        value["explanation"] = "All verbs are regular."
+    changed = target.model_copy(
+        update={
+            "value": canonical(value).decode(),
+            "alternatives": ("amant",) if mutation == "extra-alternative" else (),
+        }
+    )
+    claims = replace(card.claims, assertions=tuple(changed if a.id == "target" else a for a in card.claims.assertions))
+    candidate = replace(card, claims=claims, analysis_path=card.analysis_path.with_name(mutation + ".json"))
+    _analyze(root, load_execution(root), candidate, load_source(profile, parsed))
+    analysis = Analysis.read_json(candidate.analysis_path.read_bytes())
+    check = next(c for c in analysis.checks if c.assertion_ids == ("target",))
+    assert check.result == "fail"
+    assert check.objections == ("source_bound_target_contradiction",)
+    envelopes = [stage_artifact(root, load_stage(root, identity)) for identity in analysis.stage_ids]
+    assert any(digest(envelope) == check.input_sha256 for envelope in envelopes)
+
+
+def test_source_bound_rule_does_not_infer_exception_applicability(tmp_path: Path) -> None:
+    """Even deliberately regular-looking exceptional anchors are not authority."""
+    from latinitas_cards.pipeline_consumers import load_run
+
+    profile, objectives, _ = fixture(tmp_path)
+    deck = tmp_path / "deck.csv"
+    deck.write_text(deck.read_text().replace("amō", "dō").replace("amāre", "dāre"))
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    for entry in data["entries"]:
+        for form in entry["forms"]:
+            form["text"] = form["text"].replace("amō", "dō").replace("amāre", "dāre")
+    rebind(profile, data)
+    raw = json.loads(objectives.read_text())
+    raw["forms"] = [raw["forms"][0]]
+    raw["forms"][0]["target"].update(person="1", number="plural")
+    write(objectives, raw)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    card = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)[0][
+        0
+    ]
+    assert "dāmus" in card.answer  # The proposal mechanism alone overgeneralizes.
+    analysis = Analysis.read_json(card.analysis_path.read_bytes())
+    target = next(c for c in analysis.checks if c.assertion_ids == ("target",))
+    assert target.result == "not_applicable"
+    assert target.objections == ("generated_cell_requires_independent_applicability_evidence",)
+    assert all(c.result != "pass" for c in analysis.checks)
+    assert report["file_export"]["exported"] == 0
+
+
+@pytest.mark.parametrize("damage", ["source", "checker", "analyzer", "artifact"])
+def test_source_bound_rule_rejects_stale_proofs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str) -> None:
+    from latinitas_cards import pipeline_consumers as consumers
+    from latinitas_cards.acceptance import load_stage
+
+    profile, objectives, _ = fixture(tmp_path, preset=None)
+    settings = json.loads(profile.read_text())
+    settings["selection"]["entries"] = ["v"]
+    write(profile, settings)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    run = consumers.load_run(root)
+    original = next(
+        c for c in current_cards(profile, run.profile, run.objectives, root)[0] if c.prompt.startswith("amō\n")
+    )
+    proof = Analysis.read_json(original.analysis_path.read_bytes())
+    assert next(c for c in proof.checks if c.assertion_ids == ("target",)).result == "pass"
+    if damage == "artifact":
+        stage = load_stage(root, proof.stage_ids[1])
+        assert stage.artifact is not None
+        (root / stage.artifact).write_text("{}")
+        replay = call("stage", "analyze", "--run", str(root))
+        assert any(row.get("state") == "failed" for row in replay["stages"]["analyze"])
+    else:
+        if damage == "source":
+            deck = tmp_path / "deck.csv"
+            deck.write_text(deck.read_text().replace("lieben", "lieben (changed)"))
+            rebind(profile, json.loads((tmp_path / "inputs.json").read_text()))
+        elif damage == "checker":
+            monkeypatch.setattr(consumers, "implementation_digest", lambda: digest("changed executable bytes"))
+        else:
+            monkeypatch.setattr(consumers, "RULE_VERSION", "changed-analyzer/2")
+        parsed = PipelineProfile.read_json(profile.read_bytes())
+        current = next(
+            c for c in current_cards(profile, parsed, run.objectives, root)[0] if c.prompt.startswith("amō\n")
+        )
+        assert current.binding != original.binding or current.versions != original.versions
+        write(current.analysis_path, proof)
+        with pytest.raises(ValueError, match="stale analysis context"):
+            consumers._analysis_decision(current)
+    if damage == "source":
+        denied = runner.invoke(app, ["pipeline", "export", "--run", str(root), "--output", str(tmp_path / "denied")])
+        assert denied.exit_code == 1 and "changed profile/input: deck.csv" in denied.output
+        assert not (tmp_path / "denied").exists()
+    else:
+        assert call("export", "--run", str(root), "--output", str(tmp_path / "denied"))["exported"] == 0
+
+
+@pytest.mark.parametrize(
+    "control", ["other-role", "mapping-mismatch", "different-lemma", "non-active", "wrong-feature"]
+)
+def test_source_bound_rule_requires_confirmed_citation_role(tmp_path: Path, control: str) -> None:
+    from latinitas_cards.pipeline_consumers import load_run
+
+    profile, objectives, _ = fixture(tmp_path, preset=None)
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    verb = next(e for e in data["entries"] if e["identity"] == "v")
+    if control == "other-role":
+        verb["forms"][0]["source_role"] = "other"
+    elif control == "mapping-mismatch":
+        path = tmp_path / "deck-profile.json"
+        deck = json.loads(path.read_text())
+        deck["principal_parts"]["roles"] = ["perfect_1s", "present_infinitive", "present_1s", "ppp"]
+        write(path, deck)
+    elif control == "different-lemma":
+        path = tmp_path / "deck.csv"
+        path.write_text(path.read_text().replace("v,amō,", "v,legō,"))
+    elif control == "non-active":
+        path = tmp_path / "deck.csv"
+        path.write_text(path.read_text().replace("amō", "amor"))
+        verb["forms"][0]["text"] = "amor"
+    else:
+        verb["forms"][0]["features"]["person"] = "3"
+    rebind(profile, data)
+    settings = json.loads(profile.read_text())
+    settings["selection"]["entries"] = ["v"]
+    write(profile, settings)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    cards, skipped = current_cards(
+        profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root
+    )
+    assert cards or skipped  # Reject malformed roles rather than silently dropping the work.
+    for card in cards:
+        analysis = Analysis.read_json(card.analysis_path.read_bytes())
+        target = next(c for c in analysis.checks if c.assertion_ids == ("target",))
+        assert target.result != "pass"
+        if control == "wrong-feature" and card.prompt.startswith("amō\n"):
+            assert target.result == "fail" and target.objections == ("source_bound_target_contradiction",)
+    assert report["file_export"]["exported"] == 0
+
+
+@pytest.mark.parametrize("library_state", ["contradiction", "unavailable", "unsupported"])
+def test_source_bound_rule_keeps_library_objections(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, library_state: str
+) -> None:
+    from types import SimpleNamespace
+
+    from latinitas_cards import pipeline_orchestration as workflow
+    from latinitas_cards.pipeline_consumers import load_run
+
+    profile, objectives, _ = fixture(tmp_path, preset=None)
+    settings = json.loads(profile.read_text())
+    settings["selection"]["entries"] = ["v"]
+    write(profile, settings)
+    # Only the optional analyzer boundary is synthetic; no passing Check or policy is injected.
+    monkeypatch.setattr(workflow, "LocalStanza", lambda path: SimpleNamespace(version="synthetic-engineering/1"))
+    monkeypatch.setattr(workflow, "analyze_deck", lambda *a, **kw: SimpleNamespace(state=library_state, checks=()))
+    output = tmp_path / "workflow"
+    report = call(
+        "run",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(output),
+        "--library-resources",
+        "engineering-only",
+        "--offline",
+    )
+    root = output / "run"
+    card = next(
+        c
+        for c in current_cards(
+            profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root
+        )[0]
+        if c.prompt.startswith("amō\n")
+    )
+    target = next(
+        c for c in Analysis.read_json(card.analysis_path.read_bytes()).checks if c.assertion_ids == ("target",)
+    )
+    expected = {"contradiction": "fail", "unavailable": "unresolved", "unsupported": "pass"}
+    assert target.result == expected[library_state]
+    assert (
+        target.objections
+        == {
+            "contradiction": ("library_contradiction",),
+            "unavailable": ("processing_unavailable",),
+            "unsupported": (),
+        }[library_state]
+    )
+    assert report["file_export"]["exported"] == 0
+
+
+def test_source_bound_rule_missing_lexical_field_preserves_unsupported_siblings(tmp_path: Path) -> None:
+    from latinitas_cards.pipeline_consumers import load_run
+
+    profile, objectives, _ = fixture(tmp_path, preset=None)
+    deck = tmp_path / "deck.csv"
+    with deck.open() as stream:
+        rows = list(csv.DictReader(stream))
+    with deck.open("w") as stream:
+        writer = csv.DictWriter(stream, fieldnames=["ID", "Parts", "Meaning"], extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+    manifest = tmp_path / "deck.csv.latinitas.json"
+    raw = json.loads(manifest.read_text())
+    raw["source_columns"] = ["ID", "Parts", "Meaning"]
+    write(manifest, raw)
+    rebind(profile, json.loads((tmp_path / "inputs.json").read_text()))
+    settings = json.loads(profile.read_text())
+    settings["selection"]["entries"] = ["n", "a"]
+    write(profile, settings)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    cards, _ = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)
+    assert {c.binding.source_identity for c in cards} == {"n", "a"}
+    assert len(report["stages"]["analyze"]) == len(cards)
+    for card in cards:
+        analysis = Analysis.read_json(card.analysis_path.read_bytes())
+        assert all(c.result == "not_applicable" for c in analysis.checks)
+    assert report["file_export"]["exported"] == 0
+
+
 def test_orchestrated_offline_stages_and_replay(tmp_path: Path) -> None:
     profile, objectives, _ = fixture(tmp_path)
     output = tmp_path / "workflow"

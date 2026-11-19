@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-19T16:16:05Z"
+updated_at: "2026-11-19T22:01:40Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -9,8 +9,8 @@ status_summary: blocked
 blockers:
     - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
-next_action: Select the next eligible task
-last_verification_result: pass for T-225-prevent-native-evidence-disclosure-keys-from-grading at 2026-11-19T16:16:05Z
+next_action: Resolve blocker on T-207-approve-deck-workflow-contract-and-calibration
+last_verification_result: pass for T-226-produce-source-bound-deterministic-grammar at 2026-11-19T22:01:40Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -37,11 +37,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-225-prevent-native-evidence-disclosure-keys-from-grading at 2026-11-19T16:16:05Z
+- pass for T-226-produce-source-bound-deterministic-grammar at 2026-11-19T22:01:40Z
 
 ## Next Action
 
-- Select the next eligible task
+- Resolve blocker on T-207-approve-deck-workflow-contract-and-calibration
 
 ## Relevant Artifacts
 
@@ -55,6 +55,6 @@ continuation_notes:
 
 - todo: 18
 - in_progress: 0
-- completed: 205
+- completed: 206
 - blocked: 2
 - cancelled: 0

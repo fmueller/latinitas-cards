@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
-from .acceptance import AcceptanceReader, save_acceptance
+from .acceptance import AcceptanceReader, check_envelope, save_acceptance
 from .acceptance_policy import ScopeCell, implementation_digest
 from .acceptance_presentation import ACCEPTANCE_FIELDS, Presentation, metadata, note_tags, require_installation
 from .acceptance_records import (
@@ -45,6 +45,7 @@ from .export_receipts import (
 )
 from .form_recipes import RULE_VERSION, derive_form, form_translations
 from .grammar_layout import COLUMNS, GRAMMAR_LAYOUT, LAYOUT_SHA256
+from .html_text import source_html_to_text
 from .identity import ResolvedSourceIdentity, derive_latinitas_id, resolve_source_identities
 from .manifest import CsvIdentityManifest, reconcile_csv_manifest
 from .phrase_inputs import EntryV2, Features, Form, FormV2, PhraseInputV2, Selection, Sense
@@ -288,6 +289,108 @@ def _assertion(
         alternatives=tuple(dict.fromkeys(alternatives)),
         evidence=tuple(dict.fromkeys(evidence)),
     )
+
+
+def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
+    """Check confirmed present_1s role consistency, not paradigm applicability.
+
+    An entire serialized entry includes lexical/sense claims this rule cannot
+    establish. Likewise a cell proof says nothing about contextual cloze use,
+    translations, segmentation conventions or free explanatory clauses.
+    """
+    expected: dict[str, object] | None = None
+    constraints: tuple[Evidence, ...] = ()
+    reason = "unsupported_assertion_class_or_rule_evidence"
+    objective = card.objective
+    if isinstance(objective, FormObjective):
+        entry, sense = _entry(source, objective.entry, objective.sense)
+        anchors = tuple(_form(source, entry, key) for key in objective.anchors)
+        selected = _form(source, entry, objective.form) if objective.form else None
+        record = source.records[entry.identity]
+        lemma = source_html_to_text(record.fields.get(source.deck.fields.lexical_entry_field, "")).strip()
+        present = Features(person="1", number="singular", tense="present", mood="indicative", voice="active")
+        if (
+            objective.recipe in ("form_recognition", "form_translation")
+            and entry.pos == "verb"
+            and selected is not None
+            and selected.source_role == "present_1s"
+            and selected.text == lemma
+            and selected.text.endswith("ō")
+            and not anchors
+        ):
+            expected = {
+                "surface": selected.text,
+                "features": present.model_dump(),
+                "source_role": "present_1s",
+                "anchors": [],
+                "rule": None,
+            }
+            constraints = (
+                Evidence(
+                    "latinitas-principal-part-rules",
+                    "confirmed-present-1s-active-role/1",
+                    card.versions.checker,
+                    "Consistency with confirmed present_1s mapping of an active -ō citation form: "
+                    "first person singular present indicative active. Not independent lexical, "
+                    "paradigm applicability or generated-cell verification.",
+                ),
+            )
+        elif objective.recipe in ("verb_production", "noun_declension", "adjective_declension"):
+            reason = "generated_cell_requires_independent_applicability_evidence"
+        else:
+            reason = "missing_applicable_source_role_rule"
+        if expected is not None:
+            # _form verified each role against the confirmed principal-part parser.
+            constraints = (
+                Evidence(
+                    "confirmed-deck-mapping",
+                    source.scope + "/" + entry.identity,
+                    "1",
+                    canonical(
+                        {
+                            "fields": dict(record.fields),
+                            "mapping": source.deck.fields,
+                            "roles": source.deck.principal_parts,
+                            "selected_sense": sense,
+                            "forms": anchors or (selected,),
+                        }
+                    ).decode(),
+                ),
+                *constraints,
+            )
+    unsupported = {
+        "source": "source_requires_lexical_and_sense_evidence",
+        "translation": "translation_requires_sense_government_and_semantic_evidence",
+        "segmentation": "segmentation_requires_convention_and_reconstruction_evidence",
+        "explanation": "explanation_requires_clause_evidence",
+    }
+    checks = []
+    for assertion in card.claims.assertions:
+        result: Literal["pass", "fail", "not_applicable"] = "not_applicable"
+        objections: tuple[str, ...] = (unsupported.get(assertion.id, unsupported.get(assertion.kind, reason)),)
+        if expected is not None and assertion.id == "target" and assertion.kind == "label":
+            try:
+                matches = decode_json(assertion.value) == expected
+            except ValueError:
+                matches = False
+            matches = matches and assertion.selected_sense is None and not assertion.alternatives
+            result = "pass" if matches else "fail"
+            objections = () if matches else ("source_bound_target_contradiction",)
+        envelope = check_envelope(card.binding, card.versions, "rule", (assertion,), reference_constraints=constraints)
+        checks.append(
+            Check(
+                id=assertion.id,
+                assertion_ids=(assertion.id,),
+                method="rule",
+                version=card.versions.checker,
+                result=result,
+                evidence=constraints,
+                alternatives=(),
+                objections=objections,
+                input_sha256=digest(envelope),
+            )
+        )
+    return tuple(checks)
 
 
 def _render_form(
