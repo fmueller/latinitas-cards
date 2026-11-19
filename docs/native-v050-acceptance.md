@@ -178,6 +178,128 @@ For policy withdrawal, **do not enable or withdraw production policy for this ki
 that native scenario stays gated until exact authorized policy revisions exist.
 Synthetic isolated withdrawal tests are engineering evidence only.
 
+### Source correction against installed material (planned)
+
+Start from lane 2's genuinely reviewed, imported export, not `display-*.csv` or
+the runner's replaced record. Keep the run at its original absolute path. Retain
+every ancestor receipt/CSV, source, profile, extraction, analysis, stage and decision;
+save the last receipt ID as `prior_receipt`. Independently inventory each installed
+`LatinitasID`, native note/card ID, template/card key and prior decision ID across
+all batches. Choose a source entry with an installed card, a still-current eligible
+recipe sibling on the same note, and an unrelated eligible note as controls. If
+that baseline is unavailable, mark the sibling/control cells blocked, not passed.
+Capture the closed-Desktop baseline and Personal Notes/tags as above.
+
+Using the already permitted source and its actual review/authoring process, correct
+one erroneous extraction assertion for that entry; corroborate it against the
+mapped source cell. If the error is in the source cell, correct that source too.
+Keep source identity/scope, objective keys, targets and recipe slots unchanged;
+changing those is a separate new-identity case. Preserve the original files and
+record the exact old/new text, evidence and hashes. Recreate the reviewed v2 input
+binding with the library's `pipeline_consumers.input_binding(data, deck,
+source_bytes, scope)` and explicitly confirm a new pipeline profile's input/deck
+SHA-256 references. These are commitments to reviewed material, not new approval.
+There is no CLI that automatically rebinds or approves corrected extraction.
+If this genuine authoring/review prerequisite cannot be met, block the scenario;
+do not substitute arbitrary JSON edits, test `rebind`, or synthetic authorities.
+
+Set `installed_run` to the retained run and `renewed_profile` to that confirmed
+profile. From the candidate checkout, before obtaining any fresh acceptance:
+
+```sh
+uv run latinitas-cards pipeline validate --profile "$renewed_profile" --json
+uv run latinitas-cards pipeline preview --run "$installed_run" --profile "$renewed_profile" --json
+uv run latinitas-cards pipeline handoff --run "$installed_run" --profile "$renewed_profile" --json
+# Negative control: changed eligibility must not silently continue the old batch.
+uv run latinitas-cards pipeline export --run "$installed_run" --profile "$renewed_profile" \
+  --output source-unsafe-continuation.csv --after-receipt "$prior_receipt" --json
+# Expect nonzero reconciliation-required refusal and no continuation CSV.
+uv run latinitas-cards pipeline export --run "$installed_run" --profile "$renewed_profile" \
+  --output source-reconciled.csv --reconcile-receipt "$prior_receipt" --json
+```
+
+Independent expectations: old acceptance cannot approve the changed assertion or
+binding; preview withholds affected cards. Handoff/reconciliation names the exact
+previously installed note/card and prior decision IDs, with the actual reason
+(`assertion_mismatch` for changed assertions; a binding-only change may differ),
+manual resolution and `not_applied`. No stale row is refreshed. Any unresolved
+installed sibling withholds the **whole note row**, including an otherwise eligible
+sibling; independently eligible unrelated notes remain eligible, subject to normal
+selection and already-emitted receipt handling. They need not be emitted again.
+Compare identities and row membership, not a fixed fixture count. Do not erase old
+decisions or re-approve them merely to make this negative control export.
+
+After recording the refusal, use offline resume for an **orchestrated** run so it
+refreshes ingest before analysis and later prerequisites:
+
+```sh
+uv run latinitas-cards pipeline resume --run "$installed_run" \
+  --profile "$renewed_profile" --offline --json
+```
+
+Inspect every stage outcome; callback success alone does not mean regenerated
+analysis or acceptance. Missing resources or authority can still defer/withhold.
+An **adapted** run has no standalone ingest/analyze executor: genuinely regenerate
+current analysis and bound stages through the authorized library/authoring process
+first, then use `pipeline stage decide --run "$installed_run" --profile
+"$renewed_profile" --offline --json`. That command consumes analysis; it does not
+refresh it and rejects stale context/assertions. If current analysis cannot be
+produced, regeneration remains blocked. Obtain genuinely fresh full-card review
+through the supported review path before any renewed learning export; offline
+stages alone do not grant acceptance. Re-run preview/handoff and explicit receipt reconciliation.
+Fresh acceptance does not itself resolve the old installed-material obligation:
+retain its history and use the content-only manual resolution procedure below.
+
+### Application-checker revision against all installed batches (planned/blocked)
+
+Require two maintainer-provided application revisions with an actual reviewed
+checker/validator implementation change. Record each checkout/package identity,
+imported module path and `acceptance_policy.implementation_digest()`; the digests
+must genuinely differ. The digest covers application Python dependencies, not a
+profile's display theme or a hand-edited version label. There is no CLI switch to
+install a checker revision. Do not edit stored acceptance/version/digest records,
+monkeypatch the checker, or treat the isolated test's synthetic revision as native
+qualification. If a real revision pair or genuinely accepted installed baseline
+is unavailable, this cell is **blocked**. Any automatic baseline additionally
+requires the separately authorized exact policy scope/revisions and T-200 gates;
+the disabled bootstrap cannot supply it. No such revision or scope is enabled here.
+
+Under the old revision, retain at least two imported batches and independently
+inventory their installed note/card/decision identities as above. Keep Desktop
+closed and the original run, profiles and complete receipt chain at their original
+paths. Switch only the executing application to the real new revision using its
+approved setup; do not migrate or overwrite acceptance history. Before fresh
+analysis/review, run from that revision:
+
+```sh
+uv run latinitas-cards pipeline preview --run "$installed_run" --json
+uv run latinitas-cards pipeline handoff --run "$installed_run" --json
+uv run latinitas-cards pipeline export --run "$installed_run" \
+  --output checker-reconciled.csv --reconcile-receipt "$prior_receipt" --json
+```
+
+Expect stale decisions to fail current version binding and handoff to cover **all
+affected earlier batches**, not just `prior_receipt`: compare the exact union of
+installed note/card identities and old decision IDs. With otherwise unchanged
+inputs this is `binding_mismatch`; no card dependent on that stale checker approval
+may export. Entire unresolved note rows, including eligible siblings, are withheld.
+Unlike the single-source case, an unrelated source note whose approval binds the
+same old application checker is also ineligible. Only independently current
+acceptance can remain eligible; unrelated native notes are never changed by CSV
+generation. Regenerate stages and obtain fresh full-card authority under the new
+revision as in the source scenario, then reconcile explicitly, preserving the
+earlier manual obligations. Missing/corrupt ancestor receipts or CSV hashes must
+block reconciliation, not be bypassed by deleting history or starting a clean run.
+
+For **both** scenarios, do not import reconciled output as proof of resolution.
+Perform the explicit content-only manual action below, then repeat the closed
+before/after identity, every-column card/revlog, Personal Notes and complete tag
+comparisons for affected notes, retained siblings and unrelated controls. CSV
+generation alone leaves all native state unchanged; omission is not retirement.
+Record setup, regeneration/refusal outputs and native actions separately. These
+procedures are planned, not executed, and do not authorize source acquisition,
+real inference, policy enablement or native work within T-199.
+
 Expected: affected exact note/card identities, previous decision IDs, reason and
 manual action are in `pipeline handoff` or curated receipt ineligibility; ordinary
 CSV omits unsafe rows but does not alter Anki. Unaffected independently eligible

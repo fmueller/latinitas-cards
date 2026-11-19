@@ -6,7 +6,7 @@ priority: medium
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-198-present-acceptance-evidence-and-morphology-without
-updated_at: "2026-11-19T10:40:07Z"
+updated_at: "2026-11-19T11:01:45Z"
 ---
 
 # T-199-document-v0-5-0-workflows-and-reconcile-cli Document v0.5.0 workflows and reconcile CLI schemas
@@ -82,5 +82,17 @@ executed. Run documentation checks and mandatory chain after any code changes.
 - Native, real model/reference and original automatic acceptance remain separate
   unexecuted gates. T-199 completion records documentation/engineering delivery,
   not integrated release acceptance or authority to advance T-200.
+- Post-completion independent acceptance found R8: the original native kit lacked
+  concrete source-correction and application-checker-revision procedures. The
+  earlier kit-completeness claim is superseded, not treated as an original pass.
+- Added planned identity-bound setup, genuine binding/revision prerequisites,
+  stale refusal, all-batch reconciliation, unsafe sibling/unrelated-note outcomes
+  and manual-only preservation checks. Real checker revisions and automatic scope
+  remain blocked unless separately available and authorized; no native step ran.
+- Scoped review caught and corrected the initial regeneration wording: offline
+  resume refreshes ingest for orchestrated runs; adapted stage decide consumes
+  genuinely current analysis and cannot refresh it. Scoped readback accepted R8;
+  prior R1-R7 dispositions, failures and spent challenge budgets remain intact.
 - 2026-11-19T10:39:53Z: verification pass
 - 2026-11-19T10:40:07Z: Implementation-only completion; verified 2026-11-19T10:39:53Z on final corrected docs/example snapshot. Exact Ruff/mypy/pytest chain passed (3775 passed, 7 skipped). Reviewed R1-R7 resolved. Native T201, T195 manual resolution/history, original automatic scope and T200 plan/reference/inference gates remain unexecuted; no successor selected or authorized.
+- 2026-11-19T11:01:45Z: verification pass
