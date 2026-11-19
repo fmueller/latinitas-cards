@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "RecipeTarget": {
+      "additionalProperties": false,
+      "description": "Explicit finite exercise, referring to intake content rather than new QA answers.",
+      "properties": {
+        "analysis": {
+          "enum": [
+            "supported",
+            "unsupported",
+            "ambiguous"
+          ],
+          "title": "Analysis",
+          "type": "string"
+        },
+        "example": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "formation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "item_key": {
+          "$ref": "#/$defs/Text"
+        },
+        "key": {
+          "$ref": "#/$defs/Text"
+        },
+        "mnemonic_key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mnemonic_side": {
+          "enum": [
+            "front",
+            "back"
+          ],
+          "title": "Mnemonic Side",
+          "type": "string"
+        },
+        "related_production": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "title": "Related Production",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "item_key",
+        "formation",
+        "example",
+        "analysis",
+        "mnemonic_key",
+        "mnemonic_side",
+        "related_production"
+      ],
+      "title": "RecipeTarget",
+      "type": "object"
+    },
+    "Text": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "latinitas-curated-recipes",
+      "title": "Format",
+      "type": "string"
+    },
+    "targets": {
+      "items": {
+        "$ref": "#/$defs/RecipeTarget"
+      },
+      "title": "Targets",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "targets"
+  ],
+  "title": "RecipePlan",
+  "type": "object"
+}

@@ -12,6 +12,7 @@ from .corpus_model import CorpusDescriptor, CorpusRecordSchema
 from .corpus_profile import CorpusProfile
 from .corpus_selection import CandidatesReport, Selection
 from .curated import Approval, CuratedInput, Permission
+from .curated_cards import RecipePlan
 from .policy import Policy
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -29,6 +30,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "latinitas-curated": CuratedInput,
     "latinitas-curated-approval": Approval,
     "latinitas-curated-permission": Permission,
+    "latinitas-curated-recipes": RecipePlan,
     "latinitas-policy": Policy,
 }
 

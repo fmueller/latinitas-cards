@@ -1037,9 +1037,10 @@ def export(
     output_limit: int | None = None,
     after_receipt: str | None = None,
     reconcile_receipt: str | None = None,
+    effective_profile: PipelineProfile | None = None,
 ) -> dict[str, object]:
     with run_lock(root):
-        return _export(root, output, profile_path, output_limit, after_receipt, reconcile_receipt)
+        return _export(root, output, profile_path, output_limit, after_receipt, reconcile_receipt, effective_profile)
 
 
 def _card_projection(items: list[Rendered]) -> object:
@@ -1167,12 +1168,13 @@ def _export(
     output_limit: int | None,
     after_receipt: str | None,
     reconcile_receipt: str | None,
+    effective_profile: PipelineProfile | None = None,
 ) -> dict[str, object]:
     if output.is_symlink() or output.resolve().is_relative_to(root.resolve()):
         raise ValueError("choose an output outside the evidence store")
     run = load_run(root)
     path = profile_path or Path(run.profile_path)
-    profile = load_pipeline_profile(path) if profile_path else run.profile
+    profile = effective_profile or (load_pipeline_profile(path) if profile_path else run.profile)
     limit = profile.selection.output_limit if output_limit is None else output_limit
     if limit is not None and limit <= 0:
         raise ValueError("output_limit must be positive")

@@ -1,13 +1,13 @@
 ---
 id: T-197-export-curated-application-cards-only-after
 title: Export curated application cards only after rendered approval
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.5.0.md#curated-grammar-and-mnemonics
 dependencies:
     - T-196-validate-provenance-bound-curated-rule-and
     - T-195-track-export-receipts-and-installed-card
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-19T06:41:01Z"
 ---
 
 # T-197-export-curated-application-cards-only-after Export curated application cards only after rendered approval
@@ -82,3 +82,44 @@ cards still export. Editing/withdrawing the German mnemonic invalidates affected
 without invalidating unchanged rule-only cards or bypassing installed-content handoff.
 
 ## Implementation Notes
+
+Implemented finite application, formation-rule recall, component explanation and
+opt-in mnemonic recall through public curated preview/review/export. Saved shared
+profiles retain effective language, preset, recipe overrides and selection;
+grammar-study composes independent production acceptance without changing defaults
+or generating missing content. Exact rule/rendered and every displayed mnemonic's
+language-specific approval are required. Curated CSV uses an explicit separate
+note type, stable identities and unowned personal fields/tags.
+
+Receipt-backed withdrawal compares all historical exports, preserves stale sibling
+handoffs and supports empty current intake. Seen decisions install atomically before
+replay; old histories cannot erase withdrawals. Separate production publication
+failures report recovery-required uncertainty, not zero export or rolled-back
+curated output. German/English safety guidance and static rendered review are
+available; no Anki writes or native preservation claims are made.
+
+TDD and required simplification were followed by six independent scoped review
+lanes, boundary adversarial verification and an overall verifier. Two correction
+rounds resolved empty-source handoffs, replayed rejection retention, interrupted
+history writes, truthful partial publication, localization/prose and discriminating
+CSV/ownership checks. The new status-label finding received one targeted follow-up;
+the broad review campaign was not restarted. No review defects remain open.
+
+Final reviewed source patch SHA-256:
+4edb55486cbb9fba15f896612f2a8dc06ec12c7ea1fc4254ee7cb20506f43b98.
+The exact final Ruff -> mypy -> pytest chain passed: 3762 passed, 7 skipped,
+one warning; strict mypy checked 234 source files. Formatting, schema drift and
+diff checks passed. Public manual acceptance used 42 actual CLI subprocesses on
+original synthetic verbal/nominal material in German/English; seven static
+render captures were inspected, including both card themes and a narrow viewport.
+Synthetic reviewer identities establish engineering behavior, not real linguistic
+approval. No mutation adapter was installed; targeted deliberate regressions
+demonstrated that strengthened CSV/sibling assertions fail on wrong behavior.
+
+Implementation completion is not independent outer acceptance. T-200 inference,
+studies and evaluation remain paused pending concrete-plan approval. T-201 still
+owns real-Desktop Anki preservation/resolution acceptance; offline receipts do not
+establish it. Outer final adversarial QA/native German-card video and maintainer
+publication remain separate gates. No successor task was taken.
+- 2026-11-19T06:40:51Z: verification pass
+- 2026-11-19T06:41:01Z: Implementation complete following pass verification at 2026-11-19T06:40:51Z; final reviewed source and Ruff/mypy/pytest evidence preserved. Synthetic engineering approval tests only; independent outer acceptance, T200 inference approval and T201 native Anki preservation remain separate. No successor taken.

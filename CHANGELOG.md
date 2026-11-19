@@ -6,8 +6,10 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
-- `curated` validates and previews provenance-bound rule/mnemonic candidates and
-  records separate human decisions; intake alone does not authorize card export.
+- `curated` previews German/English rule-application, formation, component and opt-in
+  mnemonic cards; CSV export requires exact human content and rendered-card review.
+- Saved `grammar-study` selections combine curated recipes with production drills;
+  receipt-backed CSV handoffs report withdrawals without changing installed cards.
 - `pipeline` previews evidence-gated German/English form and controlled-phrase cards,
   with opt-in conjugation/declension drills, confirmed PPP cards and manual CSV export.
 - `pipeline export` supports optional receipt-bound batches, replay and explicit

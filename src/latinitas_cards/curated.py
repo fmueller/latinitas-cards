@@ -237,17 +237,30 @@ def approval_status(
     fingerprint = current_subject(item, subject, subject_key, language)
     if fingerprint is None:
         return "missing_language_variant" if subject == "mnemonic" else "unreviewed"
-    superseded = {identity for record in history for identity in record.supersedes}
-    matching = [
-        record
-        for record in history
-        if record.approval_id not in superseded
-        and _subject(record) == (data.source_scope, item.key, subject, subject_key, language)
-        and record.fingerprint == fingerprint
-    ]
+    matching = matching_decisions(data.source_scope, item.key, subject, subject_key, language, fingerprint, history)
     if len(matching) > 1:
         return "conflict"
     return matching[0].decision if matching else "unreviewed"
+
+
+def matching_decisions(
+    scope: str,
+    item_key: str,
+    subject: str,
+    subject_key: str,
+    language: str,
+    fingerprint: str,
+    history: tuple[Approval, ...],
+) -> tuple[Approval, ...]:
+    """Exact unsuperseded heads; callers validate the retained history first."""
+    superseded = {identity for record in history for identity in record.supersedes}
+    return tuple(
+        record
+        for record in history
+        if record.approval_id not in superseded
+        and _subject(record) == (scope, item_key, subject, subject_key, language)
+        and record.fingerprint == fingerprint
+    )
 
 
 def record_reviews(
@@ -255,6 +268,8 @@ def record_reviews(
     history: tuple[Approval, ...],
     decisions: tuple[Approval, ...],
     output: Path,
+    *,
+    rendered_subjects: dict[tuple[str, str, str], str] | None = None,
 ) -> None:
     """Write a new retained history only after every submitted decision matches."""
     if not decisions:
@@ -262,11 +277,13 @@ def record_reviews(
     items = {item.key: item for item in data.items}
     for decision in decisions:
         item = items.get(decision.item_key)
-        if (
-            decision.source_scope != data.source_scope
-            or item is None
-            or current_subject(item, decision.subject, decision.subject_key, decision.language) != decision.fingerprint
-        ):
+        if decision.subject == "rendered_card":
+            fingerprint = (rendered_subjects or {}).get((decision.item_key, decision.subject_key, decision.language))
+        elif item is not None:
+            fingerprint = current_subject(item, decision.subject, decision.subject_key, decision.language)
+        else:
+            fingerprint = None
+        if decision.source_scope != data.source_scope or item is None or fingerprint != decision.fingerprint:
             raise ValueError("stale/unknown subject; rendered-card review belongs to the downstream card workflow")
     combined = (*history, *decisions)
     validate_history(combined)
