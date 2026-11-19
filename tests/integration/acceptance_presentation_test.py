@@ -4,10 +4,12 @@ import csv
 import hashlib
 import io
 import json
+import shutil
 import sqlite3
 import subprocess
 import sys
 import zipfile
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -520,3 +522,64 @@ def test_disposable_example_preserves_user_tags_and_single_field_update(tmp_path
         expected[0]["Grammar12Answer"] = "Controlled correction: " + initial[0]["Grammar12Answer"]
         assert updated == expected
         assert omitted == initial[1:]
+
+
+def test_evidence_disclosure_owns_activation_keys_without_editing_text() -> None:
+    from latinitas_cards.acceptance_presentation import Presentation
+
+    class Summary(HTMLParser):
+        attributes: dict[str, str | None]
+
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            if tag == "summary":
+                self.attributes = dict(attrs)
+
+    parser = Summary()
+    parser.feed(Presentation("card", "human", (), (), (), ()).answer("de"))
+    attributes = parser.attributes
+    # Qt reserves reviewer shortcuts before DOM keydown outside input contexts.
+    assert attributes.get("contenteditable") == "true"
+    assert attributes.get("inputmode") != "none"
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is needed to execute the exported HTML event handlers")
+    subprocess.run(
+        [
+            node,
+            "-e",
+            """
+const assert = require('node:assert/strict');
+const attrs = JSON.parse(process.argv[1]);
+const handle = new Function('event', attrs.onkeydown);
+const summary = {parentElement: {open: false}};
+function press(key, options = {}) {
+    const event = {key, target: summary, repeat: false, altKey: false,
+        ctrlKey: false, metaKey: false, prevented: false, stopped: false,
+        preventDefault() {this.prevented = true},
+        stopPropagation() {this.stopped = true}, ...options};
+    handle.call(summary, event);
+    return [summary.parentElement.open, event.prevented, event.stopped];
+}
+assert.deepEqual(press('Enter'), [true, true, true]);
+assert.deepEqual(press('Enter', {repeat: true}), [true, true, true]);
+assert.deepEqual(press(' '), [false, true, true]);
+assert.deepEqual(press(' '), [true, true, true]);
+assert.deepEqual(press('Tab'), [true, false, false]);
+assert.deepEqual(press('Tab', {shiftKey: true}), [true, false, false]);
+assert.deepEqual(press('x'), [true, false, false]);
+assert.deepEqual(press('Enter', {target: {}}), [true, false, false]);
+assert.deepEqual(press('Enter', {ctrlKey: true}), [true, false, false]);
+assert.deepEqual(press(' ', {altKey: true}), [true, false, false]);
+assert.deepEqual(press('Enter', {metaKey: true}), [true, false, false]);
+assert.deepEqual(press('Enter', {shiftKey: true}), [true, false, false]);
+assert.deepEqual(press(' ', {shiftKey: true}), [true, false, false]);
+for (const name of ['onbeforeinput', 'onpaste', 'ondrop']) {
+    assert.equal(new Function('event', attrs[name]).call(summary, {}), false);
+}
+""",
+            json.dumps(attributes),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )

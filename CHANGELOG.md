@@ -27,6 +27,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- Focused answer-evidence disclosures in Anki Desktop use Enter/Space to toggle
+  without grading the card; ordinary review shortcuts outside them are unchanged.
 - German cards render withheld-status explanations, blank markers and reference
   headings in German instead of mixing in English.
 - Principal-part generation withholds non-verb entries instead of enabling verb

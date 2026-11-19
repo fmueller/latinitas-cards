@@ -120,10 +120,21 @@ class Presentation:
             ("Grenzen" if de else "Limitations", self.limitations),
         )
         body = "".join(f"<p><strong>{label}:</strong> {escape('; '.join(values))}</p>" for label, values in parts)
+        # Qt handles reviewer shortcuts before DOM keydown unless focus is in an
+        # input context. Keep that context non-editable via beforeinput/paste/drop.
+        summary = (
+            '<summary contenteditable="true" spellcheck="false" '
+            'onbeforeinput="return false" onpaste="return false" ondrop="return false" '
+            'onkeydown="if (event.target !== this || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) '
+            "return; "
+            "if (event.key === 'Enter' || event.key === ' ') {event.preventDefault(); event.stopPropagation(); "
+            'if (!event.repeat) this.parentElement.open = !this.parentElement.open;}">'
+            f"{title}</summary>"
+        )
         return (
             f'<section class="acceptance-panel" lang="{escape(language, quote=True)}">'
             f'<small class="acceptance-status">{labels[self.acceptance]}</small>'
-            f"<details><summary>{title}</summary>{body}</details></section>"
+            f"<details>{summary}{body}</details></section>"
         )
 
 
