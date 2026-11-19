@@ -14,6 +14,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   scoped hosted permission and cancellation; CSV files never apply changes to Anki.
 - `pipeline report` explains material yield with source links, grouped examples and
   versioned JSON, separating deferred work, processing failures and acceptance.
+- `pipeline export` records acceptance-bound card identities; `pipeline handoff`
+  lists unresolved prior exports and manual actions without changing Anki.
 
 ### Fixed
 

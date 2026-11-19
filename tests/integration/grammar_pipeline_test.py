@@ -934,12 +934,30 @@ def test_bound_human_authority_is_distinct_from_automatic_policy(tmp_path: Path)
         ),
     )
     save_acceptance(card.claims.decisions[0].path, decision)
-    assert call("export", "--run", str(root), "--output", str(tmp_path / "human.csv"))["exported"] == 1
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "human.csv"))
+    assert first["exported"] == 1
+    assert first["export_receipt"]["cards"][0]["acceptance"] == "human"
     # A later automatic analysis is not a revocation of this exact human review.
     (root / "analyses").mkdir()
     prove_cards(profile, objectives_path, root)
     call("stage", "decide", "--run", str(root))
     assert call("export", "--run", str(root), "--output", str(tmp_path / "human-after-analysis.csv"))["exported"] == 1
+    assert decision.human is not None
+    revised_review = card.claims.decisions[0].reader.decide(
+        checks=(check,),
+        origin="human",
+        stage_ids=(stage.stage_id,),
+        human=decision.human.model_copy(update={"reason": "Fresh independently bound synthetic review"}),
+    )
+    write(card.claims.decisions[0].path, revised_review)
+    stale_replay = runner.invoke(
+        app, ["pipeline", "export", "--run", str(root), "--output", str(tmp_path / "changed-review.csv"), "--json"]
+    )
+    assert stale_replay.exit_code != 0 and "reconciliation required" in stale_replay.output
+    assert not (tmp_path / "changed-review.csv").exists()
+    actions = call("handoff", "--run", str(root))["ineligible"]
+    assert len(actions) == 1 and actions[0]["reason"] == "acceptance_or_rendering_changed"
+    assert actions[0]["previous_decision_ids"] == [decision.decision_id]
     (tmp_path / "deck.csv").write_text((tmp_path / "deck.csv").read_text().replace("bonus", "malus"))
     result = runner.invoke(
         app, ["pipeline", "export", "--run", str(root), "--output", str(tmp_path / "stale.csv"), "--json"]
@@ -1543,6 +1561,14 @@ def test_batch_invalidation_reconciles_only_changed_source(tmp_path: Path, monke
     assert continued["exported"] == 17
     assert len(continued["reconciliation"]["retained"]) == 9
     assert len(continued["reconciliation"]["ineligible"]) == 1
+    handoff = continued["export_receipt"]["ineligible"]
+    assert len(handoff) == 1
+    assert handoff[0]["reason"] == "assertion_mismatch"
+    assert handoff[0]["previous_decision_ids"]
+    assert handoff[0]["resolution"] == "manual"
+    assert "scheduling" in handoff[0]["required_action"]
+    assert continued["application"]["state"] == "not_applied"
+    assert "destination" in continued["application"]["required_action"]
 
 
 def test_processing_limit_precedes_output_limit_and_resumes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1817,6 +1843,22 @@ def test_disabled_and_withdrawn_policies_cannot_replay_batches(tmp_path: Path, m
     assert denied["exported"] == 0
     assert {w["reason"] for w in denied["withheld"]} == {"policy_withdrawn"}
     assert len(denied["reconciliation"]["ineligible"]) == 2
+    receipt = enabled["export_receipt"]
+    assert receipt["format"] == "latinitas-export-receipt"
+    assert len(receipt["cards"]) == 2
+    for card in receipt["cards"]:
+        assert card["decision_ids"] and card["assertion_ids"]
+        assert card["rendered_sha256"]
+        assert "Tags" not in card["owned_fields"]
+        assert card["owned_tags"] == []
+    assert len(denied["export_receipt"]["ineligible"]) == 2
+    assert {h["reason"] for h in denied["export_receipt"]["ineligible"]} == {"policy_withdrawn"}
+    assert {tuple(h["previous_decision_ids"]) for h in denied["export_receipt"]["ineligible"]} == {
+        tuple(c["decision_ids"]) for c in receipt["cards"]
+    }
+    unresolved = call("handoff", "--run", str(root))
+    assert unresolved["ineligible"] == denied["export_receipt"]["ineligible"]
+    assert unresolved["state"] == "not_applied"
 
 
 def test_pattern_ranking_counts_supported_distinct_surfaces_not_aliases(tmp_path: Path) -> None:
@@ -2110,6 +2152,121 @@ def test_sibling_continuation_preserves_eligible_note_fields(tmp_path: Path, mon
         assert rows[0][field] and rows[1][field] == rows[0][field]
 
 
+@pytest.mark.parametrize("output_limit", [None, 1])
+def test_installed_sibling_invalidation_withholds_note_and_preserves_manual_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, output_limit: int | None
+) -> None:
+    from latinitas_cards.pipeline_consumers import load_run
+    from latinitas_cards.pipeline_reporting import Reporting, build_report
+
+    profile, objectives, root = fixture(tmp_path, preset=None)
+    raw = json.loads(profile.read_text())
+    choices = RecipeOverrides(include=("form_recognition",), exclude=("ppp_translation", "phrase_translation"))
+    raw.update(recipe_overrides=choices.model_dump(), recipes=resolve_recipes(None, choices))
+    raw["selection"]["entries"] = ["n", "a"]
+    raw["selection"]["output_limit"] = output_limit
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    for index in (1, 2):
+        data["entries"][index]["forms"] = [data["entries"][index]["forms"][0]]
+    write(profile, raw)
+    rebind(profile, data)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "first.csv"), "--output-limit", "1")
+    assert first["exported"] == 1
+    cards, _ = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)
+    broken = next(
+        c
+        for c in cards
+        if (c.claims.note_id, c.claims.card_key) == (first["cards"][0]["note_id"], first["cards"][0]["card_key"])
+    )
+    old_bytes = (tmp_path / "first.csv").read_bytes()
+    destination = tmp_path / "destination.json"
+    write(
+        destination,
+        {"Personal Notes": "keep", "Tags": ["Custom", "latinitas::basis::source"], "history": [7], "due": 42},
+    )
+    destination_bytes = destination.read_bytes()
+    analysis_bytes = broken.analysis_path.read_bytes()
+    broken.analysis_path.unlink()
+    second = call(
+        "export",
+        "--run",
+        str(root),
+        "--output",
+        str(tmp_path / "second.csv"),
+        "--output-limit",
+        "4",
+        "--reconcile-receipt",
+        first["receipt_id"],
+    )
+    assert second["exported"] == 2  # Only the unrelated note, not the still-eligible sibling of the stale card.
+    assert second["notes"] == 1
+    assert all(c["note_id"] != broken.claims.note_id for c in second["cards"])
+    assert second["unresolved_note_rows"] == [broken.claims.note_id]
+    actions = second["export_receipt"]["ineligible"]
+    assert [(a["note_id"], a["card_key"]) for a in actions] == [(broken.claims.note_id, broken.claims.card_key)]
+    assert {h["note_id"] for h in actions} != {c.claims.note_id for c in cards}
+    assert (tmp_path / "first.csv").read_bytes() == old_bytes
+    assert destination.read_bytes() == destination_bytes
+    report = build_report(
+        root, {"run_id": "synthetic-report", "status": "completed", "file_export": second}, None, None
+    )
+    sibling = next(
+        c for c in cards if c.claims.note_id == broken.claims.note_id and c.claims.card_key != broken.claims.card_key
+    )
+    outcome = next(
+        o
+        for o in Reporting.read_json(canonical(report["outcome_report"])).record.outcomes
+        if o.card_key == sibling.claims.card_key and o.source_identity == sibling.binding.source_identity
+    )
+    assert (outcome.outcome, outcome.reason) == ("withheld", "installed_content_unresolved")
+    assert set(actions[0]["previous_decision_ids"]) <= set(outcome.related_ids)
+    pending = call("handoff", "--run", str(root))
+    assert pending["ineligible"] == actions
+    human = runner.invoke(app, ["pipeline", "handoff", "--run", str(root)])
+    assert human.exit_code == 0 and "not_applied" in human.output and "scheduling" in human.output
+    # No supported apply/suspend shortcut exists; an inspection file grants no authority.
+    denied = runner.invoke(app, ["pipeline", "handoff", "--run", str(root), "--apply", str(destination)])
+    assert denied.exit_code != 0 and destination.read_bytes() == destination_bytes
+    broken.analysis_path.write_bytes(analysis_bytes)
+    assert call("handoff", "--run", str(root))["ineligible"] == actions
+    replay = runner.invoke(
+        app,
+        [
+            "pipeline",
+            "export",
+            "--run",
+            str(root),
+            "--output",
+            str(tmp_path / "restored.csv"),
+            "--output-limit",
+            "1",
+            "--json",
+        ],
+    )
+    assert replay.exit_code != 0 and "reconciliation required" in replay.output
+    assert not (tmp_path / "restored.csv").exists()
+    assert (tmp_path / "first.csv").read_bytes() == old_bytes
+    (tmp_path / "deck.csv").write_text("unconfirmed changed source")
+    unavailable = call("handoff", "--run", str(root))
+    assert {a["note_id"] for a in unavailable["ineligible"]} == {c.claims.note_id for c in cards}
+    assert unavailable["state"] == "not_applied"
+
+
 def test_processing_ceiling_uses_resolved_recipe_order(tmp_path: Path) -> None:
     profile, objectives, root = fixture(tmp_path, preset=None)
     raw = json.loads(profile.read_text())
@@ -2357,6 +2514,48 @@ def test_pipeline_report_stage_only_preserves_export_receipt(tmp_path: Path, mon
     write(profile, raw)
     changed = report_call("stage", "select", "--run", str(root), "--profile", str(profile))
     assert changed["receipt_ids"] == [] and changed["counts"]["selected_cards"] == 0
+    assert len(changed["installed_handoff"]) == 4
+    assert {h["reason"] for h in changed["installed_handoff"]} == {"current_eligibility_unavailable"}
+    readable = runner.invoke(app, ["pipeline", "report", "--run", str(root)])
+    assert readable.exit_code == 0 and "Unresolved installed content" in readable.output
+    assert "not approved for direct reimport" in readable.output
+
+
+def test_pipeline_report_reads_historical_v1_without_invented_handoff(tmp_path: Path) -> None:
+    from latinitas_cards.export_receipts import Handoff
+    from latinitas_cards.pipeline_reporting import safe_snapshot
+
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only")
+    root = output / "run"
+    stored = json.loads((output / "report.json").read_text())
+    stored["outcome_report"]["details"].pop("installed_handoff", None)
+    stored.pop("installed_handoff", None)
+    write(output / "report.json", stored)
+    result = call("report", "--run", str(root))
+    assert result["outcome_report"] == stored["outcome_report"]
+    assert "installed_handoff" not in result
+    readable = runner.invoke(app, ["pipeline", "report", "--run", str(root)])
+    assert readable.exit_code == 0 and "not assessed" in readable.output
+    action = Handoff(
+        note_id="synthetic-handoff-identity",
+        card_key="slot",
+        previous_decision_ids=(),
+        reason="current_eligibility_unavailable",
+        resolution="manual",
+        required_action="Inspect destination first",
+    ).model_dump(mode="json")
+    stored["installed_handoff"] = [action]
+    write(output / "report.json", stored)
+    assert call("report", "--run", str(root))["installed_handoff"] == [action]
+    with pytest.raises(ValueError, match="report_credential_collision"):
+        safe_snapshot(stored, ("synthetic-handoff-identity",))
+    action["unexpected"] = "private-marker"
+    write(output / "report.json", stored)
+    bad = runner.invoke(app, ["pipeline", "report", "--run", str(root), "--json"])
+    assert bad.exit_code == 1 and "pipeline_report_unavailable_or_invalid" in bad.output
+    assert "private-marker" not in bad.output
 
 
 def test_versioned_pipeline_outcomes_and_readable_yield(tmp_path: Path) -> None:
@@ -3264,3 +3463,57 @@ def test_orchestrated_corrupt_wrapper_is_branch_local(tmp_path: Path, reselect: 
         assert artifact.read_text() == "{}"
         assert (root / "stages" / (identity + ".json")).read_bytes() == record
         assert identity in json.loads((root / "stage-index.json").read_text()).values()
+
+
+def test_installed_checker_change_covers_all_batches_and_corrupt_history_blocks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from latinitas_cards import pipeline_consumers as consumers
+
+    profile, objectives, root = fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, root)
+    call(
+        "adapt",
+        "--kind",
+        "phrase-inputs",
+        "--profile",
+        str(profile),
+        "--objectives",
+        str(objectives),
+        "--output",
+        str(root),
+    )
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    call("stage", "decide", "--run", str(root))
+    first = call("export", "--run", str(root), "--output", str(tmp_path / "first.csv"), "--output-limit", "1")
+    second = call(
+        "export",
+        "--run",
+        str(root),
+        "--output",
+        str(tmp_path / "second.csv"),
+        "--output-limit",
+        "1",
+        "--after-receipt",
+        first["receipt_id"],
+    )
+    monkeypatch.setattr(consumers, "implementation_digest", lambda: digest("new checker revision"))
+    actions = call("handoff", "--run", str(root))["ineligible"]
+    assert {(a["note_id"], a["card_key"]) for a in actions} == {
+        (r["note_id"], r["card_key"]) for report in (first, second) for r in report["cards"]
+    }
+    assert {a["reason"] for a in actions} == {"binding_mismatch"}
+    denied = call(
+        "export",
+        "--run",
+        str(root),
+        "--output",
+        str(tmp_path / "denied.csv"),
+        "--reconcile-receipt",
+        second["receipt_id"],
+    )
+    assert denied["exported"] == 0 and denied["export_receipt"]["ineligible"] == actions
+    (tmp_path / "first.csv").write_text("corrupted original artifact")
+    invalid = runner.invoke(app, ["pipeline", "handoff", "--run", str(root), "--json"])
+    assert invalid.exit_code != 0 and "hash mismatch" in invalid.output

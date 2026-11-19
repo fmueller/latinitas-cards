@@ -9,10 +9,11 @@ from collections import Counter
 from pathlib import Path
 from typing import Annotated, Literal, Self, cast
 
-from pydantic import Field, JsonValue, model_validator
+from pydantic import Field, JsonValue, TypeAdapter, model_validator
 
 from .acceptance import load_stage, stage_artifact
 from .acceptance_records import Hash, Record, Text, canonical, decode_json, digest
+from .export_receipts import IMPORT_ACTION, Handoff
 from .pipeline_batches import Batches
 from .pipeline_consumers import (
     FormObjective,
@@ -21,11 +22,14 @@ from .pipeline_consumers import (
     _selected,
     _selection_snapshot,
     current_cards,
+    installed_handoff,
     load_run,
     load_source,
 )
 from .pipeline_profile import ProfileSnapshot
 from .providers import HostedPermission, Limits
+
+_HANDOFFS = TypeAdapter(tuple[Handoff, ...])
 
 type Count = Annotated[int, Field(ge=0, strict=True)]
 type StageState = Literal["pending", "running", "succeeded", "failed", "cancelled", "unknown", "deferred"]
@@ -153,6 +157,11 @@ def safe_snapshot(value: object, secrets: tuple[str, ...] = ()) -> dict[str, obj
             or value.get("stage_ids") != result.get("stage_ids")
         ):
             raise ValueError("report_credential_collision")
+    if "installed_handoff" in value:
+        original_handoffs = _HANDOFFS.validate_json(canonical(value["installed_handoff"]))
+        public_handoffs = _HANDOFFS.validate_json(canonical(result["installed_handoff"]))
+        if original_handoffs != public_handoffs:
+            raise ValueError("report_credential_collision")
     return result
 
 
@@ -171,6 +180,7 @@ def build_report(
     source = load_source(path, profile)
     cards, skipped = current_cards(path, profile, run.objectives, root)
     selected, suppressed = _selected(cards)
+    handoffs, _ = installed_handoff(Batches(root, digest(str(root.resolve()))), cards, source)
     retained = {(str(s["note_id"]), str(s["card_key"])): s for s in suppressed}
     chosen = {(c.claims.note_id, c.claims.card_key) for c in selected[: profile.selection.output_limit]}
     exported = cast(dict[str, object], execution.get("file_export", {}))
@@ -301,6 +311,8 @@ def build_report(
         if assessment.eligible:
             if ref in exported_refs:
                 kind, reason = "exported", "accepted_selected"
+            elif any(h.note_id == card.claims.note_id for h in handoffs):
+                kind, reason = "withheld", "installed_content_unresolved"
             elif ref not in chosen:
                 kind, reason = "accepted_unselected", str(retained.get(ref, {}).get("reason", "output_limit"))
             else:
@@ -311,7 +323,11 @@ def build_report(
         elif "decide" not in stages and assessment.reason == "stale_evidence":
             kind, reason = "deferred", "assessment_not_run"
         findings = [row for rows in stages.values() for row in rows if (row.get("note_id"), row.get("card_key")) == ref]
-        outcomes.append(_card_outcome(card, kind, reason, entry_links, pattern_links, decisions, findings))
+        outcome = _card_outcome(card, kind, reason, entry_links, pattern_links, decisions, findings)
+        if reason == "installed_content_unresolved":
+            prior_ids = {i for h in handoffs if h.note_id == card.claims.note_id for i in h.previous_decision_ids}
+            outcome = outcome.model_copy(update={"related_ids": tuple(sorted(set(outcome.related_ids) | prior_ids))})
+        outcomes.append(outcome)
     for skip in skipped:
         entries = cast(list[str], decode_json(skip.get("source_entries", "[]")))
         links = [entry_links[e] for e in entries if e in entry_links]
@@ -391,6 +407,7 @@ def build_report(
     )
     return {
         **execution,
+        "installed_handoff": [h.model_dump(mode="json") for h in handoffs],
         "outcome_report": Reporting(schema_version=1, record=report, details=details).model_dump(mode="json"),
     }
 
@@ -487,6 +504,13 @@ def readable(report: dict[str, object]) -> str:
         "Selection: " + json.dumps(model.effective_profile.selection.model_dump()),
         "Reuse (analysis/provider operations this invocation): " + json.dumps(details.reuse),
         "Validated receipt IDs: " + ", ".join(model.receipt_ids),
+        "Unresolved installed content: "
+        + (
+            json.dumps([h.model_dump() for h in _HANDOFFS.validate_json(canonical(report["installed_handoff"]))])
+            if "installed_handoff" in report
+            else "not assessed in this snapshot"
+        ),
+        IMPORT_ACTION,
         str(report.get("coverage_limit", "")),
     ]
     for (kind, reason, origin, policy, version), examples in sorted(groups.items()):

@@ -7,7 +7,7 @@ import typer
 
 from ..acceptance_records import canonical
 from ..grammar_layout import GRAMMAR_FIELDS, GRAMMAR_LAYOUT, LAYOUT_SHA256
-from ..pipeline_consumers import adapt, decide, export, load_run, load_source, preview
+from ..pipeline_consumers import adapt, decide, export, handoff, load_run, load_source, preview
 from ..pipeline_orchestration import cancel, execute, prepare, reconcile_call, report
 from ..pipeline_profile import PipelineProfile, RecipeOverrides, load_pipeline_profile, resolve_recipes
 from ..pipeline_reporting import readable
@@ -93,6 +93,15 @@ def preview_command(
             path, preset, include_recipe, exclude_recipe, save_profile, None if profile else saved.profile
         )
         _emit(preview(run, path, effective_profile=effective), machine)
+    except (OSError, ValueError) as error:
+        _error(error, machine)
+
+
+@app.command(name="handoff")
+def handoff_command(run: RunOption, profile: Path | None = None, machine: JsonOption = False) -> None:
+    """List unresolved prior exports and manual actions; never observe or apply to Anki."""
+    try:
+        _emit(handoff(run, profile), machine)
     except (OSError, ValueError) as error:
         _error(error, machine)
 

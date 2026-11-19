@@ -342,6 +342,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
         "adapt",
         "preview",
         "export",
+        "handoff",
         "stage",
         "validate",
         "migration-plan",

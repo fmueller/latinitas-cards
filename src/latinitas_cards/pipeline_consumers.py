@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from .acceptance import AcceptanceReader, save_acceptance
 from .acceptance_policy import ScopeCell, implementation_digest
@@ -29,6 +30,18 @@ from .acceptance_records import (
 from .card_acceptance import CardClaims, DecisionSource, export_cards
 from .claim_review import Evidence
 from .deck_evidence import SourceCell, _construction_issues
+from .export_receipts import (
+    IMPORT_ACTION,
+    MANUAL_ACTION,
+    Assessment,
+    Cursor,
+    ExportCard,
+    ExportFile,
+    ExportReceipt,
+    Handoff,
+    ReceiptCardRef,
+    invalidated_cards,
+)
 from .form_recipes import RULE_VERSION, derive_form, form_translations
 from .grammar_layout import COLUMNS, GRAMMAR_LAYOUT, LAYOUT_SHA256
 from .identity import ResolvedSourceIdentity, derive_latinitas_id, resolve_source_identities
@@ -1031,7 +1044,16 @@ def export(
 
 def _card_projection(items: list[Rendered]) -> object:
     return [
-        (c.claims.note_id, c.claims.card_key, c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
+        (
+            c.claims.note_id,
+            c.claims.card_key,
+            c.binding,
+            c.versions,
+            c.claims.assertions,
+            c.prompt,
+            c.answer,
+            tuple(s.reader.read(s.path)[0].decision_id for s in c.claims.decisions),
+        )
         for c in items
     ]
 
@@ -1052,6 +1074,90 @@ def _selection_snapshot(
             "recipes": profile.recipes,
         }
     )
+
+
+def _export_card(card: Rendered, source: Source) -> ExportCard | None:
+    assessment = card.claims.assess()
+    if not assessment.eligible:
+        return None
+    decisions = tuple(s.reader.read(s.path)[0].decision_id for s in card.claims.decisions)
+    slot = next(t.slot for t in GRAMMAR_LAYOUT if t.slot.recipe == card.recipe)
+    return ExportCard(
+        note_id=card.claims.note_id,
+        card_key=card.claims.card_key,
+        decision_ids=decisions,
+        assertion_ids=tuple(a.id for a in card.claims.assertions),
+        rendered_sha256=digest(
+            (render_phrase_text(card.prompt, source.deck), render_phrase_text(card.answer, source.deck))
+        ),
+        acceptance=cast(Literal["human", "automatic", "mixed"], assessment.origin),
+        owned_fields=("LatinitasID", "CardKey", slot.enabled_field, slot.prompt_field, slot.answer_field),
+        owned_tags=(),
+    )
+
+
+def installed_handoff(
+    batches: Batches, cards: tuple[Rendered, ...], source: Source | None
+) -> tuple[tuple[Handoff, ...], dict[CardRef, ExportCard]]:
+    """Reassess all prior exports, including other branches of the batch history."""
+    current = {}
+    for card in cards:
+        assert source is not None
+        ref = CardRef(note_id=card.claims.note_id, card_key=card.claims.card_key)
+        current[ref] = Assessment(_export_card(card, source), card.claims.assess().reason)
+    previous = []
+    legacy: dict[CardRef, Handoff] = {}
+    for receipt_id in sorted(set(batches.index.requests.values())):
+        batch = batches.read(receipt_id)
+        raw = batch.result.get("export_receipt")
+        if raw is not None:
+            receipt = ExportReceipt.read_json(canonical(raw))
+            if receipt.run_id != batches.run_id or receipt.files != (
+                ExportFile(path=batch.output, sha256=batch.output_sha256),
+            ):
+                raise ValueError("export receipt publication mismatch")
+            previous.append(receipt)
+        else:
+            # Historical selection receipts cannot prove the assertion/policy
+            # commitments needed to declare an installed card still current.
+            for ref in batch.emitted_cards:
+                legacy[ref] = Handoff(
+                    **ref.model_dump(),
+                    previous_decision_ids=(),
+                    reason="legacy_receipt_missing_acceptance_commitments",
+                    resolution="manual",
+                    required_action=MANUAL_ACTION,
+                )
+    handoffs = {CardRef(note_id=h.note_id, card_key=h.card_key): h for h in invalidated_cards(previous, current)}
+    handoffs.update(legacy)
+    return (
+        tuple(handoffs[ref] for ref in sorted(handoffs, key=lambda r: (r.note_id, r.card_key))),
+        {ref: a.card for ref, a in current.items() if a.card is not None},
+    )
+
+
+def handoff(root: Path, profile_path: Path | None = None) -> dict[str, object]:
+    """Inspect unresolved installed content even when current inputs cannot load."""
+    with run_lock(root):
+        run = load_run(root)
+        path = profile_path or Path(run.profile_path)
+        profile = load_pipeline_profile(path) if profile_path else run.profile
+        source = None
+        cards: tuple[Rendered, ...] = ()
+        try:
+            source = load_source(path, profile)
+            cards, _ = current_cards(path, profile, run.objectives, root)
+        except (ValueError, OSError):
+            # This cannot authorize export. Preserve known identities rather
+            # than treating unavailable input as proof of successful resolution.
+            pass
+        actions, _ = installed_handoff(Batches(root, digest(str(root.resolve()))), cards, source)
+        return {
+            "state": "not_applied",
+            "installation": "presumed_from_export_not_observed",
+            "ineligible": [a.model_dump(mode="json") for a in actions],
+            "required_action": IMPORT_ACTION,
+        }
 
 
 def _export(
@@ -1086,18 +1192,29 @@ def _export(
     snapshot = _selection_snapshot(selected, skipped, suppressed, profile)
     batches = Batches(root, digest(str(root.resolve())))
     batches.recover(snapshot)
+    handoffs, commitments = installed_handoff(batches, cards, source)
     request_id, replay, emitted = batches.request(
         snapshot, limit, profile.layout.template_sha256, after_receipt, reconcile_receipt
     )
+    unresolved_notes = {h.note_id for h in handoffs}
     if replay is not None:
+        raw = replay.result.get("export_receipt")
+        prior = ExportReceipt.read_json(canonical(raw)) if raw is not None else None
+        if handoffs != (prior.ineligible if prior is not None else ()) or (
+            prior is not None and any(c.note_id in unresolved_notes for c in prior.cards)
+        ):
+            raise ValueError("installed content changed; explicit reconciliation required")
         return batches.result(replay)
     if output.exists():
         raise ValueError("choose a new output outside the evidence store")
-    refs = [CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key) for c in selected]
-    remaining = [c for c, ref in zip(selected, refs, strict=True) if ref not in emitted]
+    safe_selected = [c for c in selected if c.claims.note_id not in unresolved_notes]
+    refs = [CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key) for c in safe_selected]
+    remaining = [c for c, ref in zip(safe_selected, refs, strict=True) if ref not in emitted]
     eligible = remaining if limit is None else remaining[:limit]
     touched_notes = {c.claims.note_id for c in eligible}
-    carried = [c for c, ref in zip(selected, refs, strict=True) if ref in emitted and c.claims.note_id in touched_notes]
+    carried = [
+        c for c, ref in zip(safe_selected, refs, strict=True) if ref in emitted and c.claims.note_id in touched_notes
+    ]
     notes: dict[str, dict[str, str]] = {}
     for card in (*eligible, *carried):
         fields = notes.setdefault(card.claims.note_id, dict.fromkeys(COLUMNS, ""))
@@ -1112,6 +1229,31 @@ def _export(
     rows = tuple(tuple(fields[column] for column in COLUMNS) for fields in notes.values())
     payload = serialize_anki_csv(source.deck.generated_note_type, source.deck.target_deck, COLUMNS, rows)
     exported_refs = tuple(CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key) for c in eligible)
+    cursor = Cursor(
+        selection_sha256=snapshot,
+        ordered_card_refs_sha256=digest(refs),
+        emitted_cards=tuple(ReceiptCardRef(**r.model_dump()) for r in dict.fromkeys((*emitted, *exported_refs))),
+    )
+    previous_id = after_receipt or reconcile_receipt
+    previous_export = batches.read(previous_id).result.get("export_receipt") if previous_id is not None else None
+    export_record = {
+        "format": "latinitas-export-receipt",
+        "version": 1,
+        "run_id": batches.run_id,
+        "previous_receipt_id": ExportReceipt.read_json(canonical(previous_export)).receipt_id
+        if previous_export
+        else None,
+        "selection_sha256": snapshot,
+        "layout_sha256": profile.layout.template_sha256,
+        "files": (ExportFile(path=str(output.resolve()), sha256=hashlib.sha256(payload).hexdigest()),),
+        "cards": tuple(
+            commitments[CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key)] for c in (*eligible, *carried)
+        ),
+        "ineligible": handoffs,
+        "batch_cursor": cursor,
+        "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    }
+    export_receipt = ExportReceipt.model_validate({**export_record, "receipt_id": digest(export_record)})
     result: dict[str, object] = {
         "exported": len(eligible),
         "notes": len(rows),
@@ -1144,8 +1286,11 @@ def _export(
             for c in cards
             if not c.claims.assess().eligible
         ],
+        "export_receipt": export_receipt.model_dump(mode="json"),
+        "unresolved_note_rows": sorted(unresolved_notes),
+        "application": {"state": "not_applied", "resolution": "manual", "required_action": IMPORT_ACTION},
         "requires": "explicit grammar-v1 new note type installation and manual import; "
-        "no destination handoff/application",
+        "destination inspection/approval and manual resolution are separate; no Anki application",
     }
     receipt = Receipt(
         format="latinitas-selection-receipt",
