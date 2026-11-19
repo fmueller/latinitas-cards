@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- Opt-in `acceptance-1` answers show per-card review origin and collapsible evidence
+  in German/English; migration proposals never replace installed templates.
 - `curated` previews German/English rule-application, formation, component and opt-in
   mnemonic cards; CSV export requires exact human content and rendered-card review.
 - Saved `grammar-study` selections combine curated recipes with production drills;

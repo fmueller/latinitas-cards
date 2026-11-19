@@ -350,6 +350,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
         "stage",
         "validate",
         "migration-plan",
+        "confirm-layout",
         "run",
         "resume",
         "cancel",

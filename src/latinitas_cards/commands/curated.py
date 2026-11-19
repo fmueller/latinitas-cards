@@ -83,7 +83,35 @@ def _settings(
         }
         with save.open("xb") as stream:
             stream.write(canonical(saved))
-    return Settings(effective.language, effective.recipes, theme, effective)
+    return Settings(effective.language, effective.recipes, theme, effective, profile)
+
+
+def _production_configuration(
+    path: Path | None,
+    shared: PipelineProfile | None,
+    language: str | None,
+    preset: str | None,
+    include: list[str] | None,
+    exclude: list[str] | None,
+) -> PipelineProfile | None:
+    if path is None:
+        if shared is not None and shared.layout.id == "acceptance-1":
+            raise ValueError("acceptance-1 combined output requires an independently confirmed --production-profile")
+        return shared
+    effective = load_pipeline_profile(path)
+    selected_preset = preset if preset is not None else effective.preset
+    overrides = RecipeOverrides(include=tuple(include or ()), exclude=tuple(exclude or ()))
+    effective = PipelineProfile.read_json(
+        canonical(
+            {
+                **effective.model_dump(),
+                "language": language or effective.language,
+                "preset": selected_preset,
+                "recipes": resolve_recipes(selected_preset, effective.recipe_overrides),
+            }
+        )
+    )
+    return effective.overridden(overrides)
 
 
 def _loader(input_path: Path, permissions: Path, plan: Path, approvals: Path | None) -> Loader:
@@ -126,12 +154,27 @@ def preview(
     theme: Theme = "light",
     html: Path | None = None,
     production_run: Path | None = None,
+    production_profile: Path | None = None,
 ) -> None:
     """Inspect intake, or exact learning cards with --plan; never approve by previewing."""
     try:
+        if production_profile is not None and production_run is None:
+            raise ValueError("production-profile requires production-run")
         data, permission = load_curated(input_path, permissions)
         if plan is None:
-            if any((language, profile, preset, include_recipe, exclude_recipe, save_profile, html, production_run)):
+            if any(
+                (
+                    language,
+                    profile,
+                    preset,
+                    include_recipe,
+                    exclude_recipe,
+                    save_profile,
+                    html,
+                    production_run,
+                    production_profile,
+                )
+            ):
                 raise ValueError("card configuration requires --plan")
             report = preview_candidates(data, permission, load_approvals(approvals))
             report["effective_configuration"] = {"mode": "offline", "intake_version": 1}
@@ -155,8 +198,11 @@ def preview(
                 if profile is None:
                     raise ValueError("production-run requires the shared pipeline profile")
                 try:
+                    effective = _production_configuration(
+                        production_profile, settings.profile, language, preset, include_recipe, exclude_recipe
+                    )
                     report["production"] = production_preview(
-                        production_run, profile, effective_profile=settings.profile
+                        production_run, production_profile or profile, effective_profile=effective
                     )
                 except (ValueError, OSError) as error:
                     report["production"] = {"state": "withheld", "reason": str(error)}
@@ -233,12 +279,15 @@ def export_command(
     after_receipt: str | None = None,
     reconcile_receipt: str | None = None,
     production_run: Path | None = None,
+    production_profile: Path | None = None,
     production_output: Path | None = None,
     production_after_receipt: str | None = None,
     production_reconcile_receipt: str | None = None,
 ) -> None:
     """Export exactly human-approved cards and retain receipts/manual withdrawal actions."""
     try:
+        if production_profile is not None and production_run is None:
+            raise ValueError("production-profile requires production-run")
         if (production_run is None) != (production_output is None):
             raise ValueError("production-run and production-output are required together")
         if production_run is not None:
@@ -264,6 +313,15 @@ def export_command(
             data.items[0].rule.language if data.items else None,
             input_path,
         )
+        production_config = None
+        if production_run is not None:
+            from ..pipeline_consumers import preview as production_preview
+
+            production_config = _production_configuration(
+                production_profile, settings.profile, language, preset, include_recipe, exclude_recipe
+            )
+            if production_profile is not None or (settings.profile and settings.profile.layout.id == "acceptance-1"):
+                production_preview(production_run, production_profile or profile, effective_profile=production_config)
         report = export_curated(
             run, output, load, settings, after_receipt=after_receipt, reconcile_receipt=reconcile_receipt
         )
@@ -274,8 +332,8 @@ def export_command(
                 report["production"] = production_export(
                     production_run,
                     production_output,
-                    profile_path=profile,
-                    effective_profile=settings.profile,
+                    profile_path=production_profile or profile,
+                    effective_profile=production_config,
                     after_receipt=production_after_receipt,
                     reconcile_receipt=production_reconcile_receipt,
                 )

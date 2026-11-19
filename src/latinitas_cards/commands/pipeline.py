@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 
 import typer
 
+from ..acceptance_presentation import ACCEPTANCE_FIELDS, confirm_installation, layout_digest, stylesheet
 from ..acceptance_records import canonical
 from ..grammar_layout import GRAMMAR_FIELDS, GRAMMAR_LAYOUT, LAYOUT_SHA256
 from ..pipeline_consumers import adapt, decide, export, handoff, load_run, load_source, preview
@@ -289,21 +290,56 @@ def validate_command(profile: ProfileOption, machine: JsonOption = False) -> Non
 
 
 @app.command(name="migration-plan")
-def migration_plan(machine: JsonOption = False) -> None:
+def migration_plan(
+    machine: JsonOption = False, acceptance: bool = False, family: Literal["grammar", "curated"] = "grammar"
+) -> None:
     """Copyable append-only layout proposal, never an installation or scheduled-template rewrite."""
+    from ..curated_cards import CURATED_FIELDS, CURATED_LAYOUT
+
+    fields = GRAMMAR_FIELDS if family == "grammar" else CURATED_FIELDS
+    templates = GRAMMAR_LAYOUT if family == "grammar" else CURATED_LAYOUT
+    if family == "curated" and not acceptance:
+        raise typer.BadParameter("curated migration requires --acceptance")
+    if acceptance:
+        fields = (*fields, *(("Personal Notes",) if family == "curated" else ()), *ACCEPTANCE_FIELDS)
     _emit(
         {
-            "id": "grammar-v1",
+            "id": "acceptance-1" if acceptance else "grammar-v1",
             "version": 1,
-            "template_sha256": LAYOUT_SHA256,
-            "requires": "Create an explicitly named new grammar-v1 note type; existing ordinals stay unchanged. "
-            "Manual installation/import only.",
-            "fields": GRAMMAR_FIELDS,
-            "css": REFERENCE_CARD_CSS,
+            "template_sha256": layout_digest(family) if acceptance else LAYOUT_SHA256,
+            "requires": (
+                "Manual opt-in installation only; CSV headers never install templates. Preserve existing "
+                "LatinitasID, CardKey, template ordinals, Personal Notes, user/source tags and scheduling. "
+                "Back up and inspect the actual destination before any update. Native preservation is unverified. "
+                "After installing this exact family layout, use pipeline confirm-layout --profile FILE --installed "
+                "with the matching --family. The profile keeps its three layout keys."
+                if acceptance
+                else "Create an explicitly named new grammar-v1 note type; existing ordinals stay unchanged. "
+                "Manual installation/import only."
+            ),
+            "fields": fields,
+            "css": stylesheet() if acceptance else REFERENCE_CARD_CSS,
             "templates": [
                 {"ordinal": t.slot.ordinal, "name": t.slot.template_name, "front": t.front, "back": t.back}
-                for t in GRAMMAR_LAYOUT
+                for t in templates
             ],
         },
         machine,
     )
+
+
+@app.command(name="confirm-layout")
+def confirm_layout(
+    profile: ProfileOption,
+    installed: bool = False,
+    family: Literal["grammar", "curated"] = "grammar",
+    machine: JsonOption = False,
+) -> None:
+    """Record your explicit installation attestation, not native verification or an Anki write."""
+    try:
+        if not installed:
+            raise ValueError("confirm --installed only after manually installing the exact migration-plan")
+        path = confirm_installation(profile, family)
+        _emit({"confirmation": str(path), "native_verified": False, "applied": False}, machine)
+    except (OSError, ValueError) as error:
+        _error(error, machine)

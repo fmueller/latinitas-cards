@@ -180,14 +180,14 @@ def build_report(
     source = load_source(path, profile)
     cards, skipped = current_cards(path, profile, run.objectives, root)
     selected, suppressed = _selected(cards)
-    handoffs, _ = installed_handoff(Batches(root, digest(str(root.resolve()))), cards, source)
+    handoffs, _ = installed_handoff(Batches(root, digest(str(root.resolve()))), cards, source, profile)
     retained = {(str(s["note_id"]), str(s["card_key"])): s for s in suppressed}
     chosen = {(c.claims.note_id, c.claims.card_key) for c in selected[: profile.selection.output_limit]}
     exported = cast(dict[str, object], execution.get("file_export", {}))
     exports = [exported] if exported else []
     if not exported:
         batches = Batches(root, digest(str(root.resolve())))
-        snapshot = _selection_snapshot(selected, skipped, suppressed, profile)
+        snapshot = _selection_snapshot(selected, skipped, suppressed, profile, source)
         for receipt_id in sorted(set(batches.index.requests.values())):
             try:
                 receipt = batches.read(receipt_id)

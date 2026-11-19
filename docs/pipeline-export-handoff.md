@@ -11,8 +11,9 @@ publication as the CSV and batch receipt, rather than published as another file.
 Each exported card lists its semantic note/card identity, decision IDs, assertion
 IDs, rendered-content digest, acceptance origin and owned fields/tags. Decision
 IDs bind the assertions to their evidence, source, checker versions and policy.
-The grammar layout currently owns no acceptance tags; this receipt does not
-install the later acceptance presentation layout or approve any destination.
+Legacy `grammar-v1` owns no acceptance tags; opt-in `acceptance-1` receipts own
+the managed tags described below. Neither receipt installs a layout or approves
+any destination.
 
 Regeneration checks every prior export in this run, including earlier partial
 batches. Ineligible cards retain their previous authority IDs and reasons in
@@ -62,3 +63,69 @@ and invalidation reasons. Exact rule/mnemonic/rendered-approval checking belongs
 to the curated consumer; a generic human decision cannot approve curated content.
 Synthetic ledger/automatic-policy fixtures are engineering controls, not semantic
 evaluation or policy enablement. Ordinary automatic learning export remains disabled.
+
+## Opt-in acceptance answers
+
+`pipeline migration-plan --acceptance --family grammar --json` prints the
+`acceptance-1` field/template/CSS proposal; use `--family curated` for curated
+cards. Neither command installs anything. The family-specific template digest
+must match the profile's layout, with exactly `id: acceptance-1`, `version: 1`
+and `template_sha256`. After manual installation, explicitly attest it with
+`pipeline confirm-layout --profile FILE --family grammar --installed --json`
+(or `--family curated`). This writes a local `FILE.acceptance-1.json` sidecar
+bound to that profile path, family and layout, without altering the approved
+profile schema. It is an attestation, not observed/native installation evidence.
+Missing, moved, conflicting or stale confirmation blocks the opt-in layout.
+Legacy three-key layouts remain valid and unchanged. Curated and grammar
+digests are different. For combined `curated` preview/export, supply the curated
+`--profile` and a separately confirmed grammar `--production-profile`, alongside
+`--production-run` (and `--production-output` for export). Explicit language,
+preset and recipe overrides apply to both; each retains its own inputs, policy,
+selection and relative-path base. Invalid production layout configuration is
+checked before curated publication, but the two exports remain separate
+transactions with explicit recovery reporting for later failures.
+
+Back up the actual collection first. Append the three managed fields `Acceptance
+Data`, `Evidence Summary`, `Acceptance Receipt`; preserve the first identity
+field, semantic CardKey, every existing field position, template order and
+user-owned fields. The complete installed schema is the old field sequence,
+including Personal Notes, followed by the three new fields. Map CSV columns by
+field name; leave Personal Notes unmapped. Install the
+proposal only by explicit opt-in. The exporter does not write Personal Notes in
+this layout. Offline identity/ordinal checks do not prove scheduling or review
+history preservation; native import/update acceptance remains T-201.
+
+Answers show each card's own human/automatic origin and a native keyboard-operable
+disclosure: `Warum diese Antwort?` or `Why this answer?`. Evidence is collapsed
+initially, with basis/check summaries and limitations, not private reasoning or
+model-confidence percentages. Full references remain in the stored report.
+Curated candidate renderings say that the approval route is human, not that an
+unreviewed candidate has passed. The separately labeled `approval_back_html`
+shows the proposed learning appearance if approved, including its human status
+and required completed-check wording; it is not current approval. The rendered
+fingerprint commits to that exact prospective answer and front. Only after all
+matching human approvals does the unchanged prospective answer enter learning
+CSV. Decision IDs stay in metadata rather than changing the approved appearance.
+
+`Acceptance Data` stores version 1 per-card decision IDs, origin, basis, checks
+and limitations; `Evidence Summary` stores escaped per-card HTML; `Acceptance
+Receipt` identifies the local run and card keys, not the circular final receipt
+digest. These fields never supply acceptance authority. Namespaced tags summarize
+all currently assessed siblings: human only when all are human, automatic only
+when all are automatic, mixed otherwise, incomplete when one is unresolved.
+Basis tags indicate at least one sibling's basis. Source tags retain their case;
+an unowned acceptance/basis namespace collision blocks export, conservatively
+including case variants. Grammar source tags contribute to the export snapshot,
+not linguistic acceptance: tag-only updates require explicit reconciliation
+instead of silently replaying an old request. Collisions are checked before
+replay/recovery. Destination-only
+tags still require the manual destination workflow above before reimport.
+
+Morphology uses the deck profile's existing terminology conventions, muted or
+monochrome themes and light/dark appearance. Answers carry accepted analyses as
+text; fronts receive no analysis decorations. Labels, weight and underlining do
+not depend on color alone. Presentation-only theme/layout choices preserve
+linguistic decisions and semantic identity; terminology/content changes still
+need their evidence. A curated theme/layout change invalidates the exact rendered
+approval while retaining unchanged rule approval. No syntax/construction palette
+or automatic template replacement is included.

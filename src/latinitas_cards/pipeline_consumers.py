@@ -15,6 +15,7 @@ from typing import Literal, cast
 
 from .acceptance import AcceptanceReader, save_acceptance
 from .acceptance_policy import ScopeCell, implementation_digest
+from .acceptance_presentation import ACCEPTANCE_FIELDS, Presentation, metadata, note_tags, require_installation
 from .acceptance_records import (
     Acceptance,
     Assertion,
@@ -656,7 +657,19 @@ def _automatic_objectives(source: Source, recipes: tuple[str, ...]) -> tuple[For
 def current_cards(
     profile_path: Path, profile: PipelineProfile, objectives: Objectives, root: Path
 ) -> tuple[tuple[Rendered, ...], tuple[dict[str, str], ...]]:
-    if (profile.layout.id, profile.layout.version, profile.layout.template_sha256) != ("grammar-v1", 1, LAYOUT_SHA256):
+    if profile.layout.id == "acceptance-1":
+        require_installation(
+            profile.layout.id,
+            profile.layout.version,
+            profile.layout.template_sha256,
+            profile_path,
+            "grammar",
+        )
+    elif (profile.layout.id, profile.layout.version, profile.layout.template_sha256) != (
+        "grammar-v1",
+        1,
+        LAYOUT_SHA256,
+    ):
         raise ValueError("explicit grammar-v1 layout installation/migration required")
     source = load_source(profile_path, profile)
     versions = _versions(profile)
@@ -795,11 +808,19 @@ def current_cards(
                         else tuple(p for p in source.data.patterns if p.key == objective.selection.pattern),
                     }
                 ),
-                mapping_sha256=digest(source.deck),
+                mapping_sha256=digest(
+                    source.deck.apply_overrides(
+                        {"morphology": {"theme": "muted", "appearance": "light", "comparison": "static"}}
+                    )
+                ),
                 task_sha256=digest(objective),
                 language=profile.language,
                 config_sha256=digest(
-                    {"language": profile.language, "layout": profile.layout, "registry": source.data.registry_version}
+                    {
+                        "language": profile.language,
+                        "layout": {"id": "grammar-v1", "version": 1, "template_sha256": LAYOUT_SHA256},
+                        "registry": source.data.registry_version,
+                    }
                 ),
             )
             cells = tuple(
@@ -950,6 +971,7 @@ def preview(
     cards, skipped = current_cards(path, profile, run.objectives, root)
     selected, suppressed = _selected(cards)
     limit = profile.selection.output_limit
+    source = load_source(path, profile)
     return {
         "recipes": profile.recipes,
         "language": profile.language,
@@ -961,6 +983,11 @@ def preview(
                 "recipe": c.recipe,
                 "prompt": c.prompt,
                 "answer": c.answer,
+                **(
+                    {"front_html": render_phrase_text(c.prompt, source.deck), "back_html": _answer(c, source, profile)}
+                    if profile.layout.id == "acceptance-1"
+                    else {}
+                ),
                 "state": "accepted" if c.claims.assess().eligible else "withheld",
                 "reason": c.claims.assess().reason,
                 "assertions": [a.model_dump(mode="json") for a in c.claims.assertions],
@@ -1064,7 +1091,14 @@ def _selection_snapshot(
     skipped: tuple[dict[str, str], ...],
     suppressed: list[dict[str, str]],
     profile: PipelineProfile,
+    source: Source,
 ) -> str:
+    inherited = {}
+    if profile.layout.id == "acceptance-1":
+        for card in selected:
+            tags = _inherited_tags((card,), source)
+            note_tags((presentation(card, profile.language),), tags)
+            inherited[card.claims.note_id] = tags
     return digest(
         {
             "ranking": "selection-v1",
@@ -1073,11 +1107,72 @@ def _selection_snapshot(
             "suppressed": suppressed,
             "selection": profile.selection.model_dump(exclude={"output_limit"}),
             "recipes": profile.recipes,
+            **({"source_tags": inherited} if profile.layout.id == "acceptance-1" else {}),
         }
     )
 
 
-def _export_card(card: Rendered, source: Source) -> ExportCard | None:
+def _inherited_tags(cards: tuple[Rendered, ...], source: Source) -> tuple[str, ...]:
+    tags: list[str] = []
+    for card in cards:
+        if isinstance(card.objective, FormObjective):
+            entries: tuple[str, ...] = (card.objective.entry,)
+        else:
+            entries = tuple(binding.entry for binding in card.objective.selection.bindings)
+        for entry in entries:
+            tags.extend(source.records[entry].source_tags)
+    return tuple(dict.fromkeys(tags))
+
+
+def presentation(card: Rendered, language: str) -> Presentation:
+    assessment = card.claims.assess()
+    decisions = tuple(s.reader.read(s.path)[0] for s in card.claims.decisions) if assessment.eligible else ()
+    checks = tuple(c for d in decisions for c in d.checks)
+    methods = {c.method for c in checks}
+    categories = {"source"} | (methods & {"rule", "library"})
+    if methods & {"blind_model", "semantic_comparison"}:
+        categories.add("model")
+    basis = tuple(sorted(categories)) + tuple(
+        dict.fromkeys(f"{e.source} / {e.reference} ({e.version})" for a in card.claims.assertions for e in a.evidence)
+    )
+    return Presentation(
+        card.claims.card_key,
+        assessment.origin if assessment.eligible else "none",
+        tuple(d.decision_id for d in decisions),
+        basis,
+        tuple(dict.fromkeys(f"{c.method}: {c.result}" for c in checks)),
+        (
+            (
+                "Referenzantwort; Selbstbeurteilung. Keine empirische Richtigkeitsquote."
+                if language == "de"
+                else "Reference answer; self-assessment. No empirical accuracy estimate."
+            ),
+            *(card.objective.caveats if isinstance(card.objective, FormObjective) else ()),
+            *(
+                ("Alternative Lesarten beachten." if language == "de" else "Allow alternate readings.",)
+                if any(a.alternatives for a in card.claims.assertions)
+                else ()
+            ),
+            *((assessment.reason,) if not assessment.eligible else ()),
+        ),
+    )
+
+
+def _answer(card: Rendered, source: Source, profile: PipelineProfile | None) -> str:
+    if profile is None or profile.layout.id != "acceptance-1":
+        return render_phrase_text(card.answer, source.deck)
+
+    text = card.answer
+    if isinstance(card.objective, FormObjective) and not card.recipe.endswith("recognition"):
+        target = cast(dict[str, object], decode_json(next(a.value for a in card.claims.assertions if a.id == "target")))
+        analysis = _features(Features.model_validate(target["features"]), source.deck)
+        text += "\n" + ("Analyse: " if profile.language == "de" else "Analysis: ") + analysis
+    answer = render_phrase_text(text, source.deck)
+    panel = presentation(card, profile.language).answer(profile.language)
+    return answer.removesuffix("</div>") + panel + "</div>"
+
+
+def _export_card(card: Rendered, source: Source, profile: PipelineProfile | None = None) -> ExportCard | None:
     assessment = card.claims.assess()
     if not assessment.eligible:
         return None
@@ -1088,24 +1183,37 @@ def _export_card(card: Rendered, source: Source) -> ExportCard | None:
         card_key=card.claims.card_key,
         decision_ids=decisions,
         assertion_ids=tuple(a.id for a in card.claims.assertions),
-        rendered_sha256=digest(
-            (render_phrase_text(card.prompt, source.deck), render_phrase_text(card.answer, source.deck))
-        ),
+        rendered_sha256=digest((render_phrase_text(card.prompt, source.deck), _answer(card, source, profile))),
         acceptance=cast(Literal["human", "automatic", "mixed"], assessment.origin),
-        owned_fields=("LatinitasID", "CardKey", slot.enabled_field, slot.prompt_field, slot.answer_field),
-        owned_tags=(),
+        owned_fields=(
+            "LatinitasID",
+            "CardKey",
+            slot.enabled_field,
+            slot.prompt_field,
+            slot.answer_field,
+            *(ACCEPTANCE_FIELDS if profile and profile.layout.id == "acceptance-1" else ()),
+        ),
+        owned_tags=note_tags((presentation(card, profile.language),), ())
+        if profile and profile.layout.id == "acceptance-1"
+        else (),
     )
 
 
 def installed_handoff(
-    batches: Batches, cards: tuple[Rendered, ...], source: Source | None
+    batches: Batches, cards: tuple[Rendered, ...], source: Source | None, profile: PipelineProfile | None = None
 ) -> tuple[tuple[Handoff, ...], dict[CardRef, ExportCard]]:
     """Reassess all prior exports, including other branches of the batch history."""
     current = {}
     for card in cards:
         assert source is not None
         ref = CardRef(note_id=card.claims.note_id, card_key=card.claims.card_key)
-        current[ref] = Assessment(_export_card(card, source), card.claims.assess().reason)
+        current[ref] = Assessment(_export_card(card, source, profile), card.claims.assess().reason)
+    if profile and profile.layout.id == "acceptance-1":
+        for ref, assessment in tuple(current.items()):
+            siblings = tuple(c for c in cards if c.claims.note_id == ref.note_id)
+            tags = note_tags(tuple(presentation(c, profile.language) for c in siblings), ())
+            if assessment.card:
+                current[ref] = Assessment(assessment.card.model_copy(update={"owned_tags": tags}), assessment.reason)
     previous = []
     legacy: dict[CardRef, Handoff] = {}
     for receipt_id in sorted(set(batches.index.requests.values())):
@@ -1152,7 +1260,7 @@ def handoff(root: Path, profile_path: Path | None = None) -> dict[str, object]:
             # This cannot authorize export. Preserve known identities rather
             # than treating unavailable input as proof of successful resolution.
             pass
-        actions, _ = installed_handoff(Batches(root, digest(str(root.resolve()))), cards, source)
+        actions, _ = installed_handoff(Batches(root, digest(str(root.resolve()))), cards, source, profile)
         return {
             "state": "not_applied",
             "installation": "presumed_from_export_not_observed",
@@ -1191,10 +1299,10 @@ def _export(
         repeated_suppressed,
     ):
         raise ValueError("eligibility changed before export")
-    snapshot = _selection_snapshot(selected, skipped, suppressed, profile)
+    snapshot = _selection_snapshot(selected, skipped, suppressed, profile, source)
     batches = Batches(root, digest(str(root.resolve())))
     batches.recover(snapshot)
-    handoffs, commitments = installed_handoff(batches, cards, source)
+    handoffs, commitments = installed_handoff(batches, cards, source, profile)
     request_id, replay, emitted = batches.request(
         snapshot, limit, profile.layout.template_sha256, after_receipt, reconcile_receipt
     )
@@ -1217,9 +1325,11 @@ def _export(
     carried = [
         c for c, ref in zip(safe_selected, refs, strict=True) if ref in emitted and c.claims.note_id in touched_notes
     ]
+    opted_in = profile.layout.id == "acceptance-1"
+    columns = (*(c for c in COLUMNS[:-1] if c != "Personal Notes"), *ACCEPTANCE_FIELDS, "Tags") if opted_in else COLUMNS
     notes: dict[str, dict[str, str]] = {}
     for card in (*eligible, *carried):
-        fields = notes.setdefault(card.claims.note_id, dict.fromkeys(COLUMNS, ""))
+        fields = notes.setdefault(card.claims.note_id, dict.fromkeys(columns, ""))
         fields["LatinitasID"] = card.claims.note_id
         fields["CardKey"] = " ".join(filter(None, (fields["CardKey"], card.claims.card_key)))
         slot = next(t.slot for t in GRAMMAR_LAYOUT if t.slot.recipe == card.recipe)
@@ -1227,9 +1337,21 @@ def _export(
             raise ValueError("conflicting objectives for one note/template slot")
         fields[slot.enabled_field] = "1"
         fields[slot.prompt_field] = render_phrase_text(card.prompt, source.deck)
-        fields[slot.answer_field] = render_phrase_text(card.answer, source.deck)
-    rows = tuple(tuple(fields[column] for column in COLUMNS) for fields in notes.values())
-    payload = serialize_anki_csv(source.deck.generated_note_type, source.deck.target_deck, COLUMNS, rows)
+        fields[slot.answer_field] = _answer(card, source, profile)
+    if opted_in:
+        for note_id, fields in notes.items():
+            siblings = tuple(c for c in cards if c.claims.note_id == note_id)
+            panels = tuple(presentation(c, profile.language) for c in siblings)
+            inherited = _inherited_tags(siblings, source)
+            owned = note_tags(panels, inherited)
+            fields.update(metadata(panels, profile.language, batches.run_id))
+            fields["Tags"] = " ".join((*inherited, *owned))
+            for c in (*eligible, *carried):
+                if c.claims.note_id == note_id:
+                    ref = CardRef(note_id=note_id, card_key=c.claims.card_key)
+                    commitments[ref] = commitments[ref].model_copy(update={"owned_tags": owned})
+    rows = tuple(tuple(fields[column] for column in columns) for fields in notes.values())
+    payload = serialize_anki_csv(source.deck.generated_note_type, source.deck.target_deck, columns, rows)
     exported_refs = tuple(CardRef(note_id=c.claims.note_id, card_key=c.claims.card_key) for c in eligible)
     cursor = Cursor(
         selection_sha256=snapshot,

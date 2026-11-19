@@ -7,6 +7,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
+from .acceptance_presentation import ACCEPTANCE_FIELDS, Presentation, layout_digest, metadata, note_tags
 from .acceptance_records import canonical, digest
 from .curated import Approval, CuratedInput, load_approvals
 from .curated_cards import (
@@ -41,7 +42,18 @@ MANUAL_ACTION_DE = (
 )
 
 
-def _commitment(card: CuratedCard) -> ExportCard | None:
+def _presentation(card: CuratedCard, language: str) -> Presentation:
+    return Presentation(
+        card.card_key,
+        "human" if card.reason == "accepted" else "none",
+        tuple(identity for r in card.requirements for identity in r.decision_ids),
+        ("curated",),
+        tuple(f"{r.subject}: {r.status}" for r in card.requirements),
+        ("Referenzantwort; Selbstbeurteilung." if language == "de" else "Reference answer; self-assessment.",),
+    )
+
+
+def _commitment(card: CuratedCard, settings: Settings, tags: tuple[str, ...] = ()) -> ExportCard | None:
     if card.reason != "accepted":
         return None
     slot = next(t.slot for t in CURATED_LAYOUT if t.slot.recipe == card.recipe)
@@ -56,8 +68,15 @@ def _commitment(card: CuratedCard) -> ExportCard | None:
         ),
         rendered_sha256=card.fingerprint,
         acceptance="human",
-        owned_fields=("LatinitasID", "CardKey", slot.enabled_field, slot.prompt_field, slot.answer_field),
-        owned_tags=(),
+        owned_fields=(
+            "LatinitasID",
+            "CardKey",
+            slot.enabled_field,
+            slot.prompt_field,
+            slot.answer_field,
+            *(ACCEPTANCE_FIELDS if settings.acceptance_layout else ()),
+        ),
+        owned_tags=tags,
     )
 
 
@@ -82,6 +101,16 @@ def _export(
 ) -> dict[str, object]:
     data, plan, history = load()
     cards, skipped = render_cards(data, plan, history, settings)
+    note_panels = {
+        note_id: tuple(_presentation(card, settings.language) for card in cards if card.note_id == note_id)
+        for note_id in dict.fromkeys(card.note_id for card in cards)
+    }
+    item_tags = {item.key: " ".join(item.tags) for item in data.items}
+    owned_tags = {}
+    if settings.acceptance_layout:
+        for card in cards:
+            if card.note_id not in owned_tags:
+                owned_tags[card.note_id] = note_tags(note_panels[card.note_id], tuple(item_tags[card.item_key].split()))
     # Remember every review seen by this receipt store, including rejections and
     # supersession history. An older approved file cannot erase a seen rejection.
     history_dir = root / "curated-history"
@@ -123,13 +152,19 @@ def _export(
         ):
             raise ValueError("curated receipt publication mismatch")
         previous_receipts.append(previous_record)
-    current = {CardRef(note_id=c.note_id, card_key=c.card_key): Assessment(_commitment(c), c.reason) for c in cards}
+    current = {
+        CardRef(note_id=c.note_id, card_key=c.card_key): Assessment(
+            _commitment(c, settings, owned_tags.get(c.note_id, ())), c.reason
+        )
+        for c in cards
+    }
     handoffs = invalidated_cards(previous_receipts, current)
     if settings.language == "de":
         handoffs = tuple(h.model_copy(update={"required_action": MANUAL_ACTION_DE}) for h in handoffs)
     blocked_notes = {h.note_id for h in handoffs}
     limit = settings.profile.selection.output_limit if settings.profile else None
-    request_id, replay, emitted = batches.request(snapshot, limit, TEMPLATE_SHA256, after_receipt, reconcile_receipt)
+    layout = layout_digest("curated") if settings.acceptance_layout else TEMPLATE_SHA256
+    request_id, replay, emitted = batches.request(snapshot, limit, layout, after_receipt, reconcile_receipt)
     if replay is not None:
         prior = ExportReceipt.read_json(canonical(replay.result["export_receipt"]))
         if prior.ineligible != handoffs or any(c.note_id in blocked_notes for c in prior.cards):
@@ -146,8 +181,8 @@ def _export(
     chosen = remaining[:limit] if limit is not None else remaining
     touched = {c.note_id for c in chosen}
     carried = [c for c in eligible if ref(c) in emitted and c.note_id in touched]
+    columns = (*CURATED_FIELDS, *(ACCEPTANCE_FIELDS if settings.acceptance_layout else ()), "Tags")
     notes: dict[str, dict[str, str]] = {}
-    item_tags = {item.key: " ".join(item.tags) for item in data.items}
     for card in (*chosen, *carried):
         fields = notes.setdefault(card.note_id, dict.fromkeys(CURATED_FIELDS, ""))
         fields["Tags"] = item_tags[card.item_key]
@@ -157,11 +192,18 @@ def _export(
         fields[slot.enabled_field] = "1"
         fields[slot.prompt_field] = card.front_html
         fields[slot.answer_field] = card.back_html
+    if settings.acceptance_layout:
+        for note_id, fields in notes.items():
+            panels = note_panels[note_id]
+            inherited = tuple(fields["Tags"].split())
+            owned = owned_tags[note_id]
+            fields["Tags"] = " ".join((*inherited, *owned))
+            fields.update(metadata(panels, settings.language, batches.run_id))
     payload = serialize_anki_csv(
         "Latinitas Curated v1",
         "Latinitas Curated",
-        (*CURATED_FIELDS, "Tags"),
-        (tuple(row[field] for field in (*CURATED_FIELDS, "Tags")) for row in notes.values()),
+        columns,
+        (tuple(row[field] for field in columns) for row in notes.values()),
     )
     output_sha256 = hashlib.sha256(payload).hexdigest()
     raw = dict(
@@ -170,9 +212,9 @@ def _export(
         run_id=batches.run_id,
         previous_receipt_id=None,
         selection_sha256=snapshot,
-        layout_sha256=TEMPLATE_SHA256,
+        layout_sha256=layout,
         files=(ExportFile(path=str(output.resolve()), sha256=output_sha256),),
-        cards=tuple(_commitment(c) for c in (*chosen, *carried)),
+        cards=tuple(_commitment(c, settings, owned_tags.get(c.note_id, ())) for c in (*chosen, *carried)),
         ineligible=handoffs,
         batch_cursor=None,
         created_at=datetime.now(UTC).isoformat().replace("+00:00", "Z"),

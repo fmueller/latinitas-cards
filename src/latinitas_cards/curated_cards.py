@@ -10,6 +10,7 @@ from typing import Literal, Self
 
 from pydantic import model_validator
 
+from .acceptance_presentation import ACCEPTANCE_FIELDS, Presentation, layout_digest, require_installation, stylesheet
 from .acceptance_records import Record, Text, digest
 from .cards import CardSlot
 from .curated import (
@@ -100,6 +101,21 @@ class Settings:
     recipes: tuple[str, ...] = ("rule_application",)
     theme: Literal["light", "dark"] = "light"
     profile: PipelineProfile | None = None
+    profile_path: Path | None = None
+
+    @property
+    def acceptance_layout(self) -> bool:
+        if self.profile is None or self.profile.layout.id != "acceptance-1":
+            return False
+        layout = self.profile.layout
+        require_installation(
+            layout.id,
+            layout.version,
+            layout.template_sha256,
+            self.profile_path,
+            "curated",
+        )
+        return True
 
     @property
     def snapshot(self) -> dict[str, object]:
@@ -132,20 +148,30 @@ class CuratedCard:
     back_html: str
     fingerprint: str
     requirements: tuple[Requirement, ...]
+    approval_back_html: str | None = None
 
     @property
     def reason(self) -> str:
         return next((f"{r.subject}:{r.status}" for r in self.requirements if r.status != "approved"), "accepted")
 
     def report(self) -> dict[str, object]:
-        return {**asdict(self), "state": "accepted" if self.reason == "accepted" else "withheld", "reason": self.reason}
+        value = asdict(self)
+        if self.approval_back_html is None:
+            value.pop("approval_back_html")
+        else:
+            value["rendered_approval_subject"] = (
+                "front_html + approval_back_html; proposed learning appearance, not approval"
+            )
+        return {**value, "state": "accepted" if self.reason == "accepted" else "withheld", "reason": self.reason}
 
 
 def _paragraph(label: str, value: str) -> str:
     return f"<p><strong>{escape(label)}</strong> {escape(value)}</p>"
 
 
-def _render(item: Item, target: RecipeTarget, recipe: str, settings: Settings) -> tuple[str, str, tuple[Mnemonic, ...]]:
+def _render(
+    item: Item, target: RecipeTarget, recipe: str, settings: Settings, approved: bool = False
+) -> tuple[str, str, tuple[Mnemonic, ...]]:
     de = settings.language == "de"
     if item.rule.language != settings.language:
         raise ValueError("missing_language_variant")
@@ -227,6 +253,28 @@ def _render(item: Item, target: RecipeTarget, recipe: str, settings: Settings) -
         colors = "background:#fff;color:#171717" if settings.theme == "light" else "background:#202020;color:#eee"
         return f'<div class="curated-card" lang="{settings.language}" style="{colors};padding:1.25rem">{body}</div>'
 
+    if settings.acceptance_layout:
+        if approved:
+            checks = ("rule: approved", *(("mnemonic: approved",) if mnemonic else ()), "rendered_card: approved")
+        else:
+            checks = (
+                "Regel und exakte Darstellung benötigen menschliche Freigabe."
+                if de
+                else "Rule and exact rendering require human approval.",
+            )
+        back += Presentation(
+            derive_card_semantic_key(recipe, target.key),
+            "human" if approved else "curated",
+            (),
+            ("curated", *(f"{e.source} / {e.reference} ({e.version})" for e in evidence)),
+            checks,
+            (
+                "Referenzantwort; Selbstbeurteilung, keine empirische Richtigkeitsquote."
+                if de
+                else "Reference answer; self-assessment, no empirical accuracy estimate.",
+                *item.rule.caveats,
+            ),
+        ).answer(settings.language)
     return wrap(front), wrap(back), (mnemonic,) if mnemonic else ()
 
 
@@ -260,6 +308,11 @@ def render_cards(
                 if target.analysis != "supported":
                     raise ValueError(target.analysis)
                 front, back, mnemonics = _render(item, target, recipe, settings)
+                # Human review binds the exact prospective learning answer, not
+                # the neutral administrative preview or approval-history IDs.
+                approval_back = (
+                    _render(item, target, recipe, settings, approved=True)[1] if settings.acceptance_layout else back
+                )
                 note_id = derive_latinitas_id("curated", item.key, source_scope=data.source_scope)
                 key = derive_card_semantic_key(recipe, target.key)
                 rule_fp = rule_fingerprint(item)
@@ -269,10 +322,10 @@ def render_cards(
                         "semantic_key": key,
                         "language": settings.language,
                         "prompt": front,
-                        "answer": back,
+                        "answer": approval_back,
                         "rule_fingerprint": rule_fp,
                         "mnemonics": tuple(fp for _, _, fp in mnemonic_subjects),
-                        "template_sha256": TEMPLATE_SHA256,
+                        "template_sha256": layout_digest("curated") if settings.acceptance_layout else TEMPLATE_SHA256,
                         "presentation": {"theme": settings.theme},
                     }
                 )
@@ -292,7 +345,20 @@ def render_cards(
                             subject, subject_key, settings.language, fp, status, tuple(m.approval_id for m in matches)
                         )
                     )
-                cards.append(CuratedCard(note_id, key, item.key, recipe, front, back, fingerprint, tuple(requirements)))
+                accepted = all(r.status == "approved" for r in requirements)
+                cards.append(
+                    CuratedCard(
+                        note_id,
+                        key,
+                        item.key,
+                        recipe,
+                        front,
+                        approval_back if accepted else back,
+                        fingerprint,
+                        tuple(requirements),
+                        approval_back if settings.acceptance_layout else None,
+                    )
+                )
             except ValueError as error:
                 skipped.append({**base, "reason": str(error)})
     # One slot per objective type on an item note. Never pick one of conflicting targets silently.
@@ -317,11 +383,11 @@ def preview_report(
         "cards": [card.report() for card in cards],
         "skipped": skipped,
         "layout": {
-            "id": "curated-v1",
-            "template_sha256": TEMPLATE_SHA256,
+            "id": "acceptance-1" if settings.acceptance_layout else "curated-v1",
+            "template_sha256": layout_digest("curated") if settings.acceptance_layout else TEMPLATE_SHA256,
             "templates": [asdict(t) for t in CURATED_LAYOUT],
-            "fields": (*CURATED_FIELDS, "Personal Notes"),
-            "css": REFERENCE_CARD_CSS,
+            "fields": (*CURATED_FIELDS, "Personal Notes", *(ACCEPTANCE_FIELDS if settings.acceptance_layout else ())),
+            "css": stylesheet() if settings.acceptance_layout else REFERENCE_CARD_CSS,
         },
         "grading": "Selbstbeurteilung; Referenzantworten, keine Zeichenkettengleichheit."
         if settings.language == "de"
@@ -355,13 +421,18 @@ def write_preview(
         else:
             status = "Approved" if card.reason == "accepted" else "Withheld"
         body += f"<section><h2>{label}</h2><p>{status} · <code>{escape(card.reason)}</code></p>"
-        body += (
-            f'<div class="sides"><article>{card.front_html}</article>'
-            f"<article>{card.back_html}</article></div></section>"
-        )
+        body += f'<div class="sides"><article>{card.front_html}</article><article>{card.back_html}</article></div>'
+        if card.approval_back_html is not None and card.reason != "accepted":
+            proposed = (
+                "Vorgeschlagene Lernantwort bei Freigabe; dies ist keine Freigabe."
+                if settings.language == "de"
+                else "Proposed learning answer if approved; this is not approval."
+            )
+            body += f"<p>{proposed}</p><article>{card.approval_back_html}</article>"
+        body += "</section>"
     html = f'<!doctype html><html lang="{settings.language}"><meta charset="utf-8">'
     html += '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    html += f"<title>{title}</title><style>{REFERENCE_CARD_CSS}"
+    html += f"<title>{title}</title><style>{stylesheet() if settings.acceptance_layout else REFERENCE_CARD_CSS}"
     html += "body{max-width:1100px;margin:2rem auto;padding:0 1rem;font:17px/1.5 sans-serif;background:#eee;color:#222}"
     html += ".sides{display:grid;grid-template-columns:1fr 1fr;gap:1rem}article{min-width:0;overflow-wrap:anywhere}"
     html += "section{margin:2rem 0}h2{font-size:1rem}@media(max-width:700px){.sides{grid-template-columns:1fr}}"
