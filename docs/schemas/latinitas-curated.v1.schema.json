@@ -1,0 +1,241 @@
+{
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "reference": {
+          "$ref": "#/$defs/Text"
+        },
+        "source": {
+          "$ref": "#/$defs/Text"
+        },
+        "text": {
+          "$ref": "#/$defs/Text"
+        },
+        "version": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "source",
+        "reference",
+        "version",
+        "text"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Example": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "explanation": {
+          "$ref": "#/$defs/Text"
+        },
+        "latin": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "latin",
+        "explanation",
+        "evidence"
+      ],
+      "title": "Example",
+      "type": "object"
+    },
+    "Item": {
+      "additionalProperties": false,
+      "properties": {
+        "examples": {
+          "items": {
+            "$ref": "#/$defs/Example"
+          },
+          "title": "Examples",
+          "type": "array"
+        },
+        "key": {
+          "$ref": "#/$defs/Text"
+        },
+        "mnemonics": {
+          "items": {
+            "$ref": "#/$defs/Mnemonic"
+          },
+          "title": "Mnemonics",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "rule": {
+          "$ref": "#/$defs/Rule"
+        },
+        "tags": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "title": "Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "rule",
+        "mnemonics",
+        "examples",
+        "tags",
+        "provenance"
+      ],
+      "title": "Item",
+      "type": "object"
+    },
+    "Language": {
+      "enum": [
+        "de",
+        "en"
+      ],
+      "type": "string"
+    },
+    "Mnemonic": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/Text"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "rule_key": {
+          "$ref": "#/$defs/Text"
+        },
+        "text": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "key",
+        "language",
+        "text",
+        "rule_key",
+        "provenance"
+      ],
+      "title": "Mnemonic",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "document": {
+          "$ref": "#/$defs/Text"
+        },
+        "reference": {
+          "$ref": "#/$defs/Text"
+        },
+        "section": {
+          "$ref": "#/$defs/Text"
+        },
+        "wording": {
+          "enum": [
+            "quoted",
+            "agent_proposed",
+            "author_composed"
+          ],
+          "title": "Wording",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document",
+        "section",
+        "reference",
+        "wording"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Rule": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability": {
+          "$ref": "#/$defs/Text"
+        },
+        "caveats": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "title": "Caveats",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "text": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "text",
+        "language",
+        "applicability",
+        "caveats",
+        "evidence"
+      ],
+      "title": "Rule",
+      "type": "object"
+    },
+    "Text": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "latinitas-curated",
+      "title": "Format",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/Item"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "source_scope": {
+      "$ref": "#/$defs/Text"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "source_scope",
+    "items"
+  ],
+  "title": "CuratedInput",
+  "type": "object"
+}

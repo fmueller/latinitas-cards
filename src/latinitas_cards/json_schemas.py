@@ -11,6 +11,7 @@ from .corpus_manifest import CorpusManifest
 from .corpus_model import CorpusDescriptor, CorpusRecordSchema
 from .corpus_profile import CorpusProfile
 from .corpus_selection import CandidatesReport, Selection
+from .curated import Approval, CuratedInput, Permission
 from .policy import Policy
 
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -25,6 +26,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "latinitas-corpus-profile": CorpusProfile,
     "latinitas-corpus-selection": Selection,
     "latinitas-corpus-candidates": CandidatesReport,
+    "latinitas-curated": CuratedInput,
+    "latinitas-curated-approval": Approval,
+    "latinitas-curated-permission": Permission,
     "latinitas-policy": Policy,
 }
 

@@ -1,0 +1,35 @@
+{
+  "format": "latinitas-curated",
+  "version": 1,
+  "source_scope": "original-synthetic-lesson",
+  "items": [
+    {
+      "key": "lesson:imperfect-a",
+      "rule": {
+        "text": "For regular first-conjugation verbs, form the imperfect active indicative from the present stem, the imperfect marker and the active personal ending.",
+        "language": "en",
+        "applicability": "Regular first-conjugation verbs, imperfect indicative active.",
+        "caveats": ["Check first-person singular ending adjustments separately; this is not a rule for every Latin verb."],
+        "evidence": [{"source": "original synthetic lesson", "reference": "lesson.md#1", "version": "1", "text": "For regular first-conjugation verbs, form the imperfect active indicative from the present stem, the imperfect marker and the active personal ending."}]
+      },
+      "mnemonics": [{"key": "ba", "language": "de", "text": "Mit ba war es damals da.", "rule_key": "lesson:imperfect-a", "provenance": {"document": "lesson.md", "section": "1. First-conjugation imperfect", "reference": "lesson.md#1", "wording": "quoted"}}],
+      "examples": [{"latin": "amābam", "explanation": "first-person singular imperfect active indicative.", "evidence": [{"source": "original synthetic lesson", "reference": "lesson.md#1", "version": "1", "text": "amābam — first-person singular imperfect active indicative."}]}],
+      "tags": ["course::synthetic"],
+      "provenance": {"document": "lesson.md", "section": "1. First-conjugation imperfect", "reference": "lesson.md#1", "wording": "quoted"}
+    },
+    {
+      "key": "lesson:genitive-plural",
+      "rule": {
+        "text": "In a regular first-declension noun, the genitive plural ends in -ārum.",
+        "language": "en",
+        "applicability": "Regular first-declension genitive plural.",
+        "caveats": ["Do not infer a noun's declension from this ending rule alone."],
+        "evidence": [{"source": "original synthetic lesson", "reference": "lesson.md#2", "version": "1", "text": "In a regular first-declension noun, the genitive plural ends in -ārum."}]
+      },
+      "mnemonics": [],
+      "examples": [],
+      "tags": ["course::synthetic"],
+      "provenance": {"document": "lesson.md", "section": "2. Rule without a memory aid", "reference": "lesson.md#2", "wording": "quoted"}
+    }
+  ]
+}

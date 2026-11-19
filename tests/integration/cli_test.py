@@ -321,6 +321,10 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     assert set(authored.commands) == {"preview", "validate", "export"}
     commands.remove(authored)
     commands.extend(authored.commands.values())
+    curated = cast(click.Group, click_app.commands["curated"])
+    assert set(curated.commands) == {"validate", "preview", "review"}
+    commands.remove(curated)
+    commands.extend(curated.commands.values())
     managed = cast(click.Group, click_app.commands["managed"])
     assert set(managed.commands) == {"capture", "adopt", "plan", "approve", "emit", "observe", "reconcile"}
     commands.remove(managed)

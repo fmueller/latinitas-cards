@@ -1,0 +1,16 @@
+{
+  "format": "latinitas-curated-permission",
+  "version": 1,
+  "source_scope": "original-synthetic-lesson",
+  "sources": [
+    {
+      "document": "lesson.md",
+      "source_sha256": "085f8c10ed273e0414eae05e2d42b029c089409445739884003554ab583fe820",
+      "rights": "Original synthetic lesson; offline extraction and fixture redistribution permitted under the repository license.",
+      "extraction_permission": "Explicit permission in lesson.md introductory paragraph; manual offline extraction only.",
+      "processing": "manual",
+      "provider": null,
+      "provider_permission": null
+    }
+  ]
+}

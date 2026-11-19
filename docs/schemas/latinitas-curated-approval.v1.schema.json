@@ -1,0 +1,106 @@
+{
+  "$defs": {
+    "Hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Language": {
+      "enum": [
+        "de",
+        "en"
+      ],
+      "type": "string"
+    },
+    "Text": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Timestamp": {
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d+)?Z$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "approval_id": {
+      "$ref": "#/$defs/Hash"
+    },
+    "decision": {
+      "enum": [
+        "approved",
+        "rejected"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "fingerprint": {
+      "$ref": "#/$defs/Hash"
+    },
+    "format": {
+      "const": "latinitas-curated-approval",
+      "title": "Format",
+      "type": "string"
+    },
+    "item_key": {
+      "$ref": "#/$defs/Text"
+    },
+    "language": {
+      "$ref": "#/$defs/Language"
+    },
+    "reason": {
+      "$ref": "#/$defs/Text"
+    },
+    "reviewed_at": {
+      "$ref": "#/$defs/Timestamp"
+    },
+    "reviewer": {
+      "$ref": "#/$defs/Text"
+    },
+    "source_scope": {
+      "$ref": "#/$defs/Text"
+    },
+    "subject": {
+      "enum": [
+        "rule",
+        "mnemonic",
+        "rendered_card"
+      ],
+      "title": "Subject",
+      "type": "string"
+    },
+    "subject_key": {
+      "$ref": "#/$defs/Text"
+    },
+    "supersedes": {
+      "items": {
+        "$ref": "#/$defs/Hash"
+      },
+      "title": "Supersedes",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "approval_id",
+    "supersedes",
+    "source_scope",
+    "item_key",
+    "subject",
+    "subject_key",
+    "language",
+    "fingerprint",
+    "decision",
+    "reviewer",
+    "reason",
+    "reviewed_at"
+  ],
+  "title": "Approval",
+  "type": "object"
+}

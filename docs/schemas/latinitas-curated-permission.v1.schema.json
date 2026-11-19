@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "Hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "SourcePermission": {
+      "additionalProperties": false,
+      "properties": {
+        "document": {
+          "$ref": "#/$defs/Text"
+        },
+        "extraction_permission": {
+          "$ref": "#/$defs/Text"
+        },
+        "processing": {
+          "enum": [
+            "manual",
+            "local",
+            "hosted"
+          ],
+          "title": "Processing",
+          "type": "string"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider_permission": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rights": {
+          "$ref": "#/$defs/Text"
+        },
+        "source_sha256": {
+          "$ref": "#/$defs/Hash"
+        }
+      },
+      "required": [
+        "document",
+        "source_sha256",
+        "rights",
+        "extraction_permission",
+        "processing",
+        "provider",
+        "provider_permission"
+      ],
+      "title": "SourcePermission",
+      "type": "object"
+    },
+    "Text": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Operator attestations of prior extraction; never authority to make a call.",
+  "properties": {
+    "format": {
+      "const": "latinitas-curated-permission",
+      "title": "Format",
+      "type": "string"
+    },
+    "source_scope": {
+      "$ref": "#/$defs/Text"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/SourcePermission"
+      },
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "source_scope",
+    "sources"
+  ],
+  "title": "Permission",
+  "type": "object"
+}
