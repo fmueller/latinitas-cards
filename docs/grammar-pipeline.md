@@ -1,7 +1,9 @@
 # Bounded grammar cards
 
-`pipeline` is an offline, opt-in consumer of the shared evidence store. It does
-not run providers, install analyzer resources, approve a policy, install templates,
+`pipeline` is an opt-in consumer of the shared evidence store. Preview/export and
+reporting are offline; orchestration requires explicitly configured providers and
+qualified token accounting before dispatch. No production deployment is qualified
+yet. It does not install analyzer resources, approve a policy, install templates,
 or modify Anki. The installed `v050-disabled` revision 1 policy remains disabled:
 all-pass automatic analyses alone cannot enable ordinary learning CSV output.
 Bound, complete human review is separate authority. Generic curated claims are
@@ -178,6 +180,57 @@ exists. Synthetic policy fixtures belong only in tests.
 Automatic decisions are immutable revisions keyed by the exact analysis bytes.
 An unchanged analysis reuses its decision; malformed/stale analyses are reported
 per card and do not prevent independent siblings from being decided.
+
+## Outcome reports
+
+After `pipeline run` or `resume`, inspect the saved snapshot without provider calls:
+
+```bash
+uv run latinitas-cards pipeline report --run workflow/run
+uv run latinitas-cards pipeline report --run workflow/run --json
+```
+
+The readable report groups reasons with representative source links, examples,
+origin, policy revision, alternatives, objections and evidence limitations. JSON
+preserves the unversioned execution diagnostics and adds `outcome_report`, with
+`schema_version: 1`, `record` and `details`. The strict `record` follows the approved
+`latinitas-pipeline-report` v1 shape; `details` holds counts, source links, examples,
+findings, processing problems and actual analysis/provider reuse for this invocation.
+The envelope schema is available as
+`latinitas_cards.pipeline_reporting.Reporting.model_json_schema()`; the approved
+record schema is `PipelineReport.model_json_schema()` in the same module. Legacy
+execution snapshots remain readable as JSON without fabricated v1 outcomes.
+Snapshot profiles use the exact shared profile shape; reading historical policy
+identifiers does not install or authorize those policies for execution.
+Reports are snapshots, not acceptance authority; a later source/policy change still
+requires current validation. Running selection/rendering alone retains applicable
+receipt-backed exports rather than treating missing invocation-local export data
+as a new deferral.
+
+Outcomes distinguish `not_generated`, `deferred`, `withheld`, `processing_failed`,
+`accepted_unselected` and `exported` (accepted and selected into a CSV receipt, not
+imported into Anki). Missing token accounting is a deferred prerequisite, not a
+linguistic rejection; missing analyzer resources and uncertain/failed provider calls
+are processing problems. Valid independent authority can still export a card when
+an optional stage fails; `outcome_report.details.processing_outcomes` retains that
+failure separately. `complete` is false while work, assessments or stages remain
+deferred, failed, unknown or cancelled, even if an export operation completed.
+
+`source_units` counts filtered recipe/objective work, including automatic objectives,
+not lexical entries. Stages, distinct linguistic claims, generated candidates and
+CardRef pairs have separate counts. A shared assertion with different supporting
+checks counts once; one failed claim can affect multiple cards. Unattempted work
+has null candidate/card IDs; missing recipe content does not invent exercises.
+Source links identify confirmed input entries and controlled-phrase patterns by
+file URI and JSON pointer. Limits separate call/token reservations and permission
+caps from output selection. Renewed processing uses the existing explicit receipt
+reconciliation; reporting does not reset budgets or create a second journal.
+Untrusted exception details are omitted on publication and read; runtime credentials
+are redacted. If redaction collides with a structural identity, reporting fails
+without replacing the previous snapshot rather than publishing corrupted hashes.
+Readable output escapes terminal controls and aggregates distinct findings across
+each reason group; only its exercise example and source links are representative.
+Structured findings suffice; private reasoning traces are neither needed nor shown.
 
 Preview reconstructs all source/target/translation/stem/explanation/role/caveat
 and rendered-front/back assertions. CSV repeats current-source reconstruction and

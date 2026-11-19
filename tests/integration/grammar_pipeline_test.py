@@ -2165,6 +2165,417 @@ def test_orchestrated_offline_stages_and_replay(tmp_path: Path) -> None:
     assert call("resume", "--run", str(root))["status"] == "cancelled"
 
 
+def report_call(*args: str) -> dict[str, Any]:
+    result = call(*args)
+    view = result["outcome_report"]
+    return {**result, **view["record"], **view["details"]}
+
+
+def test_pipeline_report_export_only_is_incomplete(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only")
+    result = report_call("stage", "export", "--run", str(output / "run"))
+    assert not result["complete"]
+
+
+def test_pipeline_report_missing_pattern_retains_source_work(tmp_path: Path) -> None:
+    profile, objectives, _ = phrase_fixture(tmp_path, "en", "preposition-noun")
+    raw = json.loads(objectives.read_text())
+    first = raw["phrases"][0]
+    raw["phrases"].append({**first, "selection": {**first["selection"], "pattern": "missing-pattern"}})
+    write(objectives, raw)
+    result = report_call(
+        "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(tmp_path / "out")
+    )
+    missing = [o for o in result["outcomes"] if o["card_key"] is None and o["related_ids"]]
+    assert len(missing) == 1 and missing[0]["outcome"] == "not_generated" and missing[0]["candidate_id"] is None
+    assert missing[0]["source_links"] and not any("#/patterns/" in link for link in missing[0]["source_links"])
+    assert any(o["card_key"] and o["outcome"] == "withheld" for o in result["outcomes"])
+
+
+def test_pipeline_report_exact_approved_record_and_outcome_shape() -> None:
+    from latinitas_cards.pipeline_reporting import Outcome, PipelineReport
+
+    assert set(PipelineReport.model_fields) == {
+        "format",
+        "version",
+        "run_id",
+        "profile_sha256",
+        "effective_profile",
+        "source_units",
+        "stage_counts",
+        "outcomes",
+        "calls",
+        "decision_ids",
+        "receipt_ids",
+        "permission_sha256",
+        "complete",
+    }
+    assert set(Outcome.model_fields) == {
+        "source_identity",
+        "candidate_id",
+        "card_key",
+        "outcome",
+        "reason",
+        "related_ids",
+    }
+    assert PipelineReport.model_json_schema()["additionalProperties"] is False
+
+
+def test_pipeline_report_conflicting_objectives_account_for_both_work_units(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    raw = json.loads(objectives.read_text())
+    first = raw["forms"][0]
+    raw["forms"] = [first, {**first, "explanation": "a distinct synthetic explanation"}]
+    write(objectives, raw)
+    result = report_call(
+        "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(tmp_path / "out")
+    )
+    assert result["source_units"] == {"selected": 2, "attempted": 2, "deferred": 0}
+    assert result["counts"]["cards"] == 0
+    assert len({i for o in result["outcomes"] for i in o["related_ids"]}) == 2
+    assert len([o for o in result["outcomes"] if o["related_ids"] and o["source_links"]]) == 2
+
+
+def test_pipeline_report_read_boundary_and_terminal_controls(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "out"
+    result = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    result["historical_diagnostics"] = {"error": "Bearer SYNTHETIC_OLD_TOKEN"}
+    view = result["outcome_report"]
+    view["record"]["run_id"] += "\x1b[2J\x1b[H"
+    for rows in (view["record"]["outcomes"], view["details"]["outcomes"]):
+        rows[0]["reason"] = "\x1b[2J\x1b[H"
+    view["details"]["outcomes"][2]["objections"] = ["distinct material objection"]
+    view["details"]["outcomes"][2]["limitations"] = ["distinct evidence limitation"]
+    write(output / "report.json", result)
+    stored = call("report", "--run", str(output / "run"))
+    assert "SYNTHETIC_OLD_TOKEN" not in canonical(stored).decode()
+    human = runner.invoke(app, ["pipeline", "report", "--run", str(output / "run")], color=True)
+    assert human.exit_code == 0 and "\x1b" not in human.output
+    assert "distinct material objection" in human.output and "distinct evidence limitation" in human.output
+
+
+@pytest.mark.parametrize("collision", ["1", "SYNTHETIC_KEY_TOKEN", "card_identity"])
+def test_pipeline_report_secret_collision_fails_without_corrupt_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, collision: str
+) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    configure_pipeline_http(profile, "http://127.0.0.1:1")
+    raw = json.loads(profile.read_text())
+    for endpoint in raw["providers"].values():
+        endpoint["credential_ref"] = "SYNTHETIC_REPORT_TOKEN"
+    write(profile, raw)
+    output = tmp_path / "out"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--offline")
+    original = (output / "report.json").read_bytes()
+    if collision == "card_identity":
+        collision = next(
+            o["note_id"] for o in json.loads(original)["outcome_report"]["details"]["outcomes"] if o["note_id"]
+        )
+    elif collision != "1":
+        index = json.loads((output / "run" / "stage-index.json").read_text())
+        index[collision] = "missing-stage"
+        write(output / "run" / "stage-index.json", index)
+    monkeypatch.setenv("SYNTHETIC_REPORT_TOKEN", collision)
+    failed = runner.invoke(app, ["pipeline", "stage", "render", "--run", str(output / "run"), "--offline", "--json"])
+    assert failed.exit_code == 1
+    assert "pipeline_report_redaction_or_validation_failed" in failed.output
+    assert "SYNTHETIC_KEY_TOKEN" not in failed.output
+    assert (output / "report.json").read_bytes() == original
+
+
+def test_pipeline_report_explains_actual_analysis_reuse(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "out"
+    first = report_call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    assert first["reuse"].get("processed") == 6 and not first["reuse"].get("reused")
+    resumed = report_call("resume", "--run", str(output / "run"))
+    assert resumed["reuse"].get("reused") == 6 and not resumed["reuse"].get("processed")
+    human = runner.invoke(app, ["pipeline", "report", "--run", str(output / "run")])
+    assert human.exit_code == 0 and '"reused": 6' in human.output
+
+
+@pytest.mark.parametrize("damage", ["format", "binding", "assertions", "checks"])
+def test_pipeline_report_decision_failure_is_card_linked_and_redacted(tmp_path: Path, damage: str) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--offline")
+    path = next((output / "run" / "analyses").glob("*.json"))
+    analysis = json.loads(path.read_text())
+    if damage == "format":
+        analysis["format"] = "synthetic-private-error-marker"
+    elif damage == "binding":
+        analysis["binding"]["config_sha256"] = "0" * 64
+    elif damage == "assertions":
+        analysis["assertions"][0]["value"] = "changed assertion"
+    else:
+        analysis["checks"][0]["input_sha256"] = "0" * 64
+    write(path, analysis)
+    result = report_call("stage", "decide", "--run", str(output / "run"))
+    if damage == "checks":
+        # The disabled policy withholds this check; it is not a processing exception.
+        assert not result["stages"]["decide"][0]["analysis_errors"]
+        assert {o["outcome"] for o in result["outcomes"] if o["card_key"]} == {"withheld"}
+        again = report_call("stage", "export", "--run", str(output / "run"))
+        assert {o["outcome"] for o in again["outcomes"] if o["card_key"]} == {"withheld"}
+        return
+    damaged = result["stages"]["decide"][0]["analysis_errors"][0]
+    assert "synthetic-private-error-marker" not in canonical(result).decode()
+    assert any(
+        o["note_id"] == damaged["note_id"]
+        and o["card_key"] == damaged["card_key"]
+        and o["outcome"] == "processing_failed"
+        for o in result["outcomes"]
+    )
+    again = report_call("stage", "export", "--run", str(output / "run"))
+    assert not again["complete"]
+    assert any(
+        o["outcome"] == "processing_failed"
+        for o in again["outcomes"]
+        if (o["note_id"], o["card_key"]) == (damaged["note_id"], damaged["card_key"])
+    )
+
+
+def test_pipeline_report_stage_only_preserves_export_receipt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, tmp_path / "unused")
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only")
+    root = output / "run"
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    exported = report_call("resume", "--run", str(root))
+    for stage in ("select", "render"):
+        result = report_call("stage", stage, "--run", str(root))
+        assert result["receipt_ids"] == exported["receipt_ids"]
+        assert result["counts"]["selected_cards"] == 6
+        assert {o["outcome"] for o in result["outcomes"] if o["card_key"]} == {"exported"}
+    raw = json.loads(profile.read_text())
+    raw["selection"]["entries"] = ["n"]
+    write(profile, raw)
+    changed = report_call("stage", "select", "--run", str(root), "--profile", str(profile))
+    assert changed["receipt_ids"] == [] and changed["counts"]["selected_cards"] == 0
+
+
+def test_versioned_pipeline_outcomes_and_readable_yield(tmp_path: Path) -> None:
+    from latinitas_cards.pipeline_reporting import Reporting
+
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "workflow"
+    result = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    view = Reporting.read_json(canonical(result["outcome_report"]))
+    report = view.record
+    assert report.format == "latinitas-pipeline-report" and report.version == 1
+    assert report.profile_sha256 == digest(report.effective_profile)
+    assert view.details.counts["cards"] == 6
+    assert view.details.counts["candidates"] == 6
+    assert report.source_units.model_dump() == {"selected": 6, "attempted": 6, "deferred": 0}
+    cards = [o for o in view.details.outcomes if o.card_key is not None]
+    assert len(cards) == 6 and {o.outcome for o in cards} == {"withheld"}
+    assert {o.reason for o in cards} == {"policy_not_enabled"}
+    assert all(o.source_links and o.policy_version == "1" for o in cards)
+    assert any(o.outcome == "not_generated" and o.card_key is None for o in report.outcomes)
+    for item in cards:
+        for link in item.source_links:
+            assert link.startswith("file:") and "#/entries/" in link
+    assert report.calls == () and report.permission_sha256 is None
+    stored = call("report", "--run", str(output / "run"))
+    assert stored == result
+    human = runner.invoke(app, ["pipeline", "report", "--run", str(output / "run")])
+    assert human.exit_code == 0, human.output
+    assert "Yield:" in human.output and "withheld" in human.output
+    assert "Example:" in human.output and "private reasoning" not in human.output
+    assert "not applied to Anki" in human.output
+
+
+def test_pipeline_report_partial_resume_keeps_accepted_and_deferred_distinct(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, tmp_path / "unused")
+    raw = json.loads(profile.read_text())
+    raw["processing"]["max_source_units"] = 2
+    raw["selection"]["output_limit"] = 1
+    write(profile, raw)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only")
+    root = output / "run"
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    first = report_call("resume", "--run", str(root))
+    assert first["source_units"] == dict(selected=6, attempted=2, deferred=4)
+    assert first["counts"]["cards"] == first["counts"]["candidates"] == 2
+    assert {o["outcome"] for o in first["outcomes"] if o["card_key"]} == {"exported", "accepted_unselected"}
+    deferred = [o for o in first["outcomes"] if o["reason"] == "processing_limit"]
+    assert len(deferred) == 4 and all(o["card_key"] is None and o["candidate_id"] is None for o in deferred)
+    assert all(o["source_links"] for o in deferred)
+    assert not first["complete"]
+    accepted_ids = {i for o in first["outcomes"] if o["card_key"] for i in o["related_ids"]}
+    raw["processing"]["max_source_units"] = None
+    write(profile, raw)
+    prove_cards(profile, objectives, root)
+    resumed = report_call(
+        "resume", "--run", str(root), "--profile", str(profile), "--reconcile-receipt", first["receipt_ids"][0]
+    )
+    assert resumed["source_units"] == dict(selected=6, attempted=6, deferred=0)
+    assert resumed["counts"]["cards"] == 6
+    assert resumed["counts"]["selected_cards"] == 2
+    assert accepted_ids <= {i for o in resumed["outcomes"] for i in o["related_ids"]}
+    assert {o["origin"] for o in resumed["outcomes"] if o["card_key"]} == {"automatic"}
+    assert resumed["receipt_ids"] == [resumed["file_export"]["receipt_id"]]
+    assert resumed["complete"]
+
+
+def test_pipeline_report_one_failed_claim_withholds_multiple_cards(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    install_synthetic(monkeypatch, profile, objectives, tmp_path / "unused")
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only")
+    root = output / "run"
+    (root / "analyses").mkdir()
+    prove_cards(profile, objectives, root)
+    for path in (root / "analyses").glob("*.json"):
+        analysis = Analysis.read_json(path.read_bytes())
+        if analysis.binding.source_identity != "n":
+            continue
+        checks = tuple(
+            c.model_copy(
+                update={"result": "fail", "objections": ("synthetic contradiction",), "alternatives": ("other",)}
+            )
+            if c.assertion_ids == ("source",)
+            else c
+            for c in analysis.checks
+        )
+        write(path, analysis.model_copy(update={"checks": checks}))
+    report = report_call("resume", "--run", str(root))
+    assert report["counts"]["failed_claims"] == 1
+    assert report["counts"]["cards_affected_by_failed_claims"] == 2
+    failed = [o for o in report["outcomes"] if o["failed_claim_ids"]]
+    assert len(failed) == 2 and {o["outcome"] for o in failed} == {"withheld"}
+    assert all("synthetic contradiction" in o["objections"] and "other" in o["alternatives"] for o in failed)
+    assert report["counts"]["selected_cards"] == 4
+
+
+def test_pipeline_report_provider_prerequisite_is_not_linguistic_rejection(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    configure_pipeline_http(profile, "http://127.0.0.1:1")
+    output = tmp_path / "workflow"
+    report = report_call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    cards = [o for o in report["outcomes"] if o["card_key"]]
+    assert len(cards) == 1 and cards[0]["outcome"] == "deferred"
+    assert cards[0]["reason"] == "missing_token_bound"
+    assert report["calls"] == [] and not report["complete"]
+    assert any(p["reason"] == "missing_token_bound" for p in report["processing_outcomes"])
+
+
+def test_pipeline_report_processing_failures_and_secret_redaction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    secret = "synthetic-runtime-secret"
+    monkeypatch.setenv("SYNTHETIC_REPORT_TOKEN", secret)
+    with synthetic_pipeline_http() as (url, requests, status):
+        configure_pipeline_http(profile, url)
+        raw = json.loads(profile.read_text())
+        for endpoint in raw["providers"].values():
+            endpoint["credential_ref"] = "SYNTHETIC_REPORT_TOKEN"
+        write(profile, raw)
+        status[0] = 503
+        output = tmp_path / "workflow"
+        result = report_call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+        assert requests and {o["outcome"] for o in result["outcomes"] if o["card_key"]} == {"processing_failed"}
+        assert not result["complete"]
+        root = output / "run"
+        identity = result["stage_ids"]["ingest"]
+        stage_path = root / "stages" / (identity + ".json")
+        stage = json.loads(stage_path.read_text())
+        stage["state"] = "arbitrary-secret-from-error"
+        write(stage_path, stage)
+        dispatched = len(requests)
+        failed = report_call("resume", "--run", str(root))
+        assert len(requests) == dispatched and not failed["reuse"].get("processed")
+        assert failed["invalid_stages"] and failed["status"] in ("failed", "unknown")
+        assert any(p["reason"] == "invalid_stage_artifact" for p in failed["processing_outcomes"])
+        stored = (output / "report.json").read_text()
+        assert "arbitrary-secret-from-error" not in stored and secret not in stored
+        assert "diagnostic_details_redacted" in stored
+        assert report_call("report", "--run", str(root)) == failed
+        human = runner.invoke(app, ["pipeline", "report", "--run", str(root)])
+        assert human.exit_code == 0 and "processing_failed" in human.output
+        assert secret not in human.output and "arbitrary-secret-from-error" not in human.output
+
+
+def test_pipeline_report_validates_historical_profile_shape_without_authorizing_it(tmp_path: Path) -> None:
+    profile, objectives, _ = fixture(tmp_path)
+    output = tmp_path / "out"
+    result = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    record = result["outcome_report"]["record"]
+    historical = json.loads(profile.read_text())
+    historical["policy"]["id"] = "historical-uninstalled-policy"
+    record["effective_profile"] = historical
+    record["profile_sha256"] = digest(historical)
+    write(output / "report.json", result)
+    assert call("report", "--run", str(output / "run"))["outcome_report"]["record"]["effective_profile"] == historical
+    for malformed in ({}, {**historical, "selection": {}}, {**historical, "unexpected": "private-profile-marker"}):
+        record["effective_profile"] = malformed
+        record["profile_sha256"] = digest(malformed)
+        write(output / "report.json", result)
+        bad = runner.invoke(app, ["pipeline", "report", "--run", str(output / "run"), "--json"])
+        assert bad.exit_code == 1 and "pipeline_report_unavailable_or_invalid" in bad.output
+        assert "private-profile-marker" not in bad.output
+
+
+def test_pipeline_report_schema_rejects_invalid_version_and_counts(tmp_path: Path) -> None:
+    from pydantic import ValidationError
+
+    from latinitas_cards.pipeline_reporting import PipelineReport, Reporting
+
+    profile, objectives, _ = fixture(tmp_path)
+    result = call(
+        "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(tmp_path / "workflow")
+    )
+    assert PipelineReport.model_json_schema()["properties"]["format"]["const"] == "latinitas-pipeline-report"
+    view = result["outcome_report"]
+    for mutation in (
+        {"version": 2},
+        {"version": True},
+        {"source_units": {"selected": -1, "attempted": 0, "deferred": 0}},
+        {"source_units": {"selected": True, "attempted": 0, "deferred": 0}},
+        {"stage_counts": {"invented_state": 1}},
+        {"extra": "not_an_approved_key"},
+    ):
+        with pytest.raises(ValueError):
+            PipelineReport.read_json(canonical({**view["record"], **mutation}))
+    with pytest.raises(ValidationError):
+        Reporting.read_json(canonical({**view, "details": {**view["details"], "counts": {"cards": -1}}}))
+    view["record"]["version"] = "private-error-string"
+    write(tmp_path / "workflow" / "report.json", result)
+    bad = runner.invoke(app, ["pipeline", "report", "--run", str(tmp_path / "workflow" / "run"), "--json"])
+    assert bad.exit_code == 1 and "private-error-string" not in bad.output
+    result.pop("outcome_report")
+    result["historical_diagnostics"] = {"error": "Bearer SYNTHETIC_OLD_TOKEN"}
+    write(tmp_path / "workflow" / "report.json", result)
+    legacy = call("report", "--run", str(tmp_path / "workflow" / "run"))
+    assert "outcome_report" not in legacy and "SYNTHETIC_OLD_TOKEN" not in canonical(legacy).decode()
+
+
+def test_pipeline_report_links_confirmed_phrase_passages(tmp_path: Path) -> None:
+    profile, objectives, _ = phrase_fixture(tmp_path, "en", "preposition-noun")
+    report = report_call(
+        "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(tmp_path / "workflow")
+    )
+    cards = [o for o in report["outcomes"] if o["card_key"]]
+    assert cards and all(any("#/patterns/" in link for link in o["source_links"]) for o in cards)
+    for item in cards:
+        for link in item["source_links"]:
+            pointer = link.split("#/", 1)[1].split("/")
+            assert json.loads((tmp_path / "inputs.json").read_text())[pointer[0]][int(pointer[1])]
+
+
 def provider_answer(body: dict[str, Any]) -> bytes:
     task = json.loads(body["messages"][1]["content"])
     answer = dict(
@@ -2414,6 +2825,9 @@ def test_orchestrated_permission_exact_requests_and_renewal(tmp_path: Path, monk
     assert sent == [] and denied["stages"]["propose"][0]["reason"] == "permission_or_scope"
     permitted = call("resume", "--run", str(root), "--allow-hosted", str(grant))
     assert len(sent) == 2 and len(permitted["provider_calls"]) == 2
+    assert permitted["outcome_report"]["record"]["permission_sha256"] == hashlib.sha256(grant.read_bytes()).hexdigest()
+    assert permitted["outcome_report"]["details"]["limits"]["hosted"]["max_calls"] == 2
+    assert permitted["outcome_report"]["details"]["limits"]["local"]["max_calls"] == 200
     assert (root / "permissions" / (permission["permission_id"] + ".json")).exists()
     raw["providers"]["counter_check"]["url"] += "/new-scope"
     write(profile, raw)
@@ -2459,8 +2873,9 @@ def test_orchestrated_abandon_cancel_and_tampered_stages(tmp_path: Path, monkeyp
     assert cancelled["status"] == "cancelled" and len(dispatches) == 1
     unknown = cancelled["provider_calls"][0]
     assert unknown["state"] == "unknown"
-    call("resume", "--run", str(root), "--continue-cancelled")
+    undispatched = call("resume", "--run", str(root), "--continue-cancelled")
     assert len(dispatches) == 1
+    assert not undispatched["outcome_report"]["details"]["reuse"].get("processed")
     call("reconcile-call", "--run", str(root), "--call-id", unknown["call_id"], "--abandon")
     call("resume", "--run", str(root), "--retry-unknown")
     assert len(dispatches) == 1
@@ -2523,10 +2938,20 @@ def test_orchestrated_library_unavailable_and_independent_authority(
         ),
     )
     save_acceptance(card.claims.decisions[0].path, decision)
-    assert call("resume", "--run", str(root), "--offline")["file_export"]["exported"] == 1
+    human_report = report_call("resume", "--run", str(root), "--offline")
+    assert human_report["file_export"]["exported"] == 1
+    accepted = [o for o in human_report["outcomes"] if o["outcome"] == "exported"]
+    assert len(accepted) == 1 and accepted[0]["origin"] == "human"
+    assert any(o["origin"] != "human" for o in human_report["outcomes"] if o["card_key"])
+    human_ref = (accepted[0]["note_id"], accepted[0]["card_key"])
+    for stage_name in ("select", "render", "export"):
+        restored = report_call("stage", stage_name, "--run", str(root))
+        assert not [o for o in restored["processing_outcomes"] if (o.get("note_id"), o.get("card_key")) == human_ref]
+        assert [o for o in restored["outcomes"] if (o["note_id"], o["card_key"]) == human_ref] == accepted
+        assert restored["complete"] == human_report["complete"]
 
     library_output = profile.parent / "missing-library"
-    missing = call(
+    missing = report_call(
         "run",
         "--profile",
         str(profile),
@@ -2537,6 +2962,9 @@ def test_orchestrated_library_unavailable_and_independent_authority(
     )
     assert missing["status"] == "failed" and missing["provider_calls"] == []
     assert any(r.get("reason") == "processing_unavailable" for r in missing["stages"]["analyze"])
+    assert any(
+        o["outcome"] == "processing_failed" and o["reason"] == "processing_unavailable" for o in missing["outcomes"]
+    )
 
     profile2, objectives2, _ = fixture(tmp_path / "isolated")
     install_synthetic(monkeypatch, profile2, objectives2, tmp_path / "unused")

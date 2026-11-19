@@ -14,7 +14,18 @@ from typing import Literal
 
 from .acceptance import AcceptanceReader, save_acceptance
 from .acceptance_policy import ScopeCell, implementation_digest
-from .acceptance_records import Assertion, Binding, Check, Record, Text, Versions, canonical, decode_json, digest
+from .acceptance_records import (
+    Acceptance,
+    Assertion,
+    Binding,
+    Check,
+    Record,
+    Text,
+    Versions,
+    canonical,
+    decode_json,
+    digest,
+)
 from .card_acceptance import CardClaims, DecisionSource, export_cards
 from .claim_review import Evidence
 from .deck_evidence import SourceCell, _construction_issues
@@ -681,8 +692,18 @@ def current_cards(
             and any(b.entry not in profile.selection.entries for b in objective.selection.bindings)
         ):
             continue
+        work = {
+            "work_id": digest(objective),
+            "source_entries": canonical(
+                [objective.entry]
+                if isinstance(objective, FormObjective)
+                else sorted({b.entry for b in objective.selection.bindings})
+            ).decode(),
+        }
+        if isinstance(objective, PhraseObjective):
+            work["source_pattern"] = objective.selection.pattern
         if limit is not None and processed >= limit:
-            skipped.append({"object_key": objective.object_key, "reason": "processing_limit"})
+            skipped.append({**work, "object_key": objective.object_key, "reason": "processing_limit"})
             continue
         processed += 1
         try:
@@ -712,6 +733,7 @@ def current_cards(
                 if variant not in kept and len(kept) >= profile.selection.variants_per_binding:
                     skipped.append(
                         {
+                            **work,
                             "object_key": objective.object_key,
                             "candidate_key": digest(objective),
                             "reason": "variant_limit",
@@ -739,7 +761,7 @@ def current_cards(
             representation = (prompt, answer, assertions)
             if ref in seen:
                 if seen[ref] == representation:
-                    skipped.append({"object_key": objective.object_key, "reason": "duplicate_card_ref"})
+                    skipped.append({**work, "object_key": objective.object_key, "reason": "duplicate_card_ref"})
                     continue
                 conflicted.add(ref)
                 raise ValueError("duplicate semantic exercise")
@@ -793,7 +815,27 @@ def current_cards(
                 )
             )
         except (ValueError, KeyError) as exc:
-            skipped.append({"object_key": objective.object_key, "reason": str(exc)})
+            skipped.append({**work, "object_key": objective.object_key, "reason": str(exc)})
+    for card in rendered:
+        if (card.claims.note_id, card.claims.card_key) in conflicted:
+            objective = card.objective
+            skipped.append(
+                {
+                    "work_id": digest(objective),
+                    "source_entries": canonical(
+                        [objective.entry]
+                        if isinstance(objective, FormObjective)
+                        else sorted({b.entry for b in objective.selection.bindings})
+                    ).decode(),
+                    **(
+                        {"source_pattern": objective.selection.pattern}
+                        if isinstance(objective, PhraseObjective)
+                        else {}
+                    ),
+                    "object_key": objective.object_key,
+                    "reason": "conflicting_card_ref",
+                }
+            )
     rendered = [r for r in rendered if (r.claims.note_id, r.claims.card_key) not in conflicted]
     available = {r.recipe for r in rendered}
     skipped.extend(
@@ -834,6 +876,22 @@ def decide(root: Path, profile_path: Path | None = None) -> dict[str, object]:
         return _decide(root, profile_path)
 
 
+def _analysis_decision(card: Rendered) -> Acceptance:
+    destination = card.claims.decisions[0]
+    analysis = Analysis.read_json(card.analysis_path.read_bytes())
+    if analysis.binding != card.binding or analysis.versions != card.versions:
+        raise ValueError("stale analysis context")
+    current = {a.id: a for a in analysis.assertions}
+    if any(current.get(a.id) != a for a in card.claims.assertions):
+        raise ValueError("analysis assertion mismatch")
+    decision = destination.reader.decide_automatic(checks=analysis.checks, stage_ids=analysis.stage_ids)
+    if destination.path.exists():
+        stored, _ = destination.reader.read(destination.path)
+        if stored.checks != decision.checks or stored.stage_ids != decision.stage_ids:
+            raise ValueError("stored decision differs from current analysis")
+    return decision
+
+
 def _decide(root: Path, profile_path: Path | None) -> dict[str, object]:
     run = load_run(root)
     path = profile_path or Path(run.profile_path)
@@ -847,18 +905,8 @@ def _decide(root: Path, profile_path: Path | None) -> dict[str, object]:
         if not path.exists() or destination.path.name == "unanalysed.json":
             continue
         try:
-            analysis = Analysis.read_json(path.read_bytes())
-            if analysis.binding != card.binding or analysis.versions != card.versions:
-                raise ValueError("stale analysis context")
-            current = {a.id: a for a in analysis.assertions}
-            if any(current.get(a.id) != a for a in card.claims.assertions):
-                raise ValueError("analysis assertion mismatch")
-            decision = destination.reader.decide_automatic(checks=analysis.checks, stage_ids=analysis.stage_ids)
-            if destination.path.exists():
-                stored, _ = destination.reader.read(destination.path)
-                if stored.checks != decision.checks or stored.stage_ids != decision.stage_ids:
-                    raise ValueError("stored decision differs from current analysis")
-            else:
+            decision = _analysis_decision(card)
+            if not destination.path.exists():
                 save_acceptance(destination.path, decision)
         except (ValueError, OSError, TypeError) as error:
             errors.append({"note_id": card.claims.note_id, "card_key": card.claims.card_key, "reason": str(error)})
@@ -981,6 +1029,31 @@ def export(
         return _export(root, output, profile_path, output_limit, after_receipt, reconcile_receipt)
 
 
+def _card_projection(items: list[Rendered]) -> object:
+    return [
+        (c.claims.note_id, c.claims.card_key, c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
+        for c in items
+    ]
+
+
+def _selection_snapshot(
+    selected: list[Rendered],
+    skipped: tuple[dict[str, str], ...],
+    suppressed: list[dict[str, str]],
+    profile: PipelineProfile,
+) -> str:
+    return digest(
+        {
+            "ranking": "selection-v1",
+            "cards": _card_projection(selected),
+            "skipped": skipped,
+            "suppressed": suppressed,
+            "selection": profile.selection.model_dump(exclude={"output_limit"}),
+            "recipes": profile.recipes,
+        }
+    )
+
+
 def _export(
     root: Path,
     output: Path,
@@ -1004,28 +1077,13 @@ def _export(
     repeated, repeated_skipped = current_cards(path, profile, run.objectives, root)
     repeated_selected, repeated_suppressed = _selected(repeated)
 
-    def projection(items: list[Rendered]) -> object:
-        return [
-            (c.claims.note_id, c.claims.card_key, c.binding, c.versions, c.claims.assertions, c.prompt, c.answer)
-            for c in items
-        ]
-
-    if (projection(selected), skipped, suppressed) != (
-        projection(repeated_selected),
+    if (_card_projection(selected), skipped, suppressed) != (
+        _card_projection(repeated_selected),
         repeated_skipped,
         repeated_suppressed,
     ):
         raise ValueError("eligibility changed before export")
-    snapshot = digest(
-        {
-            "ranking": "selection-v1",
-            "cards": projection(selected),
-            "skipped": skipped,
-            "suppressed": suppressed,
-            "selection": profile.selection.model_dump(exclude={"output_limit"}),
-            "recipes": profile.recipes,
-        }
-    )
+    snapshot = _selection_snapshot(selected, skipped, suppressed, profile)
     batches = Batches(root, digest(str(root.resolve())))
     batches.recover(snapshot)
     request_id, replay, emitted = batches.request(
@@ -1107,6 +1165,10 @@ def _export(
     load_source(path, profile)
     final_cards, final_skipped = current_cards(path, profile, run.objectives, root)
     final_selected, final_suppressed = _selected(final_cards)
-    if (projection(final_selected), final_skipped, final_suppressed) != (projection(selected), skipped, suppressed):
+    if (_card_projection(final_selected), final_skipped, final_suppressed) != (
+        _card_projection(selected),
+        skipped,
+        suppressed,
+    ):
         raise ValueError("eligibility changed before export")
     return batches.publish(receipt, payload)

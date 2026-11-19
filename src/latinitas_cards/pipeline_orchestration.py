@@ -54,6 +54,7 @@ from .pipeline_consumers import (
     preview,
 )
 from .pipeline_profile import PipelineProfile, load_pipeline_profile
+from .pipeline_reporting import build_report, safe_snapshot
 from .providers import (
     PROMPT_VERSIONS,
     Endpoint,
@@ -319,7 +320,7 @@ def _analyze(root: Path, state: Execution, card: Rendered, source: Source) -> di
                 stage_artifact(root, load_stage(root, identity))
             cached = cast(dict[str, object], metadata["outcome"])
             if cached.get("state") != "failed":
-                return cached
+                return {**cached, "_reused": True}
     constraints: tuple[Evidence, ...] = ()
     library_state = "not_configured"
     if library and isinstance(card.objective, FormObjective) and card.objective.form:
@@ -433,7 +434,7 @@ def _summary(
     versions = _versions(profile)
     envelope = {
         "effective_profile": profile,
-        "outcomes": rows,
+        "outcomes": [{key: value for key, value in row.items() if key != "reuse"} for row in rows],
         "prerequisite_output_sha256s": tuple(load_stage(root, p).output_sha256 for p in prerequisites),
     }
     identity = digest({"stage": name, "binding": binding, "versions": versions, "envelope": envelope})
@@ -628,6 +629,7 @@ def execute(
                     required = PREREQUISITES.get(name)
                     problem = None
                     invalid_current = False
+                    reuse = "not_processed"
                     try:
                         _prerequisite(root, index, card, name)
                     except (OSError, ValueError, KeyError, TypeError) as error:
@@ -653,6 +655,7 @@ def execute(
                         row = {"stage_id": _stage(root, state, card, name, {"binding": card.binding})}
                     elif name == "analyze":
                         row = _analyze(root, state, card, source)
+                        reuse = "reused" if row.pop("_reused", False) else "processed"
                         row["analysis_sha256"] = hashlib.sha256(card.analysis_path.read_bytes()).hexdigest()
                     elif llm_off:
                         row = {"state": "not_requested", "reason": "LLM-off"}
@@ -674,6 +677,7 @@ def execute(
                             context = RequestContext(endpoint=endpoint, task=task, recipe=card.recipe, scope=scope)
                             _immutable(root / "request-contexts" / (digest(context) + ".json"), canonical(context))
                             bound = input_token_bound(endpoint)
+                            prior_calls = {call.call_id for call in provider.calls()}
                             result = completed or provider.request(
                                 role,
                                 task,
@@ -688,6 +692,11 @@ def execute(
                                 duplicate_warning_confirmed=confirm_duplicate_billing,
                             )
                             row = asdict(result)
+                            dispatched = any(
+                                call.call_id not in prior_calls and call.reason != "not_dispatched"
+                                for call in provider.calls()
+                            )
+                            reuse = "reused" if completed else "processed" if dispatched else "not_processed"
                             if result.answer is not None:
                                 row["reason"] = "transport_only_not_acceptance"
                                 row["stage_id"] = _stage(
@@ -728,6 +737,7 @@ def execute(
                             "card_key": card.claims.card_key,
                             **row,
                             "execution_stage_id": execution_stage,
+                            **({"reuse": reuse} if name != "ingest" else {}),
                         }
                     )
             elif name == "decide":
@@ -761,6 +771,22 @@ def execute(
         report["provider_calls"] = [c.model_dump(mode="json") for c in provider.calls()]
         if only in ("select", "render"):
             report.update(preview(root))
+        report = build_report(
+            root,
+            report,
+            hashlib.sha256(permission_path.read_bytes()).hexdigest() if permission_path else None,
+            permission,
+        )
+        secrets = tuple(
+            value
+            for endpoint in provider.endpoints.values()
+            if endpoint and endpoint.credential_ref
+            if (value := os.environ.get(endpoint.credential_ref))
+        )
+        try:
+            report = safe_snapshot(report, secrets)
+        except (ValueError, TypeError):
+            raise ValueError("pipeline_report_redaction_or_validation_failed") from None
         _atomic(Path(state.output) / "report.json", canonical(report))
         return cast(dict[str, object], decode_json(canonical(report)))
 
@@ -827,8 +853,10 @@ def reconcile_call(
 
 
 def report(root: Path) -> dict[str, object]:
-    state = load_execution(root)
-    result = decode_json((Path(state.output) / "report.json").read_bytes())
-    if not isinstance(result, dict):
-        raise ValueError("invalid report")
-    return result
+    try:
+        state = load_execution(root)
+        return safe_snapshot(decode_json((Path(state.output) / "report.json").read_bytes()))
+    except (OSError, ValueError, TypeError):
+        # Validation errors can quote corrupted records or credential-bearing
+        # exception text. The report command must not print those raw inputs.
+        raise ValueError("pipeline_report_unavailable_or_invalid") from None

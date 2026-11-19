@@ -1,12 +1,12 @@
 ---
 id: T-194-explain-pipeline-outcomes-in-human-and-machine
 title: Explain pipeline outcomes in human and machine reports
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.5.0.md#outcome-reports-and-anki-acceptance-metadata
 dependencies:
     - T-193-orchestrate-inspectable-stages-with-bounded-resume
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-19T01:49:15Z"
 ---
 
 # T-194-explain-pipeline-outcomes-in-human-and-machine Explain pipeline outcomes in human and machine reports
@@ -35,3 +35,8 @@ counts. Validate schema/source links, partial resume and error redaction. Run th
 mandatory validation chain.
 
 ## Implementation Notes
+
+- 2026-11-18T23:25:56Z: High-risk review round 2/2 exhausted: stage-only report restoration validates valid human unanalysed.json authority as automatic analysis, inventing analysis_processing_failed and incomplete status. Public CLI resume then stage select reproduced it; required correction and regression remain. Candidate preserved uncommitted; no completion or push.
+- 2026-11-19T01:30:51Z: Maintainer standing exception permits additional confirmed in-scope correction rounds; resume preserved candidate for human-authority applicability regression and correction. Historical rounds 1 and 2 remain consumed; this is round 3.
+- 2026-11-19T01:49:08Z: verification pass
+- 2026-11-19T01:49:15Z: Implemented readable yield and strict versioned reports over current stages, selection and validated receipts. Verification passed at 2026-11-19T01:49:08Z after final Ruff/mypy/pytest gate (3648 passed,7 skipped,1 warning), public manual campaign and independent high-risk review. Round3 under maintainer standing exception resolved human-authority stage-only applicability; historical rounds and blocker evidence retained. Production policy disabled, missing token bound deferred; no inference/judges/native/release acceptance. Outer loop owns integrated acceptance and successor selection.

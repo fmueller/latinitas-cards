@@ -88,7 +88,9 @@ class Layout(Record):
     template_sha256: Hash
 
 
-class PipelineProfile(Record):
+class ProfileSnapshot(Record):
+    """Exact profile data for reporting; does not establish installed policy authority."""
+
     format: Literal["latinitas-pipeline-profile"]
     version: Literal[1]
     deck_profile: FileReference
@@ -107,6 +109,12 @@ class PipelineProfile(Record):
     def effective(self) -> Self:
         if self.recipes != resolve_recipes(self.preset, self.recipe_overrides):
             raise ValueError("saved recipes differ from resolved preset/overrides")
+        return self
+
+
+class PipelineProfile(ProfileSnapshot):
+    @model_validator(mode="after")
+    def installed_policy(self) -> Self:
         lookup_policy(self.policy.id, self.policy.version, self.policy.sha256)
         return self
 

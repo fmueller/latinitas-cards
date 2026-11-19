@@ -10,6 +10,7 @@ from ..grammar_layout import GRAMMAR_FIELDS, GRAMMAR_LAYOUT, LAYOUT_SHA256
 from ..pipeline_consumers import adapt, decide, export, load_run, load_source, preview
 from ..pipeline_orchestration import cancel, execute, prepare, reconcile_call, report
 from ..pipeline_profile import PipelineProfile, RecipeOverrides, load_pipeline_profile, resolve_recipes
+from ..pipeline_reporting import readable
 from ..reference_templates import REFERENCE_CARD_CSS
 from .claims import JsonOption, _emit, _error
 
@@ -232,7 +233,11 @@ def cancel_command(run: RunOption, machine: JsonOption = False) -> None:
 def report_command(run: RunOption, machine: JsonOption = False) -> None:
     """Read the stored execution report without contacting providers."""
     try:
-        _emit(report(run), machine)
+        result = report(run)
+        if machine:
+            _emit(result, True)
+        else:
+            typer.echo(readable(result))
     except (OSError, ValueError) as error:
         _error(error, machine)
 
