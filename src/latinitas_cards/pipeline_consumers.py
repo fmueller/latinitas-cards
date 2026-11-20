@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
 
-from .acceptance import AcceptanceReader, check_envelope, save_acceptance
+from .acceptance import AcceptanceReader, check_envelope, load_acceptance, save_acceptance
 from .acceptance_policy import ScopeCell, implementation_digest
 from .acceptance_presentation import ACCEPTANCE_FIELDS, Presentation, metadata, note_tags, require_installation
 from .acceptance_records import (
@@ -950,11 +950,25 @@ def current_cards(
             human_path = path.with_name("unanalysed.json")
             if human_path.exists():
                 try:
-                    decision, eligibility = reader.read(human_path)
-                    if decision.origin == "human" and eligibility.eligible:
-                        claims = CardClaims(note_id, key, assertions, (DecisionSource(reader, human_path),))
+                    if load_acceptance(human_path).origin == "human":
+                        decision, eligibility = reader.read(human_path)
+                        if eligibility.eligible:
+                            claims = CardClaims(note_id, key, assertions, (DecisionSource(reader, human_path),))
                 except (ValueError, OSError, TypeError):
                     pass
+            index_path = root / "stage-index.json"
+            if revision != "unanalysed" and claims.decisions[0].path != human_path and index_path.exists():
+                index = decode_json(index_path.read_bytes())
+                if not isinstance(index, dict):
+                    raise ValueError("invalid automatic stage index")
+                stage_key = "counter_check/" + digest((note_id, key))
+                if versions.counter_prompt is not None and stage_key in index:
+                    model_stage = index[stage_key]
+                    if not isinstance(model_stage, str) or not model_stage:
+                        raise ValueError("invalid indexed counter stage")
+                    revision = digest({"analysis_sha256": revision, "model_stage_id": model_stage})
+                    path = path.with_name(revision + ".json")
+                    claims = CardClaims(note_id, key, assertions, (DecisionSource(reader, path),))
             rendered.append(
                 Rendered(
                     objective.recipe, prompt, answer, claims, binding, versions, material, analysis_path, objective
@@ -1030,7 +1044,10 @@ def _analysis_decision(card: Rendered) -> Acceptance:
     current = {a.id: a for a in analysis.assertions}
     if any(current.get(a.id) != a for a in card.claims.assertions):
         raise ValueError("analysis assertion mismatch")
-    decision = destination.reader.decide_automatic(checks=analysis.checks, stage_ids=analysis.stage_ids)
+    checks, stages = destination.reader.model_checks()
+    decision = destination.reader.decide_automatic(
+        checks=(*analysis.checks, *checks), stage_ids=(*analysis.stage_ids, *stages)
+    )
     if destination.path.exists():
         stored, _ = destination.reader.read(destination.path)
         if stored.checks != decision.checks or stored.stage_ids != decision.stage_ids:

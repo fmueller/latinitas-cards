@@ -28,7 +28,19 @@ from .acceptance import (
     stage_artifact,
 )
 from .acceptance_policy import SupportRegistry, implementation_digest
-from .acceptance_records import Binding, Check, Record, Stage, StageName, Text, canonical, decode_json, digest
+from .acceptance_records import (
+    Assertion,
+    Binding,
+    Check,
+    Record,
+    Stage,
+    StageName,
+    Text,
+    Versions,
+    canonical,
+    decode_json,
+    digest,
+)
 from .acceptance_registry import SUPPORT_REGISTRY
 from .claim_review import Evidence
 from .deck_evidence import CHECKER, DeckTask, analyze_deck
@@ -516,7 +528,9 @@ def read_source_comparison(root: Path, card: Rendered) -> dict[str, object] | No
     path = root / "stage-index.json"
     if not path.exists():
         return None
-    index = cast(dict[str, JsonValue], decode_json(path.read_bytes()))
+    index = decode_json(path.read_bytes())
+    if not isinstance(index, dict):
+        raise ValueError("stage index must be an object")
     identity = _prerequisite(root, index, card, "counter_check")
     if identity is None:
         return None
@@ -538,11 +552,45 @@ def read_source_comparison(root: Path, card: Rendered) -> dict[str, object] | No
     return None
 
 
+def read_acceptance_model_checks(
+    root: Path, binding: Binding, versions: Versions, assertions: tuple[Assertion, ...]
+) -> tuple[tuple[Check, ...], tuple[str, ...]]:
+    """Reconstruct the complete original card and both actual invocations.
+
+    The original whole-task blind check cannot be projected to a subset.
+    Returning verified records does not make unresolved siblings eligible and
+    does not change the diagnostic artifact's lack of acceptance authority.
+    """
+    if versions.proposal_prompt is None or versions.counter_prompt is None:
+        return (), ()
+    saved = load_run(root)
+    cards, _ = current_cards(Path(saved.profile_path), saved.profile, saved.objectives, root)
+    matches = [
+        card
+        for card in cards
+        if card.binding == binding and card.versions == versions and card.claims.assertions == assertions
+    ]
+    if len(matches) != 1:
+        raise ValueError("model evidence requires the complete current card")
+    card = matches[0]
+    proof = read_source_comparison(root, card)
+    if proof is None:
+        return (), ()
+    comparisons = cast(list[dict[str, object]], proof["comparisons"])
+    checks = tuple(
+        Check.read_json(canonical(check)) for check in (proof["blind_check"], *(c["check"] for c in comparisons))
+    )
+    index = cast(dict[str, str], decode_json((root / "stage-index.json").read_bytes()))
+    return checks, (index[_card_key(card, "counter_check")],)
+
+
 def _prerequisite(root: Path, index: dict[str, JsonValue], card: Rendered, name: StageName) -> str | None:
     identity = index.get(_card_key(card, name))
     if not isinstance(identity, str):
         return None
     stage = load_stage(root, identity)
+    if stage.stage != name:
+        raise ValueError("indexed prerequisite stage type mismatch")
     if stage.state != "succeeded" or stage.binding != card.binding or stage.versions != card.versions:
         return None
     reusable_stage(root, identity, binding=card.binding, versions=card.versions, input_sha256=stage.input_sha256)

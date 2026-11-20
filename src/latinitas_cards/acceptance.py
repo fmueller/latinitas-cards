@@ -247,6 +247,15 @@ def assess(
         # A human approval does not acquire or lose authority through automatic
         # policy changes. Its own check commitments remain exact and immutable.
         evidence_versions = decision.versions if decision.origin == "human" else versions
+        model_checks = tuple(c for c in decision.checks if c.method in ("blind_model", "semantic_comparison"))
+        if model_checks:
+            if decision.origin != "automatic" or any(c.method == "human" for c in decision.checks):
+                return result("origin_mismatch")
+            from .pipeline_orchestration import read_acceptance_model_checks
+
+            expected_checks, proof_ids = read_acceptance_model_checks(root, binding, versions, assertions)
+            if not expected_checks or model_checks != expected_checks or not set(proof_ids) <= set(decision.stage_ids):
+                return result("stale_evidence")
         if decision.origin == "automatic":
             reason = policy_reason(versions, policy_revision, cells)
             if reason:
@@ -285,9 +294,13 @@ def assess(
         current = {a.id: a for a in assertions}
         covered: set[str] = set()
         for check in decision.checks:
-            if check.method not in ("rule", "library", "human"):
-                # This library-only route cannot authorize model-method checks.
-                return result("unrepresentable_claim")
+            if check.method in ("blind_model", "semantic_comparison"):
+                # Regeneration above verifies the complete pair and graph, not
+                # a run-supplied checker or the diagnostic's authority flag.
+                if check.result != "pass" or check.alternatives or check.objections:
+                    return result("incomplete_checks")
+                covered.update(check.assertion_ids)
+                continue
             if check.method == "human" and decision.origin != "human":
                 return result("origin_mismatch")
             if decision.origin == "human" and check.method != "human":
@@ -331,6 +344,16 @@ class AcceptanceReader:
     cells: tuple[ScopeCell, ...]
     policy_revision: str = "1"
 
+    def model_checks(self) -> tuple[tuple[Check, ...], tuple[str, ...]]:
+        """Regenerate complete-card model evidence, not eligibility or authority.
+
+        Unsupported siblings retain their unresolved checks. This does not
+        trim the whole-task blind check or authorize its passing target alone.
+        """
+        from .pipeline_orchestration import read_acceptance_model_checks
+
+        return read_acceptance_model_checks(self.root, self.binding, self.versions, self.assertions)
+
     def decide_automatic(self, *, checks: tuple[Check, ...], stage_ids: tuple[str, ...]) -> Acceptance:
         """Evaluate an analysis for this card without inheriting an aggregate decision.
 
@@ -351,7 +374,9 @@ class AcceptanceReader:
                 # Missing required proofs fail coverage/artifact validation below;
                 # an unrelated analysis branch is not this card's prerequisite.
                 continue
-            if stage.input_sha256 in inputs:
+            if stage.input_sha256 in inputs or (
+                stage.stage == "counter_check" and any(c.method == "blind_model" for c in relevant)
+            ):
                 selected.append(identity)
         # assess/reusable_stage validates each selected proof's full recursive
         # prerequisite closure, even when it is absent from this top-level list.

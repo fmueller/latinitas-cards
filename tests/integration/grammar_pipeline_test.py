@@ -878,7 +878,8 @@ def test_recognition_preserves_syncretism_and_withholds_case_guess(tmp_path: Pat
     assert any("ambiguous recognition" in s["reason"] for s in report["skipped"])
 
 
-def test_bound_human_authority_is_distinct_from_automatic_policy(tmp_path: Path) -> None:
+@pytest.mark.parametrize("index_damage", [None, "{", "[]", "null"])
+def test_bound_human_authority_is_distinct_from_automatic_policy(tmp_path: Path, index_damage: str | None) -> None:
     from latinitas_cards.acceptance import save_acceptance
     from latinitas_cards.acceptance_records import Human
     from latinitas_cards.pipeline_consumers import Objectives
@@ -934,14 +935,30 @@ def test_bound_human_authority_is_distinct_from_automatic_policy(tmp_path: Path)
         ),
     )
     save_acceptance(card.claims.decisions[0].path, decision)
-    first = call("export", "--run", str(root), "--output", str(tmp_path / "human.csv"))
-    assert first["exported"] == 1
-    assert first["export_receipt"]["cards"][0]["acceptance"] == "human"
+    if index_damage is None:
+        first = call("export", "--run", str(root), "--output", str(tmp_path / "human.csv"))
+        assert first["exported"] == 1
+        assert first["export_receipt"]["cards"][0]["acceptance"] == "human"
     # A later automatic analysis is not a revocation of this exact human review.
     (root / "analyses").mkdir()
     prove_cards(profile, objectives_path, root)
     call("stage", "decide", "--run", str(root))
-    assert call("export", "--run", str(root), "--output", str(tmp_path / "human-after-analysis.csv"))["exported"] == 1
+    index_path = root / "stage-index.json"
+    index_bytes = index_path.read_bytes() if index_path.exists() else None
+    if index_damage is not None:
+        index_path.write_text(index_damage)
+        shown = call("preview", "--run", str(root))
+        human = next(c for c in shown["cards"] if c["note_id"] == card.claims.note_id)
+        assert human["state"] == "accepted"
+        assert shown["skipped"]
+    after = call("export", "--run", str(root), "--output", str(tmp_path / "human-after-analysis.csv"))
+    assert after["exported"] == 1
+    assert after["export_receipt"]["cards"][0]["decision_ids"] == [decision.decision_id]
+    assert after["export_receipt"]["cards"][0]["acceptance"] == "human"
+    if index_bytes is not None:
+        index_path.write_bytes(index_bytes)
+    elif index_damage is not None:
+        index_path.unlink()
     assert decision.human is not None
     revised_review = card.claims.decisions[0].reader.decide(
         checks=(check,),

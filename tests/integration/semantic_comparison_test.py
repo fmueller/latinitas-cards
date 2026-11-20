@@ -220,12 +220,15 @@ def recommit_stage_tree(root: Path, identity: str) -> None:
         "proposal_response",
         "proposal_response_recommit",
         "scope",
+        "wrapper_stage_type",
     ],
 )
 def test_source_comparison_tampering_fails_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str) -> None:
     import hashlib
 
     import grammar_pipeline_test as fixtures
+
+    from latinitas_cards.pipeline_consumers import current_cards, load_run
 
     monkeypatch.setattr(fixtures, "provider_answer", source_answer)
     profile, objectives = setup_source(tmp_path)
@@ -238,6 +241,10 @@ def test_source_comparison_tampering_fails_closed(tmp_path: Path, monkeypatch: p
         report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
         root = output / "run"
         assert len(sent) == 2 and report["stages"]["counter_check"][0]["semantic_comparison"] == "unresolved"
+        saved = load_run(root)
+        card = current_cards(profile, saved.profile, saved.objectives, root)[0][0]
+        destination = card.claims.decisions[0]
+        assert destination.reader.model_checks()[0]
         ledger_path = root / "providers" / "provider-ledger.json"
         ledger = json.loads(ledger_path.read_text())
         counter = ledger["calls"][0 if damage.startswith("proposal") else -1]
@@ -249,7 +256,11 @@ def test_source_comparison_tampering_fails_closed(tmp_path: Path, monkeypatch: p
             "missing_result_recommit",
             "redirect_reference",
         )
-        if stage_damage:
+        if damage == "wrapper_stage_type":
+            index = json.loads((root / "stage-index.json").read_text())
+            identity = next(value for key, value in index.items() if key.startswith("counter_check/"))
+            artifact = root / "stages" / (identity + ".json")
+        elif stage_damage:
             stage = load_stage(root, report["stages"]["counter_check"][0]["stage_id"])
             assert stage.artifact is not None
             artifact = root / stage.artifact
@@ -262,7 +273,10 @@ def test_source_comparison_tampering_fails_closed(tmp_path: Path, monkeypatch: p
                 / counter["request_artifact" if damage.startswith("request") else "response_artifact"]
             )
         raw = json.loads(artifact.read_text())
-        if damage == "scope":
+        if damage == "wrapper_stage_type":
+            assert raw["stage"] == "counter_check"
+            raw["stage"] = "analyze"
+        elif damage == "scope":
             raw[0]["fields"] = ["unselected-field"]
         elif damage.startswith("request"):
             raw["messages"].append({"role": "user", "content": "leaked proposal answer"})
@@ -307,6 +321,10 @@ def test_source_comparison_tampering_fails_closed(tmp_path: Path, monkeypatch: p
             key = "request_sha256" if damage.startswith("request") else "response_sha256"
             counter[key] = hashlib.sha256(artifact.read_bytes()).hexdigest()
             write(ledger_path, ledger)
+        with pytest.raises(ValueError):
+            destination.reader.model_checks()
+        _, eligibility = destination.reader.read(destination.path)
+        assert not eligibility.eligible and eligibility.reason == "stale_evidence"
         decision = call("stage", "decide", "--run", str(root))["stages"]["decide"][0]
         assert decision["analysis_errors"] and not decision["decisions"]
         replay = call("resume", "--run", str(root), "--offline")
@@ -350,3 +368,112 @@ def test_source_comparison_invalidates_changed_execution(
         replay = call("resume", "--run", str(root), "--profile", str(profile), "--offline")
         assert replay["file_export"]["exported"] == 0 and len(sent) == 2
         assert all(d["semantic_comparison"] == "not_available" for d in replay["stages"]["decide"][0]["decisions"])
+
+
+def complete_source_answer(body: dict[str, Any]) -> bytes:
+    """Cover every requested sibling, without claiming unsupported prose is true."""
+    wrapper = json.loads(source_answer(body))
+    answer = json.loads(wrapper["choices"][0]["message"]["content"])
+    for identity in ("source", "rendered"):
+        answer["assertions"].append(
+            dict(
+                id=identity,
+                kind="label",
+                value="synthetic unsupported sibling",
+                selected_sense=None,
+                alternatives=[],
+                evidence=[EVIDENCE],
+            )
+        )
+    wrapper["choices"][0]["message"]["content"] = canonical(answer).decode()
+    return canonical(wrapper)
+
+
+def test_acceptance_reader_regenerates_complete_model_checks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from dataclasses import replace
+
+    import grammar_pipeline_test as fixtures
+
+    from latinitas_cards.acceptance import Acceptance, save_acceptance
+    from latinitas_cards.pipeline_consumers import current_cards, load_run
+
+    monkeypatch.setattr(fixtures, "provider_answer", complete_source_answer)
+    profile, objectives = setup_source(tmp_path)
+    with synthetic_pipeline_http() as (url, sent, _):
+        configure_pipeline_http(profile, url)
+        settings = json.loads(profile.read_text())
+        settings["selection"]["entries"] = ["v"]
+        write(profile, settings)
+        output = tmp_path / "workflow"
+        report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+        root = output / "run"
+        saved = load_run(root)
+        card = current_cards(profile, saved.profile, saved.objectives, root)[0][0]
+        destination = card.claims.decisions[0]
+        reader = destination.reader
+        checks, stages = reader.model_checks()
+        assert len(sent) == 2
+        assert {c.id for c in checks} == {
+            "blind/transport",
+            "semantic/source",
+            "semantic/target",
+            "semantic/translation",
+            "semantic/rendered",
+        }
+        blind = next(c for c in checks if c.method == "blind_model")
+        assert blind.assertion_ids == tuple(a.id for a in reader.assertions)
+        assert blind.result == "pass"
+        target = next(c for c in checks if c.id == "semantic/target")
+        assert target.result == "pass" and not target.objections
+        assert all(c.result == "unresolved" for c in checks if c.id not in (blind.id, target.id))
+        stored, eligibility = reader.read(destination.path)
+        assert set(checks) <= set(stored.checks)
+        assert set(stages) <= set(stored.stage_ids)
+        assert not eligibility.eligible and eligibility.reason == "policy_not_enabled"
+        assert report["file_export"]["exported"] == 0
+        assert report["file_export"]["export_receipt"]["cards"] == []
+        partial = replace(reader, assertions=(reader.assertions[1],), cells=(reader.cells[1],))
+        with pytest.raises(ValueError, match="complete current card"):
+            partial.model_checks()
+        assert partial.decide_automatic(checks=checks, stage_ids=stages).state == "withheld"
+        for damage in (
+            "blind_only",
+            "omit_semantic_sibling",
+            "forged_check",
+            "forged_state",
+            "missing_graph",
+            "human_mix",
+        ):
+            damaged_checks = checks
+            fields: dict[str, Any] = stored.model_dump(exclude={"decision_id"})
+            if damage == "blind_only":
+                damaged_checks = (blind,)
+            elif damage == "omit_semantic_sibling":
+                damaged_checks = tuple(c for c in checks if c.id != "semantic/translation")
+            elif damage == "forged_check":
+                damaged_checks = tuple(c.model_copy(update={"version": "forged"}) if c == target else c for c in checks)
+            elif damage == "forged_state":
+                damaged_checks = tuple(
+                    c.model_copy(update={"result": "pass", "objections": (), "alternatives": ()}) for c in checks
+                )
+                fields.update(state="accepted", reason="accepted")
+            elif damage == "missing_graph":
+                fields["stage_ids"] = tuple(s for s in stored.stage_ids if s not in stages)
+            elif damage == "human_mix":
+                damaged_checks = (*checks, target.model_copy(update={"id": "human", "method": "human"}))
+            forged = Acceptance.create(**{**fields, "checks": damaged_checks})
+            forged_path = root / (damage + "-decision.json")
+            save_acceptance(forged_path, forged)
+            _, rejected = reader.read(forged_path)
+            assert not rejected.eligible
+            assert rejected.reason == ("origin_mismatch" if damage == "human_mix" else "stale_evidence")
+        call("resume", "--run", str(root), "--offline")
+        assert len(sent) == 2
+        for analysis in (root / "analyses").rglob("*.json"):
+            analysis.unlink()
+        for malformed_index in ("[]", "null", '"not an index"'):
+            (root / "stage-index.json").write_text(malformed_index)
+            with pytest.raises(ValueError, match="stage index must be an object"):
+                reader.model_checks()
+            _, rejected = reader.read(destination.path)
+            assert not rejected.eligible and rejected.reason == "stale_evidence"
