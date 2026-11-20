@@ -481,6 +481,10 @@ class ProviderRun:
         with self._lock():
             for call in reversed(self._load().calls):
                 if call.stage_id == identity and call.state == "succeeded":
+                    if call.request_sha256 != hashlib.sha256(body).hexdigest() or call.endpoint_sha256 != digest(
+                        endpoint
+                    ):
+                        raise ValueError("completed request differs from current proposal-free invocation")
                     return self._completed(endpoint, task, scope, call)
         return None
 

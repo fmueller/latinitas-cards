@@ -55,6 +55,7 @@ from .pipeline_profile import PipelineProfile, RecipeOverrides, load_pipeline_pr
 from .preview_export import serialize_anki_csv
 from .principal_parts import PrincipalPartParseSuccess, parse_principal_parts
 from .profile import DeckProfile, load_profile
+from .providers import PROMPT_VERSIONS
 from .sources import CanonicalSourceRecord, read_source_records
 from .terminology import feature_name, feature_value
 
@@ -291,8 +292,10 @@ def _assertion(
     )
 
 
-def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
-    """Check confirmed present_1s role consistency, not paradigm applicability.
+def source_role_target(
+    source: Source, objective: FormObjective | PhraseObjective, versions: Versions
+) -> tuple[dict[str, object] | None, tuple[Evidence, ...], str]:
+    """Reconstruct confirmed present_1s role content, not paradigm applicability.
 
     An entire serialized entry includes lexical/sense claims this rule cannot
     establish. Likewise a cell proof says nothing about contextual cloze use,
@@ -301,7 +304,6 @@ def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
     expected: dict[str, object] | None = None
     constraints: tuple[Evidence, ...] = ()
     reason = "unsupported_assertion_class_or_rule_evidence"
-    objective = card.objective
     if isinstance(objective, FormObjective):
         entry, sense = _entry(source, objective.entry, objective.sense)
         anchors = tuple(_form(source, entry, key) for key in objective.anchors)
@@ -329,7 +331,7 @@ def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
                 Evidence(
                     "latinitas-principal-part-rules",
                     "confirmed-present-1s-active-role/1",
-                    card.versions.checker,
+                    versions.checker,
                     "Consistency with confirmed present_1s mapping of an active -ō citation form: "
                     "first person singular present indicative active. Not independent lexical, "
                     "paradigm applicability or generated-cell verification.",
@@ -358,6 +360,11 @@ def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
                 ),
                 *constraints,
             )
+    return expected, constraints, reason
+
+
+def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
+    expected, constraints, reason = source_role_target(source, card.objective, card.versions)
     unsupported = {
         "source": "source_requires_lexical_and_sense_evidence",
         "translation": "translation_requires_sense_government_and_semantic_evidence",
@@ -703,17 +710,19 @@ def _render_phrase(
 
 def _versions(profile: PipelineProfile) -> Versions:
     current = implementation_digest()
+    proposal, counter = profile.providers.proposal, profile.providers.counter_check
+    model_path = proposal is not None and counter is not None
     return Versions(
         producer="grammar-recipes/1:" + current,
         analyzer=RULE_VERSION,
-        proposal_prompt=None,
-        counter_prompt=None,
+        proposal_prompt=PROMPT_VERSIONS["proposal"] if model_path else None,
+        counter_prompt=PROMPT_VERSIONS["counter_check"] if model_path else None,
         checker="grammar-card/1:" + current,
-        comparison="structured/1",
+        comparison="source-role-comparison/1:" + current,
         policy=profile.policy.id,
         policy_sha256=profile.policy.sha256,
-        proposal_model=None,
-        counter_model=None,
+        proposal_model=proposal.model + ":" + digest(proposal) if model_path and proposal else None,
+        counter_model=counter.model + ":" + digest(counter) if model_path and counter else None,
     )
 
 
@@ -1030,6 +1039,8 @@ def _analysis_decision(card: Rendered) -> Acceptance:
 
 
 def _decide(root: Path, profile_path: Path | None) -> dict[str, object]:
+    from .pipeline_orchestration import read_source_comparison
+
     run = load_run(root)
     path = profile_path or Path(run.profile_path)
     profile = load_pipeline_profile(path) if profile_path else run.profile
@@ -1042,6 +1053,7 @@ def _decide(root: Path, profile_path: Path | None) -> dict[str, object]:
         if not path.exists() or destination.path.name == "unanalysed.json":
             continue
         try:
+            comparison = read_source_comparison(root, card)
             decision = _analysis_decision(card)
             if not destination.path.exists():
                 save_acceptance(destination.path, decision)
@@ -1054,6 +1066,7 @@ def _decide(root: Path, profile_path: Path | None) -> dict[str, object]:
                 "card_key": card.claims.card_key,
                 "state": decision.state,
                 "reason": decision.reason,
+                "semantic_comparison": comparison["relation"] if comparison else "not_available",
             }
         )
     return {"decisions": decisions, "skipped": skipped, "analysis_errors": errors}

@@ -69,6 +69,7 @@ from .providers import (
     Span,
     compare_answers,
 )
+from .semantic_comparison import compare_source_answers
 
 STAGES: tuple[StageName, ...] = (
     "ingest",
@@ -485,6 +486,58 @@ def _card_key(card: Rendered, name: StageName) -> str:
     return name + "/" + digest((card.claims.note_id, card.claims.card_key))
 
 
+def _model_envelope(root: Path, card: Rendered, role: Role) -> dict[str, object]:
+    saved = load_run(root)
+    profile = saved.profile
+    source = load_source(Path(saved.profile_path), profile)
+    task, scope = _task(card, source, profile)
+    provider = _provider(root, load_execution(root), profile)
+    result = provider.completed(role, task, scope)
+    if result is None or result.answer is None:
+        raise ValueError("missing successful proposal-free invocation")
+    envelope: dict[str, object] = {"task": task, "result": result.answer, "call_id": result.call_id}
+    if role == "proposal":
+        return envelope
+    proposal = provider.completed("proposal", task, scope)
+    if proposal is None or proposal.answer is None:
+        raise ValueError("missing successful proposal-free invocations")
+    calls = {call.call_id: call for call in provider.calls()}
+    assert proposal.call_id is not None and result.call_id is not None
+    envelope["semantic_comparison"] = compare_source_answers(
+        source, card, task, proposal.answer, result.answer, calls[proposal.call_id], calls[result.call_id]
+    )
+    return envelope
+
+
+def read_source_comparison(root: Path, card: Rendered) -> dict[str, object] | None:
+    """Rebuild a persisted proof from current sources and actual saved calls."""
+    if card.versions.proposal_prompt is None or card.versions.counter_prompt is None:
+        return None
+    path = root / "stage-index.json"
+    if not path.exists():
+        return None
+    index = cast(dict[str, JsonValue], decode_json(path.read_bytes()))
+    identity = _prerequisite(root, index, card, "counter_check")
+    if identity is None:
+        return None
+    wrapper_stage = load_stage(root, identity)
+    wrapper = cast(dict[str, object], stage_artifact(root, wrapper_stage))
+    for row in cast(list[dict[str, object]], wrapper.get("outcomes", [])):
+        stage_id = row.get("stage_id")
+        if not isinstance(stage_id, str):
+            continue
+        if stage_id not in wrapper_stage.prerequisite_ids:
+            raise ValueError("uncommitted model outcome reference")
+        model_stage = load_stage(root, stage_id)
+        envelope = stage_artifact(root, model_stage)
+        expected = _model_envelope(root, card, "counter_check")
+        if model_stage.stage != "counter_check" or canonical(envelope) != canonical(expected):
+            raise ValueError("source comparison proof mismatch")
+        return cast(dict[str, object], expected["semantic_comparison"])
+    # LLM-off stages have no model artifact and supply no semantic proof.
+    return None
+
+
 def _prerequisite(root: Path, index: dict[str, JsonValue], card: Rendered, name: StageName) -> str | None:
     identity = index.get(_card_key(card, name))
     if not isinstance(identity, str):
@@ -502,6 +555,15 @@ def _prerequisite(root: Path, index: dict[str, JsonValue], card: Rendered, name:
             continue
         visited.add(current.stage_id)
         envelope = cast(dict[str, object], stage_artifact(root, current))
+        if current.stage in ("propose", "counter_check"):
+            if set(envelope) == {"effective_profile", "outcomes", "prerequisite_output_sha256s"}:
+                for outcome in cast(list[dict[str, object]], envelope["outcomes"]):
+                    if "stage_id" in outcome and outcome["stage_id"] not in current.prerequisite_ids:
+                        raise ValueError("uncommitted model outcome reference")
+            else:
+                role: Role = "proposal" if current.stage == "propose" else "counter_check"
+                if canonical(envelope) != canonical(_model_envelope(root, card, role)):
+                    raise ValueError("source comparison or model stage proof mismatch")
         for row in cast(list[dict[str, object]], envelope.get("outcomes", [])):
             if "analysis" not in row:
                 continue
@@ -706,12 +768,16 @@ def execute(
                             reuse = "reused" if completed else "processed" if dispatched else "not_processed"
                             if result.answer is not None:
                                 row["reason"] = "transport_only_not_acceptance"
+                                envelope = _model_envelope(root, card, role)
+                                if role == "counter_check":
+                                    proof = cast(dict[str, object], envelope["semantic_comparison"])
+                                    row["semantic_comparison"] = proof["relation"]
                                 row["stage_id"] = _stage(
                                     root,
                                     state,
                                     card,
                                     name,
-                                    {"task": task, "result": result.answer, "call_id": result.call_id},
+                                    envelope,
                                 )
                                 if role == "counter_check":
                                     row["authority"] = "transport_only_not_acceptance"

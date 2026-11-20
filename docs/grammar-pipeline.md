@@ -181,6 +181,33 @@ semantic authority from a matching model answer. The profile's requested policy
 cannot enable an installed policy. No public bypass or policy-registration command
 exists. Synthetic policy fixtures belong only in tests.
 
+Successful counter stages also retain a `latinitas-source-comparison` engineering
+proof. It reconstructs the confirmed active -ō `present_1s` role/feature cell from
+the current mapped source, independently of both answers. Each assertion has a
+separate comparison result and commitment to the actual proposal/counter output
+bytes. The blind envelope commits to the saved proposal-free task/request and
+counter response. Decision/replay readers reconstruct the proof and verify the
+actual request bodies, response artifacts, scope and current versions offline.
+
+Only that context-free source-role label can receive `equivalent` here. With both
+answers and no open objections or unqualified alternatives, wrong features or
+cited forms yield `contradiction`. Missing assertions, open objections,
+unqualified alternatives, contextual applicability and unsupported classes remain
+`unresolved`. No supported alternative convention is installed, so the comparator
+does not manufacture `compatible_alternatives` results. Matching translation,
+segmentation, lexical/sense or explanatory prose supplies no evidence. This does
+not verify regular-paradigm applicability, derived forms (including dō/dāre →
+dāmus), lexical truth or complete rendered answers.
+
+The proof is diagnostic, with `authorizes_acceptance: false`; it is not a generic
+model-acceptance envelope. The shared acceptance reader still rejects model-only
+checks: implementing its model-proof authorization path is a separate residual
+prerequisite, not something policy enablement alone resolves. Ordinary automatic
+learning export stays disabled. Other producer classes need class-specific evidence
+contracts and separately lawful, qualified
+reference data. Offline synthetic transport tests are engineering checks, not
+product evaluation or completion of the v0.5 semantic prerequisite.
+
 Automatic decisions are immutable revisions keyed by the exact analysis bytes.
 An unchanged analysis reuses its decision; malformed/stale analyses are reported
 per card and do not prevent independent siblings from being decided.
