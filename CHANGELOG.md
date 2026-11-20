@@ -26,8 +26,9 @@ Notable user-facing changes to Latinitas Cards are documented here.
   limits and separate usage records; token totals and charges are not guaranteed caps.
 - `pipeline run` supports MiniMax-M3.1-Flash at its qualified HTTPS Chat endpoint
   with opt-in estimated accounting and low-effort structured answers.
-- `pipeline run` checks derived amō, porta and bonus target cells against bundled
-  source paradigms; unsupported lexemes and whole-card automatic exports stay withheld.
+- `pipeline run` checks finite amō, porta and bonus forms, five named stem analyses
+  and six PPP recognition/cloze contexts against bundled grammar; unsupported
+  evidence and whole-card automatic exports stay withheld.
 - `pipeline export` records acceptance-bound card identities; `pipeline handoff`
   lists unresolved prior exports and manual actions without changing Anki.
 

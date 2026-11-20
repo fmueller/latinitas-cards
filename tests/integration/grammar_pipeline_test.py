@@ -2310,7 +2310,7 @@ def test_processing_ceiling_uses_resolved_recipe_order(tmp_path: Path) -> None:
     assert [c["recipe"] for c in report["cards"]] == ["form_translation"]
 
 
-def test_attested_paradigms_produce_only_target_evidence(tmp_path: Path) -> None:
+def test_attested_paradigms_produce_bounded_target_and_stem_evidence(tmp_path: Path) -> None:
     """Expected cells transcribed independently from Bennett §§20, 63, 101."""
     from latinitas_cards.latin_library import attested_paradigms
     from latinitas_cards.pipeline_consumers import FormObjective, load_run
@@ -2401,7 +2401,9 @@ def test_attested_paradigms_produce_only_target_evidence(tmp_path: Path) -> None
         )
         assert checks["target"].result == "pass"
         assert any("Bennett" in e.source and "sha256" in e.version for e in checks["target"].evidence)
-        assert all(c.result != "pass" for c in analysis.checks if c.id != "target")
+        stem_supported = json.loads(target.value)["surface"] in {"amās", "amāmus", "amātis", "portārum", "portās"}
+        assert (checks["stem"].result == "pass") == stem_supported
+        assert all(c.result != "pass" for c in analysis.checks if c.id not in ("target", "stem"))
         assert {a.id for a in analysis.assertions} == {i for c in analysis.checks for i in c.assertion_ids}
     assert not report["provider_calls"] and report["file_export"]["exported"] == 0
     before = {c.analysis_path: c.analysis_path.read_bytes() for c in cards}
@@ -2499,7 +2501,8 @@ def test_attested_paradigm_accepts_compatible_partial_anchor_features(tmp_path: 
     assert len(cards) == 1
     checks = Analysis.read_json(cards[0].analysis_path.read_bytes()).checks
     assert next(c for c in checks if c.id == "target").result == "pass"
-    assert all(c.result != "pass" for c in checks if c.id != "target")
+    assert next(c for c in checks if c.id == "stem").result == "pass"
+    assert all(c.result != "pass" for c in checks if c.id not in ("target", "stem"))
     assert report["file_export"]["exported"] == 0
 
 

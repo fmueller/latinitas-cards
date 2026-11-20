@@ -7,7 +7,7 @@ from typing import Literal
 from .acceptance import check_envelope
 from .acceptance_records import Assertion, Check, decode_json, digest
 from .phrase_inputs import Features
-from .pipeline_consumers import FormObjective, Rendered, Source, source_role_target
+from .pipeline_consumers import Rendered, Source, source_form_claims
 from .providers import Call, ModelAnswer, ModelTask
 
 VERSION = "source-role-comparison/1"
@@ -15,10 +15,15 @@ type Relation = Literal["equivalent", "compatible_alternatives", "contradiction"
 
 
 def _content(assertion: Assertion) -> dict[str, object] | None:
-    """A feature tuple and cited surface, not prose/gloss equality."""
+    """Structured source-bound claims, not prose/gloss equality."""
     try:
         value = decode_json(assertion.value)
-        if not isinstance(value, dict) or set(value) != {"surface", "features", "source_role", "anchors", "rule"}:
+        if assertion.kind == "segmentation":
+            return value if isinstance(value, dict) else None
+        if not isinstance(value, dict) or set(value) not in (
+            {"surface", "features", "source_role", "anchors", "rule"},
+            {"surface", "features", "source_role", "anchors", "rule", "context"},
+        ):
             return None
         features = Features.model_validate(value["features"], strict=True)
         return {**value, "features": features.model_dump()}
@@ -38,13 +43,11 @@ def compare_source_answers(
     """Build only after the provider reader verifies both immutable invocations.
 
     Source reconstruction is deliberately narrower than the requested model task.
-    No convention/reference supports alternative segmentations or meanings here.
+    No alternative segmentation convention or meaning equivalence is installed.
     """
     if proposal_call.response_sha256 is None or counter_call.response_sha256 is None:
         raise ValueError("missing actual output commitments")
-    expected, constraints, unsupported = source_role_target(source, card.objective, card.versions)
-    if isinstance(card.objective, FormObjective) and card.objective.context:
-        expected, unsupported = None, "context_requires_independent_applicability_evidence"
+    expected, constraints, unsupported = source_form_claims(source, card.objective, card.versions)
     expected_ids = {a.id for a in card.claims.assertions}
     proposal_ids = [a.id for a in proposal.assertions]
     counter_ids = [a.id for a in counter.assertions]
@@ -77,23 +80,21 @@ def compare_source_answers(
             "segmentation": "segmentation_requires_convention_and_reconstruction_evidence",
             "explanation": "explanation_requires_clause_evidence",
         }.get(assertion.id, unsupported)
-        if assertion.id == "target" and assertion.kind == "label" and expected is not None:
+        if assertion.id in expected:
+            kind = "segmentation" if assertion.id == "stem" else "label"
             if any(a is None for a in answers):
                 reason = "missing_model_assertion"
             elif objections or alternatives:
                 reason = "open_objection_or_unqualified_alternative"
             elif any(
-                a is not None and (a.kind != "label" or a.selected_sense is not None or _content(a) != expected)
+                a is not None
+                and (a.kind != kind or a.selected_sense is not None or _content(a) != expected[assertion.id])
                 for a in (assertion, *answers)
             ):
                 relation, reason = "contradiction", "source_role_feature_or_surface_contradiction"
             else:
                 relation = "equivalent"
-                reason = (
-                    "independently_attested_lexeme_and_cell"
-                    if unsupported == "independently_attested_lexeme_and_cell"
-                    else "confirmed_present_1s_role_consistency_only"
-                )
+                reason = "independently_attested_segmentation" if assertion.id == "stem" else unsupported
         if relation != "equivalent":
             objections = tuple(dict.fromkeys((*objections, reason)))
         envelope = {

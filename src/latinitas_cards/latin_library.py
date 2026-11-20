@@ -46,12 +46,8 @@ class AttestedParadigm:
     evidence: Evidence
 
 
-def attested_paradigms() -> tuple[AttestedParadigm, ...]:
-    """Read the installed, digest-pinned source tables without using the generator.
-
-    This is bounded generation evidence, not exhaustive analysis of an arbitrary
-    surface or contextual disambiguation. No sense or translation is certified.
-    """
+def bennett_sections(*sections: int) -> tuple[Evidence, ...]:
+    """Read exact sections from the retained edition, refusing altered bytes."""
     try:
         raw = BENNETT_PATH.read_bytes()
     except OSError as exc:
@@ -59,6 +55,27 @@ def attested_paradigms() -> tuple[AttestedParadigm, ...]:
     if hashlib.sha256(raw).hexdigest() != BENNETT_SHA256:
         raise ProcessingUnavailable("attested morphology reference digest mismatch")
     document = raw.decode("latin1")
+    evidence = []
+    for section in sections:
+        start = document.index(f'<a name="sect{section}">')
+        end = document.index(f'<a name="sect{section + 1}">', start)
+        evidence.append(
+            Evidence(
+                "Charles E. Bennett, New Latin Grammar",
+                f"https://www.gutenberg.org/ebooks/15665#sect{section}",
+                "1918; GITenberg HTML; sha256:" + BENNETT_SHA256,
+                source_html_to_text(document[start:end]),
+            )
+        )
+    return tuple(evidence)
+
+
+def attested_paradigms() -> tuple[AttestedParadigm, ...]:
+    """Read the installed, digest-pinned source tables without using the generator.
+
+    This is bounded generation evidence, not exhaustive analysis of an arbitrary
+    surface or contextual disambiguation. No sense or translation is certified.
+    """
     cases = {
         "Nom.": "nominative",
         "Gen.": "genitive",
@@ -73,10 +90,8 @@ def attested_paradigms() -> tuple[AttestedParadigm, ...]:
         (63, "adjective", "regular-us-a-um/1"),
         (101, "verb", "regular-first-present-active/1"),
     )
-    for section, pos, rule in tables:
-        start = document.index(f'<a name="sect{section}">')
-        end = document.index(f'<a name="sect{section + 1}">', start)
-        text = source_html_to_text(document[start:end])
+    for (_, pos, rule), evidence in zip(tables, bennett_sections(*(t[0] for t in tables)), strict=True):
+        text = evidence.text
         cells = []
         anchors: tuple[AttestedCell, ...]
         if pos == "verb":
@@ -126,12 +141,7 @@ def attested_paradigms() -> tuple[AttestedParadigm, ...]:
                 anchors=anchors,
                 cells=tuple(cells),
                 rule=rule,
-                evidence=Evidence(
-                    "Charles E. Bennett, New Latin Grammar",
-                    f"https://www.gutenberg.org/ebooks/15665#sect{section}",
-                    "1918; GITenberg HTML; sha256:" + BENNETT_SHA256,
-                    text,
-                ),
+                evidence=evidence,
             )
         )
     return tuple(paradigms)

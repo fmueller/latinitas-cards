@@ -268,7 +268,13 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
     registry = SupportRegistry.read_json(canonical(SUPPORT_REGISTRY))
     keys = next(e.target for e in registry.entries if e.recipe == card.recipe)
     features = objective.target if isinstance(objective, FormObjective) else None
-    if not isinstance(objective, FormObjective) and objective.target:
+    if (
+        isinstance(objective, FormObjective)
+        and objective.form
+        and objective.recipe not in ("verb_production", "noun_declension", "adjective_declension")
+    ):
+        features = _form(source, _entry(source, objective.entry, objective.sense)[0], objective.form).features
+    elif not isinstance(objective, FormObjective) and objective.target:
         selected_binding = next(b for b in objective.selection.bindings if b.role == objective.target)
         features = _form(
             source, _entry(source, selected_binding.entry, selected_binding.sense)[0], selected_binding.form
@@ -283,7 +289,11 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
     target: dict[str, JsonValue] = {key: values[key] for key in keys}
     binding = card.binding.model_copy(update={"config_sha256": _config(profile)})
     request_objective = card.recipe
-    if not isinstance(objective, FormObjective):
+    if isinstance(objective, FormObjective) and card.recipe == "ppp_recognition" and objective.context:
+        request_objective = canonical(
+            {"recipe": card.recipe, "context": objective.context, "selected_form": objective.form}
+        ).decode()
+    elif not isinstance(objective, FormObjective):
         pattern = next(p for p in source.data.patterns if p.key == objective.selection.pattern)
         request_objective = canonical(
             {

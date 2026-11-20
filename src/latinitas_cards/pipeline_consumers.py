@@ -43,6 +43,7 @@ from .export_receipts import (
     ReceiptCardRef,
     invalidated_cards,
 )
+from .form_evidence import attested_segmentation, contextual_ppp
 from .form_recipes import RULE_VERSION, derive_form, form_translations
 from .grammar_layout import COLUMNS, GRAMMAR_LAYOUT, LAYOUT_SHA256
 from .html_text import source_html_to_text
@@ -296,11 +297,10 @@ def _assertion(
 def source_role_target(
     source: Source, objective: FormObjective | PhraseObjective, versions: Versions
 ) -> tuple[dict[str, object] | None, tuple[Evidence, ...], str]:
-    """Reconstruct the narrow citation rule or independently attested derived cell.
+    """Reconstruct a source-role, attested derived cell or exact attested context.
 
     An entire serialized entry includes lexical/sense claims this rule cannot
-    establish. Likewise a cell proof says nothing about contextual cloze use,
-    translations, segmentation conventions or free explanatory clauses.
+    establish. A target proof does not cover translations or free clauses.
     """
     expected: dict[str, object] | None = None
     constraints: tuple[Evidence, ...] = ()
@@ -320,6 +320,7 @@ def source_role_target(
             and selected.text == lemma
             and selected.text.endswith("ō")
             and not anchors
+            and not objective.context
         ):
             expected = {
                 "surface": selected.text,
@@ -338,6 +339,32 @@ def source_role_target(
                     "paradigm applicability or generated-cell verification.",
                 ),
             )
+        elif (
+            objective.recipe in ("ppp_recognition", "form_cloze")
+            and entry.pos == "verb"
+            and selected is not None
+            and selected.source_role == "ppp"
+            and not anchors
+            and objective.context
+        ):
+            reason = "context_requires_independent_applicability_evidence"
+            try:
+                features, constraints = contextual_ppp(
+                    lemma, selected.text, objective.context, cloze=objective.recipe == "form_cloze"
+                )
+            except ProcessingUnavailable:
+                features = None
+                reason = "attested_context_resource_unavailable"
+            if features is not None:
+                expected = {
+                    "surface": selected.text,
+                    "features": features.model_dump(),
+                    "source_role": "ppp",
+                    "anchors": [],
+                    "rule": None,
+                    "context": objective.context,
+                }
+                reason = "independently_attested_contextual_ppp"
         elif objective.recipe in ("verb_production", "noun_declension", "adjective_declension"):
             reason = "generated_cell_requires_independent_applicability_evidence"
             try:
@@ -402,8 +429,33 @@ def source_role_target(
     return expected, constraints, reason
 
 
+def source_form_claims(
+    source: Source, objective: FormObjective | PhraseObjective, versions: Versions
+) -> tuple[dict[str, object], tuple[Evidence, ...], str]:
+    target, constraints, reason = source_role_target(source, objective, versions)
+    if target is None:
+        return {}, constraints, reason
+    expected: dict[str, object] = {"target": target}
+    if not isinstance(objective, FormObjective) or target["source_role"] != "derived":
+        return expected, constraints, reason
+    entry, _ = _entry(source, objective.entry, objective.sense)
+    lemma = source_html_to_text(
+        source.records[entry.identity].fields.get(source.deck.fields.lexical_entry_field, "")
+    ).strip()
+    try:
+        stem, references = attested_segmentation(
+            lemma, entry.pos, str(target["surface"]), Features.model_validate(target["features"])
+        )
+    except ProcessingUnavailable:
+        return expected, constraints, reason
+    if stem is not None:
+        expected["stem"] = stem
+        constraints = tuple(dict.fromkeys((*constraints, *references)))
+    return expected, constraints, reason
+
+
 def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
-    expected, constraints, reason = source_role_target(source, card.objective, card.versions)
+    expected, constraints, reason = source_form_claims(source, card.objective, card.versions)
     unsupported = {
         "source": "source_requires_lexical_and_sense_evidence",
         "translation": "translation_requires_sense_government_and_semantic_evidence",
@@ -414,9 +466,9 @@ def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
     for assertion in card.claims.assertions:
         result: Literal["pass", "fail", "not_applicable"] = "not_applicable"
         objections: tuple[str, ...] = (unsupported.get(assertion.id, unsupported.get(assertion.kind, reason)),)
-        if expected is not None and assertion.id == "target" and assertion.kind == "label":
+        if assertion.id in expected and assertion.kind == ("segmentation" if assertion.id == "stem" else "label"):
             try:
-                matches = decode_json(assertion.value) == expected
+                matches = decode_json(assertion.value) == expected[assertion.id]
             except ValueError:
                 matches = False
             matches = matches and assertion.selected_sense is None and not assertion.alternatives
@@ -563,7 +615,7 @@ def _render_form(
                 if None in values or len(values) != 1:
                     raise ValueError("ambiguous recognition distinction")
             prompt = (
-                surface
+                (objective.context or surface)
                 + "\n"
                 + (
                     "Bestimme die Form; mögliche Lesarten angeben."
@@ -605,6 +657,12 @@ def _render_form(
                     "source_role": selected.source_role if selected else "derived",
                     "anchors": anchors,
                     "rule": derived.rule if derived else None,
+                    **(
+                        {"context": objective.context}
+                        if objective.context
+                        and objective.recipe in ("form_recognition", "ppp_recognition", "form_cloze")
+                        else {}
+                    ),
                 }
             ).decode(),
             evidence,
@@ -623,7 +681,23 @@ def _render_form(
         )
     if derived:
         answer += "\n" + ("Stamm/Basis: " if language == "de" else "Stem/base: ") + derived.stem
-        assertions.append(_assertion("stem", "segmentation", derived.stem, evidence))
+        concatenates = surface.startswith(derived.stem)
+        segmentation = {
+            "convention": {
+                "verb": "bennett-present-stem/1",
+                "noun": "bennett-declensional-stem/1",
+            }.get(entry.pos, "bounded-generator-base/1"),
+            "components": [
+                {"role": "stem", "text": derived.stem},
+                {
+                    "role": "personal-ending" if entry.pos == "verb" else "case-ending",
+                    "text": surface[len(derived.stem) :] if concatenates else None,
+                },
+            ],
+            "operation": "concatenation" if concatenates else "unverified",
+            "surface": surface,
+        }
+        assertions.append(_assertion("stem", "segmentation", canonical(segmentation).decode(), evidence))
     if objective.explanation:
         answer += "\n" + objective.explanation
         assertions.append(_assertion("explanation", "explanation", objective.explanation, evidence))

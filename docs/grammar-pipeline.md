@@ -182,22 +182,24 @@ cannot enable an installed policy. No public bypass or policy-registration comma
 exists. Synthetic policy fixtures belong only in tests.
 
 Successful counter stages also retain a `latinitas-source-comparison` engineering
-proof. It reconstructs the confirmed active -ō `present_1s` role/feature cell from
-the current mapped source, independently of both answers. Each assertion has a
+proof. It reconstructs supported claims from the current mapped source and
+installed references, independently of both answers. Each assertion has a
 separate comparison result and commitment to the actual proposal/counter output
 bytes. The blind envelope commits to the saved proposal-free task/request and
 counter response. Decision/replay readers reconstruct the proof and verify the
 actual request bodies, response artifacts, scope and current versions offline.
 
-Only that context-free source-role label can receive `equivalent` here. With both
-answers and no open objections or unqualified alternatives, wrong features or
-cited forms yield `contradiction`. Missing assertions, open objections,
-unqualified alternatives, contextual applicability and unsupported classes remain
+Supported claims include the narrow context-free active -ō `present_1s` source-role
+label, [T234's finite attested target cells](#attested-morphology-evidence-t234), and
+[T235's named segmentations and exact citation contexts](#source-bound-components-and-contexts-t235).
+With both answers and no open objections or unqualified alternatives, wrong
+features, components or cited contexts yield `contradiction`. Missing assertions,
+open objections, unqualified alternatives and unsupported classes/contexts remain
 `unresolved`. No supported alternative convention is installed, so the comparator
 does not manufacture `compatible_alternatives` results. Matching translation,
-segmentation, lexical/sense or explanatory prose supplies no evidence. This does
-not verify regular-paradigm applicability, derived forms (including dō/dāre →
-dāmus), lexical truth or complete rendered answers.
+unqualified segmentation, lexical/sense or explanatory prose supplies no evidence.
+This does not verify arbitrary regular-paradigm applicability (including dō/dāre →
+dāmus), arbitrary prose, lexical truth or complete rendered answers.
 
 The proof is diagnostic, with `authorizes_acceptance: false`; it is not a generic
 model-acceptance envelope. The shared acceptance reader now reconstructs model
@@ -476,8 +478,8 @@ No local Ollama or manual maintainer test is a prerequisite to this inventory.
 
 ## Attested morphology evidence (T234)
 
-The T233 inventory above describes its pinned base. The pipeline now has a bounded
-source-backed producer for **derived target labels only**. It reads installed
+The T233 inventory above describes its pinned base. T234 added a bounded
+source-backed producer for **derived target labels**. It reads installed
 paradigm tables independently of `derive_form`, matches the confirmed source lemma,
 POS, exact anchors and complete target features, and compares the proposed surface
 against the attested cell. Input declarations, anchor suffixes and model agreement
@@ -524,6 +526,93 @@ Acquisition is closed at three charged requests, 2,061,202 unique retained sourc
 bytes and a conservative fifteen minutes acquisition work, separate from 1.094
 seconds HTTP execution. One HTTP 503 and the quantity-omitting ASCII edition remain
 recorded. No hosted inference, campaign restoration or additional allocation occurred.
+
+## Source-bound components and contexts (T235)
+
+`form_evidence` reads the same digest-pinned Bennett HTML, without a new fetch,
+analyzer fixture or model inference. `pipeline_consumers.source_form_claims` binds
+that evidence to the current mapped lemma, POS, anchors, selected form and objective.
+Rule envelopes and complete-card semantic comparisons reconstruct the same claims.
+Neither a generated stem nor two agreeing models supplies independent evidence.
+
+The renderer's `stem` assertion now records a named convention, ordered components
+with roles, reconstruction operation and surface. Its visible stem/base line is
+unchanged. The installed conventions have different source obligations:
+
+- `bennett-declensional-stem/1` uses the explicit **portā-** stem in §20 and
+  the stem/case-ending distinction of §17. Only the two attested nonempty
+  concatenations **portā + rum → portārum** and **portā + s → portās** pass.
+  The other ten porta cells require weakening, coalescence or zero-ending
+  evidence not implemented here. Mere successful string reconstruction does not
+  establish that a different split is a valid grammatical convention.
+- `bennett-present-stem/1` uses the amō/amāre identity and cells in §101,
+  present-stem description in §§97/117 and personal endings in §96. Three
+  concatenations pass: **amā + s → amās**, **amā + mus → amāmus**,
+  **amā + tis → amātis**. The other three present-active cells require changes
+  not checked here. This is Bennett's pedagogical convention, not an exclusive
+  historical analysis: §117 footnote 39 distinguishes underlying thematic-vowel
+  stems such as amā-ĕ-/amā-ŏ-. No inferred sound change is accepted.
+- `bounded-generator-base/1` identifies the adjective generator's proposal,
+  not a corroborated convention. All 36 bonus component analyses and all
+  PPP-derived component analyses remain unsupported. T234 target diagnostics
+  remain separate and retain their original finite coverage and cue refusals.
+
+The proposed **puell- + -ārum** termination analysis and **puellā- + -rum**
+stem/case-ending analysis are both unqualified: this edition's §17 distinguishes
+termination from case-ending and §20 attests porta, not puella applicability.
+Neither proposal is silently equated to the installed porta convention.
+Unsupported conventions, incorrect quantities/components, invented operations and
+same-spelling alternative splits cannot receive an equivalence pass. Material
+alternatives and objections are retained; no `compatible_alternatives` producer
+is claimed.
+
+Context support is a finite **grammatical paradigm citation**, not free-text
+disambiguation or a corpus/lexical resource. §§99/101 independently identify the
+amō principal parts; §102 explicitly labels the perfect-passive compounds and
+their participles; §100 supplies the auxiliaries. Nominal facts also retain the
+applicable chain: §95 classifies participles as adjective forms; §233.3 gives
+them adjective construction; §234 supplies gender/number/case agreement; §166
+places the finite subject (including an implied pronoun) in the nominative;
+§254 supplies finite person/number and compound participle gender agreement.
+The attested -us/-a/-um and -ī/-ae/-a variants are read with §63's labelled
+nominal columns, not treated as a productive ending-only proof. The masculine
+rows give exactly six supported contexts: **amātus sum / es / est**,
+**amātī sumus / estis / sunt**.
+The first row's parenthesized feminine/neuter alternatives and footnote markers
+are removed only to read its explicit masculine variant. No other gender,
+tense, lemma, arbitrary sentence or context-free participle gains evidence.
+
+For `ppp_recognition`, `context` must equal one of those complete citation strings.
+The prompt shows that exact context. For explicitly selected `form_cloze`, replace
+only its participle with one `____`, for example `____ es`, selecting the confirmed
+source `amātus` with nominal nominative/masculine/singular/perfect/passive features.
+The existing complete-target and nonleaking lexical-cue guards still apply.
+This is a constrained inflection completion with specified gender, not a claim
+that the blank alone excludes every feminine/neuter completion. The evidence
+independently supplies the participial features; run-provided features do not
+prove them. The target assertion commits to the exact displayed context, and
+reference evidence records the restored citation, target span, auxiliary
+person/number, compound role and nominal agreement basis. Both model roles receive
+the exact recognition context and selected source-form key in a proposal-free
+structured objective; cloze context remains in its registered target input.
+Participle features do not inherit the finite compound's person/mood. This
+confirms the attested compound use, not an exhaustive
+adjectival/participial reading of arbitrary prose. Supines, guessed isolated
+cases, incompatible auxiliary/participle numbers and unknown contexts withhold.
+
+The original whole-card `source`, translation, explanation/caveat, rendered-card
+and curated obligations are not trimmed or granted authority by these diagnostics.
+All remain unsupported here. Changed source, context, reference or checker bytes
+invalidate prior commitments; blind tasks remain proposal-free, and ordinary
+automatic learning exports remain denied under the disabled installed policy.
+No held-out study, native acceptance, enablement or release-scope reduction follows.
+
+The installed checkpoint's controlled loopback dispatch uses an explicit request-byte
+accounting bound; an unconfigured initial provider dispatch safely defers with
+`missing_token_bound`. Normal resume can reuse saved calls with the server stopped.
+Explicit `resume --offline` instead installs LLM-off active wrappers: historical
+proofs remain immutable, but active model checks are not preserved by that mode.
+Neither behavior grants export authority or is a T235 provider/accounting change.
 
 ## Outcome reports
 
