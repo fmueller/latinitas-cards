@@ -161,12 +161,48 @@ Accounting cannot detect an undisclosed provider-side deployment change.
 Accounting grants no linguistic, policy, acceptance or export authority. Purpose
 and accounting configuration are immutable for a run. Development and isolated
 evaluation captures are not reference truth or ordinary learning exports; direct
-export refuses them and orchestration reports export as not requested. All new
-estimated runtime dispatch currently refuses with `estimated_runtime_not_qualified`,
-pending actual P2 qualification. Accounting opt-in, semantic evidence and a separately
-enabled policy do not remove that independent guard.
-The installed automatic registry remains disabled. This contract does not perform
-provider qualification, protected studies, reference solving or publication.
+export refuses them and orchestration reports export as not requested.
+The installed automatic registry remains disabled. Accounting does not perform
+protected studies, reference solving or publication.
+
+### MiniMax estimated-mode protocol qualification
+
+The installed application admits estimated runtime dispatch only for this exact
+declared scope; a profile or permission cannot add another qualification:
+
+- Hosted `openai` protocol at `https://api.minimax.io/v1/chat/completions`, model
+  `MiniMax-M3.1-Flash`, with explicit `service_revision: null` (unpinnable alias).
+- The installed proposal/1 and blind/1 messages plus MiniMax structured-answer
+  contract/1, which states the existing selected-sense validator invariant.
+  Both roles receive the same source task, without the proposal answer.
+- Nonstreaming text-only JSON-object requests, `max_completion_tokens: 2048` and
+  `reasoning_effort: low`, 60-second configured deadline and zero retries. No tools,
+  multimodal data, alternate service tier, user-supplied system prompt or fallback.
+- Unchanged strict stop/one-choice/task-bound answer parsing, version-2 hosted
+  permission, applicable public pricing, estimated reservations and campaign guards.
+
+Other endpoints/models/protocols/localities, a claimed pinned service revision or
+different runtime output/deadline/retry configuration still refuse with
+`estimated_runtime_not_qualified`. Guaranteed mode still has no installed input
+bound. Development and runtime use the same serializer and admission does not
+change artifact custody, the policy registry or learning-export eligibility.
+
+Qualification records a bounded 2026-11-20 synthetic development observation,
+not provider-side strict-schema enforcement, a tokenizer bound or Latin reliability.
+Four new-campaign attempts were retained: default thinking exhausted its cap with
+no answer; low effort returned schema-invalid selected senses and a false masculine
+explanation; the explicit structural contract then produced two complete answers.
+The proposal gave the useful accusative plural `silvas`/`silvās`, but the blind
+counter-check falsely gave `silvae`. Structural success does not accept that claim;
+neither agreement nor this qualification supplies linguistic or whole-card authority.
+No runtime-purpose hosted request was used to qualify the identical wire.
+
+Observed public rates were USD 0.15/M input and USD 0.60/M output at
+https://platform.minimax.io/docs/guides/pricing-paygo.md. Actual plan deduction,
+Credits/balance allocation and invoices were not established. Provider-reported
+usage stayed within each reservation in these samples; this is not a guarantee.
+The service alias may change without notice; detected material changes require
+requalification, and undisclosed provider-side changes cannot be detected locally.
 
 ## Guaranteed spending, cancellation and recovery
 

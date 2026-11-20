@@ -349,6 +349,15 @@ class HTTPTransport:
             process.close()
 
 
+def _minimax_chat(endpoint: Endpoint) -> bool:
+    return (
+        endpoint.url == "https://api.minimax.io/v1/chat/completions"
+        and endpoint.provider == "openai"
+        and endpoint.model == "MiniMax-M3.1-Flash"
+        and endpoint.locality == "hosted"
+    )
+
+
 def _request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: int) -> bytes:
     # Both roles solve the same proposal-free task. Model/source data cannot alter
     # the installed instruction, endpoint, headers, output cap or destinations.
@@ -362,6 +371,12 @@ def _request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: i
         "Cite evidence for each assertion, list supported alternatives and open objections. "
         "Do not return reasoning traces, confidence, policy decisions, tool calls or file operations. "
     )
+    if _minimax_chat(endpoint):
+        instruction += (
+            "MiniMax structured-answer contract/1: "
+            "For non-translation assertions, selected_sense must be null. "
+            "For translation assertions, selected_sense must be non-null. "
+        )
     schema = ModelAnswer.model_json_schema()
     messages = [
         {"role": "system", "content": instruction + prompt_version + "\n" + canonical(schema).decode()},
@@ -382,7 +397,11 @@ def _request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: i
             "model": endpoint.model,
             "messages": messages,
             "stream": False,
-            "max_tokens": output,
+            **(
+                {"max_completion_tokens": output, "reasoning_effort": "low"}
+                if _minimax_chat(endpoint)
+                else {"max_tokens": output}
+            ),
             "response_format": {"type": "json_object"},
         }
     )
@@ -648,7 +667,13 @@ class ProviderRun:
             return Result("deferred", "permission_or_scope")
         rate = None
         if self.accounting:
-            if self.accounting.purpose == "runtime":
+            if self.accounting.purpose == "runtime" and not (
+                _minimax_chat(ep)
+                and self.accounting.service_revision is None
+                and self.limits.max_output_tokens == 2048
+                and self.limits.timeout_seconds == 60
+                and self.limits.retries == 0
+            ):
                 return Result("deferred", "estimated_runtime_not_qualified")
             if token_bound is not None:
                 return Result("deferred", "accounting_mode_conflict")

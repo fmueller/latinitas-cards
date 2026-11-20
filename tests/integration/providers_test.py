@@ -1219,6 +1219,95 @@ def test_estimated_accounting_does_not_qualify_runtime(tmp_path: Path, monkeypat
     assert fake.requests == [] and campaign.load().charges == ()
 
 
+@pytest.mark.parametrize(
+    "change", ["none", "model", "url", "locality", "provider", "revision", "output", "timeout", "retries"]
+)
+def test_minimax_estimated_runtime_admission_is_installed_and_exact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    raw = dict(
+        url="https://api.minimax.io/v1/chat/completions",
+        provider="openai",
+        model="MiniMax-M3.1-Flash",
+        locality="hosted",
+        credential_ref="MINIMAX_API_KEY",
+    )
+    if change in ("model", "url", "locality", "provider"):
+        raw[change] = {
+            "model": "MiniMax-M3",
+            "url": "https://api.minimax.io/v1/chat/completions/",
+            "locality": "local",
+            "provider": "ollama",
+        }[change]
+    ep = Endpoint.model_validate(raw)
+    settings = estimated_settings(ep).model_copy(
+        update={
+            "phase": "native",
+            "purpose": "runtime",
+            "service_revision": "claimed" if change == "revision" else None,
+        }
+    )
+    limits = Limits(
+        retries=int(change == "retries"),
+        max_output_tokens=1024 if change == "output" else 2048,
+        timeout_seconds=30 if change == "timeout" else 60,
+    )
+    campaign = allocate(settings)
+    r = ProviderRun(
+        tmp_path / "runtime",
+        run_id="synthetic-run",
+        config_sha256=digest("config"),
+        proposal=ep,
+        counter_check=ep,
+        accounting=settings,
+        limits=limits,
+    )
+    disclosure = json.loads(r.disclosure(task(), SCOPE, recipe="form_recognition"))
+    grant = permission(
+        ep,
+        version=2,
+        accounting=settings.model_dump(mode="json"),
+        effective_limits_sha256=digest(limits),
+        max_microdollars=25000000,
+        max_execution_seconds=86400,
+        possible_existing_credits_use=True,
+        input_sha256s=[*disclosure["input_sha256s"], *disclosure["request_sha256s"]],
+    )
+    captured = canonical(
+        {
+            "choices": [{"finish_reason": "stop", "message": {"content": answer().decode()}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 30, "total_tokens": 130},
+        }
+    )
+    fake = Fake([captured, captured])
+    result = estimated_invoke(r, fake, permission=grant)
+    if change != "none":
+        assert result.reason == "estimated_runtime_not_qualified"
+        assert not fake.requests and not campaign.load().charges
+        return
+    assert result.state == "succeeded"
+    assert estimated_invoke(r, fake, role="counter_check", permission=grant).state == "succeeded"
+    wires = [json.loads(body) for body in fake.requests]
+    assert len(wires) == 2
+    assert wires[0]["messages"][1] == wires[1]["messages"][1]
+    assert json.loads(wires[1]["messages"][1]["content"]) == json.loads(canonical(task()))
+    for wire in wires:
+        assert "For non-translation assertions, selected_sense must be null." in wire["messages"][0]["content"]
+        assert set(wire) == {
+            "model",
+            "messages",
+            "stream",
+            "max_completion_tokens",
+            "reasoning_effort",
+            "response_format",
+        }
+        assert wire["model"] == "MiniMax-M3.1-Flash" and wire["stream"] is False
+        assert wire["max_completion_tokens"] == 2048 and wire["reasoning_effort"] == "low"
+        assert wire["response_format"] == {"type": "json_object"}
+    assert len(campaign.load().charges) == 2
+
+
 @pytest.mark.parametrize("usage_ok", [True, False])
 def test_estimated_reconciliation_retains_usage_review_and_original_reservation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, usage_ok: bool

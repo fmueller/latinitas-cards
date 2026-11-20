@@ -1,12 +1,12 @@
 ---
 id: T-231-qualify-minimax-provider-accounting-and-bounded
 title: Qualify MiniMax provider accounting and bounded execution
-status: blocked
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-189-add-explicit-providers-and-blind-linguistic
-updated_at: "2026-11-20T12:22:07Z"
+updated_at: "2026-11-20T16:57:29Z"
 ---
 
 # T-231-qualify-minimax-provider-accounting-and-bounded Qualify MiniMax provider accounting and bounded execution
@@ -191,3 +191,141 @@ under P2; the probes did not satisfy it. Any qualification reconciliation must
 explicitly adopt the new mode and record observed limitations, not relabel a
 heuristic as a proven bound. This administrative handoff starts no P1 work,
 authorizes no new hosted call, changes no runtime and completes no task.
+
+## Current P2 acceptance and authority disposition — 2026-11-20
+
+The maintainer's revision 55 execution approval now governs P2. T232/P1 is
+completed on remote main at 7f4be5ed0f957514c3429b38810cf8dde0ad9690;
+the coordinator reports exact-head Build 44768222639 and CodeQL 44768222549
+successful. This is the actual implementation prerequisite. Installed Taskrail
+offers no dependency-edit command; retain original dependency history and record
+this prerequisite here rather than hand-editing lifecycle metadata.
+
+The following mode-specific acceptance supersedes the original guaranteed-bound
+requirement for this estimated-mode outcome only. All earlier requirements,
+blockers, failures and two-probe evidence remain historical, not retroactively
+passed. Guaranteed accounting stays default and token_bound keeps its meaning.
+
+- Qualify only HTTPS https://api.minimax.io/v1/chat/completions with
+  MiniMax-M3.1-Flash in the installed same pipeline under explicit estimated
+  accounting. Bind application admission to reviewed endpoint/model/wire/settings/
+  caps, not a user-authored qualification assertion; preserve unpinnable deployment
+  revision and pricing/billing uncertainty. No fallback or linguistic authority.
+- Initially spend at most 12 real dispatched attempts, including unknowns/retries,
+  solely from the new revision55 shared DEVELOPMENT allocation. Retain one durable
+  central campaign across handoffs: 2000 attempts, 40000000 estimated tokens,
+  USD25 estimated public-rate valuation, 86400 reserved execution seconds;
+  development/study/native/QA phase caps 80/1600/160/160. Existing closed probe
+  spending/slots do not transfer. More than 12 requires coordinator allocation.
+- Every complete request is at most 16 KiB, reserves at most 2048 output tokens
+  including reasoning, has at most 60-second timeout, and runs alone. Preserve
+  per-run 200 attempts/200000 estimated tokens, prospective reservations, all
+  outcomes, usage/pricing review stops, no automatic retry/unknown resubmission,
+  full reservation retention and actual reported usage separate from estimates.
+- Check applicable current public pricing before dispatch. Existing environment
+  key may consume existing Credits/balance; no top-ups/account changes or claim of
+  a guaranteed financial ceiling. Use only newly authored manifested synthetic
+  Latin/German development data; no private/protected/reference/holdout/judge data.
+- Exercise installed proposal and genuinely proposal-free counter-check with
+  strict task binding and complete outputs; retain bad semantic answers. Exercise
+  replay and malformed/length/tool/HTTP/unknown/cancellation controls offline or
+  loopback. Development custody cannot produce learning exports. Qualify runtime
+  wire equivalence offline without borrowing native/QA attempts or calling a
+  runtime-purpose hosted request in this development phase.
+- Use red/green TDD, dedicated simplification, independent risk-scaled review and
+  verified dispositions, then an independent fixed-candidate installed/public-
+  boundary checkpoint without reviewer hosted calls. Preserve prior failures and
+  review budgets. Freeze bytes and pass exact Ruff -> mypy -> pytest final chain
+  plus Taskrail/guards before supported verify/complete. Genuinely completed P2
+  may commit/push to main with hooks/maintainer identity/no attribution trailers,
+  remote read-back, exact-head subscription and Build/CodeQL success.
+
+No automatic policy enablement, T200/T201 lifecycle, references, judges, studies,
+publication/deployment or successor selection belongs to this task. Transfer
+credential-free exact campaign commitments and remaining global/phase spending
+for continuation; no later owner may reset the campaign allocation.
+- 2026-11-20T16:23:28Z: Revision55 mode-specific P2 acceptance adopted after completed T232 prerequisite; historical guaranteed-bound outcome retained
+
+## Current P2 execution evidence — 2026-11-20
+
+Reconciled own stale task/STATE drafts with accepted remote P1 before writing;
+published T231 exactly matched the preserved dd571c82 task commitment. Supported
+unblock/validate/next selected this exact task with off_spec=false before start.
+No other owner, remote drift, task recreation or successor selection was observed.
+
+One new central revision55 campaign is authoritative across all later runs:
+5bb4efba89e50a95713e9b9bda958adab8a1b5e9c90f8e74f57e6e2a202c5d7f.
+It retains four development attempts (two failed, two structurally succeeded),
+71314 estimated input-plus-output tokens, USD0.014384 public-rate reservations,
+240 reserved execution seconds and 42.588 observed execution seconds. Actual
+provider-reported usage is 4390 input + 3374 completion = 7764 tokens; completion
+includes 2447 reasoning tokens. None of these observations is an invoice or bound.
+Remaining global allocation: 1996 attempts, 39928686 estimated tokens,
+USD24.985616 valuation and 86160 reserved seconds. Remaining phase attempts:
+development76, study1600, native160, QA160. Four of the initial12 P2 attempts used;
+no further calls are planned. Old two-probe allocation stays closed and separate.
+
+The first new hosted proposal exhausted default thinking at length/empty content;
+the second, with low effort, returned stop but violated the existing selected_sense
+validator and falsely called silva masculine. The final installed wire uses
+max_completion_tokens2048, low effort and MiniMax structured-answer contract/1
+explaining that existing validator without weakening it. Exact same proposal-free
+task was sent separately to proposal and counter-check; both parsed fully. Proposal
+gave silvas/silvās; counter falsely gave silvae as accusative plural. All failures
+and wrong answers remain evidence, never linguistic acceptance or reference truth.
+Development export was not requested because custody forbids learning exports.
+
+Final successful wire sizes were 3884/3881 bytes. Candidate providers.py SHA256:
+c46519a61d175e12a94b18c57685be746b63c55c7f59803f887be8b1f0dbc412.
+Central ledger SHA256 after all four attempts:
+0584049811c31cef471d7a0513aa1b24188e5b3d586cb2b1e17b91d1154b147c.
+Credential-free receipts, scope/permission/request commitments, original central
+state and continuation manifest are retained for transfer; never initialize a
+replacement campaign or restore only a run. Public pricing was checked live before
+calls: USD0.15/M input and USD0.60/M output. A curl snapshot initially retained an
+empty redirect body; following the public redirect saved the verified rates. No
+account-side deduction/tier entitlement or financial cap was inferred or changed.
+
+Red admission and structural-instruction regressions failed for their intended
+reasons, then passed. Dedicated simplification made no changes and provider tests
+passed103; mypy passed239 source files. A zero-call unsupported second-declension
+preflight and a post-persistence display KeyError are retained separately from
+hosted outcomes. No inference was retried because of that display error. Independent
+review/checkpoint, frozen full final gate and delivery remain pending at this note.
+Evidence: https://ampcode.com/artifacts/t231-minimax-qualification-af346b0f-6810-4e7d-9976-32ca2699da23.
+
+Subsequent review/checkpoint disposition: high-risk conventional review completed
+general, security/data-integrity, Python/tests and separate claims/comment-audit
+lanes, plus one shared boundary/overall adversarial round. No confirmed defects
+remain. C-01 (configured60 versus permission30) was independently rejected as a
+defect: adopted acceptance is at most60, documentation qualifies configured60,
+the wire has no timeout field and tighter consent must remain effective. No
+correction/follow-up round or budget reset occurred.
+
+Independent installed checkpoint passed103 provider checks with the key unset and
+external networking impossible. All123 packaged files matched source/wheel/install;
+positive runtime admission was offline only. Four actual captures replayed with
+original outcomes; all three copied runs resumed offline safely, then direct
+learning export refused with no CSV and unchanged copied ledgers. Failed build/
+harness iterations remain retained. Wheel SHA256:
+647303406aa4ab9c47a6af9b9b8bac36c5e85017d4d397e3660b97daae542471.
+No reviewer made hosted calls. No mutation adapter was installed or set up.
+
+Credential-free campaign continuation was uploaded through supported transfer to
+the coordinator, 131007 bytes/203 verified payload hashes, archive SHA256
+5d6ceeadf60d3adcd3a250485084f4b2da8dfc23b18bc2d30bec198e30685bc1.
+It preserves exact central state and all charged runs; restoration must compare
+existing state and cannot initialize empty spending or overwrite a newer ledger.
+The owner retains this checkout; final frozen full gate and delivery still remain.
+
+Final frozen-code gate completed at 2026-11-20 16:56:53 UTC: uv run ruff check
+passed, uv run mypy passed239 source files, then uv run pytest -v passed3883,
+skipped7 with one warning in999.71seconds. Executable diff SHA256 remained
+bb9ece98e1428c93c238f31a8efe4fc63ad3fd09f67d1290f845c2ac1c535598;
+provider bytes still match the reviewed and installed-checkpoint candidate above.
+Taskrail validation and whitespace checks passed; fetched origin/main remained
+the accepted P1 base. This completes the amended estimated-mode protocol scope,
+not guaranteed accounting, linguistic reliability, acceptance policy or publication.
+Direct-main delivery and exact-head Build/CodeQL acceptance remain separate gates.
+- 2026-11-20T16:57:29Z: verification pass
+- 2026-11-20T16:57:29Z: Completed amended estimated-mode scope after frozen full gate at 2026-11-20 16:56:53 UTC, independent review and installed checkpoint. Direct-main delivery and exact-head CI are supervised separately; automatic acceptance/export and guaranteed-bound claims remain disabled.

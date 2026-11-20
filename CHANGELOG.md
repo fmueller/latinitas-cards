@@ -24,6 +24,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   versioned JSON, separating deferred work, processing failures and acceptance.
 - `pipeline run` supports explicitly estimated accounting with shared campaign
   limits and separate usage records; token totals and charges are not guaranteed caps.
+- `pipeline run` supports MiniMax-M3.1-Flash at its qualified HTTPS Chat endpoint
+  with opt-in estimated accounting and low-effort structured answers.
 - `pipeline export` records acceptance-bound card identities; `pipeline handoff`
   lists unresolved prior exports and manual actions without changing Anki.
 
@@ -41,9 +43,9 @@ Notable user-facing changes to Latinitas Cards are documented here.
 ### Limitations
 
 - Guaranteed `pipeline run` accounting still requires a proven input-token bound;
-  estimated mode is explicit opt-in, not provider qualification or export authority.
-  Estimated runtime dispatch is refused pending qualification. Offline/local-only
-  restrictions persist on resume.
+  estimated mode is explicit opt-in, not linguistic or export authority. Only the
+  declared MiniMax wire/settings qualify for estimated runtime dispatch; synthetic
+  checks retained wrong Latin answers. Offline/local-only restrictions persist on resume.
 
 ## [0.4.0] - 2026-11-01
 
