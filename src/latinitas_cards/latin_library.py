@@ -9,7 +9,12 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .acceptance_records import digest
+from .claim_review import Evidence
+from .html_text import source_html_to_text
 from .phrase_inputs import POS, Features, Sense
+
+BENNETT_PATH = Path(__file__).parent / "references" / "bennett-1918.html"
+BENNETT_SHA256 = "13f80dd1202e958854117c9c9cb2914630e92e37de2967791a45237f571327e6"
 
 
 class ProcessingUnavailable(RuntimeError):
@@ -21,6 +26,115 @@ class LibraryReading:
     lemma: str
     pos: POS
     features: Features
+
+
+@dataclass(frozen=True)
+class AttestedCell:
+    surface: str
+    features: Features
+
+
+@dataclass(frozen=True)
+class AttestedParadigm:
+    """One explicitly attested lexeme, not a suffix-based productive class."""
+
+    pos: POS
+    lemma: str
+    anchors: tuple[AttestedCell, ...]
+    cells: tuple[AttestedCell, ...]
+    rule: str
+    evidence: Evidence
+
+
+def attested_paradigms() -> tuple[AttestedParadigm, ...]:
+    """Read the installed, digest-pinned source tables without using the generator.
+
+    This is bounded generation evidence, not exhaustive analysis of an arbitrary
+    surface or contextual disambiguation. No sense or translation is certified.
+    """
+    try:
+        raw = BENNETT_PATH.read_bytes()
+    except OSError as exc:
+        raise ProcessingUnavailable("attested morphology reference absent or unreadable") from exc
+    if hashlib.sha256(raw).hexdigest() != BENNETT_SHA256:
+        raise ProcessingUnavailable("attested morphology reference digest mismatch")
+    document = raw.decode("latin1")
+    cases = {
+        "Nom.": "nominative",
+        "Gen.": "genitive",
+        "Dat.": "dative",
+        "Acc.": "accusative",
+        "Voc.": "vocative",
+        "Abl.": "ablative",
+    }
+    paradigms = []
+    tables: tuple[tuple[int, POS, str], ...] = (
+        (20, "noun", "regular-first-declension/1"),
+        (63, "adjective", "regular-us-a-um/1"),
+        (101, "verb", "regular-first-present-active/1"),
+    )
+    for section, pos, rule in tables:
+        start = document.index(f'<a name="sect{section}">')
+        end = document.index(f'<a name="sect{section + 1}">', start)
+        text = source_html_to_text(document[start:end])
+        cells = []
+        anchors: tuple[AttestedCell, ...]
+        if pos == "verb":
+            anchor_texts = text.split("PERF. PASS. PARTIC.\n", 1)[1].splitlines()[:2]
+            rows = text.split("PRESENT TENSE.\nSINGULAR.\nPLURAL.\n", 1)[1].split("\nIMPERFECT.", 1)[0].splitlines()
+            for index, row in enumerate(rows):
+                cells.append(
+                    AttestedCell(
+                        row.split(",", 1)[0],
+                        Features.model_validate(
+                            {
+                                "person": str(index // 2 + 1),
+                                "number": "singular" if index % 2 == 0 else "plural",
+                                "tense": "present",
+                                "mood": "indicative",
+                                "voice": "active",
+                            }
+                        ),
+                    )
+                )
+            anchors = (
+                AttestedCell(anchor_texts[0], cells[0].features),
+                AttestedCell(anchor_texts[1], Features(tense="present", voice="active")),
+            )
+        else:
+            rows = text.split("SINGULAR.\n", 1)[1].split("\n1.", 1)[0].splitlines()
+            number = "singular"
+            genders = ("feminine",) if pos == "noun" else ("masculine", "feminine", "neuter")
+            for index, row in enumerate(rows):
+                if row == "PLURAL.":
+                    number = "plural"
+                if row not in cases:
+                    continue
+                for column, gender in enumerate(genders, start=1):
+                    cells.append(
+                        AttestedCell(
+                            rows[index + column],
+                            Features.model_validate({"case": cases[row], "number": number, "gender": gender}),
+                        )
+                    )
+            anchor_count = 2 if pos == "noun" else 3
+            anchors = tuple(cells[:anchor_count])
+        paradigms.append(
+            AttestedParadigm(
+                pos=pos,
+                lemma=anchors[0].surface,
+                anchors=anchors,
+                cells=tuple(cells),
+                rule=rule,
+                evidence=Evidence(
+                    "Charles E. Bennett, New Latin Grammar",
+                    f"https://www.gutenberg.org/ebooks/15665#sect{section}",
+                    "1918; GITenberg HTML; sha256:" + BENNETT_SHA256,
+                    text,
+                ),
+            )
+        )
+    return tuple(paradigms)
 
 
 class LatinLibrary(Protocol):

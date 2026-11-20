@@ -474,6 +474,57 @@ no new budget or reliability claim follows. Guaranteed mode, rights/custody,
 disabled authority, T200/T201 lifecycle and the T205 publication stop are unchanged.
 No local Ollama or manual maintainer test is a prerequisite to this inventory.
 
+## Attested morphology evidence (T234)
+
+The T233 inventory above describes its pinned base. The pipeline now has a bounded
+source-backed producer for **derived target labels only**. It reads installed
+paradigm tables independently of `derive_form`, matches the confirmed source lemma,
+POS, exact anchors and complete target features, and compares the proposed surface
+against the attested cell. Input declarations, anchor suffixes and model agreement
+cannot extend its coverage. This reusable boundary does not qualify a general Latin
+analyzer or license all lexemes in a productive class.
+
+The retained reference is Charles E. Bennett, *New Latin Grammar*, 1918 edition,
+Gutenberg 15665 (2005-04-20), quantity-preserving GITenberg HTML. Original bytes and
+full license are installed in `references/bennett-1918.html`; SHA256 is
+`13f80dd1202e958854117c9c9cb2914630e92e37de2967791a45237f571327e6`.
+The source is public domain in the US; the attached license retains its outside-US
+jurisdiction caveat. See [rights and acquisition ledger](t234-reference-acquisition.json)
+and [third-party notices](../THIRD_PARTY_NOTICES.md). No modern translation is used
+as linguistic authority. These are exposed development sources, never holdouts.
+
+| Generator proposal scope | Independently attested coverage | Still unsupported |
+| --- | --- | --- |
+| Six first-conjugation present indicative active cells | §101: amō, anchors amō/amāre, all six cells, including amāmus | Arbitrary first-conjugation lexemes, other voices/tenses/moods, inferred classes and exceptions |
+| Six cases × two numbers, masculine/feminine first-declension nouns | §20: porta/portae, feminine only, twelve cells | Masculine lexical gender, other nouns including puella, inferred gender/class and exceptional forms |
+| Six cases × two numbers × three genders, regular us/a/um adjectives | §63: bonus/bona/bonum, all 36 cells | Other adjectives, pronominal classes, PPP/contextual applicability and unattested exceptions |
+
+The mechanism reads all 54 attested cells. Public production rendering retains its
+existing answer-disclosure guard: porta nominative/vocative singular and bonus
+masculine nominative singular disclose their answers in their cues, so they remain
+withheld rather than relaxing the guard. The other 51 cells receive target-only
+diagnostics. §127 explicitly gives dō/dăre and dămus; invented regular dō/dāre
+anchors do not match an attested regular paradigm and cannot license dāmus.
+Breves are not silently equated to macrons. Unknown/missing lemma, POS, voice,
+class, incomplete features, context or resource evidence remain withheld. These
+tables are generation evidence, not exhaustive ambiguity analysis of an isolated
+surface. Non-exhaustive LocalStanza readings still cannot disambiguate it.
+
+Evidence retains normalized source-section text, edition, locator and the original
+file's digest in immutable analysis envelopes. The complete original HTML remains
+installed byte-for-byte. Reference bytes join the implementation commitment,
+so reference/checker changes invalidate old evidence. The existing proposal-free
+blind and complete-card semantic proof readers reconstruct this same target
+boundary; they do not inherit truth from agreeing models. Unsupported source/sense,
+translation, segmentation, explanation, rendered and contextual siblings remain
+unresolved. Human/curated approval and the disabled automatic registry are unchanged;
+no whole-card automatic export, evaluator qualification or release readiness follows.
+
+Acquisition is closed at three charged requests, 2,061,202 unique retained source
+bytes and a conservative fifteen minutes acquisition work, separate from 1.094
+seconds HTTP execution. One HTTP 503 and the quantity-omitting ASCII edition remain
+recorded. No hosted inference, campaign restoration or additional allocation occurred.
+
 ## Outcome reports
 
 After `pipeline run` or `resume`, inspect the saved snapshot without provider calls:

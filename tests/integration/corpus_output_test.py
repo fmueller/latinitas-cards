@@ -469,6 +469,7 @@ def test_no_translation_string_grading_in_source() -> None:
         ("pipeline_consumers.py", "_form", "part.display != form.text"),
         ("pipeline_consumers.py", "_render_form", "f.text == surface"),
         ("pipeline_consumers.py", "source_role_target", "selected.text == lemma"),
+        ("pipeline_consumers.py", "source_role_target", "getattr(attested.features, name) != value"),
         # Annotation conflicts and retained segmentation differences.
         ("annotation_plans.py", "evaluate_operations", "row.value != record.value"),
         ("commands/annotations.py", "segment.body.additions", "record.value != value"),

@@ -88,7 +88,12 @@ def compare_source_answers(
             ):
                 relation, reason = "contradiction", "source_role_feature_or_surface_contradiction"
             else:
-                relation, reason = "equivalent", "confirmed_present_1s_role_consistency_only"
+                relation = "equivalent"
+                reason = (
+                    "independently_attested_lexeme_and_cell"
+                    if unsupported == "independently_attested_lexeme_and_cell"
+                    else "confirmed_present_1s_role_consistency_only"
+                )
         if relation != "equivalent":
             objections = tuple(dict.fromkeys((*objections, reason)))
         envelope = {

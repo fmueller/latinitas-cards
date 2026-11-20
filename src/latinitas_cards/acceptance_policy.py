@@ -129,12 +129,12 @@ class SupportRegistry(Record):
 def implementation_digest() -> str:
     """Cover the reader/validator and its local dependencies, excluding authority records."""
     package = Path(__file__).parent
-    # All package Python files cover transitive validation/adaptation code; authority
-    # data lives separately so a withdrawal does not change evaluated algorithms.
+    # Reference bytes are executable evidence dependencies, unlike policy authority
+    # records: changing an attested table must invalidate previous checks.
     return digest(
         [
             {"path": p.relative_to(package).as_posix(), "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
-            for p in sorted(package.rglob("*.py"))
+            for p in sorted((*package.rglob("*.py"), *(package / "references").glob("*.html")))
             if p.name != "acceptance_registry.py"
         ]
     )

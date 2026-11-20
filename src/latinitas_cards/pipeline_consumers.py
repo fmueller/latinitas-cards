@@ -47,6 +47,7 @@ from .form_recipes import RULE_VERSION, derive_form, form_translations
 from .grammar_layout import COLUMNS, GRAMMAR_LAYOUT, LAYOUT_SHA256
 from .html_text import source_html_to_text
 from .identity import ResolvedSourceIdentity, derive_latinitas_id, resolve_source_identities
+from .latin_library import ProcessingUnavailable, attested_paradigms
 from .manifest import CsvIdentityManifest, reconcile_csv_manifest
 from .phrase_inputs import EntryV2, Features, Form, FormV2, PhraseInputV2, Selection, Sense
 from .phrase_recipes import _CANONICAL, Reference, render_phrase_objective, render_phrase_text
@@ -295,7 +296,7 @@ def _assertion(
 def source_role_target(
     source: Source, objective: FormObjective | PhraseObjective, versions: Versions
 ) -> tuple[dict[str, object] | None, tuple[Evidence, ...], str]:
-    """Reconstruct confirmed present_1s role content, not paradigm applicability.
+    """Reconstruct the narrow citation rule or independently attested derived cell.
 
     An entire serialized entry includes lexical/sense claims this rule cannot
     establish. Likewise a cell proof says nothing about contextual cloze use,
@@ -339,6 +340,44 @@ def source_role_target(
             )
         elif objective.recipe in ("verb_production", "noun_declension", "adjective_declension"):
             reason = "generated_cell_requires_independent_applicability_evidence"
+            try:
+                paradigms = attested_paradigms()
+            except ProcessingUnavailable:
+                paradigms = ()
+                reason = "attested_morphology_resource_unavailable"
+            for paradigm in paradigms:
+                if (
+                    paradigm.pos != entry.pos
+                    or paradigm.lemma != lemma
+                    or tuple(f.text for f in anchors) != tuple(a.surface for a in paradigm.anchors)
+                    or any(
+                        getattr(attested.features, name) != value
+                        for anchor, attested in zip(anchors, paradigm.anchors, strict=True)
+                        for name, value in anchor.features.model_dump(exclude_none=True).items()
+                    )
+                    or selected is not None
+                    or objective.context
+                ):
+                    continue
+                for cell in paradigm.cells:
+                    if cell.features != objective.target:
+                        continue
+                    expected = cast(
+                        dict[str, object],
+                        decode_json(
+                            canonical(
+                                {
+                                    "surface": cell.surface,
+                                    "features": cell.features,
+                                    "source_role": "derived",
+                                    "anchors": anchors,
+                                    "rule": paradigm.rule,
+                                }
+                            )
+                        ),
+                    )
+                    constraints = (paradigm.evidence,)
+                    reason = "independently_attested_lexeme_and_cell"
         else:
             reason = "missing_applicable_source_role_rule"
         if expected is not None:

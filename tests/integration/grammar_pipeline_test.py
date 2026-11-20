@@ -2310,6 +2310,249 @@ def test_processing_ceiling_uses_resolved_recipe_order(tmp_path: Path) -> None:
     assert [c["recipe"] for c in report["cards"]] == ["form_translation"]
 
 
+def test_attested_paradigms_produce_only_target_evidence(tmp_path: Path) -> None:
+    """Expected cells transcribed independently from Bennett §§20, 63, 101."""
+    from latinitas_cards.latin_library import attested_paradigms
+    from latinitas_cards.pipeline_consumers import FormObjective, load_run
+
+    profile, objectives, _ = fixture(tmp_path)
+    inputs = json.loads((tmp_path / "inputs.json").read_text())
+    noun = inputs["entries"][1]
+    noun["forms"] = [{**form, "text": form["text"].replace("puell", "port")} for form in noun["forms"]]
+    (tmp_path / "deck.csv").write_text((tmp_path / "deck.csv").read_text().replace("puell", "port"))
+    rebind(profile, inputs)
+    cases = ("nominative", "genitive", "dative", "accusative", "vocative", "ablative")
+    cells: list[tuple[str, dict[str, str], str]] = []
+    for person, singular, plural in (("1", "amō", "amāmus"), ("2", "amās", "amātis"), ("3", "amat", "amant")):
+        for number, surface in (("singular", singular), ("plural", plural)):
+            cells.append(
+                ("v", dict(person=person, number=number, tense="present", mood="indicative", voice="active"), surface)
+            )
+    for number, forms in (
+        ("singular", "porta portae portae portam porta portā"),
+        ("plural", "portae portārum portīs portās portae portīs"),
+    ):
+        cells.extend(
+            ("n", dict(case=case, number=number, gender="feminine"), form)
+            for case, form in zip(cases, forms.split(), strict=True)
+        )
+    for number, genders in (
+        (
+            "singular",
+            ("bonus bonī bonō bonum bone bonō", "bona bonae bonae bonam bona bonā", "bonum bonī bonō bonum bonum bonō"),
+        ),
+        (
+            "plural",
+            (
+                "bonī bonōrum bonīs bonōs bonī bonīs",
+                "bonae bonārum bonīs bonās bonae bonīs",
+                "bona bonōrum bonīs bona bona bonīs",
+            ),
+        ),
+    ):
+        for gender, forms in zip(("masculine", "feminine", "neuter"), genders, strict=True):
+            cells.extend(
+                ("a", dict(case=case, number=number, gender=gender), form)
+                for case, form in zip(cases, forms.split(), strict=True)
+            )
+    raw = json.loads(objectives.read_text())
+    templates = {form["entry"]: form for form in raw["forms"]}
+    raw["forms"] = [{**templates[entry], "target": features} for entry, features, _ in cells]
+    write(objectives, raw)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    saved = load_run(root)
+    cards, skipped = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), saved.objectives, root)
+    expected = {(entry, canonical(features)): surface for entry, features, surface in cells}
+    identities = {"amō": "v", "porta": "n", "bonus": "a"}
+    parsed_cells = [
+        ((identities[p.lemma], canonical(cell.features.model_dump(exclude_none=True))), cell.surface)
+        for p in attested_paradigms()
+        for cell in p.cells
+    ]
+    assert len(parsed_cells) == len(expected) == 54 and dict(parsed_cells) == expected
+    excluded = {
+        ("n", canonical(dict(case=case, number="singular", gender="feminine"))) for case in ("nominative", "vocative")
+    } | {("a", canonical(dict(case="nominative", number="singular", gender="masculine")))}
+    rendered = {
+        (c.objective.entry, canonical(c.objective.target.model_dump(exclude_none=True)))
+        for c in cards
+        if isinstance(c.objective, FormObjective)
+    }
+    assert rendered == expected.keys() - excluded
+    work_skipped = [row for row in skipped if "work_id" in row]
+    assert {row["work_id"] for row in work_skipped} == {
+        digest(o)
+        for o in saved.objectives.forms
+        if (o.entry, canonical(o.target.model_dump(exclude_none=True))) in excluded
+    }
+    assert len(work_skipped) == 3 and {row["reason"] for row in work_skipped} == {
+        "answer revealed by production prompt"
+    }
+    for card in cards:
+        assert isinstance(card.objective, FormObjective)
+        analysis = Analysis.read_json(card.analysis_path.read_bytes())
+        checks = {check.id: check for check in analysis.checks}
+        target = next(a for a in card.claims.assertions if a.id == "target")
+        assert (
+            json.loads(target.value)["surface"]
+            == expected[card.objective.entry, canonical(card.objective.target.model_dump(exclude_none=True))]
+        )
+        assert checks["target"].result == "pass"
+        assert any("Bennett" in e.source and "sha256" in e.version for e in checks["target"].evidence)
+        assert all(c.result != "pass" for c in analysis.checks if c.id != "target")
+        assert {a.id for a in analysis.assertions} == {i for c in analysis.checks for i in c.assertion_ids}
+    assert not report["provider_calls"] and report["file_export"]["exported"] == 0
+    before = {c.analysis_path: c.analysis_path.read_bytes() for c in cards}
+    call("resume", "--run", str(root))
+    assert all(path.read_bytes() == content for path, content in before.items())
+    assert call("export", "--run", str(root), "--output", str(tmp_path / "denied.csv"))["exported"] == 0
+
+
+@pytest.mark.parametrize(
+    "control",
+    [
+        "unknown-lemma",
+        "conflicting-lemma",
+        "noun-gender",
+        "unknown-noun",
+        "missing-resource",
+        "tampered-resource",
+        "context",
+        "wrong-voice",
+        "incomplete",
+        "contradictory-infinitive",
+    ],
+)
+def test_attested_paradigms_withhold_unsupported_inputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, control: str
+) -> None:
+    from latinitas_cards import latin_library
+    from latinitas_cards.pipeline_consumers import load_run
+
+    profile, objectives, _ = fixture(tmp_path)
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    raw = json.loads(objectives.read_text())
+    raw["forms"] = [
+        next(f for f in raw["forms"] if f["entry"] == ("n" if control in ("noun-gender", "unknown-noun") else "v"))
+    ]
+    if control == "unknown-lemma":
+        deck = tmp_path / "deck.csv"
+        deck.write_text(deck.read_text().replace("amō", "talō").replace("amāre", "talāre"))
+        for form in data["entries"][0]["forms"]:
+            form["text"] = form["text"].replace("amō", "talō").replace("amāre", "talāre")
+    elif control == "conflicting-lemma":
+        deck = tmp_path / "deck.csv"
+        deck.write_text(deck.read_text().replace("v,amō,", "v,moneō,"))
+    elif control == "noun-gender":
+        deck = tmp_path / "deck.csv"
+        deck.write_text(deck.read_text().replace("puell", "port"))
+        noun = data["entries"][1]
+        noun["gender"] = "masculine"
+        for form in noun["forms"]:
+            form["text"] = form["text"].replace("puell", "port")
+            form["features"]["gender"] = "masculine"
+        raw["forms"][0]["target"]["gender"] = "masculine"
+    elif control in ("missing-resource", "tampered-resource"):
+        path = tmp_path / "reference.html"
+        if control == "tampered-resource":
+            path.write_bytes(latin_library.BENNETT_PATH.read_bytes() + b"\n")
+        monkeypatch.setattr(latin_library, "BENNETT_PATH", path)
+    elif control == "context":
+        raw["forms"][0]["context"] = "Unverified contextual applicability"
+    elif control == "wrong-voice":
+        raw["forms"][0]["target"]["voice"] = "passive"
+    elif control == "incomplete":
+        raw["forms"][0]["target"].pop("voice")
+    elif control == "contradictory-infinitive":
+        data["entries"][0]["forms"][1]["features"] = dict(
+            tense="perfect", voice="passive", case="ablative", gender="neuter", number="plural"
+        )
+    rebind(profile, data)
+    write(objectives, raw)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    cards, _ = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)
+    assert bool(cards) == (control not in ("wrong-voice", "incomplete"))
+    for card in cards:
+        analysis = Analysis.read_json(card.analysis_path.read_bytes())
+        assert all(c.result != "pass" for c in analysis.checks)
+    assert report["provider_calls"] == [] and report["file_export"]["exported"] == 0
+
+
+def test_attested_paradigm_accepts_compatible_partial_anchor_features(tmp_path: Path) -> None:
+    from latinitas_cards.pipeline_consumers import load_run
+
+    profile, objectives, _ = fixture(tmp_path)
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    data["entries"][0]["forms"][1]["features"] = {"tense": "present", "voice": "active"}
+    rebind(profile, data)
+    raw = json.loads(objectives.read_text())
+    raw["forms"] = [raw["forms"][0]]
+    write(objectives, raw)
+    output = tmp_path / "workflow"
+    report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    cards, _ = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)
+    assert len(cards) == 1
+    checks = Analysis.read_json(cards[0].analysis_path.read_bytes()).checks
+    assert next(c for c in checks if c.id == "target").result == "pass"
+    assert all(c.result != "pass" for c in checks if c.id != "target")
+    assert report["file_export"]["exported"] == 0
+
+
+@pytest.mark.parametrize("damage", ["changed", "removed"])
+def test_changed_reference_invalidates_saved_derived_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str
+) -> None:
+    import shutil
+
+    from latinitas_cards import latin_library
+    from latinitas_cards.pipeline_consumers import _analysis_decision, load_run
+
+    package = Path(policies.__file__).parent
+    copied = tmp_path / "installed-package"
+    shutil.copytree(package, copied, ignore=shutil.ignore_patterns("__pycache__"))
+    reference = copied / "references" / "bennett-1918.html"
+    original_digest = policies.implementation_digest()
+    monkeypatch.setattr(policies, "__file__", str(copied / "acceptance_policy.py"))
+    monkeypatch.setattr(latin_library, "BENNETT_PATH", reference)
+    assert policies.implementation_digest() == original_digest
+    profile, objectives, _ = fixture(tmp_path / "inputs")
+    raw = json.loads(objectives.read_text())
+    raw["forms"] = [
+        {
+            **raw["forms"][0],
+            "target": dict(person="1", number="plural", tense="present", mood="indicative", voice="active"),
+        }
+    ]
+    write(objectives, raw)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    parsed = PipelineProfile.read_json(profile.read_bytes())
+    cards, _ = current_cards(profile, parsed, load_run(root).objectives, root)
+    analysis = Analysis.read_json(cards[0].analysis_path.read_bytes())
+    assert next(c for c in analysis.checks if c.id == "target").result == "pass"
+    assert _analysis_decision(cards[0]).state == "withheld"
+    if damage == "changed":
+        reference.write_bytes(reference.read_bytes() + b"\n")
+    else:
+        reference.unlink()
+    assert policies.implementation_digest() != original_digest
+    current, _ = current_cards(profile, parsed, load_run(root).objectives, root)
+    assert current[0].versions != cards[0].versions
+    with pytest.raises(ValueError, match="stale analysis context"):
+        _analysis_decision(current[0])
+    report = call("resume", "--run", str(root), "--offline")
+    updated = Analysis.read_json(current[0].analysis_path.read_bytes())
+    assert updated.versions == current[0].versions
+    assert all(c.result != "pass" for c in updated.checks)
+    assert report["provider_calls"] == [] and report["file_export"]["exported"] == 0
+
+
 def test_source_bound_rule_producer_keeps_production_policy_disabled(tmp_path: Path) -> None:
     """Disposable source mappings exercise rules, not empirical qualification."""
     from latinitas_cards.acceptance import load_stage, stage_artifact
@@ -2366,16 +2609,21 @@ def test_source_bound_rule_producer_keeps_production_policy_disabled(tmp_path: P
 
 
 @pytest.mark.parametrize("mutation", ["wrong-feature", "wrong-form", "extra-clause", "extra-alternative"])
-def test_source_bound_rule_rejects_candidate_claims(tmp_path: Path, mutation: str) -> None:
+@pytest.mark.parametrize("derived", [False, True])
+def test_source_bound_rule_rejects_candidate_claims(tmp_path: Path, mutation: str, derived: bool) -> None:
     from dataclasses import replace
 
     from latinitas_cards.acceptance import load_stage, stage_artifact
     from latinitas_cards.pipeline_consumers import load_run, load_source
     from latinitas_cards.pipeline_orchestration import _analyze, load_execution
 
-    profile, objectives, _ = fixture(tmp_path, preset=None)
+    profile, objectives, _ = fixture(tmp_path, preset="grammar-study" if derived else None)
     raw = json.loads(objectives.read_text())
-    raw["forms"] = [{**raw["forms"][0], "recipe": "form_translation", "form": "present", "anchors": []}]
+    raw["forms"] = (
+        [raw["forms"][0]]
+        if derived
+        else [{**raw["forms"][0], "recipe": "form_translation", "form": "present", "anchors": []}]
+    )
     write(objectives, raw)
     output = tmp_path / "workflow"
     call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))

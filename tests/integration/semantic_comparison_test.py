@@ -21,6 +21,94 @@ from latinitas_cards.acceptance_records import canonical, digest
 PRESENT = dict(person="1", number="singular", tense="present", mood="indicative", voice="active")
 
 
+@pytest.mark.parametrize("control", ["correct", "wrong-cell", "missing-sibling", "alternative", "objection"])
+def test_attested_cell_reconstructs_complete_model_proof(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, control: str
+) -> None:
+    import grammar_pipeline_test as fixtures
+
+    from latinitas_cards.pipeline_consumers import current_cards, load_run
+    from latinitas_cards.pipeline_profile import PipelineProfile
+
+    profile, objectives, _ = fixture(tmp_path)
+    raw = json.loads(objectives.read_text())
+    raw["forms"] = [{**raw["forms"][0], "target": {**PRESENT, "number": "plural"}}]
+    write(objectives, raw)
+    anchors = json.loads((tmp_path / "inputs.json").read_text())["entries"][0]["forms"]
+
+    def answer(body: dict[str, Any]) -> bytes:
+        task = json.loads(body["messages"][1]["content"])
+        value = dict(
+            surface="amāmus" if control != "wrong-cell" else "amātis",
+            features={**PRESENT, "number": "plural"},
+            source_role="derived",
+            anchors=anchors,
+            rule="regular-first-present-active/1",
+        )
+        assertions = [
+            dict(
+                id=identity,
+                kind=kind,
+                value=canonical(value).decode() if identity == "target" else "unsupported sibling",
+                selected_sense=None,
+                alternatives=["perhaps another voice"] if identity == "target" and control == "alternative" else [],
+                evidence=[EVIDENCE],
+            )
+            for identity, kind in (
+                ("source", "label"),
+                ("target", "label"),
+                ("stem", "segmentation"),
+                ("rendered", "label"),
+            )
+            if control != "missing-sibling" or identity != "stem"
+        ]
+        content = dict(
+            format="latinitas-model-answer",
+            version=1,
+            task_sha256=task["task_sha256"],
+            assertions=assertions,
+            alternatives=[],
+            objections=["unresolved exception"] if control == "objection" else [],
+        )
+        return canonical({"choices": [{"finish_reason": "stop", "message": {"content": canonical(content).decode()}}]})
+
+    monkeypatch.setattr(fixtures, "provider_answer", answer)
+    with synthetic_pipeline_http() as (url, sent, _):
+        configure_pipeline_http(profile, url)
+        settings = json.loads(profile.read_text())
+        settings["selection"]["entries"] = ["v"]
+        write(profile, settings)
+        output = tmp_path / "workflow"
+        report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+        root = output / "run"
+        card = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)[
+            0
+        ][0]
+        checks, _ = card.claims.decisions[0].reader.model_checks()
+        by_id = {c.id: c for c in checks}
+        if control == "wrong-cell":
+            expected_result = "fail"
+        elif control in ("alternative", "objection"):
+            expected_result = "unresolved"
+        else:
+            expected_result = "pass"
+        assert by_id["semantic/target"].result == expected_result
+        assert all(
+            c.result != "pass" for c in checks if c.method == "semantic_comparison" and c.id != "semantic/target"
+        )
+        assert by_id["blind/transport"].assertion_ids == tuple(a.id for a in card.claims.assertions)
+        if control == "missing-sibling":
+            assert by_id["blind/transport"].result != "pass"
+        elif control == "correct":
+            assert by_id["blind/transport"].result == "pass"
+        assert report["file_export"]["exported"] == 0
+        assert len(sent) == 2 and sent[0]["messages"][1]["content"] == sent[1]["messages"][1]["content"]
+        assert "amāmus" not in sent[1]["messages"][1]["content"]
+        before = {p: p.read_bytes() for p in (root / "stages").glob("*.json")}
+        call("resume", "--run", str(root), "--offline")
+        assert len(sent) == 2 and all(path.read_bytes() == data for path, data in before.items())
+
+
 def source_answer(body: dict[str, Any]) -> bytes:
     task = json.loads(body["messages"][1]["content"])
     # Written from the disposable mapped source, never from the renderer.

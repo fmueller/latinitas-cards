@@ -1,0 +1,48 @@
+{
+  "task": "T-234-produce-source-grounded-morphology-applicability",
+  "state": "closed; no further acquisition dispatched",
+  "purpose": "exposed development source, never a protected reference answer",
+  "initial_aggregate": {"requests": 0, "retained_bytes": 0, "acquisition_work_seconds": 0},
+  "suballocation": {"requests": 12, "retained_bytes": 20971520, "acquisition_work_seconds": 1800},
+  "aggregate_limits": {"requests": 100, "retained_bytes": 209715200, "acquisition_work_seconds": 14400},
+  "reservation_method": "Credential-free local JSON written before each urllib dispatch; redirect handler refuses redirects; no retries. The final request-3 fetch script and cumulative ledger remain in persistent scratch. Earlier script revisions and reservation-before-dispatch ordering are evidenced by the original tool-transcript patches and outputs, not standalone retained historical script snapshots.",
+  "original_transcript": "https://ampcode.com/threads/T-01a1fa22-d59a-754b-8389-4928b31ce9f9",
+  "requests": [
+    {
+      "number": 1,
+      "url": "https://www.gutenberg.org/cache/epub/15665/pg15665.txt",
+      "state": "failed",
+      "http_status": 503,
+      "retained_bytes": 0,
+      "decision": "No automatic retry; changed to a public mirror. Failure stays charged."
+    },
+    {
+      "number": 2,
+      "url": "https://raw.githubusercontent.com/GITenberg/New-Latin-Grammar_15665/master/15665.txt",
+      "state": "received",
+      "http_status": 200,
+      "retained_bytes": 638570,
+      "sha256": "370c927296968bef01aa592b858d2f56be3474c86d1b93603a9ed665206074fc",
+      "decision": "Public-domain edition with complete Gutenberg terms. ASCII transcriber's note explicitly omits quantities: not used as runtime cell authority. Retained as failed suitability evidence."
+    },
+    {
+      "number": 3,
+      "url": "https://raw.githubusercontent.com/GITenberg/New-Latin-Grammar_15665/master/15665-h/15665-h.htm",
+      "state": "received",
+      "http_status": 200,
+      "retained_bytes": 1422632,
+      "sha256": "13f80dd1202e958854117c9c9cb2914630e92e37de2967791a45237f571327e6",
+      "decision": "Bennett, New Latin Grammar, 1918 edition; Gutenberg 15665, April 20 2005. Quantity-preserving Latin-1 HTML with character references. Sections 20/63/101 supply exact lexeme paradigms; section 127 documents the excluded do exception. Original HTML and full Gutenberg license retained byte-for-byte in the package."
+    }
+  ],
+  "rights": "Underlying 1918 US publication is public domain in the US (published before 1931). Full original Gutenberg terms remain attached, including redistribution without charge and the outside-US jurisdiction caveat. No copyrighted modern translation is used. This is not a worldwide copyright-status warranty.",
+  "http_execution_seconds": 1.0941585130000533,
+  "acquisition_work_seconds": 900,
+  "work_accounting": "Conservative fifteen-minute charge for source selection, rights and edition inspection, reservations, fetches, retention and packaging, closed at 2026-11-20T18:18:03Z. Not socket time. No further source acquisition belongs to this candidate.",
+  "totals": {"requests": 3, "unique_retained_bytes": 2061202, "acquisition_work_seconds": 900},
+  "suballocation_remaining": {"requests": 9, "retained_bytes": 18910318, "acquisition_work_seconds": 900},
+  "aggregate_remaining": {"requests": 97, "retained_bytes": 207653998, "acquisition_work_seconds": 13500},
+  "transfer_commitment": "Committed quantity-preserving source is byte-identical to request 3. Original ASCII/source HTML, cumulative reservation ledger and final request-3 no-retry fetch script remain in the retained checkout and can be transferred without new acquisition; the linked original transcript retains earlier script revisions. Duplicate package/install copies are not new source material or new requests.",
+  "hosted_calls": 0,
+  "campaign_restoration": false
+}

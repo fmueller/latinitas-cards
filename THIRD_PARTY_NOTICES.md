@@ -1,5 +1,18 @@
 # Third-Party Notices
 
+## Bundled morphology reference
+
+`src/latinitas_cards/references/bennett-1918.html` is the original, unmodified
+GITenberg HTML of Charles E. Bennett's *New Latin Grammar* (1918), Project
+Gutenberg eBook 15665, released April 20, 2005. The underlying 1918 US publication
+is public domain in the US. The complete original Gutenberg license, attribution
+and outside-US jurisdiction caveat remain attached to the file. Redistribution
+here is without charge under those terms; this notice does not claim worldwide
+public-domain status. See [the acquisition/rights ledger](docs/t234-reference-acquisition.json)
+for exact URL, digest, scope, failed requests and retained unsuitable ASCII edition.
+
+## Package dependency inventory
+
 Latinitas Cards (`latinitas-cards`) is licensed under GPL-3.0-or-later. This notice is
 scoped to the supported `uv.lock` maintained on 2026-10-17: 92 `[[package]]` records, including
 the project itself, or 91 third-party package records (90 normalized names because CPU and
