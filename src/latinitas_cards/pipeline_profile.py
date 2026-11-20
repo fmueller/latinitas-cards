@@ -5,11 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, SerializeAsAny, model_validator
 
 from .acceptance_policy import SupportRegistry, lookup_policy
 from .acceptance_records import Hash, Record, Text, canonical
 from .acceptance_registry import SUPPORT_REGISTRY
+from .hosted_accounting import EstimatedAccounting
 from .providers import Endpoint
 
 RECIPES = tuple(e.recipe for e in SupportRegistry.read_json(canonical(SUPPORT_REGISTRY)).entries)
@@ -65,6 +66,13 @@ class Processing(Record):
     retries: int = Field(default=1, ge=0, le=1)
 
 
+class EstimatedProcessing(Processing):
+    accounting: EstimatedAccounting
+    max_calls: int = Field(default=200, gt=0, le=200)
+    max_tokens: int = Field(default=200000, gt=0, le=200000)
+    retries: Literal[0] = 0
+
+
 class Providers(Record):
     proposal: Endpoint | None
     counter_check: Endpoint | None
@@ -92,7 +100,7 @@ class ProfileSnapshot(Record):
     """Exact profile data for reporting; does not establish installed policy authority."""
 
     format: Literal["latinitas-pipeline-profile"]
-    version: Literal[1]
+    version: Literal[1, 2]
     deck_profile: FileReference
     inputs: tuple[InputReference, ...] = Field(min_length=1)
     language: Literal["de", "en"]
@@ -100,16 +108,22 @@ class ProfileSnapshot(Record):
     recipe_overrides: RecipeOverrides
     recipes: tuple[Text, ...]
     selection: Selection
-    processing: Processing
+    processing: SerializeAsAny[Processing | EstimatedProcessing]
     providers: Providers
     policy: Policy
     layout: Layout
 
     @model_validator(mode="after")
     def effective(self) -> Self:
+        if (self.version == 2) != isinstance(self.processing, EstimatedProcessing):
+            raise ValueError("estimated accounting requires profile version 2")
         if self.recipes != resolve_recipes(self.preset, self.recipe_overrides):
             raise ValueError("saved recipes differ from resolved preset/overrides")
         return self
+
+    @property
+    def accounting(self) -> EstimatedAccounting | None:
+        return self.processing.accounting if isinstance(self.processing, EstimatedProcessing) else None
 
 
 class PipelineProfile(ProfileSnapshot):

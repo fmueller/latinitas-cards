@@ -71,7 +71,7 @@ class SourceUnits(Record):
 
 class PipelineReport(Record):
     format: Literal["latinitas-pipeline-report"]
-    version: Literal[1]
+    version: Literal[1, 2]
     run_id: Text
     profile_sha256: Hash
     effective_profile: ProfileSnapshot
@@ -84,6 +84,12 @@ class PipelineReport(Record):
     permission_sha256: Hash | None
     complete: bool
 
+    @model_validator(mode="after")
+    def accounting_version(self) -> Self:
+        if self.version != self.effective_profile.version:
+            raise ValueError("report accounting schema mismatch")
+        return self
+
 
 class ReportDetails(Record):
     counts: dict[str, Count]
@@ -94,12 +100,14 @@ class ReportDetails(Record):
 
 
 class Reporting(Record):
-    schema_version: Annotated[int, Field(strict=True, ge=1, le=1)]
+    schema_version: Annotated[int, Field(strict=True, ge=1, le=2)]
     record: PipelineReport
     details: ReportDetails
 
     @model_validator(mode="after")
     def matching_projection(self) -> Self:
+        if self.schema_version != self.record.version or self.record.version != self.record.effective_profile.version:
+            raise ValueError("report accounting schema mismatch")
         rows = tuple(Outcome(**o.model_dump(include=set(Outcome.model_fields))) for o in self.details.outcomes)
         if rows != self.record.outcomes:
             raise ValueError("report_detail_identity_mismatch")
@@ -358,7 +366,7 @@ def build_report(
             )
         )
     calls = cast(list[dict[str, object]], execution.get("provider_calls", []))
-    configured = Limits(**profile.processing.model_dump(exclude={"max_source_units"}))
+    configured = Limits(**profile.processing.model_dump(include=set(Limits.model_fields)))
     hosted = configured.model_dump(mode="json")
     if permission is not None:
         for key in ("max_calls", "max_tokens", "timeout_seconds"):
@@ -370,6 +378,18 @@ def build_report(
             "source": "effective_profile capped by supplied permission for hosted calls only",
             "calls_reserved": len(calls),
             "tokens_reserved": sum(int(cast(int, c["reserved_tokens"])) for c in calls),
+            **(
+                {
+                    "accounting_kind": "estimated",
+                    "estimator": profile.accounting.estimator,
+                    "campaign_id": profile.accounting.campaign_id,
+                    "purpose": profile.accounting.purpose,
+                    "no_guaranteed_token_or_financial_cap": True,
+                    "actual_plan_deduction": "unknown",
+                }
+                if profile.accounting
+                else {}
+            ),
         },
         counts={
             "claims": len({i for o in outcomes for i in o.claim_ids}),
@@ -385,7 +405,7 @@ def build_report(
     )
     report = PipelineReport(
         format="latinitas-pipeline-report",
-        version=1,
+        version=profile.version,
         run_id=str(execution["run_id"]),
         profile_sha256=digest(profile),
         effective_profile=profile,
@@ -408,7 +428,9 @@ def build_report(
     return {
         **execution,
         "installed_handoff": [h.model_dump(mode="json") for h in handoffs],
-        "outcome_report": Reporting(schema_version=1, record=report, details=details).model_dump(mode="json"),
+        "outcome_report": Reporting(schema_version=profile.version, record=report, details=details).model_dump(
+            mode="json"
+        ),
     }
 
 

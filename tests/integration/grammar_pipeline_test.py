@@ -3125,7 +3125,7 @@ def provider_answer(body: dict[str, Any]) -> bytes:
 
 
 @contextmanager
-def synthetic_pipeline_http() -> Iterator[tuple[str, list[dict[str, Any]], list[int]]]:
+def synthetic_pipeline_http(*, usage: bool = False) -> Iterator[tuple[str, list[dict[str, Any]], list[int]]]:
     requests: list[dict[str, Any]] = []
     status = [200]
 
@@ -3134,6 +3134,13 @@ def synthetic_pipeline_http() -> Iterator[tuple[str, list[dict[str, Any]], list[
             body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             requests.append(body)
             payload = provider_answer(body)
+            if usage:
+                payload = canonical(
+                    {
+                        **json.loads(payload),
+                        "usage": {"prompt_tokens": 100, "completion_tokens": 30, "total_tokens": 130},
+                    }
+                )
             self.send_response(status[0])
             self.send_header("x-request-id", f"synthetic-{len(requests)}")
             self.send_header("Content-Length", str(len(payload)))
@@ -3167,6 +3174,155 @@ def configure_pipeline_http(profile: Path, url: str, *, calls: int = 200) -> Non
     raw["selection"]["entries"] = ["n"]
     raw["processing"].update(max_source_units=1, max_calls=calls)
     write(profile, raw)
+
+
+@pytest.mark.parametrize("phase,purpose", [("development", "development"), ("study", "isolated_evaluation")])
+def test_estimated_installed_pipeline_separates_usage_custody_and_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str, purpose: str
+) -> None:
+    from latinitas_cards.hosted_accounting import PHASE_CALLS, Campaign, CampaignAllocation
+
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    profile, objectives, _ = fixture(tmp_path)
+    allocation = CampaignAllocation(
+        format="latinitas-campaign-allocation",
+        version=1,
+        campaign_id=digest("pipeline-test"),
+        authority="synthetic offline engineering only",
+        max_calls=2,
+        max_tokens=40000000,
+        max_microdollars=25000000,
+        max_execution_seconds=86400,
+        phase_calls=PHASE_CALLS,
+    )
+    Campaign(allocation.campaign_id).initialize(allocation)
+    with synthetic_pipeline_http(usage=True) as (url, requests, _):
+        configure_pipeline_http(profile, url)
+        raw = json.loads(profile.read_text())
+        raw["version"] = 2
+        raw["processing"].update(
+            retries=0,
+            accounting={
+                "format": "latinitas-estimated-accounting",
+                "version": 1,
+                "kind": "estimated",
+                "campaign_id": allocation.campaign_id,
+                "phase": phase,
+                "purpose": purpose,
+                "estimator": "wire-padded/1",
+                "service_revision": None,
+                "acknowledges_no_guaranteed_cap": True,
+                "pricing": [
+                    {
+                        "endpoint_sha256": digest(raw["providers"]["proposal"]),
+                        "input_microdollars_per_million": 1000000,
+                        "output_microdollars_per_million": 3000000,
+                        "source_url": "https://example.invalid/pricing",
+                        "checked_at": "2020-01-01T00:00:00Z",
+                        "expires_at": "2099-01-01T00:00:00Z",
+                    }
+                ],
+            },
+        )
+        write(profile, raw)
+        output = tmp_path / "estimated"
+        report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+        assert len(requests) == 2
+        assert [c["used_tokens"] for c in report["provider_calls"]] == [130, 130]
+        assert report["outcome_report"]["record"]["version"] == 2
+        accounting = raw["processing"]["accounting"]
+        charges = {c["call_id"]: c for c in report["accounting_provenance"]["charges"]}
+        assert set(charges) == {c["call_id"] for c in report["provider_calls"]}
+        captured = {digest(body): body for body in requests}
+        assert len(captured) == 2
+        for provider_call in report["provider_calls"]:
+            charge = charges[provider_call["call_id"]]
+            reservation = charge["reservation"]
+            assert charge["run_id"] == report["run_id"]
+            assert charge["stage_id"] == provider_call["stage_id"]
+            assert charge["state"] == provider_call["state"] == "succeeded"
+            assert charge["stop_reason"] is None
+            assert reservation["request_sha256"] == provider_call["request_sha256"]
+            assert reservation["request_sha256"] in captured
+            disclosure = next(d for d in report["disclosure"] if reservation["request_sha256"] in d["request_sha256s"])
+            assert reservation["scope_sha256"] == digest(disclosure["data_scope"])
+            assert reservation["endpoint_sha256"] == provider_call["endpoint_sha256"]
+            assert reservation["endpoint_sha256"] == digest(raw["providers"]["proposal"])
+            assert reservation["accounting"] == disclosure["accounting"] == accounting
+            assert reservation["pricing_sha256"] == digest(accounting["pricing"][0])
+            assert reservation["permission_id"] is None
+            assert charge["usage"] == {"input_tokens": 100, "output_tokens": 30, "total_tokens": 130}
+            assert reservation["input_tokens"] > charge["usage"]["input_tokens"]
+            assert reservation["output_tokens"] > charge["usage"]["output_tokens"]
+            assert provider_call["reserved_tokens"] == reservation["input_tokens"] + reservation["output_tokens"]
+            assert provider_call["reserved_tokens"] > provider_call["used_tokens"]
+        limits = report["outcome_report"]["details"]["limits"]
+        assert limits["accounting_kind"] == "estimated" and limits["estimator"] == "wire-padded/1"
+        assert limits["campaign_id"] == allocation.campaign_id and limits["purpose"] == purpose
+        assert limits["no_guaranteed_token_or_financial_cap"] is True
+        assert limits["actual_plan_deduction"] == "unknown"
+        assert limits["tokens_reserved"] == sum(c["reserved_tokens"] for c in report["provider_calls"])
+        assert report["stages"]["export"][0]["reason"] == "isolated_artifact_not_learning_export"
+        assert not list(output.glob("*.csv")) and "file_export" not in report
+        root = output / "run"
+        assert json.loads((output / "report.json").read_text()) == call("report", "--run", str(root)) == report
+        resumed = call("resume", "--run", str(root), "--offline")
+        assert resumed["accounting_provenance"] == report["accounting_provenance"]
+        assert resumed["provider_calls"] == report["provider_calls"]
+        assert call("report", "--run", str(root)) == resumed
+        assert len(requests) == 2  # Completed capture needs neither pricing renewal nor another dispatch.
+        rejected = runner.invoke(app, ["pipeline", "export", "--run", str(root), "--output", str(tmp_path / "bad.csv")])
+        assert rejected.exit_code != 0 and "isolated" in rejected.output
+        assert not (tmp_path / "bad.csv").exists()
+        second = call(
+            "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(tmp_path / "another")
+        )
+        assert len(requests) == 2
+        assert second["stages"]["propose"][0]["reason"] == "campaign_budget_exhausted"
+
+        adapted = tmp_path / "adapted"
+        call(
+            "adapt",
+            "--kind",
+            "phrase-inputs",
+            "--profile",
+            str(profile),
+            "--objectives",
+            str(objectives),
+            "--output",
+            str(adapted),
+        )
+        replacement = tmp_path / "replacement.json"
+        raw["version"] = 1
+        raw["processing"].pop("accounting")
+        write(replacement, raw)
+        call("validate", "--profile", str(replacement))
+        changed = runner.invoke(
+            app, ["pipeline", "resume", "--run", str(root), "--profile", str(replacement), "--offline", "--json"]
+        )
+        assert changed.exit_code != 0 and "immutable" in changed.output
+        for isolated in (root, adapted):
+            custody = (isolated / "accounting-custody.json").read_bytes()
+            assert json.loads(custody) == accounting
+            destination = tmp_path / (isolated.name + "-replacement.csv")
+            rejected = runner.invoke(
+                app,
+                [
+                    "pipeline",
+                    "export",
+                    "--run",
+                    str(isolated),
+                    "--profile",
+                    str(replacement),
+                    "--output",
+                    str(destination),
+                    "--json",
+                ],
+            )
+            assert rejected.exit_code != 0 and "isolated" in rejected.output
+            assert not destination.exists()
+            assert (isolated / "accounting-custody.json").read_bytes() == custody
+        assert len(requests) == 2
 
 
 def test_orchestrated_http_success_lost_response_resume_and_offline(

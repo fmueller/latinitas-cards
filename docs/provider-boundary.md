@@ -70,7 +70,105 @@ all required class-specific evidence and semantic comparisons before evaluating
 acceptance. Legitimate alternative wording or segmentation must not be discarded
 merely because this structural comparison cannot resolve it.
 
-## Spending, cancellation and recovery
+## Opt-in estimated hosted accounting
+
+Guaranteed accounting remains the version-1 default. `token_bound` still means a
+trusted, proven upper bound over the complete service input; missing qualification
+still refuses new requests. No heuristic is supplied through that callback.
+
+Version-2 pipeline profiles explicitly add `processing.accounting` and set
+`processing.retries` to `0`. This uses the **same** `pipeline run`, `stage` and
+`resume` path, without a fallback provider or a second development runner. The
+accounting record has format `latinitas-estimated-accounting`, version `1`, kind
+`estimated`, a campaign digest, phase (`development`, `study`, `native`, `qa`),
+purpose (`development`, `isolated_evaluation`, `runtime`), estimator
+`wire-padded/1`, endpoint-specific public-pricing observations, `service_revision`
+(a string or explicit `null` when unpinnable), and
+`acknowledges_no_guaranteed_cap: true`. Its exact schema is exposed by
+`EstimatedAccounting.model_json_schema()`. Version-1 profiles cannot contain this
+record; version-2 profiles cannot omit it. Existing offline workflows are unchanged.
+
+`wire-padded/1` reserves 2 × complete serialized UTF-8 request bytes + 8192 estimated
+input tokens, plus the full requested output allowance. This is a padded heuristic,
+**not a guaranteed service-token or financial ceiling**. Reasoning must share the
+2048-token output cap; qualifying a real adapter's compliance is separate work.
+Public rates are operator-checked observations bound to the exact endpoint/model
+digest, with a public HTTPS source, check time and expiry. Rates are positive integer
+microdollars per million input/output tokens. Each reservation rounds valuation
+up to a whole microdollar, assuming no cache discounts. Missing, stale or mismatched
+pricing blocks new spending. Reported usage and actual plan deduction are not the
+same thing: deduction remains unknown unless separately evidenced. Existing
+Credits/balance may be used; no account changes, top-ups or subscriptions occur.
+
+Initialize an explicitly approved `latinitas-campaign-allocation` version-1 file
+with `pipeline campaign --allocation FILE --initialize`. Inspection without
+`--initialize` does not create an allocation. The allocation binds a campaign
+digest and authority, maximum attempts, estimated tokens, microdollars, provider
+execution seconds and all four phase caps. Ceiling values may be narrowed, never
+increased above 2000 attempts, 40000000 tokens, USD 25 estimated valuation and
+86400 seconds. Phase attempt caps are development 80, study 1600, native 160 and
+QA 160; unused capacity cannot be reassigned. Reinitializing the same allocation
+is idempotent, not a reset; a different allocation under that identity is refused.
+Creating another allocation requires separate prospective authority, not a retry.
+T231's closed two-call probe allocation is not imported or credited.
+
+The authoritative ledger is under
+`~/.local/state/latinitas-cards/hosted-campaigns/`, **outside run directories**.
+Retain this owner-only state when restoring or moving the execution environment;
+restoring only a run is not sufficient. Local filesystem administrators and
+operator-authored permission/allocation files remain trusted; this is not a
+tamper-proof remote billing service. A single application dispatch lock spans
+campaigns and is held through response persistence. Runs and roles share campaign
+spending, and each run is additionally limited to 200 attempts and 200000 estimated
+tokens. Request wire bytes are limited to 16384, output to 2048 tokens including
+reasoning, and deadline to 60 seconds. The full deadline is reserved before every
+attempt; actual elapsed milliseconds are recorded separately, without refunds.
+
+Hosted estimated requests require permission version `2`, including all version-1
+scope/request commitments, the exact accounting record, effective `Limits` digest,
+permission microdollar/execution-second ceilings and
+`possible_existing_credits_use: true`. Permission binds purpose and estimator, not
+just endpoint and model. Renewing it cannot restore run, phase or campaign budget.
+Every dispatch takes the strictest remaining permission/run/phase/campaign limit.
+No hidden API retry occurs. Exact request/scope commitments and full reservations
+are durable before sending. Raw request/scope artifacts and fully received,
+screened responses within the transport capture limit stay in the owner-only run
+store; other outcomes retain available identity/error/unknown evidence.
+Version-2 reports identify estimated accounting, while
+the versioned campaign provenance retains each reservation and provider-reported
+input/output/total usage separately. Neither a low usage report nor cancellation
+refunds any reservation.
+
+Missing/invalid usage, or usage above either input or output reservation, stops
+new campaign dispatch for review. A failed/unknown dispatch retains its full charge.
+Unknown transport error labels map conservatively to `unknown`; raw exception
+messages are not persisted. Unknown calls block the campaign until identified
+reconciliation or explicit abandonment. Existing `pipeline reconcile` controls
+apply; abandoning does not prove that remote processing or billing stopped.
+For a crash after central preparation but before a run journal entry,
+`pipeline campaign --allocation FILE --abandon-call ID --confirm-unknown-billing`
+closes the orphan without refund. A diverged/stale run remains refused; use an
+explicitly authorized new run with the same campaign and acknowledge potential
+duplicate processing. Every potential duplicate requires both retry and duplicate
+billing acknowledgment and fresh remaining budget. Review stops are not cleared by
+abandonment. No automatic reset/replenishment or financial guarantee is implied.
+
+Model labels and declared service revisions are retained. An unpinnable deployment
+is a reproducibility limitation, not a fabricated immutable revision. A detected
+material revision change refuses further spending/reuse and requires requalification.
+Accounting cannot detect an undisclosed provider-side deployment change.
+
+Accounting grants no linguistic, policy, acceptance or export authority. Purpose
+and accounting configuration are immutable for a run. Development and isolated
+evaluation captures are not reference truth or ordinary learning exports; direct
+export refuses them and orchestration reports export as not requested. All new
+estimated runtime dispatch currently refuses with `estimated_runtime_not_qualified`,
+pending actual P2 qualification. Accounting opt-in, semantic evidence and a separately
+enabled policy do not remove that independent guard.
+The installed automatic registry remains disabled. This contract does not perform
+provider qualification, protected studies, reference solving or publication.
+
+## Guaranteed spending, cancellation and recovery
 
 Defaults are 60 seconds/request, one retry, 200 total attempts, 200000 total
 input-plus-reserved-output tokens, at most 2048 output tokens per attempt, and one

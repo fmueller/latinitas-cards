@@ -4,7 +4,7 @@ import json
 import os
 import socket
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta, tzinfo
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,10 +17,12 @@ import pytest
 import latinitas_cards.providers as provider_module
 from latinitas_cards.acceptance_records import Binding, canonical, digest
 from latinitas_cards.claim_review import Evidence
+from latinitas_cards.hosted_accounting import Campaign, CampaignAllocation, EstimatedAccounting, Pricing
 from latinitas_cards.providers import (
     Endpoint,
     HostedPermission,
     HTTPTransport,
+    Ledger,
     Limits,
     ModelAnswer,
     ModelTask,
@@ -29,6 +31,7 @@ from latinitas_cards.providers import (
     Scope,
     Span,
     TransportFailure,
+    TransportReply,
     compare_answers,
 )
 
@@ -558,7 +561,7 @@ def test_offline_validation_disclosure_and_missing_token_bound(tmp_path: Path) -
 
 @contextmanager
 def server(
-    *, delay: Event | None = None, raw: bytes | None = None, extra_length: int = 0
+    *, delay: Event | None = None, raw: bytes | None = None, extra_length: int = 0, status_code: int = 200
 ) -> Iterator[tuple[str, list[bytes], Event]]:
     requests: list[bytes] = []
     received = Event()
@@ -582,7 +585,7 @@ def server(
             else:
                 response = answer()
             try:
-                self.send_response(200)
+                self.send_response(status_code)
                 self.send_header("Content-Length", str(len(response) + extra_length))
                 self.end_headers()
                 self.wfile.write(response)
@@ -1002,3 +1005,672 @@ def test_default_limits_and_proposal_check_share_total_call_budget(tmp_path: Pat
     )
     fake = Fake()
     assert execute(r, fake).reason == "budget_exhausted" and fake.requests == []
+
+
+def estimated_settings(ep: Endpoint) -> EstimatedAccounting:
+    return EstimatedAccounting(
+        format="latinitas-estimated-accounting",
+        version=1,
+        kind="estimated",
+        campaign_id=digest("synthetic-allocation"),
+        phase="development",
+        purpose="development",
+        estimator="wire-padded/1",
+        service_revision=None,
+        acknowledges_no_guaranteed_cap=True,
+        pricing=(
+            Pricing(
+                endpoint_sha256=digest(ep),
+                input_microdollars_per_million=1000000,
+                output_microdollars_per_million=3000000,
+                source_url="https://example.invalid/public-synthetic-pricing",
+                checked_at="2020-01-01T00:00:00Z",
+                expires_at="2099-01-01T00:00:00Z",
+            ),
+        ),
+    )
+
+
+def allocate(settings: EstimatedAccounting, **limits: int) -> Campaign:
+    campaign = Campaign(settings.campaign_id)
+    campaign.initialize(
+        CampaignAllocation(
+            format="latinitas-campaign-allocation",
+            version=1,
+            campaign_id=settings.campaign_id,
+            authority="synthetic local tests only; no hosted execution",
+            max_calls=limits.get("calls", 2000),
+            max_tokens=limits.get("tokens", 40000000),
+            max_microdollars=limits.get("cost", 25000000),
+            max_execution_seconds=limits.get("seconds", 86400),
+            phase_calls={"development": limits.get("phase_calls", 80), "study": 1600, "native": 160, "qa": 160},
+        )
+    )
+    return campaign
+
+
+def estimated_run(
+    root: Path, settings: EstimatedAccounting, *, run_id: str = "estimated-run", **limits: int
+) -> ProviderRun:
+    ep = endpoint()
+    return ProviderRun(
+        root,
+        run_id=run_id,
+        config_sha256=digest("config"),
+        proposal=ep,
+        counter_check=ep,
+        accounting=settings,
+        limits=Limits(**limits),
+    )
+
+
+def estimated_reply(**usage: int) -> bytes:
+    return canonical(
+        {**json.loads(answer()), "usage": usage or {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120}}
+    )
+
+
+def estimated_invoke(
+    r: ProviderRun,
+    fake: Fake,
+    *,
+    role: Literal["proposal", "counter_check"] = "proposal",
+    permission: HostedPermission | None = None,
+    cancel: Event | None = None,
+    token_bound: Callable[[bytes], int] | None = None,
+    retry_unknown: bool = False,
+    duplicate_warning_confirmed: bool = False,
+) -> Result:
+    return r.request(
+        role,
+        task(),
+        recipe="form_recognition",
+        scope=SCOPE,
+        prompt_version="proposal/1" if role == "proposal" else "blind/1",
+        transport=fake,
+        permission=permission,
+        cancel=cancel,
+        token_bound=token_bound,
+        retry_unknown=retry_unknown,
+        duplicate_warning_confirmed=duplicate_warning_confirmed,
+    )
+
+
+@pytest.mark.parametrize(
+    "ceiling,shortfall",
+    [
+        ("calls", 0),
+        ("tokens", 0),
+        ("tokens", 1),
+        ("cost", 0),
+        ("cost", 1),
+        ("seconds", 0),
+        ("seconds", 1),
+        ("phase_calls", 0),
+    ],
+)
+def test_estimated_campaign_exact_and_one_over_shared_across_runs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, ceiling: str, shortfall: int
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    # Independent public disclosure gives the exact wire, not an accounting helper.
+    probe = estimated_run(tmp_path / "probe", settings)
+    wire = json.loads(probe.disclosure(task(), SCOPE, recipe="form_recognition"))["requests"]["proposal"]
+    estimated_input = 2 * len(canonical(wire)) + 8192
+    cap = {
+        "calls": 1,
+        "tokens": estimated_input + 2048,
+        "cost": estimated_input + 3 * 2048,
+        "seconds": 60,
+        "phase_calls": 1,
+    }[ceiling]
+    campaign = allocate(settings, **{ceiling: cap - shortfall})
+    fake = Fake([estimated_reply(), estimated_reply()])
+    r = estimated_run(tmp_path / "a", settings)
+    if shortfall:
+        assert estimated_invoke(r, fake).reason == "campaign_budget_exhausted"
+        assert fake.requests == [] and campaign.load().charges == ()
+        return
+    assert estimated_invoke(r, fake).state == "succeeded"
+    assert (
+        estimated_invoke(estimated_run(tmp_path / "b", settings, run_id="other"), fake).reason
+        == "campaign_budget_exhausted"
+    )
+    assert len(fake.requests) == 1
+    saved = campaign.load().charges
+    assert len(saved) == 1 and saved[0].usage is not None
+    assert saved[0].reservation.input_tokens == estimated_input
+    assert saved[0].reservation.output_tokens == 2048
+    assert saved[0].usage.total_tokens == 120  # Usage never refunds the full reservation.
+
+
+def test_estimated_missing_usage_stops_campaign_and_preserves_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    fake = Fake([answer()])
+    r = estimated_run(tmp_path / "a", settings)
+    result = estimated_invoke(r, fake)
+    assert result.reason == "usage_review_required"
+    assert campaign.load().charges[0].stop_reason == "missing_or_invalid_usage"
+    assert r.calls()[0].response_artifact is not None
+    other = estimated_run(tmp_path / "b", settings, run_id="other")
+    assert estimated_invoke(other, fake).reason == "campaign_review_required"
+    assert len(fake.requests) == 1
+
+
+@pytest.mark.parametrize(
+    "usage",
+    [
+        {"prompt_tokens": -1, "completion_tokens": 2, "total_tokens": 1},
+        {"prompt_tokens": True, "completion_tokens": 2, "total_tokens": 3},
+        {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 4},
+        {"prompt_tokens": 999999, "completion_tokens": 2, "total_tokens": 1000001},
+        {"prompt_tokens": 2, "completion_tokens": 2049, "total_tokens": 2051},
+    ],
+)
+def test_estimated_invalid_or_excess_usage_never_refunds_or_continues(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, usage: dict[str, int]
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    fake = Fake([estimated_reply(**usage)])
+    assert estimated_invoke(estimated_run(tmp_path / "a", settings), fake).reason == "usage_review_required"
+    assert (
+        estimated_invoke(estimated_run(tmp_path / "b", settings, run_id="other"), fake).reason
+        == "campaign_review_required"
+    )
+    assert len(fake.requests) == 1 and len(campaign.load().charges) == 1
+
+
+@pytest.mark.parametrize("elapsed", [60.0, 60.001])
+def test_estimated_deadline_result_and_reservation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, elapsed: float
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    clock = [0.0]
+    monkeypatch.setattr("latinitas_cards.providers.time.monotonic", lambda: clock[0])
+
+    class TimedFake(Fake):
+        def __call__(self, endpoint: Endpoint, body: bytes, timeout: float, cancel: Event) -> bytes:
+            assert timeout == 60
+            clock[0] = elapsed
+            return super().__call__(endpoint, body, timeout, cancel)
+
+    result = estimated_invoke(estimated_run(tmp_path / "a", settings), TimedFake([estimated_reply()]))
+    assert result.state == ("succeeded" if elapsed == 60 else "unknown")
+    charge = campaign.load().charges[0]
+    assert charge.reservation.execution_seconds == 60
+    assert charge.elapsed_milliseconds == int(elapsed * 1000)
+
+
+def test_estimated_accounting_does_not_qualify_runtime(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint()).model_copy(update={"phase": "native", "purpose": "runtime"})
+    campaign = allocate(settings)
+    fake = Fake([estimated_reply()])
+    assert estimated_invoke(estimated_run(tmp_path / "a", settings), fake).reason == "estimated_runtime_not_qualified"
+    assert fake.requests == [] and campaign.load().charges == ()
+
+
+@pytest.mark.parametrize("usage_ok", [True, False])
+def test_estimated_reconciliation_retains_usage_review_and_original_reservation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, usage_ok: bool
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    r = estimated_run(tmp_path / "a", settings)
+    first = estimated_invoke(r, Fake([TransportFailure("unknown", "retrieved-1")]))
+    assert first.call_id is not None
+    before = campaign.load().charges[0].reservation
+    response = (
+        estimated_reply() if usage_ok else estimated_reply(prompt_tokens=1, completion_tokens=2049, total_tokens=2050)
+    )
+    result = r.reconcile(
+        first.call_id,
+        endpoint=endpoint(),
+        task=task(),
+        request_sha256=r.calls()[0].request_sha256,
+        provider_request_id="retrieved-1",
+        response=response,
+    )
+    assert result.state == ("succeeded" if usage_ok else "failed")
+    assert campaign.load().charges[0].reservation == before
+    artifact = r.calls()[0].response_artifact
+    assert artifact and (r.root / artifact).read_bytes() == response
+    if usage_ok:
+        fake = Fake()
+        assert r.completed("proposal", task(), SCOPE) is not None
+        assert estimated_invoke(r, fake).state == "succeeded" and fake.requests == []
+    else:
+        assert campaign.load().charges[0].stop_reason == "usage_above_reservation"
+        other = estimated_run(tmp_path / "b", settings, run_id="other")
+        assert estimated_invoke(other, Fake()).reason == "campaign_review_required"
+
+
+@pytest.mark.parametrize("change", ["none", "purpose", "limits", "manifest", "v1", "money", "time"])
+def test_estimated_hosted_permission_is_exact_and_renewal_never_resets_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    ep = endpoint(hosted=True)
+    settings = estimated_settings(ep)
+    allocate(settings, calls=1)
+    limits = Limits(max_calls=10, retries=0)
+    r = ProviderRun(
+        tmp_path / "a",
+        run_id="synthetic-run",
+        config_sha256=digest("config"),
+        proposal=ep,
+        counter_check=ep,
+        accounting=settings,
+        limits=limits,
+    )
+    disclosure = json.loads(r.disclosure(task(), SCOPE, recipe="form_recognition"))
+    fields: dict[str, object] = {
+        "version": 2,
+        "accounting": settings.model_dump(mode="json"),
+        "effective_limits_sha256": digest(limits),
+        "max_microdollars": 25000000,
+        "max_execution_seconds": 86400,
+        "possible_existing_credits_use": True,
+        "max_calls": 1,
+        "input_sha256s": [*disclosure["input_sha256s"], *disclosure["request_sha256s"]],
+    }
+    if change == "purpose":
+        changed = settings.model_copy(update={"phase": "qa", "purpose": "isolated_evaluation"})
+        fields["accounting"] = changed.model_dump(mode="json")
+    elif change == "limits":
+        fields["effective_limits_sha256"] = digest(Limits())
+    elif change == "manifest":
+        fields["input_sha256s"] = [task().binding.source_sha256, digest(task())]
+    elif change == "v1":
+        fields = {}
+    elif change == "money":
+        wire = canonical(disclosure["requests"]["proposal"])
+        fields["max_microdollars"] = 2 * len(wire) + 8192 + 3 * 2048 - 1
+    elif change == "time":
+        fields["max_execution_seconds"] = 59
+    grant = permission(ep, **fields)
+    fake = Fake([estimated_reply()])
+    first = estimated_invoke(r, fake, permission=grant)
+    assert (first.state == "succeeded") is (change == "none")
+    assert len(fake.requests) == int(change == "none")
+    if change in ("money", "time"):
+        assert first.reason == "campaign_budget_exhausted"
+    if change == "none":
+        renewed = permission(ep, **{**fields, "max_calls": 10})
+        assert estimated_invoke(r, fake, role="counter_check", permission=renewed).reason == "campaign_budget_exhausted"
+        assert len(fake.requests) == 1
+
+
+def test_estimated_unknown_http_retains_screened_error_response(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    raw = canonical({"error": "synthetic service rejection"})
+    with server(raw=raw, status_code=503) as (url, captured, _):
+        ep = endpoint().model_copy(update={"url": url})
+        settings = estimated_settings(ep)
+        campaign = allocate(settings)
+        r = ProviderRun(
+            tmp_path / "a",
+            run_id="http-errors",
+            config_sha256=digest("config"),
+            proposal=ep,
+            counter_check=ep,
+            accounting=settings,
+        )
+        result = r.request(
+            "proposal",
+            task(),
+            recipe="form_recognition",
+            scope=SCOPE,
+            prompt_version="proposal/1",
+            transport=HTTPTransport(),
+        )
+        assert result.state == "unknown" and len(captured) == 1
+        call = r.calls()[0]
+        assert call.response_artifact is not None
+        assert (r.root / call.response_artifact).read_bytes() == raw
+        assert campaign.load().charges[0].state == "unknown"
+
+
+@pytest.mark.parametrize("error", ["unknown", "unrecognized-http-error", "cancelled"])
+def test_estimated_unknown_error_labels_duplicate_controls_and_fresh_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: str
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings, calls=2)
+    fake = Fake([TransportFailure(error), estimated_reply()])  # type: ignore[arg-type]
+    r = estimated_run(tmp_path / "a", settings)
+    first = estimated_invoke(r, fake)
+    assert first.state == "unknown" and first.call_id is not None
+    reopened = estimated_run(tmp_path / "a", settings)
+    assert estimated_invoke(reopened, fake).reason == "unreconciled_call"
+    other = estimated_run(tmp_path / "b", settings, run_id="other")
+    assert estimated_invoke(other, fake).reason == "campaign_unreconciled_call"
+    reopened.abandon(first.call_id)
+    assert estimated_invoke(other, fake).reason == "duplicate_processing_acknowledgment_required"
+    assert estimated_invoke(reopened, fake, retry_unknown=True).reason == "unreconciled_call"
+    assert estimated_invoke(reopened, fake, retry_unknown=True, duplicate_warning_confirmed=True).state == "succeeded"
+    assert len(fake.requests) == 2
+    assert len(campaign.load().charges) == 2 and campaign.load().charges[0].state == "abandoned"
+    assert (
+        estimated_invoke(other, fake, retry_unknown=True, duplicate_warning_confirmed=True).reason
+        == "campaign_budget_exhausted"
+    )
+
+
+def test_estimated_prepare_crash_stays_charged_and_supported_orphan_recovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    r = estimated_run(tmp_path / "a", settings)
+    fake = Fake([estimated_reply()])
+    original = provider_module._write
+
+    def crash(path: Path, data: bytes) -> None:
+        if path.name.endswith(".request.json"):
+            raise OSError("synthetic crash after durable campaign prepare")
+        original(path, data)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(provider_module, "_write", crash)
+        with pytest.raises(OSError, match="synthetic crash"):
+            estimated_invoke(r, fake)
+    assert fake.requests == []
+    charge = campaign.load().charges[0]
+    assert charge.state == "pending" and charge.reservation.request_sha256
+    assert estimated_invoke(r, fake).reason == "campaign_run_diverged"
+    other = estimated_run(tmp_path / "b", settings, run_id="other")
+    assert estimated_invoke(other, fake).reason == "campaign_unreconciled_call"
+    campaign.abandon(charge.call_id)
+    assert estimated_invoke(other, fake).reason == "duplicate_processing_acknowledgment_required"
+    assert estimated_invoke(other, fake, retry_unknown=True, duplicate_warning_confirmed=True).state == "succeeded"
+    assert len(campaign.load().charges) == 2
+
+
+@pytest.mark.parametrize("extra", [0, 1])
+def test_estimated_exact_complete_wire_byte_limit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, extra: int) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    allocate(settings)
+    r = estimated_run(tmp_path / "a", settings)
+    wire = json.loads(r.disclosure(task(), SCOPE, recipe="form_recognition"))["requests"]["proposal"]
+    supplied = task().model_copy(update={"objective": task().objective + "x" * (16384 - len(canonical(wire)) + extra)})
+    fake = Fake([estimated_reply()])
+    result = r.request(
+        "proposal", supplied, recipe="form_recognition", scope=SCOPE, prompt_version="proposal/1", transport=fake
+    )
+    assert (result.state == "succeeded") is (extra == 0)
+    assert len(fake.requests) == 1 - extra
+    if extra:
+        assert result.reason == "request_byte_limit"
+    else:
+        assert len(fake.requests[0]) == 16384
+
+
+def test_estimated_global_lock_pricing_and_cancellation_guards(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    fake = Fake([estimated_reply()])
+    r = estimated_run(tmp_path / "a", settings)
+    with campaign.lock(), pytest.raises(ValueError, match="campaign_busy"):
+        estimated_invoke(r, fake)
+    cancelled = Event()
+    cancelled.set()
+    assert estimated_invoke(r, fake, cancel=cancelled).reason == "cancelled_before_dispatch"
+    no_price = settings.model_copy(update={"pricing": ()})
+    assert estimated_invoke(estimated_run(tmp_path / "missing", no_price), fake).reason == "missing_applicable_pricing"
+    assert estimated_invoke(r, fake, token_bound=len).reason == "accounting_mode_conflict"
+    assert fake.requests == [] and campaign.load().charges == ()
+
+
+def test_estimated_role_totals_stale_copy_and_service_change(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import shutil
+
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    fake = Fake([estimated_reply(), estimated_reply()])
+    r = estimated_run(tmp_path / "a", settings, max_calls=1)
+    r.initialize()
+    shutil.copytree(tmp_path / "a", tmp_path / "stale")
+    assert estimated_invoke(r, fake).state == "succeeded"
+    assert r.completed("proposal", task(), SCOPE) is not None
+    assert estimated_invoke(r, fake, role="counter_check").reason == "budget_exhausted"
+    assert estimated_invoke(estimated_run(tmp_path / "stale", settings), fake).reason == "campaign_run_diverged"
+    changed = settings.model_copy(update={"service_revision": "changed-deployment"})
+    assert (
+        estimated_invoke(estimated_run(tmp_path / "changed", changed, run_id="other"), fake).reason
+        == "service_change_requires_requalification"
+    )
+    with pytest.raises(ValueError, match="service_change_requires_requalification"):
+        r.completed("proposal", task(), SCOPE)
+    assert len(fake.requests) == 1 and len(campaign.load().charges) == 1
+
+
+@pytest.mark.parametrize("cancel_returned", [False, True])
+def test_estimated_available_error_usage_survives_unknown_abandonment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cancel_returned: bool
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    r = estimated_run(tmp_path / "a", settings)
+    cancel = Event()
+    raw = estimated_reply(prompt_tokens=1, completion_tokens=2049, total_tokens=2050)
+
+    def returned(endpoint: Endpoint, body: bytes, timeout: float, cancel: Event) -> TransportReply:
+        if cancel_returned:
+            cancel.set()
+        return TransportReply(raw, "captured-error", 200 if cancel_returned else 503)
+
+    result = r.request(
+        "proposal",
+        task(),
+        recipe="form_recognition",
+        scope=SCOPE,
+        prompt_version="proposal/1",
+        transport=returned,
+        cancel=cancel,
+    )
+    assert result.state == "unknown" and result.call_id is not None
+    call = r.calls()[0]
+    assert call.response_artifact is not None and (r.root / call.response_artifact).read_bytes() == raw
+    charge = campaign.load().charges[0]
+    assert charge.stop_reason == "usage_above_reservation" and charge.usage is not None
+    assert charge.usage.total_tokens == 2050
+    r.abandon(result.call_id)
+    assert campaign.load().charges[0].reservation == charge.reservation
+    assert campaign.load().charges[0].stop_reason == charge.stop_reason
+    fake = Fake([estimated_reply()])
+    assert (
+        estimated_invoke(estimated_run(tmp_path / "b", settings, run_id="other"), fake).reason
+        == "campaign_review_required"
+    )
+    assert fake.requests == []
+
+
+def test_estimated_pricing_expiry_during_preparation_never_dispatches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import latinitas_cards.hosted_accounting as accounting_module
+
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    original = provider_module._write
+
+    class ExpiredClock(datetime):
+        @classmethod
+        def now(cls, tz: tzinfo | None = None) -> Self:
+            return cls(2100, 1, 1, tzinfo=tz)
+
+    def expire(path: Path, data: bytes) -> None:
+        original(path, data)
+        if path.name.endswith(".scope.json"):
+            monkeypatch.setattr(accounting_module, "datetime", ExpiredClock)
+
+    monkeypatch.setattr(provider_module, "_write", expire)
+    fake = Fake([estimated_reply()])
+    result = estimated_invoke(estimated_run(tmp_path / "a", settings), fake)
+    assert result.state == "deferred" and result.reason == "not_dispatched"
+    assert fake.requests == []
+    charge = campaign.load().charges[0]
+    assert charge.state == "cancelled" and charge.usage is None
+    assert charge.reservation.input_tokens > 0 and charge.reservation.output_tokens == 2048
+
+
+def test_estimated_equivalent_scope_requires_cross_run_duplicate_acknowledgment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    ep = endpoint(hosted=True)
+    settings = estimated_settings(ep)
+    campaign = allocate(settings, calls=2)
+    limits = Limits(retries=0)
+    scope = (SCOPE[0].model_copy(update={"fields": ("Latin", "Meaning")}),)
+    fake = Fake([TransportFailure("unknown"), estimated_reply()])
+
+    def invoke(root: Path, run_id: str, selected: tuple[Scope, ...], ack: bool = False) -> tuple[ProviderRun, Result]:
+        r = ProviderRun(
+            root,
+            run_id=run_id,
+            config_sha256=digest("config"),
+            proposal=ep,
+            counter_check=ep,
+            limits=limits,
+            accounting=settings,
+        )
+        disclosed = json.loads(r.disclosure(task(), selected, recipe="form_recognition"))
+        grant = permission(
+            ep,
+            version=2,
+            run_id=run_id,
+            data_scope=json.loads(canonical(scope)),
+            accounting=settings.model_dump(mode="json"),
+            effective_limits_sha256=digest(limits),
+            max_microdollars=25000000,
+            max_execution_seconds=86400,
+            possible_existing_credits_use=True,
+            input_sha256s=[*disclosed["input_sha256s"], *disclosed["request_sha256s"]],
+        )
+        return r, r.request(
+            "proposal",
+            task(),
+            recipe="form_recognition",
+            scope=selected,
+            prompt_version="proposal/1",
+            transport=fake,
+            permission=grant,
+            retry_unknown=ack,
+            duplicate_warning_confirmed=ack,
+        )
+
+    first, unknown = invoke(tmp_path / "a", "first", scope)
+    assert unknown.state == "unknown" and unknown.call_id is not None
+    first.abandon(unknown.call_id)
+    reordered = (scope[0].model_copy(update={"fields": ("Meaning", "Latin")}),)
+    assert invoke(tmp_path / "b", "second", reordered)[1].reason == "duplicate_processing_acknowledgment_required"
+    assert len(fake.requests) == 1
+    assert invoke(tmp_path / "b", "second", reordered, True)[1].state == "succeeded"
+    assert fake.requests[0] == fake.requests[1]
+    charges = campaign.load().charges
+    assert len(charges) == 2 and charges[0].reservation.scope_sha256 != charges[1].reservation.scope_sha256
+    assert charges[0].reservation.request_sha256 == charges[1].reservation.request_sha256
+
+
+def test_estimated_final_save_crash_reopens_charged_and_requires_explicit_recovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings, calls=2)
+    r = estimated_run(tmp_path / "a", settings)
+    original = ProviderRun._save
+    fake = Fake([estimated_reply(), estimated_reply()])
+
+    def crash(self: ProviderRun, ledger: Ledger) -> None:
+        if ledger.calls and ledger.calls[-1].state == "succeeded":
+            raise OSError("synthetic final local journal crash")
+        original(self, ledger)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(ProviderRun, "_save", crash)
+        with pytest.raises(OSError, match="final local journal crash"):
+            estimated_invoke(r, fake)
+    charge = campaign.load().charges[0]
+    assert charge.state == "succeeded" and charge.usage is not None
+    reopened = estimated_run(tmp_path / "a", settings)
+    assert reopened.calls()[0].state == "sent"
+    assert estimated_invoke(reopened, fake).reason == "unreconciled_call"
+    assert len(fake.requests) == 1
+    reopened.abandon(charge.call_id)
+    assert campaign.load().charges[0].reservation == charge.reservation
+    assert estimated_invoke(reopened, fake, retry_unknown=True, duplicate_warning_confirmed=True).state == "succeeded"
+    assert len(fake.requests) == 2 and len(campaign.load().charges) == 2
+
+
+def test_estimated_in_flight_http_cancellation_retains_charge_and_blocks_reopen(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    cancel = Event()
+    release = Event()
+    with server(delay=release) as (url, captured, received):
+        ep = endpoint().model_copy(update={"url": url})
+        settings = estimated_settings(ep)
+        campaign = allocate(settings)
+        r = ProviderRun(
+            tmp_path / "a",
+            run_id="in-flight",
+            config_sha256=digest("config"),
+            proposal=ep,
+            counter_check=ep,
+            accounting=settings,
+        )
+
+        def stop() -> None:
+            assert received.wait(3)
+            cancel.set()
+
+        stopper = Thread(target=stop)
+        stopper.start()
+        result = r.request(
+            "proposal",
+            task(),
+            recipe="form_recognition",
+            scope=SCOPE,
+            prompt_version="proposal/1",
+            transport=HTTPTransport(),
+            cancel=cancel,
+        )
+        stopper.join()
+        release.set()
+        assert result.state == "unknown" and len(captured) == 1
+        charge = campaign.load().charges[0]
+        assert charge.state == "unknown" and charge.usage is None
+        assert charge.reservation.execution_seconds == 60 and charge.reservation.output_tokens == 2048
+        other = ProviderRun(
+            tmp_path / "b",
+            run_id="other",
+            config_sha256=digest("config"),
+            proposal=ep,
+            counter_check=ep,
+            accounting=settings,
+        )
+        assert estimated_invoke(other, Fake()).reason == "campaign_unreconciled_call"
+        assert len(captured) == 1 and len(campaign.load().charges) == 1

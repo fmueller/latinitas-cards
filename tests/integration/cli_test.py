@@ -344,6 +344,7 @@ def test_command_callbacks_are_split_into_command_modules() -> None:
     pipeline = cast(click.Group, click_app.commands["pipeline"])
     assert set(pipeline.commands) == {
         "adapt",
+        "campaign",
         "preview",
         "export",
         "handoff",

@@ -157,7 +157,8 @@ def _provider(root: Path, state: Execution, profile: PipelineProfile) -> Provide
         ledger_config_sha256=state.ledger_config_sha256,
         proposal=profile.providers.proposal,
         counter_check=profile.providers.counter_check,
-        limits=Limits(**profile.processing.model_dump(exclude={"max_source_units"})),
+        limits=Limits(**profile.processing.model_dump(include=set(Limits.model_fields))),
+        accounting=profile.accounting,
     )
 
 
@@ -181,7 +182,7 @@ def prepare(
     root = output / "run"
     current_cards(profile_path, profile, objectives, root)
     # Validate operational hard limits before allocating a run or dispatching.
-    Limits(**profile.processing.model_dump(exclude={"max_source_units"}))
+    Limits(**profile.processing.model_dump(include=set(Limits.model_fields)))
     if local_only and any(
         e and e.locality != "local" for e in (profile.providers.proposal, profile.providers.counter_check)
     ):
@@ -216,6 +217,7 @@ def prepare(
             local_only=local_only,
         )
         _atomic(staged_root / "execution.json", canonical(state))
+        _atomic(staged_root / "accounting-custody.json", canonical(profile.accounting))
         _provider(staged_root, state, profile).initialize()
         staging.rename(output)
     return root
@@ -662,6 +664,10 @@ def execute(
         saved = load_run(root)
         path = profile_path or Path(saved.profile_path)
         profile = load_pipeline_profile(path) if profile_path else saved.profile
+        custody_path = root / "accounting-custody.json"
+        original_accounting = decode_json(custody_path.read_bytes()) if custody_path.exists() else None
+        if canonical(profile.accounting) != canonical(original_accounting):
+            raise ValueError("accounting mode/purpose is immutable for a run; use its original profile")
         source = load_source(path, profile)
         cards, skipped = current_cards(path, profile, saved.objectives, root)
         provider = _provider(root, state, profile)
@@ -793,7 +799,7 @@ def execute(
                             assert endpoint is not None
                             context = RequestContext(endpoint=endpoint, task=task, recipe=card.recipe, scope=scope)
                             _immutable(root / "request-contexts" / (digest(context) + ".json"), canonical(context))
-                            bound = input_token_bound(endpoint)
+                            bound = None if profile.accounting else input_token_bound(endpoint)
                             prior_calls = {call.call_id for call in provider.calls()}
                             result = completed or provider.request(
                                 role,
@@ -871,10 +877,13 @@ def execute(
                 if cancellation.is_set():
                     report["status"] = "cancelled"
                     break
-                output = Path(state.output) / ("cards-" + digest(preview(root)) + ".csv")
-                exported = _export(root, output, None, None, None, reconcile_receipt)
-                report["file_export"] = exported
-                rows = [exported]
+                if profile.accounting and profile.accounting.purpose != "runtime":
+                    rows = [{"state": "not_requested", "reason": "isolated_artifact_not_learning_export"}]
+                else:
+                    output = Path(state.output) / ("cards-" + digest(preview(root)) + ".csv")
+                    exported = _export(root, output, None, None, None, reconcile_receipt)
+                    report["file_export"] = exported
+                    rows = [exported]
             outcomes[name] = rows
             # Decision/selection/export validate their independent proof and
             # eligibility stores directly, so unrelated provider failures do
@@ -890,6 +899,10 @@ def execute(
         report["stage_ids"] = index
         report["disclosure"] = disclosures
         report["provider_calls"] = [c.model_dump(mode="json") for c in provider.calls()]
+        if provider.campaign:
+            with provider.campaign.lock():
+                report["accounting_provenance"] = provider.campaign.load().model_dump(mode="json")
+            report["actual_plan_deduction"] = "unknown; reported usage is not a billing receipt"
         if only in ("select", "render"):
             report.update(preview(root))
         report = build_report(

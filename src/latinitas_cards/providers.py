@@ -10,6 +10,7 @@ import contextlib
 import fcntl
 import hashlib
 import http.client
+import math
 import multiprocessing
 import os
 import ssl
@@ -20,7 +21,7 @@ from datetime import UTC, datetime
 from multiprocessing.connection import Connection
 from pathlib import Path
 from threading import Event
-from typing import Literal, Protocol, Self
+from typing import Literal, Protocol, Self, cast
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -30,6 +31,7 @@ from .acceptance_policy import SupportRegistry
 from .acceptance_records import Assertion, Binding, Hash, Record, Text, Timestamp, canonical, decode_json, digest
 from .acceptance_registry import SUPPORT_REGISTRY
 from .claim_review import Evidence
+from .hosted_accounting import Campaign, Charge, EstimatedAccounting, Reservation, reported_usage
 from .phrase_inputs import Features
 
 type Role = Literal["proposal", "counter_check"]
@@ -83,7 +85,7 @@ class Scope(Record):
 
 class HostedPermission(Record):
     format: Literal["latinitas-hosted-permission"]
-    version: Literal[1]
+    version: Literal[1, 2]
     permission_id: Hash
     run_id: Text
     endpoint_sha256s: tuple[Hash, ...]
@@ -99,11 +101,28 @@ class HostedPermission(Record):
 
     @model_validator(mode="after")
     def commitment(self) -> Self:
+        if (self.version == 2) != isinstance(self, EstimatedHostedPermission):
+            raise ValueError("estimated accounting requires permission version 2")
         if self.permission_id != digest(self.model_dump(mode="json", exclude={"permission_id"})):
             raise ValueError("permission digest mismatch")
         if datetime.fromisoformat(self.confirmed_at) >= datetime.fromisoformat(self.expires_at):
             raise ValueError("permission expires before confirmation")
         return self
+
+    @classmethod
+    def read_json(cls, data: bytes | str) -> Self:
+        raw = decode_json(data)
+        if cls is HostedPermission and isinstance(raw, dict) and raw.get("version") == 2:
+            return cast(Self, EstimatedHostedPermission.read_json(data))
+        return super().read_json(data)
+
+
+class EstimatedHostedPermission(HostedPermission):
+    accounting: EstimatedAccounting
+    effective_limits_sha256: Hash
+    max_microdollars: int = Field(gt=0, le=25000000)
+    max_execution_seconds: int = Field(gt=0, le=86400)
+    possible_existing_credits_use: Literal[True]
 
 
 class ModelTask(Record):
@@ -226,6 +245,7 @@ class TransportFailure(Exception):
 class TransportReply:
     body: bytes
     request_id: str | None = None
+    status: int = 200
 
 
 class Transport(Protocol):
@@ -274,11 +294,11 @@ def _http_worker(pipe: Connection, endpoint: Endpoint, body: bytes, timeout: flo
             pipe.send_bytes(b"I" + request_id.encode())
         data = response.read(1024 * 1024 + 1)
         if (
-            response.status == 200
-            and len(data) <= 1024 * 1024
+            len(data) <= 1024 * 1024
             and response.length in (None, 0)
             and (not credential or not _credential_reflected(data, credential))
         ):
+            pipe.send_bytes(b"S" + str(response.status).encode())
             pipe.send_bytes(b"B" + data)
     except (OSError, http.client.HTTPException, ValueError):
         pass  # The parent records unknown, never raw exception text.
@@ -305,6 +325,7 @@ class HTTPTransport:
         process = context.Process(target=_http_worker, args=(writer, endpoint, body, timeout, self._credential))
         deadline = time.monotonic() + timeout
         request_id = None
+        status = 200
         process.start()
         writer.close()
         try:
@@ -313,8 +334,10 @@ class HTTPTransport:
                     message = reader.recv_bytes(1024 * 1024 + 1)
                     if message[:1] == b"I":
                         request_id = message[1:].decode()
+                    elif message[:1] == b"S":
+                        status = int(message[1:])
                     elif message[:1] == b"B":
-                        return TransportReply(message[1:], request_id)
+                        return TransportReply(message[1:], request_id, status)
             raise TransportFailure("unknown", request_id)
         except (EOFError, OSError, ValueError):
             raise TransportFailure("unknown", request_id) from None
@@ -419,11 +442,18 @@ class ProviderRun:
         counter_check: Endpoint | None,
         limits: Limits | None = None,
         ledger_config_sha256: str | None = None,
+        accounting: EstimatedAccounting | None = None,
     ) -> None:
         self.root = root
         self.run_id = run_id
         self.config_sha256 = config_sha256
-        self.ledger_config_sha256 = ledger_config_sha256 or config_sha256
+        self.accounting = accounting
+        self.campaign = Campaign(accounting.campaign_id) if accounting else None
+        self.ledger_config_sha256 = (
+            digest({"ledger": ledger_config_sha256 or config_sha256, "accounting": accounting})
+            if accounting
+            else ledger_config_sha256 or config_sha256
+        )
         self.require_ledger = ledger_config_sha256 is not None
         self.endpoints: dict[Role, Endpoint | None] = {"proposal": proposal, "counter_check": counter_check}
         self.limits = limits or Limits()
@@ -477,7 +507,7 @@ class ProviderRun:
         if endpoint is None:
             return None
         body = _request(endpoint, task, PROMPT_VERSIONS[role], self.limits.max_output_tokens)
-        identity = digest({"role": role, "endpoint": endpoint, "body": decode_json(body), "scope": scope})
+        identity = self._identity(role, endpoint, body, scope)
         with self._lock():
             for call in reversed(self._load().calls):
                 if call.stage_id == identity and call.state == "succeeded":
@@ -503,6 +533,17 @@ class ProviderRun:
                 "sent_task": task,
                 "data_scope": scope,
                 "limits": self.limits,
+                **(
+                    {
+                        "accounting": self.accounting,
+                        "warning": "Estimated service tokens and public-rate USD valuation are NOT guaranteed caps. "
+                        "Existing Credits/balance may be used. Plan deduction is unknown. "
+                        "No account changes, top-ups or subscriptions. Output cap includes reasoning; "
+                        "an unpinnable service revision limits reproducibility.",
+                    }
+                    if self.accounting
+                    else {}
+                ),
                 "execution": "LLM-off"
                 if not any(self.endpoints.values())
                 else "This process's host; an orb loopback endpoint is not the user's computer. "
@@ -535,9 +576,17 @@ class ProviderRun:
             return False
         if task.binding.config_sha256 != self.config_sha256:
             return False
+        if self.accounting is None and isinstance(permission, EstimatedHostedPermission):
+            return False
         if ep.locality == "local":
             return True
         if permission is None or permission.run_id != self.run_id or permission.config_sha256 != self.config_sha256:
+            return False
+        if self.accounting is not None and (
+            not isinstance(permission, EstimatedHostedPermission)
+            or permission.accounting != self.accounting
+            or permission.effective_limits_sha256 != digest(self.limits)
+        ):
             return False
         if (
             digest(ep) not in permission.endpoint_sha256s
@@ -578,8 +627,9 @@ class ProviderRun:
     ) -> Result:
         """Only trusted adapter code may supply a proven input-token upper bound.
 
-        Unknown tokenization rejects dispatch; bytes/4 or model self-reported
-        estimates are not bounds. Ceilings count full input+output reservations,
+        Guaranteed mode rejects unknown tokenization; bytes/4 or model-reported
+        estimates are not bounds. Explicit estimated mode instead records its
+        heuristic and uncertainty. Both modes retain full input+output reservations,
         including unknown and abandoned calls. Renewing permission never resets them.
         """
         ep = self.endpoints[role]
@@ -596,15 +646,28 @@ class ProviderRun:
         request_sha256 = hashlib.sha256(body).hexdigest()
         if not self._permitted(ep, task, scope, permission, request_sha256):
             return Result("deferred", "permission_or_scope")
-        if token_bound is None:
-            return Result("deferred", "missing_token_bound")
-        bound = token_bound(body)
+        rate = None
+        if self.accounting:
+            if self.accounting.purpose == "runtime":
+                return Result("deferred", "estimated_runtime_not_qualified")
+            if token_bound is not None:
+                return Result("deferred", "accounting_mode_conflict")
+            if len(body) > 16384:
+                return Result("deferred", "request_byte_limit")
+            rate = next((p for p in self.accounting.pricing if p.applicable(digest(ep))), None)
+            if rate is None:
+                return Result("deferred", "missing_applicable_pricing")
+            bound = 2 * len(body) + 8192
+        else:
+            if token_bound is None:
+                return Result("deferred", "missing_token_bound")
+            bound = token_bound(body)
         if type(bound) is not int or bound <= 0:
             return Result("deferred", "invalid_token_bound")
         reservation = bound + self.limits.max_output_tokens
-        identity = digest({"role": role, "endpoint": ep, "body": decode_json(body), "scope": scope})
+        identity = self._identity(role, ep, body, scope)
         cancel = cancel or Event()
-        with self._lock():
+        with self._lock(), self.campaign.lock() if self.campaign else contextlib.nullcontext():
             ledger = self._load()
             matches = [c for c in ledger.calls if c.stage_id == identity]
             for call in reversed(matches):
@@ -626,7 +689,11 @@ class ProviderRun:
                     since_abandonment.append(previous)
             if since_abandonment:
                 previous = since_abandonment[-1]
-                if previous.reason != "transient" or len(since_abandonment) >= self.limits.retries + 1:
+                if (
+                    self.accounting
+                    or previous.reason != "transient"
+                    or len(since_abandonment) >= self.limits.retries + 1
+                ):
                     return Result("failed", previous.reason or "retry_exhausted", previous.call_id)
                 if cancel.wait(1):
                     return Result("cancelled", "cancelled_during_backoff", previous.call_id)
@@ -635,7 +702,8 @@ class ProviderRun:
                 max_calls = min(max_calls, permission.max_calls)
                 max_tokens = min(max_tokens, permission.max_tokens)
                 timeout = min(timeout, permission.timeout_seconds)
-            for attempt in range(len(since_abandonment), self.limits.retries + 1):
+            retries = 0 if self.accounting else self.limits.retries
+            for attempt in range(len(since_abandonment), retries + 1):
                 if cancel.is_set():
                     return Result("cancelled", "cancelled_before_dispatch")
                 if (
@@ -646,6 +714,48 @@ class ProviderRun:
                 if not self._permitted(ep, task, scope, permission, request_sha256):
                     return Result("deferred", "permission_or_scope")
                 call_id = uuid4().hex
+                estimated_reservation = None
+                if self.accounting and self.campaign:
+                    assert rate is not None
+                    estimated_reservation = Reservation(
+                        accounting=self.accounting,
+                        request_sha256=request_sha256,
+                        scope_sha256=digest(scope),
+                        endpoint_sha256=digest(ep),
+                        permission_id=permission.permission_id if permission else None,
+                        input_tokens=bound,
+                        output_tokens=self.limits.max_output_tokens,
+                        wire_bytes=len(body),
+                        microdollars=rate.reservation(bound, self.limits.max_output_tokens),
+                        execution_seconds=timeout,
+                        pricing_sha256=digest(rate),
+                    )
+                    reason = self.campaign.reserve(
+                        Charge(
+                            call_id=call_id,
+                            run_id=self.run_id,
+                            stage_id=identity,
+                            reservation=estimated_reservation,
+                            state="pending",
+                            usage=None,
+                            stop_reason=None,
+                            elapsed_milliseconds=0,
+                        ),
+                        run_calls=max_calls,
+                        run_tokens=max_tokens,
+                        permission_calls=permission.max_calls if permission else 200,
+                        permission_tokens=permission.max_tokens if permission else 200000,
+                        permission_microdollars=permission.max_microdollars
+                        if isinstance(permission, EstimatedHostedPermission)
+                        else 25000000,
+                        permission_seconds=permission.max_execution_seconds
+                        if isinstance(permission, EstimatedHostedPermission)
+                        else 86400,
+                        local_call_ids={c.call_id for c in ledger.calls},
+                        duplicate_acknowledged=retry_unknown and duplicate_warning_confirmed,
+                    )
+                    if reason:
+                        return Result("deferred", reason)
                 request_path = f"{call_id}.request.json"
                 _write(self.root / request_path, body)
                 _write(self.root / f"{call_id}.scope.json", canonical(scope))
@@ -671,10 +781,18 @@ class ProviderRun:
                 self._save(ledger)
                 retry = False
                 permitted = self._permitted(ep, task, scope, permission, request_sha256)
-                if not permitted or cancel.is_set():
+                priced = rate is None or rate.applicable(digest(ep))
+                if not permitted or not priced or cancel.is_set():
                     call = call.model_copy(update={"state": "cancelled", "reason": "not_dispatched"})
+                    if self.campaign:
+                        self.campaign.finish(
+                            call_id, state="cancelled", usage=None, stop_reason=None, elapsed_milliseconds=0
+                        )
                     self._save(ledger.model_copy(update={"calls": (*ledger.calls[:-1], call)}))
                     return Result("cancelled" if cancel.is_set() else "deferred", "not_dispatched", call_id)
+                started = time.monotonic()
+                usage = None
+                stop_reason = None
                 try:
                     reply = transport(ep, body, timeout, cancel)
                     if isinstance(reply, TransportReply):
@@ -682,35 +800,65 @@ class ProviderRun:
                         call = call.model_copy(update={"provider_request_id": reply.request_id})
                     else:
                         raw = reply
-                    if cancel.is_set():
-                        raise TransportFailure("unknown", call.provider_request_id)
                     response_path = f"{call_id}.response.json"
                     _write(self.root / response_path, raw)
                     call = call.model_copy(
                         update={"response_sha256": hashlib.sha256(raw).hexdigest(), "response_artifact": response_path}
                     )
+                    if isinstance(reply, TransportReply) and reply.status != 200:
+                        _write(self.root / f"{call_id}.http.json", canonical({"status": reply.status}))
+                    if estimated_reservation:
+                        try:
+                            usage = reported_usage(ep.provider, raw)
+                        except ValueError:
+                            stop_reason = "missing_or_invalid_usage"
+                        else:
+                            if usage.input_tokens > bound or usage.output_tokens > self.limits.max_output_tokens:
+                                stop_reason = "usage_above_reservation"
+                            call = call.model_copy(update={"used_tokens": usage.total_tokens})
+                    if cancel.is_set() or isinstance(reply, TransportReply) and reply.status != 200:
+                        raise TransportFailure("unknown", call.provider_request_id)
                     try:
-                        parsed = _answer(ep, raw, task)
+                        parsed = self._answer(ep, raw, task)
                     except ValueError:
                         call = call.model_copy(update={"state": "failed", "reason": "malformed_output"})
                         result = Result("failed", "malformed_output", call_id)
                     else:
                         call = call.model_copy(update={"state": "succeeded"})
                         result = Result("succeeded", "transport_only_not_acceptance", call_id, parsed)
+                    if stop_reason:
+                        call = call.model_copy(update={"state": "failed", "reason": "usage_review_required"})
+                        result = Result("failed", "usage_review_required", call_id)
                 except TransportFailure as exc:
-                    unknown = exc.kind == "unknown"
+                    kind = exc.kind if exc.kind in ("transient", "failed", "unknown") else "unknown"
+                    state: Literal["unknown", "failed"] = "unknown" if kind == "unknown" else "failed"
                     call = call.model_copy(
                         update={
-                            "state": "unknown" if unknown else "failed",
-                            "reason": exc.kind,
+                            "state": state,
+                            "reason": kind,
                             "provider_request_id": exc.request_id,
                         }
                     )
-                    result = Result("unknown" if unknown else "failed", exc.kind, call_id)
-                    retry = exc.kind == "transient"
+                    result = Result(state, kind, call_id)
+                    retry = kind == "transient" and self.accounting is None
                 except (Exception, KeyboardInterrupt):
                     call = call.model_copy(update={"state": "unknown", "reason": "transport_interrupted"})
                     result = Result("unknown", "transport_interrupted", call_id)
+                elapsed = time.monotonic() - started
+                if estimated_reservation:
+                    if elapsed > timeout:
+                        call = call.model_copy(update={"state": "unknown", "reason": "deadline_exceeded"})
+                        result = Result("unknown", "deadline_exceeded", call_id)
+                    if usage is None and call.state != "unknown":
+                        stop_reason = "missing_or_invalid_usage"
+                    assert self.campaign is not None
+                    self.campaign.finish(
+                        call_id,
+                        state=cast(Literal["succeeded", "failed", "unknown", "cancelled"], call.state),
+                        usage=usage,
+                        stop_reason=stop_reason,
+                        elapsed_milliseconds=math.ceil(elapsed * 1000),
+                    )
                 ledger = ledger.model_copy(update={"calls": (*ledger.calls[:-1], call)})
                 self._save(ledger)
                 if not retry or attempt == self.limits.retries:
@@ -718,6 +866,24 @@ class ProviderRun:
                 if cancel.wait(1):
                     return Result("cancelled", "cancelled_during_backoff", call_id)
         raise AssertionError("bounded attempt loop must return")
+
+    def _identity(self, role: Role, endpoint: Endpoint, body: bytes, scope: tuple[Scope, ...]) -> str:
+        return digest(
+            {
+                "role": role,
+                "endpoint": endpoint,
+                "body": decode_json(body),
+                "scope": scope,
+                **({"accounting": self.accounting} if self.accounting else {}),
+            }
+        )
+
+    def _answer(self, endpoint: Endpoint, raw: bytes, task: ModelTask) -> ModelAnswer:
+        if self.accounting and endpoint.provider == "latinitas-json/1":
+            data = decode_json(raw)
+            if isinstance(data, dict):
+                raw = canonical({k: v for k, v in data.items() if k != "usage"})
+        return _answer(endpoint, raw, task)
 
     def _artifact(self, name: str, sha256: str) -> bytes:
         if Path(name).name != name or (self.root / name).is_symlink():
@@ -728,19 +894,44 @@ class ProviderRun:
         return raw
 
     def _completed(self, endpoint: Endpoint, task: ModelTask, scope: tuple[Scope, ...], call: Call) -> Result:
+        if self.campaign:
+            campaign = self.campaign.load()
+            if digest(endpoint) in campaign.invalidated_endpoints:
+                raise ValueError("service_change_requires_requalification")
+            charge = next((c for c in campaign.charges if c.call_id == call.call_id), None)
+            if (
+                charge is None
+                or charge.state != "succeeded"
+                or charge.usage is None
+                or charge.reservation.accounting != self.accounting
+                or charge.reservation.request_sha256 != call.request_sha256
+                or charge.reservation.scope_sha256 != digest(scope)
+                or charge.run_id != self.run_id
+                or charge.usage.total_tokens != call.used_tokens
+            ):
+                raise ValueError("completed campaign provenance mismatch")
         self._artifact(call.request_artifact, call.request_sha256)
         self._artifact(f"{call.call_id}.scope.json", digest(scope))
         if call.response_artifact is None or call.response_sha256 is None:
             raise ValueError("missing response artifact")
-        parsed = _answer(endpoint, self._artifact(call.response_artifact, call.response_sha256), task)
+        parsed = self._answer(endpoint, self._artifact(call.response_artifact, call.response_sha256), task)
         return Result("succeeded", "reused_transport_only_not_acceptance", call.call_id, parsed)
 
     def abandon(self, call_id: str) -> None:
-        with self._lock():
+        with self._lock(), self.campaign.lock() if self.campaign else contextlib.nullcontext():
             ledger = self._load()
             if not any(c.call_id == call_id and c.state in ("unknown", "sent", "prepared") for c in ledger.calls):
                 raise ValueError("not an unknown call")
             if call_id not in ledger.abandoned:
+                if self.campaign:
+                    charge = next(c for c in self.campaign.load().charges if c.call_id == call_id)
+                    self.campaign.finish(
+                        call_id,
+                        state="abandoned",
+                        usage=charge.usage,
+                        stop_reason=charge.stop_reason,
+                        elapsed_milliseconds=charge.elapsed_milliseconds,
+                    )
                 self._save(ledger.model_copy(update={"abandoned": (*ledger.abandoned, call_id)}))
 
     def reconcile(
@@ -760,7 +951,7 @@ class ProviderRun:
         with no captured provider ID cannot be reconciled as a successful response;
         abandonment retains its entire reservation and grants no acceptance.
         """
-        with self._lock():
+        with self._lock(), self.campaign.lock() if self.campaign else contextlib.nullcontext():
             ledger = self._load()
             call = next((c for c in ledger.calls if c.call_id == call_id), None)
             if call is None or call.state not in ("unknown", "sent"):
@@ -788,7 +979,54 @@ class ProviderRun:
                 raise ValueError("reconciliation requires the runtime credential for screening")
             if credential and _credential_reflected(response, credential):
                 raise ValueError("credential-bearing response cannot be retained")
-            parsed = _answer(endpoint, response, task)
+            usage = None
+            if self.campaign:
+                charge = next(c for c in self.campaign.load().charges if c.call_id == call_id)
+                stop_reason = charge.stop_reason
+                try:
+                    usage = reported_usage(endpoint.provider, response)
+                except ValueError:
+                    stop_reason = "missing_or_invalid_usage"
+                else:
+                    if (
+                        usage.input_tokens > charge.reservation.input_tokens
+                        or usage.output_tokens > charge.reservation.output_tokens
+                    ):
+                        stop_reason = "usage_above_reservation"
+                if stop_reason:
+                    response_path = f"{call.call_id}.response.json"
+                    _write(self.root / response_path, response)
+                    updated = call.model_copy(
+                        update={
+                            "state": "failed",
+                            "reason": "usage_review_required",
+                            "response_artifact": response_path,
+                            "response_sha256": hashlib.sha256(response).hexdigest(),
+                            "used_tokens": usage.total_tokens if usage else None,
+                        }
+                    )
+                    self.campaign.finish(
+                        call_id,
+                        state="failed",
+                        usage=usage,
+                        stop_reason=stop_reason,
+                        elapsed_milliseconds=charge.elapsed_milliseconds,
+                    )
+                    self._save(
+                        ledger.model_copy(
+                            update={"calls": tuple(updated if c.call_id == call_id else c for c in ledger.calls)}
+                        )
+                    )
+                    return Result("failed", "usage_review_required", call_id)
+            parsed = self._answer(endpoint, response, task)
+            if self.campaign:
+                self.campaign.finish(
+                    call_id,
+                    state="succeeded",
+                    usage=usage,
+                    stop_reason=charge.stop_reason,
+                    elapsed_milliseconds=charge.elapsed_milliseconds,
+                )
             response_path = f"{call.call_id}.response.json"
             _write(self.root / response_path, response)
             updated = call.model_copy(
@@ -797,6 +1035,7 @@ class ProviderRun:
                     "reason": "operator_reconciled",
                     "response_artifact": response_path,
                     "response_sha256": hashlib.sha256(response).hexdigest(),
+                    **({"used_tokens": usage.total_tokens} if usage else {}),
                 }
             )
             self._save(

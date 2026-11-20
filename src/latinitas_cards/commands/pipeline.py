@@ -8,6 +8,7 @@ import typer
 from ..acceptance_presentation import ACCEPTANCE_FIELDS, confirm_installation, layout_digest, stylesheet
 from ..acceptance_records import canonical
 from ..grammar_layout import GRAMMAR_FIELDS, GRAMMAR_LAYOUT, LAYOUT_SHA256
+from ..hosted_accounting import Campaign, CampaignAllocation
 from ..pipeline_consumers import adapt, decide, export, handoff, load_run, load_source, preview
 from ..pipeline_orchestration import cancel, execute, prepare, reconcile_call, report
 from ..pipeline_profile import PipelineProfile, RecipeOverrides, load_pipeline_profile, resolve_recipes
@@ -18,6 +19,45 @@ from .claims import JsonOption, _emit, _error
 app = typer.Typer(help="Inspect or orchestrate evidence-gated grammar cards; explicit providers, never apply to Anki.")
 ProfileOption = Annotated[Path, typer.Option("--profile")]
 RunOption = Annotated[Path, typer.Option("--run")]
+
+
+@app.command(name="campaign")
+def campaign_command(
+    allocation: Annotated[Path, typer.Option("--allocation")],
+    initialize: bool = False,
+    abandon_call: str | None = None,
+    confirm_unknown_billing: bool = False,
+    machine: JsonOption = False,
+) -> None:
+    """Inspect an allocation; explicitly initialize or abandon an unknown charge. Never infer."""
+    try:
+        approved = CampaignAllocation.read_json(allocation.read_bytes())
+        campaign = Campaign(approved.campaign_id)
+        if initialize and abandon_call:
+            raise ValueError("choose initialization or abandonment, not both")
+        if initialize:
+            campaign.initialize(approved)
+        with campaign.lock():
+            if campaign.load().allocation != approved:
+                raise ValueError("allocation differs from authoritative campaign")
+        if abandon_call:
+            if not confirm_unknown_billing:
+                raise ValueError("abandonment requires --confirm-unknown-billing; reservations are never refunded")
+            campaign.abandon(abandon_call)
+        with campaign.lock():
+            ledger = campaign.load()
+            if ledger.allocation != approved:
+                raise ValueError("allocation differs from authoritative campaign")
+            _emit(
+                {
+                    "campaign": ledger.model_dump(mode="json"),
+                    "actual_plan_deduction": "unknown",
+                    "guaranteed_token_or_financial_cap": False,
+                },
+                machine,
+            )
+    except (OSError, ValueError) as error:
+        _error(error, machine)
 
 
 def _effective(

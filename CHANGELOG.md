@@ -22,6 +22,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   scoped hosted permission and cancellation; CSV files never apply changes to Anki.
 - `pipeline report` explains material yield with source links, grouped examples and
   versioned JSON, separating deferred work, processing failures and acceptance.
+- `pipeline run` supports explicitly estimated accounting with shared campaign
+  limits and separate usage records; token totals and charges are not guaranteed caps.
 - `pipeline export` records acceptance-bound card identities; `pipeline handoff`
   lists unresolved prior exports and manual actions without changing Anki.
 
@@ -38,8 +40,10 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Limitations
 
-- `pipeline run` defers new provider requests without qualified token accounting;
-  no production deployment is qualified yet. Offline/local-only restrictions persist on resume.
+- Guaranteed `pipeline run` accounting still requires a proven input-token bound;
+  estimated mode is explicit opt-in, not provider qualification or export authority.
+  Estimated runtime dispatch is refused pending qualification. Offline/local-only
+  restrictions persist on resume.
 
 ## [0.4.0] - 2026-11-01
 

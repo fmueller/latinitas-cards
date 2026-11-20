@@ -1024,6 +1024,7 @@ def adapt(
     )
     root.mkdir(parents=True)
     (root / "run.json").write_bytes(canonical(run))
+    (root / "accounting-custody.json").write_bytes(canonical(profile.accounting))
 
 
 def load_run(root: Path) -> Run:
@@ -1416,6 +1417,14 @@ def _export(
     run = load_run(root)
     path = profile_path or Path(run.profile_path)
     profile = effective_profile or (load_pipeline_profile(path) if profile_path else run.profile)
+    custody_path = root / "accounting-custody.json"
+    custody = decode_json(custody_path.read_bytes()) if custody_path.exists() else None
+    if (isinstance(custody, dict) and custody.get("purpose") != "runtime") or (
+        profile.accounting and profile.accounting.purpose != "runtime"
+    ):
+        raise ValueError("isolated development/evaluation artifacts cannot become learning exports")
+    if canonical(profile.accounting) != canonical(custody):
+        raise ValueError("accounting custody differs from the original run")
     limit = profile.selection.output_limit if output_limit is None else output_limit
     if limit is not None and limit <= 0:
         raise ValueError("output_limit must be positive")
