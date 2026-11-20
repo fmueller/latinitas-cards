@@ -48,7 +48,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Install pinned toolchain
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@v4
       - name: Validate planning and specs
         run: taskrail validate
 
@@ -87,7 +87,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
       - name: Install pinned toolchain
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@v4
       - name: Check CI scope selection
         run: bash scripts/check-ci-scope-test.sh
       - name: Check commit message policy
