@@ -218,6 +218,262 @@ and, for model-assisted evidence, the counter-stage commitment. Unchanged eviden
 decision; malformed/stale analyses are reported
 per card and do not prevent independent siblings from being decided.
 
+## Whole-card producer inventory (T233)
+
+This inventory is grounded in source revision
+[`cb28344`](https://github.com/fmueller/latinitas-cards/commit/cb283442cd6b84adff6ffc34f4834a6e2d0ac48d).
+It implements the revision55 P3 inventory prerequisite, not producers, evaluation,
+policy enablement or a reduction of v0.5.0. The governing requirements remain
+[shared evidence](../specs/v0.5.0.md#shared-evidence-and-automatic-acceptance),
+[the assertion/check matrix](v0.5.0-contract-proposal.md#4-evidence-comparison-and-reuse),
+[T228](../planning/tasks/T-228-verify-model-assisted-checks-in-acceptance-readers.md)
+and [T200](../planning/tasks/T-200-evaluate-held-out-automatic-acceptance-against.md).
+All citations below describe that source, not a claim of linguistic qualification.
+
+### Recipes, assertions and applicability
+
+The finite [SUPPORT_REGISTRY](../src/latinitas_cards/acceptance_registry.py)
+represents 15 recipes, two output languages and exact materials/roles/targets.
+Representability does not license a Cartesian product or establish evidence.
+`pipeline_consumers.current_cards` calls `_render_form`/`_render_phrase`, then adds
+the `rendered` label assertion for the complete prompt/answer. Form cards also
+carry `source` and `target` labels, translation when requested, segmentation for
+derived stems, and every explanation/caveat. Phrase cards carry `construction`,
+each reading's translation, explanation and role contributions. A passing target
+never covers those siblings. See [the renderer](../src/latinitas_cards/pipeline_consumers.py).
+
+| Registry recipes / material | Actual proposal boundary | Evidence still required for whole-card automatic acceptance |
+| --- | --- | --- |
+| `form_translation`, `form_recognition` / `source-form/1` | Confirmed selected source form; recognition excludes the infinitive role in the registry. Only active -ō citation `present_1s`, with no anchors, has the narrow rule target check. | Lexical/sense truth and rendered clauses; translation additionally needs sense, government and meaning equivalence. Other roles/features need independent morphology/applicability. |
+| `ppp_translation`, `ppp_recognition` / `confirmed-ppp/1` | Explicit confirmed PPP role plus role evidence, never supine/fourth position alone. Recognition retains isolated ambiguity. | Independently supported participial features, contextual number/gender/case/voice where asserted; translated participial meaning, not lemma gloss; all lexical/rendered siblings. |
+| `verb_production`, `noun_declension` / `source-form/1`; `adjective_declension` / `source-form/1` or `confirmed-ppp/1` | `form_recipes.derive_form` proposes finite regular cells with full feature tuples and anchor-shape checks. | Independent paradigm applicability, exceptions, generated surface, stem convention/sound changes and complete source/rendered coverage. A rule citation is not proof its paradigm applies to this lemma. |
+| `form_cloze`, `phrase_form_cloze` / `target-cloze/1` | Explicit supported non-meaning target/distinction and context; cue must not disclose answer. Neither is enabled by the default or grammar-study preset. | Contextual applicability, supported alternatives and answerability, constituent evidence for phrases, plus all translation/explanation/rendered siblings. |
+| `phrase_translation`, `phrase_recognition` / `preposition-noun/1`, `noun-genitive/1`, `verb-noun/1`, `adjective-noun/1` | Explicit controlled selections and reviewed reference readings; not original-corpus role discovery. | Each constituent's bound morphology/sense, agreement/government/valency, contextual meaning and every reading's clauses. Pattern validation alone is insufficient. |
+| `rule_application`, `formation_rule_recall`, `component_explanation`, `mnemonic_recall` / `curated/1` | Separate curated consumer implements these recipes and shared-profile/production-run linkage; generic curated assertions are not produced by pipeline `_analyze`. | Genuine current rule, rendered-card and mnemonic approvals as applicable; checks can flag errors but cannot replace human approval or grant linked production cards authority. |
+
+`acceptance_records.Assertion` supports label, segmentation, translation and
+explanation; translation alone requires `selected_sense`. Its `Check` methods are
+`library`, `rule`, `blind_model`, `semantic_comparison`, `human`. These types validate
+shape, evidence and objections, not truth. Exact method applicability is:
+
+| Method / source owner | Real production and immutable reading | Limit / discriminating evidence |
+| --- | --- | --- |
+| Rule: `pipeline_consumers.source_role_target`, `form_rule_checks`; caller `pipeline_orchestration._analyze` | Reconstructs source-bound active -ō `present_1s` target and exact feature tuple from confirmed mapping; produces per-assertion envelopes/stages. | Derived cells return missing independent applicability; source/sense, translation, segmentation and clauses remain unsupported. `grammar_pipeline_test.test_source_bound_rule_producer_keeps_production_policy_disabled` has target pass, false regularity explanation unsupported and empty export. `test_source_bound_rule_rejects_candidate_claims`, `test_source_bound_rule_does_not_infer_exception_applicability` and `test_source_bound_rule_requires_confirmed_citation_role` discriminate wrong features/forms/alternatives, dō/dāre and role/citation failures. |
+| Library: `deck_evidence.analyze_deck`, `_corroborate`, `_sense` | Source spans/identity, lemma/POS/full features and sense are separate checks. Exhaustive supported readings can corroborate morphology; fixed prepositional government can filter ambiguity. Sense pass needs one evidenced matching gloss/key and consistent references. | `latin_library.LocalStanza` is non-exhaustive, returns no senses, never downloads; absent/unreadable resources are processing-unavailable, not linguistic rejection. Library integration positives use supplied test libraries, not a qualified installed lexicon. In `_analyze`, only explicit selected form objectives use this optional adapter; evidence is attached, unavailable downgrades checks, contradiction vetoes a rule pass. It does not promote broader library checks into pipeline sibling passes, and phrases/derived objectives do not acquire a library producer by registry membership. |
+| Construction rule: `deck_evidence.analyze_construction`, `_construction_issues`; `phrase_inputs.construction_diagnostics` | Rechecks persisted constituent stage closure, source bindings, compatible senses/context, required features and four bounded families. | Fixed-government prepositions only; dual government is unresolved, passive valency is unsupported. Unresolved constituents withhold composite evidence. This API is not called by pipeline `_analyze` for phrase objectives and does not prove translated/explanatory prose. |
+| Blind model: `providers._request`, `ProviderRun`; `pipeline_orchestration._task`, `execute`, `_model_envelope` | Both roles receive the source/task/schema, not each other's answer. `_task` selects mapped spans and currently supplies empty `reference_constraints`. Saved actual request/response bytes and successful invocation/stage links are verified. | A complete transport/coverage proof says neither that assertions are correct nor that adequate independent reference evidence exists. Generic `providers.compare_answers` is structural identity only. |
+| Semantic comparison: `semantic_comparison.compare_source_answers`; readers `read_source_comparison`, `read_acceptance_model_checks` | Compares each original card assertion after both immutable invocations; binds outputs, retains whole-task blind coverage, objections and alternatives. `AcceptanceReader.model_checks`/`assess` regenerate the complete set, not caller-selected target-only checks. | Only the supported source-role label gets `equivalent`; wrong source surface/features get `contradiction`. Unsupported siblings, missing coverage, context, objections and unqualified alternatives remain `unresolved`. `compatible_alternatives` is representable but no producer branch emits it. |
+| Human: `acceptance_adapters.adapt_deck`, `adapt_corpus`, `verify_projection`; `curated.record_reviews`, `approval_status`; `curated_cards.render_cards` | Current explicit review projects only the bound reviewed assertions. Curated rule/rendered/mnemonic histories remain separate approvals. | Added factual clauses, stale bindings, missing language-specific/rendered/mnemonic reviews cannot inherit another approval. Human authority is not automatic policy authority. |
+
+Source owners: [deck evidence](../src/latinitas_cards/deck_evidence.py),
+[local library](../src/latinitas_cards/latin_library.py),
+[form recipes](../src/latinitas_cards/form_recipes.py),
+[phrase recipes](../src/latinitas_cards/phrase_recipes.py),
+[providers](../src/latinitas_cards/providers.py),
+[orchestration](../src/latinitas_cards/pipeline_orchestration.py),
+[comparison](../src/latinitas_cards/semantic_comparison.py),
+[acceptance](../src/latinitas_cards/acceptance.py),
+[human adapters](../src/latinitas_cards/acceptance_adapters.py),
+[curated approvals](../src/latinitas_cards/curated.py).
+
+### Public evidence and synthetic controls
+
+These focused tests pin different boundaries; they are not interchangeable proof:
+
+- [semantic_comparison_test](../tests/integration/semantic_comparison_test.py):
+  `test_source_comparison_proof_through_offline_consumers` and
+  `test_acceptance_reader_regenerates_complete_model_checks` exercise saved synthetic
+  HTTP invocations through actual pipeline/reader paths without enabling policy.
+  The target passes, source/translation/rendered partners do not; receipt cards are
+  empty. `test_agreement_does_not_supply_source_evidence` contrasts agreed wrong
+  person/surface, open objections, missing assertions, alternatives, changed sense
+  and contextual applicability. Tampering and changed-execution tests reject
+  leakage, edited/detached proofs and stale commitments. This is engineering proof,
+  not MiniMax quality evaluation or broad semantic success.
+- [deck_evidence_test](../tests/integration/deck_evidence_test.py):
+  `test_government_disambiguates_without_blanket_source_authority`,
+  `test_asymmetric_government_and_ambiguity`, `test_four_family_construction_evidence`
+  and `test_verb_person_and_number_are_not_interchangeable` test finite adapters
+  using supplied libraries. Negative controls include incomplete analyzers,
+  missing actual local resources, incompatible same-key senses, changed context
+  and passive constructions (`test_incomplete_analyzer_hypothesis_cannot_reject_or_disambiguate`,
+  `test_library_only_control_and_actual_missing_local_resources`,
+  `test_inconsistent_same_key_references_never_pass_in_either_order`,
+  `test_context_dependent_constituent_cannot_be_reused_without_its_context`,
+  `test_active_valency_cannot_license_passive_constructions`). Those fixtures do
+  not establish that a production exhaustive library/sense source is installed.
+- [form_recipes_test](../tests/unit/form_recipes_test.py) contrasts finite regular
+  cells and rejected incomplete/inapplicable targets. This tests proposals, not
+  independently established paradigm applicability.
+  [phrase_recipes_test](../tests/integration/phrase_recipes_test.py) preserves
+  ambiguous readings and withholds a single-case guess; English requires its own
+  accepted reference and isolated possibilities are not contextual evidence.
+  Those are legitimate reference-guided alternatives, not an installed automatic
+  `compatible_alternatives` semantic producer.
+- [grammar_pipeline_test](../tests/integration/grammar_pipeline_test.py)
+  `test_public_controlled_families` uses `install_synthetic`/`prove_cards`.
+  Its passing cards, production positives and sibling/installed-checker fixtures
+  prove rendering/gate/invalidation behavior under injected authority, not real
+  automatic producers. `test_source_bound_rule_keeps_library_objections` injects
+  analyzer states only: contradiction fails, unavailable stays unresolved,
+  unsupported does not veto the narrow source rule. Do not cite that as an actual
+  installed-library contradiction. The actual missing-resource test above is
+  separate. `test_bound_human_authority_is_distinct_from_automatic_policy` and
+  [acceptance_adapters_test](../tests/integration/acceptance_adapters_test.py)
+  cover bound human authority and added-clause/missing-review refusals.
+- [curated_cards_test](../tests/integration/curated_cards_test.py)
+  `test_saved_grammar_study_integrates_production_without_approval_substitution`
+  exercises shared profiles and linked curated rehearsal while production stays
+  withheld without its own authority. Its later injected production human decision
+  is an engineering fixture, not a native approved baseline.
+  `test_export_requires_both_exact_approvals`,
+  `test_every_displayed_mnemonic_needs_language_specific_approval` and
+  `test_formation_target_edit_requires_new_rendered_review` pin the separate rule,
+  rendered-card and mnemonic requirements and changed-target refusal.
+
+### Isolated evaluator: absent implementation and proposed contract
+
+The inspected application has no research-only would-accept classifier.
+The only `would_accept` occurrence in source/tests is fabricated JSON in
+`acceptance_test.test_public_reader_never_exports_disabled_or_evaluation_results`,
+which verifies rejection, not evaluation. `AcceptanceReader.decide_automatic` is
+the production reader; `assess` applies installed policy authority. Bypassing or
+monkeypatching that registry is not the permitted isolated evaluator.
+
+FOLLOW-UP PROPOSAL E below would introduce an explicitly versioned research record
+(proposed `latinitas-research-classification/1`, not an existing schema). Freeze
+candidate code/data, exact policy scope/criteria, support registry, comparison,
+bindings, versions, source rights and input manifest. Retain the complete card's
+assertions, every check/result/applicability reason, required coverage, actual blind
+requests/output/stage commitments, alternatives, objections and failures. Classify
+`would_accept`, `would_withhold`, or `unscorable`; distinguish missing evidence,
+processing failure and contradiction. No stored accepted decision, human origin
+conversion, ordinary learning CSV or import-ready handoff may result. Research
+classification separates candidate semantic sufficiency from production authority;
+it must not discard checks, treat unknown applicability as success, or reinterpret
+matching model prose as truth. All original unsupported siblings still withhold.
+
+Reuse the underlying check-envelope, coverage, source-comparison and recursive
+proof-validation semantics of `acceptance.assess`/`AcceptanceReader` and the
+orchestration readers; isolate authorization rather than copying a weakened gate.
+The exact extraction/API remains a follow-up design decision. Independent fidelity
+validation must compare per-assertion reasons and whole-card classifications on
+lawful source-grounded positive, incomplete, contradictory and ambiguous development
+cases, including altered saved requests/graphs. Ordinary disabled-policy preview,
+decision, replay and export must still deny the same cards. Synthetic enabled
+registry fixtures cannot qualify fidelity. This validation precedes any T200 study
+freeze; classification alone does not establish reference truth or enablement.
+
+### Bounded follow-up proposals (unallocated)
+
+These proposals are separately verifiable, not new Taskrail IDs or assignments.
+All are anchored to [shared evidence](../specs/v0.5.0.md#shared-evidence-and-automatic-acceptance);
+E also depends on [confidence calibration](../specs/v0.5.0.md#domain-specific-confidence-calibration).
+All depend on this inventory and preserve disabled policy, full sibling coverage,
+curated human approvals and explicit unsupported outcomes. No reference acquisition,
+protected study or hosted call is authorized by these proposals. Before using a new
+reference, establish lawful rights, exact edition/locator/digest, applicability and
+independent expected outcomes; currently no qualified broad reference is established.
+
+- **A — Morphology/applicability and derived cells.** Owners: `deck_evidence`,
+  `latin_library`, `form_recipes`, `pipeline_consumers`, orchestration integration.
+  Supply bound paradigm/exception evidence and independent generated-cell checking
+  for the actual supported verb/noun/adjective cells, not just regular anchor shapes.
+  Positive: independently supported amāre → amāmus and asymmetric noun/adjective
+  case/number/gender cells. Negative: dō/dāre must not acquire dāmus, missing voice
+  or incomplete/non-exhaustive readings cannot pass. Checkpoint: public pipeline
+  persists/reconstructs applicability and surface checks, invalidates changed
+  reference/checker bytes and withholds every still-unsupported sibling.
+- **B — Segmentation and contextual PPP/cloze.** Owners: `form_recipes`,
+  `phrase_inputs`, `deck_evidence`, renderers and source comparison. Depends on A
+  where generated cells are used. Supply named segmentation conventions, component
+  roles, reconstruction/sound changes and explicit source-bound PPP/context targets.
+  Positive: independently supported alternative puell- + -ārum / puellā- + -rum
+  conventions, confirmed PPP in a disambiguating context. Negative: unsupported
+  segmentation, supine-as-PPP, isolated case guesses or answer-revealing cues.
+  Checkpoint: retain qualified alternatives without inventing equivalence; contextual
+  recognition/cloze and rendered stem clauses have complete evidence or withhold.
+- **C — Lexical sense, government and controlled construction.** Owners:
+  `latin_library`, `deck_evidence.analyze_deck`/`analyze_construction`, `phrase_inputs`,
+  pipeline analysis/comparison integration. Depends on A/B for affected constituents.
+  Supply rights-qualified lexical/sense/voice-specific valency evidence and connect
+  actual constituent proofs to pipeline phrase checks, not run-supplied truth.
+  Positive: supported fixed-government and all four construction families with exact
+  senses. Negative: dual government without context, inconsistent same-key sources,
+  passive licensed only by active valency, missing constituent or stale source.
+  Checkpoint: public phrase journey reconstructs each constituent plus construction;
+  lexical/semantic ambiguity is retained and all dependent cards withhold on a gap.
+- **D — Translation, explanation and complete-card semantic coverage.** Owners:
+  `form_recipes`, `phrase_recipes`, `semantic_comparison`, providers/orchestration
+  and shared reader. Depends on A–C for asserted facts. Decompose rendered factual
+  clauses and supported meaning propositions by selected sense, features, language
+  and context. Compare legitimate supported alternatives independently of wording;
+  preserve proposal-free input and source/reference citations. Positive: independently
+  grounded German/English paraphrases with identical meaning and complete factual
+  clause coverage. Negative: agreeing wrong models, changed person/number/voice,
+  gloss overlap with different senses, true label plus false causal explanation,
+  omitted reading or unsupported sibling. Checkpoint: real public complete-card
+  evidence classifies discriminatingly while ordinary automatic CSV remains empty;
+  one positive cannot stand for untested recipes/materials/languages. Curated rule,
+  rendered-card and mnemonic approval remains human, not part of this automation.
+- **E — Isolated research classification and fidelity.** Owners: shared acceptance
+  semantics, orchestration proof readers and a research-only caller/record boundary
+  to be designed. Depends on A–D's required scoped producers for source-grounded
+  whole-card positives; record/denial plumbing can be prepared earlier but cannot
+  claim qualification. Implement the versioned contract above. Positive: qualified
+  development evidence produces would-accept classification without accepted output.
+  Negative: incomplete, stale, contradictory, ambiguous or tampered evidence,
+  disabled-policy learning export and fabricated research records fail closed.
+  Checkpoint: independent fixed-candidate public-boundary fidelity validation,
+  frozen code/config identities and denial controls before T200's separately
+  authorized reference/custody/feasibility/criteria/freeze gates. No study runs here.
+
+### Checker revisions and native baseline authority
+
+A genuine implementation pair already exists:
+[`068162e` (T227)](https://github.com/fmueller/latinitas-cards/commit/068162ed4dad216a9d82629fa2c99cacc1ec1a5d)
+→ direct child
+[`831e2ed` (T228)](https://github.com/fmueller/latinitas-cards/commit/831e2ede04de7e86cb6c39a079ffdf18b4107d07).
+T228 changed `acceptance.assess`, `AcceptanceReader` and the orchestration readers
+to reconstruct complete model proofs. Its task records independent review and
+checkpoint evidence. This is real checker/validator code, not a version-only bump.
+Historical source-byte reconstruction gives implementation digests
+`c06df46710a5e9427a5669f79303b9996027e6cbea30c6191d0a9a97a10a874c`
+and `6700c6620383723eeda71726d08ffd7bd2bcef2439d532c146c847f418842847`
+(the latter matches the T228 checkpoint). At this inventory's base the digest is
+`b0e433930e3ff1c5c6629c38d904bacc5f0b8a456460544eaaa2f08dc2359f97`.
+`acceptance_policy.implementation_digest` hashes all package Python except authority
+records; later executable changes also alter it. Digests alone do not prove a
+checker change, and these reconstructions are not installed-package attestations.
+
+The [v050 native kit](native-v050-acceptance.md#application-checker-revision-against-all-installed-batches-plannedblocked)
+remains planned/blocked: no genuinely reviewed/imported v050 accepted baseline,
+closed-database identity/history inventory or native replay on this pair is
+established here. T201 remains unexecuted. Historical
+[v040 native evidence](release-v0.4.0.md) exists, but is not v050 automatic authority
+or proof of populated review history. The installed-checker regression in
+`grammar_pipeline_test.test_installed_checker_change_covers_all_batches_and_corrupt_history_blocks`
+injects synthetic enabled authority, passing checks and a patched digest; it proves
+receipt/invalidation behavior, not native installation or genuine accepted truth.
+
+A genuinely reviewed human grammar baseline could test real checker-bound
+invalidation without automatic enablement: `assess` still binds human decisions
+to checker versions. That installed baseline and native execution are missing.
+An automatic baseline additionally requires supporting T200 evidence and separate
+maintainer enablement. A–D could supply genuine future checker changes, but none
+may invent a revision/digest just to exercise invalidation. No producer proposal
+substitutes for T201's actual native baseline/import/update/omission and history
+checks or for required curated approvals.
+
+### Execution limits retained
+
+This documentation task performs no hosted calls, campaign restoration, reference
+acquisition, protected-data access or judging. Revision55 remains the same campaign:
+four development calls remain charged, including the false silvae blind counter;
+no new budget or reliability claim follows. Guaranteed mode, rights/custody,
+disabled authority, T200/T201 lifecycle and the T205 publication stop are unchanged.
+No local Ollama or manual maintainer test is a prerequisite to this inventory.
+
 ## Outcome reports
 
 After `pipeline run` or `resume`, inspect the saved snapshot without provider calls:
