@@ -556,6 +556,32 @@ def test_wrong_complete_answers_do_not_self_corroborate(
         assert any(c.result != "pass" for c in checks)
         assert report["file_export"]["exported"] == 0 and len(sent) == 2
 
+        from latinitas_cards.research_classification import classify, read, save
+
+        record = classify(root)[0]
+        expected_ids = {"construction", "translation-0", "explanation-0", "roles-0", "rendered"}
+        if damage == "omitted-reading":
+            expected_ids |= {"translation-1", "explanation-1", "roles-1"}
+        assert {a.id for a in record.assertions} == expected_ids
+        assert {o.assertion_id for o in record.obligations} == expected_ids
+        assert record.classification == "would_withhold" and not record.failures
+        damaged_id = {
+            "translation": "translation-0",
+            "explanation": "explanation-0",
+            "roles": "roles-0",
+            "rendered-extra": "rendered",
+            "omitted-reading": "rendered",
+            "missing-sibling": "roles-0",
+            "sense": "translation-0",
+            "person": "construction",
+            "voice": "construction",
+            "source-sibling": "construction",
+        }[damage]
+        assert next(o for o in record.obligations if o.assertion_id == damaged_id).result == "withhold"
+        path = tmp_path / "research-negative.json"
+        save(path, record)
+        assert read(root, path) == record
+
 
 @pytest.mark.parametrize("language", ["en", "de"])
 def test_all_six_present_cells_have_bound_meaning_evidence(tmp_path: Path, language: str) -> None:

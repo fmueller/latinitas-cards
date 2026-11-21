@@ -892,7 +892,12 @@ def _automatic_objectives(source: Source, recipes: tuple[str, ...]) -> tuple[For
 
 
 def current_cards(
-    profile_path: Path, profile: PipelineProfile, objectives: Objectives, root: Path
+    profile_path: Path,
+    profile: PipelineProfile,
+    objectives: Objectives,
+    root: Path,
+    *,
+    resolve_decisions: bool = True,
 ) -> tuple[tuple[Rendered, ...], tuple[dict[str, str], ...]]:
     if profile.layout.id == "acceptance-1":
         require_installation(
@@ -1068,12 +1073,14 @@ def current_cards(
             reference = digest({"note": note_id, "card": key})
             analysis_path = root / "analyses" / (reference + ".json")
             revision = (
-                hashlib.sha256(analysis_path.read_bytes()).hexdigest() if analysis_path.exists() else "unanalysed"
+                hashlib.sha256(analysis_path.read_bytes()).hexdigest()
+                if resolve_decisions and analysis_path.exists()
+                else "unanalysed"
             )
             path = root / "decisions" / reference / (revision + ".json")
             claims = CardClaims(note_id, key, assertions, (DecisionSource(reader, path),))
             human_path = path.with_name("unanalysed.json")
-            if human_path.exists():
+            if resolve_decisions and human_path.exists():
                 try:
                     if load_acceptance(human_path).origin == "human":
                         decision, eligibility = reader.read(human_path)

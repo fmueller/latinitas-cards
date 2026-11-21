@@ -246,16 +246,9 @@ def assess(
             return result("binding_mismatch")
         # A human approval does not acquire or lose authority through automatic
         # policy changes. Its own check commitments remain exact and immutable.
-        evidence_versions = decision.versions if decision.origin == "human" else versions
-        model_checks = tuple(c for c in decision.checks if c.method in ("blind_model", "semantic_comparison"))
-        if model_checks:
-            if decision.origin != "automatic" or any(c.method == "human" for c in decision.checks):
-                return result("origin_mismatch")
-            from .pipeline_orchestration import read_acceptance_model_checks
-
-            expected_checks, proof_ids = read_acceptance_model_checks(root, binding, versions, assertions)
-            if not expected_checks or model_checks != expected_checks or not set(proof_ids) <= set(decision.stage_ids):
-                return result("stale_evidence")
+        reason = model_check_reason(decision, root, binding, versions, assertions)
+        if reason:
+            return result(reason)
         if decision.origin == "automatic":
             reason = policy_reason(versions, policy_revision, cells)
             if reason:
@@ -270,6 +263,47 @@ def assess(
             return result("human_approval_required")
         if decision.state != "accepted":
             return result(decision.reason)
+        return assess_evidence(
+            decision,
+            root=root,
+            binding=binding,
+            versions=versions,
+            assertions=assertions,
+            cells=cells,
+        )
+    except (ValueError, OSError, TypeError, KeyError):
+        return result("stale_evidence")
+
+
+def assess_evidence(
+    decision: Acceptance,
+    *,
+    root: Path,
+    binding: Binding,
+    versions: Versions,
+    assertions: tuple[Assertion, ...],
+    cells: tuple[ScopeCell, ...],
+) -> Eligibility:
+    """Validate evidence, never production authorization or a stored state flag."""
+
+    def result(reason: str) -> Eligibility:
+        return Eligibility(False, decision.origin, reason)
+
+    try:
+        decision = Acceptance.read_json(decision.model_dump_json())
+        evidence_versions = decision.versions if decision.origin == "human" else versions
+        exclusions = {"policy", "policy_sha256"} if decision.origin == "human" else set()
+        if (
+            decision.binding != binding
+            or decision.assertions != assertions
+            or decision.versions.model_dump(exclude=exclusions) != versions.model_dump(exclude=exclusions)
+        ):
+            return result("binding_mismatch")
+        reason = model_check_reason(decision, root, binding, versions, assertions)
+        if reason:
+            return result(reason)
+        if any(c.material == "curated/1" for c in cells):
+            return result("human_approval_required")
         stages = {identity: load_stage(root, identity) for identity in decision.stage_ids}
         for stage in stages.values():
             reusable_stage(
@@ -293,19 +327,20 @@ def assess(
             return result("unrepresentable_claim")
         current = {a.id: a for a in assertions}
         covered: set[str] = set()
+        nonpassing = False
         for check in decision.checks:
             if check.method in ("blind_model", "semantic_comparison"):
                 # Regeneration above verifies the complete pair and graph, not
                 # a run-supplied checker or the diagnostic's authority flag.
                 if check.result != "pass" or check.alternatives or check.objections:
-                    return result("incomplete_checks")
+                    nonpassing = True
                 covered.update(check.assertion_ids)
                 continue
             if check.method == "human" and decision.origin != "human":
                 return result("origin_mismatch")
             if decision.origin == "human" and check.method != "human":
                 return result("missing_human_check")
-            if check.version != versions.checker or check.result != "pass":
+            if check.version != versions.checker:
                 return result("stale_evidence")
             matches = [s for s in stages.values() if s.input_sha256 == check.input_sha256]
             if len(matches) != 1:
@@ -321,12 +356,32 @@ def assess(
             )
             if digest(envelope) != check.input_sha256 or digest(expected) != check.input_sha256:
                 return result("stale_evidence")
+            if check.result != "pass":
+                nonpassing = True
             covered.update(check.assertion_ids)
         if covered != set(current) or not covered:
             return result("incomplete_coverage")
+        if nonpassing:
+            return result("incomplete_checks")
         return Eligibility(True, decision.origin, "accepted")
     except (ValueError, OSError, TypeError, KeyError):
         return result("stale_evidence")
+
+
+def model_check_reason(
+    decision: Acceptance, root: Path, binding: Binding, versions: Versions, assertions: tuple[Assertion, ...]
+) -> str | None:
+    model_checks = tuple(c for c in decision.checks if c.method in ("blind_model", "semantic_comparison"))
+    if not model_checks:
+        return None
+    if decision.origin != "automatic" or any(c.method == "human" for c in decision.checks):
+        return "origin_mismatch"
+    from .pipeline_orchestration import read_acceptance_model_checks
+
+    expected_checks, proof_ids = read_acceptance_model_checks(root, binding, versions, assertions)
+    if not expected_checks or model_checks != expected_checks or not set(proof_ids) <= set(decision.stage_ids):
+        return "stale_evidence"
+    return None
 
 
 @dataclass(frozen=True)

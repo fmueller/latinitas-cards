@@ -192,14 +192,18 @@ actual request bodies, response artifacts, scope and current versions offline.
 Supported claims include the narrow context-free active -ō `present_1s` source-role
 label, [T234's finite attested target cells](#attested-morphology-evidence-t234), and
 [T235's named segmentations and exact citation contexts](#source-bound-components-and-contexts-t235).
+T237 adds bounded bilingual meaning, explanatory/role clauses and complete rendered
+projections for its finite form and phrase examples. These produce equivalent,
+contradictory, compatible-alternative, ambiguous or unresolved diagnostics without
+qualifying arbitrary prose or naturalness.
 With both answers and no open objections or unqualified alternatives, wrong
 features, components or cited contexts yield `contradiction`. Missing assertions,
 open objections, unqualified alternatives and unsupported classes/contexts remain
-`unresolved`. No supported alternative convention is installed, so the comparator
-does not manufacture `compatible_alternatives` results. Matching translation,
-unqualified segmentation, lexical/sense or explanatory prose supplies no evidence.
+`unresolved`. No additional segmentation convention is installed; compatible
+meaning alternatives are not evidence for such a convention. Matching unqualified
+translation, segmentation, lexical/sense or explanatory prose supplies no evidence.
 This does not verify arbitrary regular-paradigm applicability (including dō/dāre →
-dāmus), arbitrary prose, lexical truth or complete rendered answers.
+dāmus), arbitrary prose, lexical truth or arbitrary complete rendered answers.
 
 The proof is diagnostic, with `authorizes_acceptance: false`; it is not a generic
 model-acceptance envelope. The shared acceptance reader now reconstructs model
@@ -207,9 +211,9 @@ checks for the complete original card from current mapped sources, actual saved
 requests/outputs and the verified stage graph. It retains the original whole-task
 blind check and every semantic partner, including unresolved siblings. Blind-only
 checks, trimmed assertion sets and edited/detached proofs cannot replace that set.
-Verified proof structure is not eligibility: the supported target remains a
-diagnostic positive while unsupported lexical, translation and rendered assertions
-withhold the whole card. Policy authority is checked separately and ordinary
+Verified proof structure is not eligibility: bounded complete-card positives remain
+research diagnostics, and every unsupported lexical, translation or rendered sibling
+still withholds the whole card. Policy authority is checked separately and ordinary
 automatic learning export stays disabled. Other producer classes still need
 class-specific evidence contracts and separately lawful, qualified reference data.
 Offline synthetic transport tests are engineering checks, not product evaluation
@@ -333,17 +337,72 @@ These focused tests pin different boundaries; they are not interchangeable proof
   `test_formation_target_edit_requires_new_rendered_review` pin the separate rule,
   rendered-card and mnemonic requirements and changed-target refusal.
 
-### Isolated evaluator: absent implementation and proposed contract
+### Isolated evaluator: development-only research contract
 
-The inspected application has no research-only would-accept classifier.
-The only `would_accept` occurrence in source/tests is fabricated JSON in
-`acceptance_test.test_public_reader_never_exports_disabled_or_evaluation_results`,
-which verifies rejection, not evaluation. `AcceptanceReader.decide_automatic` is
-the production reader; `assess` applies installed policy authority. Bypassing or
-monkeypatching that registry is not the permitted isolated evaluator.
+`latinitas_cards.research_classification` provides a public Python boundary over
+an existing pipeline run. `classify(root)` reconstructs every current card from
+the saved profile and source, then reloads analysis, both blind invocations and
+the recursive source-comparison proof. It never dispatches inference or changes
+the installed registry. `save(path, record)` writes an exclusive research file;
+`read(root, path)` reconstructs and compares the complete record, not its flag.
 
-FOLLOW-UP PROPOSAL E below would introduce an explicitly versioned research record
-(proposed `latinitas-research-classification/1`, not an existing schema). Freeze
+```python
+from pathlib import Path
+from latinitas_cards.research_classification import classify, read, save
+
+root = Path("workflow/run")
+for index, record in enumerate(classify(root)):
+    path = Path("research") / f"card-{index}.json"
+    save(path, record)
+    assert read(root, path) == record
+```
+
+The schema is `latinitas-research-classification`, integer version 1. Its fixed
+`development-complete-evidence/1` criteria are development checks, not approved
+statistical study thresholds. `would_accept` means every assertion has source
+evidence, complete blind and semantic checks, no open alternatives or objections,
+and passes shared evidence validation. `would_withhold` retains missing evidence,
+contradictions, ambiguous/compatible interpretations and unsupported siblings.
+`unscorable` retains known assertion slots when saved evidence cannot be processed
+or validated. An invalid source/run inventory raises rather than inventing slots;
+the study caller must retain that failed input separately. Unscorable files can
+be saved for diagnosis but cannot be reused by `read`.
+
+Each record retains the full assertions, per-assertion scope cells and obligations,
+all relevant individual checks/applicability outcomes, reasons, alternatives,
+objections and processing failures. It binds the implementation, support registry,
+versions, policy identity, exact scope and criteria, source/input/config binding
+and recursive stage commitments to actual saved requests and outputs. Source rights
+and reference commitments remain in those checked source and evidence records.
+The evidence validator is shared with `acceptance.assess`; only production
+`assess` applies policy authority and stored decision-state requirements.
+
+No research file is an acceptance decision or human approval. The ordinary
+preview/decision/reuse/export boundaries still require the installed production
+policy; the stock disabled policy emits zero learning rows even for research
+positives. The finite T237 reference and producer limits above remain in force:
+six present-active amō cells and four exact phrase families in German/English,
+not general Latin semantics, naturalness, real hosted inference or native Anki.
+
+T238's independent installed checkpoint matched 22 development oracle cases over
+120 assertion slots and passed 15 named integrity/restoration controls. Its ten
+bilingual positives cover **amō first singular only** and the four phrase families,
+not six complete form-cell journeys. Eleven overlapping positive-store denial
+checks produced zero learning CSV rows. Contradictory or unresolved non-rendered
+siblings also withhold the aggregate rendered projection; unchanged rendered text
+alone is insufficient. The original text-only oracle mismatch and subsequent
+prospective correction remain recorded rather than retroactively counted as a pass.
+
+The checkpoint reused an identical isolated wheel and offline dependencies, not a
+fresh dependency solve. Fresh synthetic local HTTP used an explicitly injected
+length-based input-token bound; no semantic, policy or saved-reader patch was used.
+Stock dispatch still denies missing token bounds. Explicit `resume --offline`
+still denies export but stales the previous research record; exact original-store
+restoration permits saved reuse again. These are development limits, not study or
+hosted/native qualification.
+
+The allocated implementation of proposal E below introduces the research record
+(`latinitas-research-classification/1`). Freeze
 candidate code/data, exact policy scope/criteria, support registry, comparison,
 bindings, versions, source rights and input manifest. Retain the complete card's
 assertions, every check/result/applicability reason, required coverage, actual blind
@@ -358,7 +417,8 @@ matching model prose as truth. All original unsupported siblings still withhold.
 Reuse the underlying check-envelope, coverage, source-comparison and recursive
 proof-validation semantics of `acceptance.assess`/`AcceptanceReader` and the
 orchestration readers; isolate authorization rather than copying a weakened gate.
-The exact extraction/API remains a follow-up design decision. Independent fidelity
+The extraction is `acceptance.assess_evidence`; production policy authorization
+remains in `acceptance.assess`. Independent fidelity
 validation must compare per-assertion reasons and whole-card classifications on
 lawful source-grounded positive, incomplete, contradictory and ambiguous development
 cases, including altered saved requests/graphs. Ordinary disabled-policy preview,
@@ -419,11 +479,12 @@ independent expected outcomes; currently no qualified broad reference is establi
   one positive cannot stand for untested recipes/materials/languages. Curated rule,
   rendered-card and mnemonic approval remains human, not part of this automation.
 - **E — Isolated research classification and fidelity.** Owners: shared acceptance
-  semantics, orchestration proof readers and a research-only caller/record boundary
-  to be designed. Depends on A–D's required scoped producers for source-grounded
-  whole-card positives; record/denial plumbing can be prepared earlier but cannot
-  claim qualification. Implement the versioned contract above. Positive: qualified
-  development evidence produces would-accept classification without accepted output.
+  semantics, orchestration proof readers and the `research_classification` public
+  caller/versioned records implemented in T238. Depends on A–D's scoped producers
+  for source-grounded whole-card positives; record/denial plumbing can be prepared
+  earlier but cannot claim qualification. T238 implements the versioned contract
+  above. Positive: qualified development evidence produces would-accept
+  classification without accepted output.
   Negative: incomplete, stale, contradictory, ambiguous or tampered evidence,
   disabled-policy learning export and fabricated research records fail closed.
   Checkpoint: independent fixed-candidate public-boundary fidelity validation,
