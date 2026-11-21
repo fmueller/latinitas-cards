@@ -88,7 +88,8 @@ def test_ci_test_stages_are_sequential_and_disjoint() -> None:
     ):
         job = jobs[f"{stage}-tests"]
         assert f"    needs: [changes, {predecessor}]\n" in job
-        assert f"        run: uv run pytest -v tests/{stage}\n" in job
+        workers = " -n 2 --dist=loadfile" if stage == "integration" else ""
+        assert f"        run: uv run pytest -v{workers} tests/{stage}\n" in job
         assert '        python-version: ["3.13", "3.14"]' in job
         assert "    if: needs.changes.outputs.full == 'true'\n" in job
         assert f"{stage}-tests" in jobs["build-result"]

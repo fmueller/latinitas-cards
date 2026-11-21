@@ -76,6 +76,11 @@ def test_research_complete_card_and_denial(
     assert damaged.failures
     with pytest.raises(ValueError):
         read(root, destination)
+    if family == "form" and language == "de":
+        unscorable = tmp_path / "unscorable.json"
+        save(unscorable, damaged)
+        with pytest.raises(ValueError, match="unscorable"):
+            read(root, unscorable)
     response.write_bytes(before)
     assert read(root, destination) == record
     if family == "form" and language == "de":

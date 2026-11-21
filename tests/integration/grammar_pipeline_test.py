@@ -2510,6 +2510,7 @@ def test_attested_paradigm_accepts_compatible_partial_anchor_features(tmp_path: 
 def test_changed_reference_invalidates_saved_derived_evidence(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str
 ) -> None:
+    import os
     import shutil
 
     from latinitas_cards import latin_library
@@ -2537,11 +2538,16 @@ def test_changed_reference_invalidates_saved_derived_evidence(
     root = output / "run"
     parsed = PipelineProfile.read_json(profile.read_bytes())
     cards, _ = current_cards(profile, parsed, load_run(root).objectives, root)
-    analysis = Analysis.read_json(cards[0].analysis_path.read_bytes())
+    analysis_bytes = cards[0].analysis_path.read_bytes()
+    analysis = Analysis.read_json(analysis_bytes)
     assert next(c for c in analysis.checks if c.id == "target").result == "pass"
     assert _analysis_decision(cards[0]).state == "withheld"
+    original_reference = reference.read_bytes()
+    original_stat = reference.stat()
     if damage == "changed":
-        reference.write_bytes(reference.read_bytes() + b"\n")
+        assert b"sumus" in original_reference
+        reference.write_bytes(original_reference.replace(b"sumus", b"sunt ", 1))
+        os.utime(reference, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
     else:
         reference.unlink()
     assert policies.implementation_digest() != original_digest
@@ -2549,6 +2555,22 @@ def test_changed_reference_invalidates_saved_derived_evidence(
     assert current[0].versions != cards[0].versions
     with pytest.raises(ValueError, match="stale analysis context"):
         _analysis_decision(current[0])
+    replacement = reference.with_suffix(".restored")
+    replacement.write_bytes(original_reference)
+    replacement.replace(reference)
+    assert policies.implementation_digest() == original_digest
+    restored, _ = current_cards(profile, parsed, load_run(root).objectives, root)
+    assert restored[0].versions == cards[0].versions
+    assert Analysis.read_json(restored[0].analysis_path.read_bytes()) == analysis
+    replay = call("stage", "analyze", "--run", str(root))
+    rows = replay["stages"]["analyze"]
+    assert rows and all(row["reuse"] == "reused" for row in rows)
+    assert restored[0].analysis_path.read_bytes() == analysis_bytes
+    assert _analysis_decision(restored[0]).state == "withheld"
+    if damage == "changed":
+        reference.write_bytes(original_reference.replace(b"sumus", b"sunt ", 1))
+    else:
+        reference.unlink()
     report = call("resume", "--run", str(root), "--offline")
     updated = Analysis.read_json(current[0].analysis_path.read_bytes())
     assert updated.versions == current[0].versions

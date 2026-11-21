@@ -219,6 +219,7 @@ planning/artifacts/
 
 # Mutation testing state
 mutants/
+mutation/runs/
 
 # Orb portal metadata
 .amp/portals/*

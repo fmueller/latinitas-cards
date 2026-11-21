@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import html
 import re
+from functools import lru_cache
 from html.parser import HTMLParser
 
 _BLOCK_TAGS = frozenset(
@@ -200,6 +201,7 @@ def source_html_readable_spans(value: str) -> list[tuple[str, int, int]]:
     return result
 
 
+@lru_cache(maxsize=256)
 def source_html_to_text(value: str) -> str:
     """Convert untrusted source HTML to readable plain text without active markup.
 
@@ -208,7 +210,8 @@ def source_html_to_text(value: str) -> str:
     entity-encoded, the decoded text is parsed a second time without further
     decoding, so encoded comments, scripts, and styles are removed and encoded
     block tags still become line boundaries.  The result is plain text that
-    still needs escaping before HTML output.
+    still needs escaping before HTML output. Only exact input strings share
+    results; callers still read and verify current source/reference bytes.
     """
     if not value:
         return value

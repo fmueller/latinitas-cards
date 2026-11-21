@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.13, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32' and extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu'",
@@ -269,7 +269,7 @@ name = "cuda-bindings"
 version = "13.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cuda-pathfinder", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "cuda-pathfinder", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/38/cf/165b4d449f94956c2a60930cf5dfeb27132ead60a7e7f2c37819df1cba07/cuda_bindings-13.4.1-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b601c0cbf0dffb648f68e56a60b320738a20210293f33896a1964a6438cc65f1", size = 6313772, upload-time = "2026-09-10T01:17:03.969Z" },
@@ -304,43 +304,43 @@ wheels = [
 
 [package.optional-dependencies]
 cublas = [
-    { name = "nvidia-cublas", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-cuda-nvrtc", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cublas", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cuda-nvrtc", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 cudart = [
-    { name = "nvidia-cuda-runtime", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cuda-runtime", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 cufft = [
-    { name = "nvidia-cufft", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cufft", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvjitlink", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 cufile = [
-    { name = "nvidia-cufile", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cufile", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 cupti = [
-    { name = "nvidia-cuda-cupti", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cuda-cupti", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 curand = [
-    { name = "nvidia-curand", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-curand", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 cusolver = [
-    { name = "nvidia-cublas", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-cusolver", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-cusparse", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cublas", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cusolver", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cusparse", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvjitlink", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 cusparse = [
-    { name = "nvidia-cusparse", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cusparse", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvjitlink", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 nvjitlink = [
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvjitlink", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 nvrtc = [
-    { name = "nvidia-cuda-nvrtc", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cuda-nvrtc", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 nvtx = [
-    { name = "nvidia-nvtx", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvtx", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'aarch64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform != 'linux' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 
 [[package]]
@@ -350,6 +350,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a2/78/0d2db9382c92a163d7095fc08efff7800880f830a152cfced40161e7638d/emoji-2.15.0.tar.gz", hash = "sha256:eae4ab7d86456a70a00a985125a03263a5eac54cd55e51d7e184b1ed3b6757e4", size = 615483, upload-time = "2025-09-21T12:13:02.755Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e1/5e/4b5aaaabddfacfe36ba7768817bd1f71a7a810a43705e531f3ae4c690767/emoji-2.15.0-py3-none-any.whl", hash = "sha256:205296793d66a89d88af4688fa57fd6496732eb48917a87175a023c8138995eb", size = 608433, upload-time = "2025-09-21T12:13:01.197Z" },
+]
+
+[[package]]
+name = "execnet"
+version = "2.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bf/89/780e11f9588d9e7128a3f87788354c7946a9cbb1401ad38a48c4db9a4f07/execnet-2.1.2.tar.gz", hash = "sha256:63d83bfdd9a23e35b9c6a3261412324f964c2ec8dcd8d3c6916ee9373e0befcd", size = 166622, upload-time = "2025-11-12T09:56:37.75Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/84/02fc1827e8cdded4aa65baef11296a9bbe595c474f0d6d758af082d849fd/execnet-2.1.2-py3-none-any.whl", hash = "sha256:67fba928dd5a544b783f6056f449e5e3931a5c378b128bc18501f7ea79e296ec", size = 40708, upload-time = "2025-11-12T09:56:36.333Z" },
 ]
 
 [[package]]
@@ -511,6 +520,7 @@ dev = [
     { name = "mypy" },
     { name = "pandas-stubs" },
     { name = "pytest" },
+    { name = "pytest-xdist" },
     { name = "ruff" },
 ]
 
@@ -532,10 +542,11 @@ provides-extras = ["annotate", "annotate-gpu"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "mutmut", specifier = ">=3.8.0,<4" },
+    { name = "mutmut", specifier = "==3.8.1" },
     { name = "mypy", specifier = ">=1.19.1,<3" },
     { name = "pandas-stubs", specifier = ">=2.2,<4" },
     { name = "pytest", specifier = ">=9.0.2,<10" },
+    { name = "pytest-xdist", specifier = "==3.8.0" },
     { name = "ruff", specifier = ">=0.15.5,<0.18" },
 ]
 
@@ -544,8 +555,8 @@ name = "libcst"
 version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyyaml", marker = "python_full_version >= '3.14'" },
-    { name = "pyyaml-ft", marker = "python_full_version < '3.14'" },
+    { name = "pyyaml", marker = "python_full_version >= '3.14' or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "pyyaml-ft", marker = "python_full_version < '3.14' or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/02/c0/098e5c91ff1537f00c85a6438b6cb1863d17144680cc91f47c87f104a200/libcst-1.9.0.tar.gz", hash = "sha256:087b58a9afe076bb08e2d726478e1f16cb928d67ffa9092817e033c335de522a", size = 914739, upload-time = "2026-07-29T21:28:43.153Z" }
 wheels = [
@@ -737,7 +748,7 @@ wheels = [
 
 [[package]]
 name = "mutmut"
-version = "3.8.0"
+version = "3.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -747,9 +758,9 @@ dependencies = [
     { name = "setproctitle" },
     { name = "textual" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/30/b334a22184026d92a7549c8a76ad1d397ea65a6f8534ef486556ab861c70/mutmut-3.8.0.tar.gz", hash = "sha256:bc670276518f893ab356f1d28826c49b7e606e7cf89c300e3888c0b52fc1d2ed", size = 83631, upload-time = "2026-09-12T16:53:58.138Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/46/2b92ba15645575501fced5c930bd61afbf0dcf5878fcd53615d20f8b838d/mutmut-3.8.1.tar.gz", hash = "sha256:9fb7cfc23caabff22a938e33b8d34317f5fa79b1deab82642cd5e014f3f400aa", size = 87451, upload-time = "2026-10-28T07:54:39.055Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/2a/a9904a45804c1de50c0c3baad1512b78d5b66d2befd841104b8a62bf0f35/mutmut-3.8.0-py3-none-any.whl", hash = "sha256:4c0abcef6b8d1116f2adfaad19df12e1c621e4a402d4367ef15bf8cba497b91d", size = 81469, upload-time = "2026-09-12T16:53:56.906Z" },
+    { url = "https://files.pythonhosted.org/packages/18/0d/1885a8307b845e5b44ddf568939900819653e0168356ab94ed670b0e7ed0/mutmut-3.8.1-py3-none-any.whl", hash = "sha256:e424d72c0557b6a52a721d9b71e2d18eb9590af746db0bbad50b71e8d4d8ed78", size = 82376, upload-time = "2026-10-28T07:54:36.982Z" },
 ]
 
 [[package]]
@@ -758,7 +769,7 @@ version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ast-serialize" },
-    { name = "librt", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "mypy-extensions" },
     { name = "pathspec" },
     { name = "typing-extensions" },
@@ -850,7 +861,7 @@ name = "nvidia-cublas"
 version = "13.1.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cuda-nvrtc", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cuda-nvrtc", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/a1/0bd24ee8c8d03adac032fd2909426a00c88f8c57961b1277ded97f91119f/nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:b7a210458267ac818974c53038fbec2e969d5c99f305ab15c72522fa9f001dd5", size = 542848918, upload-time = "2026-04-08T18:46:22.985Z" },
@@ -893,7 +904,7 @@ name = "nvidia-cudnn-cu13"
 version = "9.24.0.43"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cublas", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/30/7c257e3d5cb4fecb147b93895c66e29c93f8e76d74b45bb418ff0587c4ec/nvidia_cudnn_cu13-9.24.0.43-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:a6812a554a1ff0413e9c52b84c26c050380649ab9615f9c16bded368ce9f421f", size = 650976863, upload-time = "2026-07-02T16:23:39.248Z" },
@@ -906,7 +917,7 @@ name = "nvidia-cufft"
 version = "12.0.0.61"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvjitlink", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/ae/f417a75c0259e85c1d2f83ca4e960289a5f814ed0cea74d18c353d3e989d/nvidia_cufft-12.0.0.61-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:2708c852ef8cd89d1d2068bdbece0aa188813a0c934db3779b9b1faa8442e5f5", size = 214053554, upload-time = "2025-09-04T08:31:38.196Z" },
@@ -938,9 +949,9 @@ name = "nvidia-cusolver"
 version = "12.0.4.66"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-cusparse", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "nvidia-nvjitlink", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cublas", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-cusparse", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvjitlink", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/c3/b30c9e935fc01e3da443ec0116ed1b2a009bb867f5324d3f2d7e533e776b/nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:02c2457eaa9e39de20f880f4bd8820e6a1cfb9f9a34f820eb12a155aa5bc92d2", size = 223467760, upload-time = "2025-09-04T08:33:04.222Z" },
@@ -953,7 +964,7 @@ name = "nvidia-cusparse"
 version = "12.6.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "nvidia-nvjitlink", marker = "(sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'emscripten' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'win32' and extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f8/94/5c26f33738ae35276672f12615a64bd008ed5be6d1ebcb23579285d960a9/nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:80bcc4662f23f1054ee334a15c72b8940402975e0eab63178fc7e670aa59472c", size = 162155568, upload-time = "2025-09-04T08:33:42.864Z" },
@@ -1054,7 +1065,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "python-dateutil" },
-    { name = "tzdata", marker = "sys_platform == 'emscripten' or sys_platform == 'win32'" },
+    { name = "tzdata", marker = "sys_platform == 'emscripten' or sys_platform == 'win32' or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/55/b1/a10c0d1a7e3ce44eb42635771004aa503e3b9ddde0bd39c524dda65f7eff/pandas-3.1.0.tar.gz", hash = "sha256:ecb9b2d8a817b1e1ba1fdb90c0abe9eab31b4fdf2562b7a56b86ac66ace17e49", size = 5933421, upload-time = "2026-10-22T11:57:03.087Z" }
 wheels = [
@@ -1224,7 +1235,7 @@ name = "pytest"
 version = "9.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
@@ -1233,6 +1244,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/79/42/bb4641652e58dedeac2ec51abc1f8cae4fee4ec63899a0999016229a0f2a/pytest-9.2.0.tar.gz", hash = "sha256:97c4f3b1f3c7414aa36465e09b8220f1d03627993bd51b1282e193753c80557b", size = 1797555, upload-time = "2026-10-27T21:30:20.728Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/51/39/1f5d8c8877a0fa327db959c19341d4be61660de1ab6b7391f9eb805bcd67/pytest-9.2.0-py3-none-any.whl", hash = "sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588", size = 411776, upload-time = "2026-10-27T21:30:19.131Z" },
+]
+
+[[package]]
+name = "pytest-xdist"
+version = "3.8.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "execnet" },
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/78/b4/439b179d1ff526791eb921115fca8e44e596a13efeda518b9d845a619450/pytest_xdist-3.8.0.tar.gz", hash = "sha256:7e578125ec9bc6050861aa93f2d59f1d8d085595d6551c2c90b6f4fad8d3a9f1", size = 88069, upload-time = "2025-07-01T13:30:59.346Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/31/d4e37e9e550c2b92a9cbc2e4d0b7420a27224968580b5a447f420847c975/pytest_xdist-3.8.0-py3-none-any.whl", hash = "sha256:202ca578cfeb7370784a8c33d6d05bc6e13b4f25b5053c30a152269fd10f0b88", size = 46396, upload-time = "2025-07-01T13:30:56.632Z" },
 ]
 
 [[package]]
@@ -1529,7 +1553,7 @@ dependencies = [
     { name = "platformdirs" },
     { name = "protobuf" },
     { name = "requests" },
-    { name = "torch", version = "2.14.1", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
+    { name = "torch", version = "2.14.1", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "torch", version = "2.14.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "tqdm" },
     { name = "udtools" },
@@ -1594,18 +1618,18 @@ resolution-markers = [
 dependencies = [
     { name = "cuda-bindings", marker = "(sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "cuda-toolkit", extra = ["cublas", "cudart", "cufft", "cufile", "cupti", "curand", "cusolver", "cusparse", "nvjitlink", "nvrtc", "nvtx"], marker = "(sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "filelock", marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
-    { name = "fsspec", marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
-    { name = "jinja2", marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
-    { name = "networkx", marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
+    { name = "filelock", marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "fsspec", marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "jinja2", marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "networkx", marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "nvidia-cudnn-cu13", marker = "(sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "nvidia-cusparselt-cu13", marker = "(sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "nvidia-nccl-cu13", marker = "(sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "nvidia-nvshmem-cu13", marker = "(sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "setuptools", marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
-    { name = "sympy", marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
+    { name = "setuptools", marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
+    { name = "sympy", marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "triton", marker = "(sys_platform == 'linux' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
-    { name = "typing-extensions", marker = "(sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or extra == 'extra-15-latinitas-cards-annotate-gpu'" },
+    { name = "typing-extensions", marker = "(sys_platform != 'darwin' and extra == 'extra-15-latinitas-cards-annotate-gpu') or (sys_platform == 'darwin' and extra == 'extra-15-latinitas-cards-annotate') or (extra != 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7d/11/faaca4f8541c45127b7e0d6bb141221fe944c8466d89986b8466c6c195f9/torch-2.14.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:dbe359d705f4d67236743794c296c6dee93a922fd8117eff8c3e880d7d0fb2b9", size = 127315286, upload-time = "2026-09-30T17:52:27.43Z" },
@@ -1690,7 +1714,7 @@ version = "0.27.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-15-latinitas-cards-annotate' and extra == 'extra-15-latinitas-cards-annotate-gpu')" },
     { name = "rich" },
     { name = "shellingham" },
 ]

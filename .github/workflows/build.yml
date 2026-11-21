@@ -159,7 +159,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --dev
       - name: Run integration tests
-        run: uv run pytest -v tests/integration
+        run: uv run pytest -v -n 2 --dist=loadfile tests/integration
 
   e2e-tests:
     name: E2E Tests (Python ${{ matrix.python-version }})

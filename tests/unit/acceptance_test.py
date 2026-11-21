@@ -165,9 +165,20 @@ def test_human_roundtrip_staleness_and_artifact_integrity(tmp_path: Path) -> Non
 def test_strict_record(tmp_path: Path, change: dict[str, object]) -> None:
     decision = candidate(tmp_path)
     path = tmp_path / "bad.json"
+    save_acceptance(path, decision)
+    original = path.read_bytes()
+    assert load_acceptance(path) == decision
     path.write_text(json.dumps({**decision.model_dump(mode="json"), **change}))
     with pytest.raises(ValueError):
         load_acceptance(path)
+    path.write_bytes(original)
+    assert load_acceptance(path) == decision
+
+
+def test_record_normalizes_literal_surrogate_pairs(tmp_path: Path) -> None:
+    raw = candidate(tmp_path).binding.model_dump_json().replace('"amo"', '"\ud83d\ude00"')
+    for _ in range(2):
+        assert Binding.read_json(raw).source_identity == "\U0001f600"
 
 
 def test_public_reader_never_exports_disabled_or_evaluation_results(tmp_path: Path) -> None:

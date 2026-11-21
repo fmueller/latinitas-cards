@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 from datetime import datetime
+from functools import lru_cache
 from typing import Annotated, Literal, Self, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
@@ -57,6 +58,15 @@ def decode_json(data: bytes | str) -> object:
     return json.loads(data, object_pairs_hook=unique, parse_float=finite_float, parse_constant=reject_constant)
 
 
+@lru_cache(maxsize=128)
+def _record_json(data: bytes | str, fields: frozenset[str]) -> bytes:
+    """Reuse immutable syntax normalization, never models or proof decisions."""
+    raw = decode_json(data)
+    if not isinstance(raw, dict) or set(raw) != fields:
+        raise ValueError("record requires exactly its versioned keys")
+    return canonical(raw)
+
+
 class Record(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -78,10 +88,7 @@ class Record(BaseModel):
 
     @classmethod
     def read_json(cls, data: bytes | str) -> Self:
-        raw = decode_json(data)
-        if not isinstance(raw, dict) or set(raw) != set(cls.model_fields):
-            raise ValueError("record requires exactly its versioned keys")
-        return cls.model_validate_json(canonical(raw))
+        return cls.model_validate_json(_record_json(data, frozenset(cls.model_fields)))
 
     @field_validator("version", mode="before", check_fields=False)
     @classmethod
