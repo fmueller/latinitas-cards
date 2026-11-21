@@ -7,7 +7,7 @@ from typing import Literal
 from .acceptance import check_envelope
 from .acceptance_records import Assertion, Check, decode_json, digest
 from .phrase_inputs import Features
-from .pipeline_consumers import Rendered, Source, source_form_claims
+from .pipeline_consumers import Rendered, Source, source_claims
 from .providers import Call, ModelAnswer, ModelTask
 
 VERSION = "source-role-comparison/1"
@@ -20,6 +20,8 @@ def _content(assertion: Assertion) -> dict[str, object] | None:
         value = decode_json(assertion.value)
         if assertion.kind == "segmentation":
             return value if isinstance(value, dict) else None
+        if assertion.id == "construction" and assertion.kind == "label" and isinstance(value, dict):
+            return value if set(value) == {"pattern", "components"} else None
         if not isinstance(value, dict) or set(value) not in (
             {"surface", "features", "source_role", "anchors", "rule"},
             {"surface", "features", "source_role", "anchors", "rule", "context"},
@@ -47,7 +49,7 @@ def compare_source_answers(
     """
     if proposal_call.response_sha256 is None or counter_call.response_sha256 is None:
         raise ValueError("missing actual output commitments")
-    expected, constraints, unsupported = source_form_claims(source, card.objective, card.versions)
+    expected, constraints, unsupported = source_claims(source, card.objective, card.versions)
     expected_ids = {a.id for a in card.claims.assertions}
     proposal_ids = [a.id for a in proposal.assertions]
     counter_ids = [a.id for a in counter.assertions]

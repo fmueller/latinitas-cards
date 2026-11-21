@@ -61,10 +61,10 @@ from .pipeline_consumers import (
     _form,
     _versions,
     current_cards,
-    form_rule_checks,
     load_run,
     load_source,
     preview,
+    rule_checks,
 )
 from .pipeline_profile import PipelineProfile, load_pipeline_profile
 from .pipeline_reporting import build_report, safe_snapshot
@@ -96,8 +96,8 @@ STAGES: tuple[StageName, ...] = (
 PREREQUISITES: dict[StageName, StageName] = {"analyze": "ingest", "propose": "analyze", "counter_check": "propose"}
 COVERAGE = (
     "Only supplied, confirmed source cells and finite rule recipes are enumerated. "
-    "Automatic rule checks verify mapped present_1s role consistency only, not independent "
-    "paradigm applicability or generated-cell correctness. "
+    "Independent Bennett diagnostics cover explicitly attested form/component/context cells and "
+    "constructed phrases over five English lexical readings, not arbitrary paradigms or exhaustive interpretation. "
     "Library morphology is not full rendered-clause/translation entailment. Unsupported assertions remain withheld; "
     "model agreement grants no authority. Human reviews remain separately bound; curated approvals require T196."
 )
@@ -237,7 +237,7 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
         record = source.records[identity]
         fields = source.deck.fields
         selected = []
-        lemma = record.fields.get(fields.lexical_entry_field, "")
+        lemma = source_html_to_text(record.fields.get(fields.lexical_entry_field, "")).strip()
         if fields.meaning_field is None:
             raise ValueError("confirmed meaning mapping required")
         cells = [
@@ -265,6 +265,17 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
         evidence.append(
             Evidence("confirmed-deck-mapping", source.scope + "/" + identity, "1", canonical(selected).decode())
         )
+        if not isinstance(objective, FormObjective):
+            supplied = canonical({"entry": entry, "identity": asdict(source.identities[identity])}).decode()
+            evidence.append(Evidence("unverified-phrase-entry", source.scope + "/" + identity, "1", supplied))
+            scopes.append(
+                Scope(
+                    source_identity=identity,
+                    fields=("phrase-input/entry",),
+                    spans=(Span(start=0, end=len(supplied)),),
+                    language=profile.language,
+                )
+            )
     registry = SupportRegistry.read_json(canonical(SUPPORT_REGISTRY))
     keys = next(e.target for e in registry.entries if e.recipe == card.recipe)
     features = objective.target if isinstance(objective, FormObjective) else None
@@ -295,6 +306,20 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
         ).decode()
     elif not isinstance(objective, FormObjective):
         pattern = next(p for p in source.data.patterns if p.key == objective.selection.pattern)
+        supplied_pattern = canonical(pattern).decode()
+        evidence.append(
+            Evidence(
+                "unverified-phrase-pattern", source.scope + "/" + card.binding.source_identity, "1", supplied_pattern
+            )
+        )
+        scopes.append(
+            Scope(
+                source_identity=card.binding.source_identity,
+                fields=("phrase-input/pattern",),
+                spans=(Span(start=0, end=len(supplied_pattern)),),
+                language=profile.language,
+            )
+        )
         request_objective = canonical(
             {
                 "recipe": card.recipe,
@@ -303,6 +328,7 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
                 "bindings": objective.selection.bindings,
                 "target": objective.target,
                 "distinction": objective.distinction,
+                "assertions": tuple({"id": a.id, "kind": a.kind} for a in card.claims.assertions),
             }
         ).decode()
     task = ModelTask(
@@ -334,7 +360,10 @@ def _stage(root: Path, state: Execution, card: Rendered, name: StageName, envelo
 
 def _analyze(root: Path, state: Execution, card: Rendered, source: Source) -> dict[str, object]:
     library = LocalStanza(Path(state.library_resources)) if state.library_resources else None
-    context = digest((card.binding, card.versions, card.claims.assertions, library.version if library else None))
+    independent = rule_checks(source, card, root)
+    context = digest(
+        (card.binding, card.versions, card.claims.assertions, library.version if library else None, independent)
+    )
     metadata_path = root / "analysis-contexts" / card.analysis_path.name
     if metadata_path.exists():
         metadata = decode_json(metadata_path.read_bytes())
@@ -387,7 +416,7 @@ def _analyze(root: Path, state: Execution, card: Rendered, source: Source) -> di
         except ValueError:
             library_state = "unsupported_library_task"
     stages, checks = [], []
-    for assertion, rule_check in zip(card.claims.assertions, form_rule_checks(source, card), strict=True):
+    for assertion, rule_check in zip(card.claims.assertions, independent, strict=True):
         evidence = tuple(dict.fromkeys((*rule_check.evidence, *constraints)))
         envelope = check_envelope(card.binding, card.versions, "rule", (assertion,), reference_constraints=evidence)
         stages.append(_stage(root, state, card, "analyze", envelope))

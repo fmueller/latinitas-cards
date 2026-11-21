@@ -614,6 +614,72 @@ Explicit `resume --offline` instead installs LLM-off active wrappers: historical
 proofs remain immutable, but active model checks are not preserved by that mode.
 Neither behavior grants export authority or is a T235 provider/accounting change.
 
+## Source-bound lexical and construction diagnostics (T236)
+
+Phrase recipes assert a structured `construction`, one translation, explanation
+and role-contribution assertion per reference reading, and the complete rendered
+front/back. Their supplied pattern, gloss, features and reference prose are input
+claims, not independent corroboration. `phrase_evidence.phrase_claims` now produces
+constituent `analyze_deck` reports and a composite `analyze_construction` report
+for the actual pipeline analysis. Source comparison and its immutable reader
+reconstruct the same proofs from current inputs and installed reference bytes.
+
+The installed `BennettLexicon` reads the already-retained 1918 *New Latin Grammar*
+HTML, including its original Project Gutenberg terms. Its exact byte digest and
+edition are recorded by `bennett_sections`; no additional reference was acquired.
+The lexical adapter's stable keys and exact English glosses are **gate** (`porta`,
+§20), **garden** (`hortus`, §23), **boy** (`puer`, §23), **good** (`bonus`, §63),
+and **love** (`amō`, §101). They are not general dictionary coverage. Other keys,
+glosses, languages and unreferenced valencies remain unsupported. The active love
+reading has nominative subject and accusative object, grounded by §§170, 172,
+174–175, including *parentēs amāmus*. It is not a passive valency or an assertion
+that every use of *amō* requires an overt object; absolute use remains outside
+this constructed-clause scope.
+
+Exactly 78 qualified morphology tuples are available: the prior twelve `porta`
+cells, 36 `bonus` cells and six present-active-indicative `amō` cells, plus the
+twelve masculine cells each of `hortus` and `puer` read from §23. No suffix rule
+extends those tables to another lexeme, tense or voice. Alternate analyses of
+syncretic forms are retained. A constructed constituent proves that its selected
+tuple exists in the independent table, **not** that an isolated surface or an
+arbitrary sentence has only that reading. Recognition is still non-exhaustive.
+
+The four construction checks are grammatical compatibility, not translated
+meaning, naturalness or the truth of a phrase. Fixed-preposition government uses
+the finite existing `GOVERNMENT` map with §§141–143; `in`/`sub` do not gain a case
+from a supplied pattern. Noun-genitive attachment uses §195 without selecting a
+possessive/material/etc. interpretation. Attributive adjective agreement uses
+§234; the selected active transitive love clause uses its independently retained
+valency and §254 person/number agreement. Public positive controls are
+*cum portā*, *porta hortī*, *hortus bonus* and *puer portam amat*.
+
+Each constituent retains its exact identity, mapped form/meaning spans, selected
+sense, table alternatives, checker version and source binding. Composite proof
+commitments include source reports and immutable stage identities, but exclude
+stage wall-clock timestamps so unchanged independent reconstruction is stable.
+Actual source, context, constituent artifact, reference or checker changes reject
+reuse. Comparison preserves complete assertion coverage and proposal-free calls;
+neither agreeing responses nor an input pattern supplies missing truth.
+Both calls receive the original supplied entry metadata, identities and pattern
+as explicitly unverified input, plus the required assertion IDs and kinds. They
+do not receive independent expected proofs or proposal output. HTML and padded
+source lemmas use the same normalization as constituent analysis, and reconciled
+manifest identities are forwarded unchanged.
+
+Fixed-preposition checks establish case compatibility only: for example, §142's
+`ē`/`ex` allomorph restriction is not a rendered-spelling check. The retained verb
+table has no passive cells; passive source claims therefore lack constituent
+support before any active-only valency can be reused.
+
+Translation, explanatory/role prose, rendered answers and curated approval remain
+unsupported siblings. No assertion is removed, automatic policy remains disabled,
+and these diagnostic positives cannot export a whole card. Proposal D and the
+isolated evaluator remain separate prerequisites. Controlled loopback response
+fixtures test transport and saved-proof custody, not hosted model competence,
+campaign qualification, native Anki acceptance or policy enablement. Normal
+server-stopped saved-call reuse is distinct from the explicit `--offline` active
+projection limitation recorded above.
+
 ## Outcome reports
 
 After `pipeline run` or `resume`, inspect the saved snapshot without provider calls:

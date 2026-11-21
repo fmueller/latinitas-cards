@@ -2556,6 +2556,97 @@ def test_changed_reference_invalidates_saved_derived_evidence(
     assert report["provider_calls"] == [] and report["file_export"]["exported"] == 0
 
 
+def bennett_phrase_fixture(root: Path, family: str) -> tuple[Path, Path, Path]:
+    profile, objectives, run = phrase_fixture(root, "en", family)
+    data = json.loads((root / "inputs.json").read_text())
+    raw = json.loads(objectives.read_text())
+    deck = root / "deck.csv"
+    deck.write_text(deck.read_text().replace("puell", "port").replace("girl", "gate"))
+    for entry in data["entries"]:
+        sense = entry["senses"][0]
+        sense["key"] = {"v": "love", "n": "gate", "a": "good", "p": "loved"}[entry["identity"]]
+        if entry["identity"] == "n":
+            sense["meaning"] = "gate"
+            for form in entry["forms"]:
+                form["text"] = form["text"].replace("puell", "port")
+    for identity, lemma, meaning, forms in (
+        ("h", "hortus", "garden", (("nom", "hortus", "nominative"), ("gen", "hortī", "genitive"))),
+        ("b", "puer", "boy", (("nom", "puer", "nominative"), ("acc", "puerum", "accusative"))),
+    ):
+        with deck.open("a") as stream:
+            csv.writer(stream).writerow((identity, lemma, " — ".join(f[1] for f in forms), meaning))
+        data["entries"].append(
+            dict(
+                identity=identity,
+                pos="noun",
+                gender="masculine",
+                evidence=[EVIDENCE],
+                senses=[dict(key=meaning, meaning=meaning, evidence=[EVIDENCE])],
+                forms=[
+                    dict(
+                        key=key,
+                        text=text,
+                        features=dict(case=case, number="singular", gender="masculine"),
+                        source_role="other",
+                        role_evidence=[EVIDENCE],
+                    )
+                    for key, text, case in forms
+                ],
+            )
+        )
+    bindings = {
+        "preposition-noun": {"object": ("n", "abl")},
+        "noun-genitive": {"head": ("n", "nom"), "dependent": ("h", "gen")},
+        "adjective-noun": {"head": ("h", "nom"), "modifier": ("a", "masc")},
+        "verb-noun": {"subject": ("b", "nom"), "object": ("n", "acc"), "verb": ("v", "third")},
+    }[family]
+    entries = {e["identity"]: e for e in data["entries"]}
+    features = {
+        role: next(f["features"] for f in entries[entry]["forms"] if f["key"] == form)
+        for role, (entry, form) in bindings.items()
+    }
+    pattern = data["patterns"][0]
+    pattern["roles"] = {
+        role: dict(
+            pos=entries[entry]["pos"],
+            senses=[entry + "/" + entries[entry]["senses"][0]["key"]],
+            requires=features[role],
+        )
+        for role, (entry, _) in bindings.items()
+    }
+    phrase = raw["phrases"][0]
+    phrase["selection"]["bindings"] = [
+        dict(role=role, entry=entry, sense=entries[entry]["senses"][0]["key"], form=form)
+        for role, (entry, form) in bindings.items()
+    ]
+    for reading in phrase["reference"]["readings"]:
+        reading["features"] = features
+    rebind(profile, data)
+    write(objectives, raw)
+    return profile, objectives, run
+
+
+@pytest.mark.parametrize("family", ["preposition-noun", "noun-genitive", "verb-noun", "adjective-noun"])
+def test_bennett_phrase_producer_public_boundary(tmp_path: Path, family: str) -> None:
+    profile, objectives, _ = bennett_phrase_fixture(tmp_path, family)
+    output = tmp_path / "workflow"
+    call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    root = output / "run"
+    from latinitas_cards.pipeline_consumers import load_run
+
+    run = load_run(root)
+    cards, _ = current_cards(profile, run.profile, run.objectives, root)
+    card = next(c for c in cards if c.recipe == "phrase_translation")
+    analysis = Analysis.read_json(card.analysis_path.read_bytes())
+    construction = next(c for c in analysis.checks if c.assertion_ids == ("construction",))
+    assert construction.result == "pass", construction.objections
+    assert any("Bennett" in e.source for e in construction.evidence)
+    assert all(c.result != "pass" for c in analysis.checks if c != construction)
+    assert call("export", "--run", str(root), "--output", str(tmp_path / "export"))["exported"] == 0
+    replay = call("stage", "analyze", "--run", str(root))
+    assert all(row["reuse"] == "reused" for row in replay["stages"]["analyze"])
+
+
 def test_source_bound_rule_producer_keeps_production_policy_disabled(tmp_path: Path) -> None:
     """Disposable source mappings exercise rules, not empirical qualification."""
     from latinitas_cards.acceptance import load_stage, stage_artifact

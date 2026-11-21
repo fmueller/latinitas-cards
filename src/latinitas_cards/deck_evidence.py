@@ -86,6 +86,7 @@ class DeckTask(Record):
     selected_sense: Text | None
     preposition: Text | None
     extra_assertions: tuple[Assertion, ...]
+    interpretation: Literal["recognition", "constructed"] = "recognition"
 
     @model_validator(mode="after")
     def complete_features(self) -> DeckTask:
@@ -206,6 +207,11 @@ def analyze_deck(
         readings = library.analyze(form)
         senses = library.senses(lemma, binding.language)
         state, result, objections = _corroborate(task, lemma, readings, exhaustive=library.ambiguity_complete)
+        if task.interpretation == "constructed" and task.preposition is None:
+            # Existence of a qualified constructed reading is not exhaustive recognition.
+            matches = any(r.lemma == lemma and r.pos == task.pos and r.features == task.features for r in readings)
+            if matches:
+                state, result, objections = "corroborated", "pass", ()
     except ProcessingUnavailable as exc:
         readings = ()
         state, result, objections, reason = "unavailable", "unresolved", ("processing_unavailable",), str(exc)
@@ -370,7 +376,10 @@ def analyze_construction(
         source = MappedSource.read_json(canonical(report["source"]))
         if digest(source.task) != stage.binding.task_sha256 or digest(source) != stage.binding.extraction_sha256:
             raise ValueError("constituent source/task binding mismatch")
-        snapshots[role] = {"stage": stage, "report": report}
+        snapshots[role] = {
+            "stage": stage.model_dump(mode="json", exclude={"started_at", "finished_at"}),
+            "report": report,
+        }
         source_bindings[role] = stage.binding
         checks = tuple(Check.read_json(canonical(c)) for c in report["checks"])
         if len(checks) < 2 or any(c.result != "pass" for c in checks[:2]):
@@ -418,7 +427,12 @@ def analyze_construction(
         language=next(iter(languages)),
         config_sha256=digest({"checker": CHECKER, "family": pattern.family}),
     )
-    evidence = (Evidence("latinitas-latin-rules", f"{pattern.family}/1", CHECKER, canonical(source_data).decode()),)
+    from .lexical_evidence import construction_references
+
+    evidence = (
+        Evidence("latinitas-latin-rules", f"{pattern.family}/1", CHECKER, canonical(source_data).decode()),
+        *construction_references(pattern.family),
+    )
     assertion = Assertion(
         id="construction",
         kind="label",

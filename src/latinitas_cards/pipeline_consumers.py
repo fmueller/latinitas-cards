@@ -429,9 +429,13 @@ def source_role_target(
     return expected, constraints, reason
 
 
-def source_form_claims(
-    source: Source, objective: FormObjective | PhraseObjective, versions: Versions
+def source_claims(
+    source: Source, objective: FormObjective | PhraseObjective, versions: Versions, root: Path | None = None
 ) -> tuple[dict[str, object], tuple[Evidence, ...], str]:
+    if isinstance(objective, PhraseObjective):
+        from .phrase_evidence import phrase_claims
+
+        return phrase_claims(source, objective, versions, root)
     target, constraints, reason = source_role_target(source, objective, versions)
     if target is None:
         return {}, constraints, reason
@@ -454,8 +458,8 @@ def source_form_claims(
     return expected, constraints, reason
 
 
-def form_rule_checks(source: Source, card: Rendered) -> tuple[Check, ...]:
-    expected, constraints, reason = source_form_claims(source, card.objective, card.versions)
+def rule_checks(source: Source, card: Rendered, root: Path | None = None) -> tuple[Check, ...]:
+    expected, constraints, reason = source_claims(source, card.objective, card.versions, root)
     unsupported = {
         "source": "source_requires_lexical_and_sense_evidence",
         "translation": "translation_requires_sense_government_and_semantic_evidence",
