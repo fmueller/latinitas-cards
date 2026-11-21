@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-21T20:45:46Z"
+updated_at: "2026-11-21T21:44:04Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -9,8 +9,9 @@ status_summary: blocked
 blockers:
     - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
-next_action: Resolve blocker on T-207-approve-deck-workflow-contract-and-calibration
-last_verification_result: pass for T-239-optimize-evidence-validation-and-integration-ci-cost at 2026-11-21T20:45:37Z
+    - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
+next_action: Resolve blocker on T-200-evaluate-held-out-automatic-acceptance-against
+last_verification_result: fail for T-200-evaluate-held-out-automatic-acceptance-against at 2026-11-21T21:44:04Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -34,14 +35,15 @@ continuation_notes:
 
 - T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required
 - T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers
+- T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.
 
 ## Last Verification
 
-- pass for T-239-optimize-evidence-validation-and-integration-ci-cost at 2026-11-21T20:45:37Z
+- fail for T-200-evaluate-held-out-automatic-acceptance-against at 2026-11-21T21:44:04Z
 
 ## Next Action
 
-- Resolve blocker on T-207-approve-deck-workflow-contract-and-calibration
+- Resolve blocker on T-200-evaluate-held-out-automatic-acceptance-against
 
 ## Relevant Artifacts
 
@@ -53,8 +55,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 19
+- todo: 18
 - in_progress: 0
 - completed: 218
-- blocked: 2
+- blocked: 3
 - cancelled: 0

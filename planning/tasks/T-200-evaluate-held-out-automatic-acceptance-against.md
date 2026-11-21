@@ -1,12 +1,12 @@
 ---
 id: T-200-evaluate-held-out-automatic-acceptance-against
 title: Evaluate held-out automatic acceptance against independent judgments
-status: todo
+status: blocked
 priority: medium
 spec_ref: specs/v0.5.0.md#domain-specific-confidence-calibration
 dependencies:
     - T-199-document-v0-5-0-workflows-and-reconcile-cli
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-21T21:44:04Z"
 ---
 
 # T-200-evaluate-held-out-automatic-acceptance-against Evaluate held-out automatic acceptance against independent judgments
@@ -62,3 +62,7 @@ an explicitly revised approved scope, not mocked results. Preserve historical pr
 and study hashes/results; this task has no implicit new-study authorization.
 
 ## Implementation Notes
+
+- 2026-11-21T21:44:04Z: verification fail
+- 2026-11-21T21:44:04Z: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.
+- 2026-11-21T21:44:04Z: Documentation-only preflight on accepted main ae6e56ba93dafe601512cf3c5a340d93a8b66af0; see docs/v0.5.0-evaluation-plan.md, T200 prerequisite inspection. Recorded source/rights and coordinator appointment brief, finite P4/P5 bounds, T238 offline-resume readiness disposition, real T227/T228 checker-source imports and missing genuine native baseline. Dedicated simplification, four independent review lanes and one three-worker challenge round reconciled no remaining documentation defects; clarified boundary versus mandatory separate identity. Two optional behavior-test pins deferred without removing supported claims. Diff check and pinned Taskrail validation passed; existing capture/comparison tests passed 79 in 13.87s. No source/test changes or full-suite claim. Historical protocol/harness/capture bytes preserved. Zero hosted attempts, reference acquisitions, role appointments or protected answers/holdouts; existing budgets and ledgers unchanged. Policy remains disabled; no empirical completion, successor selection, scope reduction or publication.
