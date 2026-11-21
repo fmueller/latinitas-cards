@@ -97,8 +97,10 @@ PREREQUISITES: dict[StageName, StageName] = {"analyze": "ingest", "propose": "an
 COVERAGE = (
     "Only supplied, confirmed source cells and finite rule recipes are enumerated. "
     "Independent Bennett diagnostics cover explicitly attested form/component/context cells and "
-    "constructed phrases over five English lexical readings, not arbitrary paradigms or exhaustive interpretation. "
-    "Library morphology is not full rendered-clause/translation entailment. Unsupported assertions remain withheld; "
+    "constructed phrases over five selected bilingual lexical readings, "
+    "not arbitrary paradigms or exhaustive interpretation. "
+    "Finite reviewed meaning/clause projections cover only their exact constructed cells and utterance vocabulary. "
+    "Library morphology alone is not rendered-clause/translation entailment. Unsupported assertions remain withheld; "
     "model agreement grants no authority. Human reviews remain separately bound; curated approvals require T196."
 )
 
@@ -265,9 +267,16 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
         evidence.append(
             Evidence("confirmed-deck-mapping", source.scope + "/" + identity, "1", canonical(selected).decode())
         )
-        if not isinstance(objective, FormObjective):
+        if not isinstance(objective, FormObjective) or objective.recipe == "form_translation":
             supplied = canonical({"entry": entry, "identity": asdict(source.identities[identity])}).decode()
-            evidence.append(Evidence("unverified-phrase-entry", source.scope + "/" + identity, "1", supplied))
+            evidence.append(
+                Evidence(
+                    "unverified-form-entry" if isinstance(objective, FormObjective) else "unverified-phrase-entry",
+                    source.scope + "/" + identity,
+                    "1",
+                    supplied,
+                )
+            )
             scopes.append(
                 Scope(
                     source_identity=identity,
@@ -300,7 +309,17 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
     target: dict[str, JsonValue] = {key: values[key] for key in keys}
     binding = card.binding.model_copy(update={"config_sha256": _config(profile)})
     request_objective = card.recipe
-    if isinstance(objective, FormObjective) and card.recipe == "ppp_recognition" and objective.context:
+    if isinstance(objective, FormObjective) and card.recipe == "form_translation":
+        request_objective = canonical(
+            {
+                "recipe": card.recipe,
+                "selected_form": objective.form,
+                "selected_sense": objective.sense,
+                "context": objective.context,
+                "assertions": tuple({"id": a.id, "kind": a.kind} for a in card.claims.assertions),
+            }
+        ).decode()
+    elif isinstance(objective, FormObjective) and card.recipe == "ppp_recognition" and objective.context:
         request_objective = canonical(
             {"recipe": card.recipe, "context": objective.context, "selected_form": objective.form}
         ).decode()
@@ -320,12 +339,26 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
                 language=profile.language,
             )
         )
+        contexts = objective.reference.contexts if card.recipe == "phrase_translation" else ()
+        for context in contexts:
+            evidence.append(
+                Evidence("unverified-phrase-context", source.scope + "/" + card.binding.source_identity, "1", context)
+            )
+            scopes.append(
+                Scope(
+                    source_identity=card.binding.source_identity,
+                    fields=("phrase-objective/context",),
+                    spans=(Span(start=0, end=len(context)),),
+                    language=profile.language,
+                )
+            )
         request_objective = canonical(
             {
                 "recipe": card.recipe,
                 "family": pattern.family,
                 "function_words": pattern.function_words,
                 "bindings": objective.selection.bindings,
+                "contexts": contexts,
                 "target": objective.target,
                 "distinction": objective.distinction,
                 "assertions": tuple({"id": a.id, "kind": a.kind} for a in card.claims.assertions),

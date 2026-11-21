@@ -22,8 +22,9 @@ Notable user-facing changes to Latinitas Cards are documented here.
   scoped hosted permission and cancellation; CSV files never apply changes to Anki.
 - `pipeline report` explains material yield with source links, grouped examples and
   versioned JSON, separating deferred work, processing failures and acceptance.
-- `pipeline run` checks controlled-phrase constituents against five retained English
-  lexical readings and finite grammar tables; unsupported answer claims still block export.
+- `pipeline run` checks five selected bilingual lexical readings and finite grammar
+  tables, with source-grounded meaning/clause diagnostics for bounded translation
+  cards; unsupported claims and disabled-policy automatic exports remain withheld.
 - `pipeline run` supports explicitly estimated accounting with shared campaign
   limits and separate usage records; token totals and charges are not guaranteed caps.
 - `pipeline run` supports MiniMax-M3.1-Flash at its qualified HTTPS Chat endpoint

@@ -459,7 +459,11 @@ def source_claims(
 
 
 def rule_checks(source: Source, card: Rendered, root: Path | None = None) -> tuple[Check, ...]:
+    from .meaning_evidence import meaning_checks
+
     expected, constraints, reason = source_claims(source, card.objective, card.versions, root)
+    meanings, meaning_constraints = meaning_checks(source, card, card.claims.assertions, expected)
+    constraints = tuple(dict.fromkeys((*constraints, *meaning_constraints)))
     unsupported = {
         "source": "source_requires_lexical_and_sense_evidence",
         "translation": "translation_requires_sense_government_and_semantic_evidence",
@@ -478,6 +482,10 @@ def rule_checks(source: Source, card: Rendered, root: Path | None = None) -> tup
             matches = matches and assertion.selected_sense is None and not assertion.alternatives
             result = "pass" if matches else "fail"
             objections = () if matches else ("source_bound_target_contradiction",)
+        if assertion.id in meanings:
+            meaning = meanings[assertion.id]
+            result = "pass" if meaning == "equivalent" else "fail" if meaning == "contradiction" else "not_applicable"
+            objections = () if meaning == "equivalent" else ("bounded_meaning_" + meaning,)
         envelope = check_envelope(card.binding, card.versions, "rule", (assertion,), reference_constraints=constraints)
         checks.append(
             Check(

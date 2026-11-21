@@ -743,3 +743,77 @@ name matching the deck profile before importing CSV; no old template ordinal is
 repurposed. CSV does not install templates or retire existing cards. Export reports
 withheld objectives; it is not a managed handoff, native Anki acceptance, empirical
 qualification, release or publication approval.
+
+## Finite bilingual meaning and complete-card diagnostics (T237)
+
+`meaning_evidence` checks source applicability, selected sense, whole utterances,
+explanatory/role clauses and the actual front/back projection separately. It never
+calls the renderer to establish truth. `meaning_language` contains newly composed
+German/English utterances linked to bounded propositions from the retained Bennett
+edition; [initial claims and independent dispositions](meaning-reference-review.md)
+retain rejected candidates as well as accepted ones. This is an explicitly finite
+development language, not a free-prose evaluator or a native linguistic study.
+
+The actual form inventory is `source`, `target`, optional `translation`, derived
+`stem`, optional `explanation`, every `caveat-N`, and `rendered`. `source` serializes
+the entire entry and selected sense, so qualification checks unselected form/sense
+metadata too. The phrase inventory is `construction`, then `translation-N`,
+`explanation-N`, `roles-N` for **every** supplied reading, and `rendered`. A passed
+construction does not silently qualify its prose. Projection checks verify exact
+Latin prompts, instructional framing, each translated reading, every explanation,
+all caveats and the absence of additional answer lines. Role clauses remain checked
+even when the translation recipe does not display them separately.
+
+Complete **diagnostic** coverage is available in German and English for:
+
+- `form_translation`: the six independently tabulated present indicative active
+  cells of *amō* (`amō`, `amās`, `amat`, `amāmus`, `amātis`, `amant`) in the selected
+  `love` sense, without extra context/anchors. Every serialized source form must
+  have an attested table/anchor reading and every selected feature must agree.
+  Primary translations preserve person/number; only the listed present-active
+  explanations and bounded-interpretation caveats are qualified.
+- `phrase_translation`: the exact singular constructed readings *cum portā*
+  (accompaniment), *porta hortī* (unspecified garden relation), *hortus bonus*
+  (evaluative good), and *puer portam amat* (boy as lover, gate as loved entity).
+  The selected senses, cases, gender, agreement, government and active third-person
+  singular verb must independently pass constituent/construction checks. Listed
+  different-wording phrase renderings preserve these propositions in both languages.
+
+Each qualified phrase also requires the exact constructed exercise premise in
+`reference.evidence`, tagged `constructed-exercise-context`. The renderer displays
+that premise on the front and both blind requests receive it as explicitly
+unverified context, not a reference answer. The genitive and verb examples stipulate
+definite noun reference; the adjective example stipulates indefinite reference.
+The *cum* example supplies a hypothetical *profectus est* motion setting and asks
+for indefinite noun reference. This supplies the contextual premise of Bennett
+§222 without claiming that every bare *cum* fragment expresses accompaniment.
+Missing, changed or additional contexts prevent complete meaning evidence.
+
+Qualification of a listed reading does not select every possible contextual
+interpretation. Unknown reading alternatives, extra causal claims,
+unverified naturalness or an unsupported source sibling leave the card incomplete.
+The rejected `feel love` / `Liebe empfinden` proposals are compatible experiential
+claims, not established equivalents of the isolated Latin finite predicate.
+Finite diagnostics distinguish these compatible claims, recognized conflicting
+person/number or lover/loved-role mappings, mixed ambiguous alternatives and
+uninterpreted wording. A source-relative contradiction denotes a conflicting
+translation mapping, not an assertion that both events are logically impossible.
+All unlisted wordings, cells, contexts, senses, phrase variants and languages remain
+unsupported. Recognition, cloze, production, PPP, segmentation and curated recipes
+retain their prior partial coverage; a translation positive does not qualify them.
+Curated rules, rendered curated cards and mnemonics still need actual human approval.
+
+Analysis and semantic comparison use the same independent producer; immutable
+readers reconstruct it from current source, reference and checker bytes. Both
+provider roles receive the same readable, explicitly unverified source metadata
+and requested assertion inventory, but no proposal output, supplied translation or
+reference explanation. Controlled transport responses reconstruct only that captured
+input. They are not independent linguistic evidence. Source-backed predicates and
+independent language review supply the bounded semantic authority, not agreement.
+
+A complete diagnostic requires all assertions and methods; ordinary installed
+`v050-disabled` decisions and exports still withhold every automatic card. Exact
+request/response commitments, all objections and alternatives remain in the saved
+proof. Successful stopped-server reuse is tested before dependency/tamper denial.
+No hosted inference, campaign restoration, held-out reference work, policy enablement,
+evaluator qualification, release readiness or publication approval follows.

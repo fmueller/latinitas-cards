@@ -6,6 +6,7 @@ from typing import Literal
 
 from .acceptance import check_envelope
 from .acceptance_records import Assertion, Check, decode_json, digest
+from .meaning_evidence import meaning_checks
 from .phrase_inputs import Features
 from .pipeline_consumers import Rendered, Source, source_claims
 from .providers import Call, ModelAnswer, ModelTask
@@ -45,11 +46,17 @@ def compare_source_answers(
     """Build only after the provider reader verifies both immutable invocations.
 
     Source reconstruction is deliberately narrower than the requested model task.
-    No alternative segmentation convention or meaning equivalence is installed.
+    Meaning equivalence is limited to source-qualified utterances and projections;
+    no general prose evaluator or alternative segmentation convention is installed.
     """
     if proposal_call.response_sha256 is None or counter_call.response_sha256 is None:
         raise ValueError("missing actual output commitments")
     expected, constraints, unsupported = source_claims(source, card.objective, card.versions)
+    meaning_results = []
+    for assertions in (card.claims.assertions, proposal.assertions, counter.assertions):
+        meanings, references = meaning_checks(source, card, assertions, expected)
+        meaning_results.append(meanings)
+        constraints = tuple(dict.fromkeys((*constraints, *references)))
     expected_ids = {a.id for a in card.claims.assertions}
     proposal_ids = [a.id for a in proposal.assertions]
     counter_ids = [a.id for a in counter.assertions]
@@ -97,6 +104,21 @@ def compare_source_answers(
             else:
                 relation = "equivalent"
                 reason = "independently_attested_segmentation" if assertion.id == "stem" else unsupported
+        if any(assertion.id in result for result in meaning_results):
+            dispositions = {result.get(assertion.id, "unresolved") for result in meaning_results}
+            if dispositions == {"equivalent"} and not objections and not global_alternatives:
+                relation, reason = "equivalent", "independently_grounded_meaning_and_projection"
+            elif relation != "contradiction":
+                if "contradiction" in dispositions:
+                    relation, reason = "contradiction", "bounded_meaning_contradiction"
+                elif "unresolved" in dispositions:
+                    relation, reason = "unresolved", "bounded_meaning_unresolved"
+                elif "ambiguous" in dispositions:
+                    relation, reason = "unresolved", "bounded_meaning_ambiguous"
+                elif "compatible_alternatives" in dispositions:
+                    relation, reason = "compatible_alternatives", "bounded_meaning_compatible_alternatives"
+                else:
+                    relation, reason = "unresolved", "open_objection_or_unqualified_alternative"
         if relation != "equivalent":
             objections = tuple(dict.fromkeys((*objections, reason)))
         envelope = {

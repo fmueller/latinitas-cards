@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .claim_review import Evidence
 from .latin_library import LibraryReading, attested_paradigms, bennett_sections
+from .meaning_language import GERMAN, meaning_references
 from .phrase_inputs import Features, Sense
 
 VERSION = "bennett-lexical-constructions/1"
@@ -78,7 +79,17 @@ class BennettLexicon:
         return tuple(dict.fromkeys(reading for surface, reading in self.readings if surface == text))
 
     def senses(self, lemma: str, language: str) -> tuple[Sense, ...]:
-        return self.lexemes.get(lemma, ()) if language == "en" else ()
+        senses = self.lexemes.get(lemma, ())
+        if language == "en":
+            return senses
+        if language == "de":
+            references = meaning_references()
+            return tuple(
+                s.model_copy(update={"meaning": GERMAN[s.key], "evidence": (*s.evidence, *references)})
+                for s in senses
+                if s.key in GERMAN
+            )
+        return ()
 
 
 def construction_references(family: str) -> tuple[Evidence, ...]:

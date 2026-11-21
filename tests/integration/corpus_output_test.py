@@ -466,6 +466,9 @@ def test_no_translation_string_grading_in_source() -> None:
         ("latin_library.py", "LocalStanza.analyze", "words[0].text != text"),
         # Retained morphology-table lookup, not translation or learner-answer grading.
         ("lexical_evidence.py", "BennettLexicon.analyze", "surface == text"),
+        ("meaning_evidence.py", "_qualified_entry", "a.surface == form.text"),
+        # Exclude an ambiguous reference utterance from conflicts, never grade a learner answer.
+        ("meaning_evidence.py", "meaning_checks", "text == 'you love'"),
         # Bind exact source cells/roles and group isolated morphological readings, never grade a learner answer.
         ("pipeline_consumers.py", "_cell", "cell.extract(record) == text"),
         ("pipeline_consumers.py", "_form", "part.display != form.text"),

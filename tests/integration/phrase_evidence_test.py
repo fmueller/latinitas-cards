@@ -354,7 +354,18 @@ def test_added_constituent_tables_preserve_all_qualified_alternatives() -> None:
     assert library.senses("puer", "en")[0].meaning == "boy"
     assert library.senses("bonus", "en")[0].meaning == "good"
     assert library.senses("amō", "en")[0].valency == {"subject": "nominative", "object": "accusative"}
-    assert library.senses("porta", "de") == () and library.ambiguity_complete is False
+    for lemma, meaning in (
+        ("porta", "Tor"),
+        ("hortus", "Garten"),
+        ("puer", "Junge"),
+        ("bonus", "gut"),
+        ("amō", "lieben"),
+    ):
+        sense = library.senses(lemma, "de")[0]
+        assert sense.meaning == meaning and sense.evidence
+    assert library.senses("amō", "de")[0].valency == {"subject": "nominative", "object": "accusative"}
+    assert library.senses("porta", "fr") == library.senses("puella", "de") == ()
+    assert library.ambiguity_complete is False
 
 
 @pytest.mark.parametrize("damage", ["reference", "checker", "constituent", "source", "context"])

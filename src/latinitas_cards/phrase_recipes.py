@@ -110,6 +110,11 @@ class Reference(Model):
     readings: tuple[Reading, ...] = Field(min_length=1, max_length=16)
     evidence: tuple[Evidence, ...] = Field(min_length=1, max_length=16)
 
+    @property
+    def contexts(self) -> tuple[str, ...]:
+        """Explicit exercise premises, not private reference prose or authority."""
+        return tuple(e.text for e in self.evidence if e.source == "constructed-exercise-context")
+
 
 class Exercise(Model):
     candidate_key: Text
@@ -189,6 +194,8 @@ def render_phrase_objective(
     settings, language_tag = profile.morphology.terminology, profile.language_tag
     if recipe == "phrase_translation":
         prompt = text + "\n" + card_text("phrase_translation_prompt", language_tag)
+        for context in reference.contexts:
+            prompt += "\n" + context
     else:
         if target not in roles:
             raise ValueError("Designated target is not a constituent")
