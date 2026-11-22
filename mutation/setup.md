@@ -114,7 +114,7 @@ no timeout was observed, so no budget was raised to conceal a hang.
   source or environment changes.
 - Adapter structure: run the installed mutation helper's `doctor` from the root.
 
-## Pruning disposition
+## T-239 pruning disposition
 
 No deletion batch is proposed. The two calibrated journeys cover different
 families/languages, while the retained wider matrices exercise distinct language,
@@ -124,3 +124,54 @@ no per-test kill data; any future deletion needs cold baseline/deletion snapshot
 unchanged mutant population, helper `diff`, the skill's keep-list and restored
 probes before an approved permanent deletion. A passing reduced suite is not
 evidence of equivalent coverage. No deletion probe was run for this task.
+
+## T-240 bounded semantic-locale deletion probe
+
+The maintainer separately authorized practical scenario pruning, not preservation
+of every matrix. The research-reader calibration above does not qualify those
+matrices. A second isolated scope measured deletion of four mirrored finite
+diagnostic locale cases, retaining compatible, contradictory, ambiguous and
+unknown inputs. Production source and the original equivalence ledger stayed
+unchanged. Other scenario reductions rely on inspected semantic overlap and
+independent review, not this narrow mutation population.
+
+Use fresh isolated copies as above, with accepted baseline test files from
+`c98c5e3c6379e710005846210105191e55f81486` in one and current tests in the other.
+Do not reuse test-dependent cached scores or modify the owning checkout. In both
+copies use these mutmut settings instead of the reader-specific selection:
+
+```toml
+source_paths = ["src/latinitas_cards/"]
+only_mutate = ["src/latinitas_cards/meaning_evidence.py"]
+mutate_only_covered_lines = true
+debug = true
+pytest_add_cli_args_test_selection = ["tests/integration/meaning_evidence_test.py::test_finite_meaning_diagnostics_distinguish_unproved_claims"]
+```
+
+Run that pytest selection twice in each copy before a cold
+`mutmut run --max-children 1 '*meaning_evidence.x__translation_relation*'`, using
+the repository environment and copy-local `PYTHONPATH` as in the reader workflow.
+Snapshot each finished run and compare with the installed helper's `diff`.
+
+Measured on 2026-11-22, Python 3.14.7, mutmut 3.8.1, one mutation worker:
+
+- Original eight cases passed twice (16.97s, 14.75s); reduced four passed twice
+  (11.31s, 10.05s). Both cold statistics and clean-baseline checks passed.
+- All 32 selected relation mutants had covering tests. Cold runs took 230.99s
+  before and 177.46s after: 28 killed, four survived, no timeouts in each.
+  Default timeout settings were retained. The other 315 generated mutants
+  were intentionally not run; helper summaries call those pending.
+- Helper `diff` found identical populations/scores, zero regressions and exactly
+  the four intended locale removals. No test was added to this cohort.
+- Replayed all 28 killed mutants with unbuffered failure output: each failed an
+  assertion in the retained finite diagnostic test (compatible/en 17,
+  ambiguous/en five, conflict/de four, unknown/de two), not compilation or
+  timeout. The tool's separate forced-failure setup control is excluded.
+- Survivors 6/12/13/14 are unchanged scope gaps, not equivalence claims. The
+  negative-only cohort does not discriminate malformed alternative inventories
+  or a valid equivalent-only result. No new equivalence ledger entries were
+  created. This does not qualify the whole function or other matrix reductions.
+
+The root `only-tests` guard also sees the required Taskrail lifecycle/task notes
+and this adapter record. Those documentation/state exceptions are inspected and
+validated separately; production, dependency and CI diffs must remain empty.

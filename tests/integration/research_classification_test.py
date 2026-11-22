@@ -9,8 +9,7 @@ from grammar_pipeline_test import call, configure_pipeline_http, rebind, synthet
 from meaning_evidence_test import captured_answer, meaning_fixture
 
 
-@pytest.mark.parametrize("language", ["de", "en"])
-@pytest.mark.parametrize("family", ["form", "preposition-noun", "noun-genitive", "adjective-noun", "verb-noun"])
+@pytest.mark.parametrize("family,language", [("form", "de"), ("verb-noun", "en")])
 def test_research_complete_card_and_denial(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, language: str, family: str
 ) -> None:
@@ -128,6 +127,8 @@ def test_research_retains_every_failed_slot(tmp_path: Path, monkeypatch: pytest.
     import grammar_pipeline_test as fixtures
 
     from latinitas_cards.acceptance_records import canonical
+    from latinitas_cards.pipeline_consumers import current_cards, load_run
+    from latinitas_cards.pipeline_orchestration import read_source_comparison
     from latinitas_cards.research_classification import classify
 
     def answer(body: dict[str, Any]) -> bytes:
@@ -153,14 +154,27 @@ def test_research_retains_every_failed_slot(tmp_path: Path, monkeypatch: pytest.
     data = json.loads((tmp_path / "inputs.json").read_text())
     data["entries"][0]["forms"] = data["entries"][0]["forms"][:1]
     rebind(profile, data)
-    with synthetic_pipeline_http() as (url, _, _):
+    with synthetic_pipeline_http() as (url, sent, _):
         configure_pipeline_http(profile, url)
         settings = json.loads(profile.read_text())
         settings["selection"]["entries"] = ["v"]
         write(profile, settings)
         output = tmp_path / "workflow"
         report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
-        record = classify(output / "run")[0]
+        root = output / "run"
+        run = load_run(root)
+        card = current_cards(profile, run.profile, run.objectives, root)[0][0]
+        proof = read_source_comparison(root, card)
+        assert proof is not None and proof["relation"] != "equivalent", proof
+        if case != "incomplete":
+            comparisons = {c["assertion_id"]: c for c in json.loads(canonical(proof))["comparisons"]}
+            assert comparisons["source"]["relation"] == comparisons["target"]["relation"] == "equivalent"
+            translation = comparisons["translation"]
+            expected = "unresolved" if case in ("ambiguous", "unsupported") else case
+            assert translation["relation"] == expected
+            reason = "bounded_meaning_" + ("unresolved" if case == "unsupported" else case)
+            assert reason in translation["check"]["objections"]
+        record = classify(root)[0]
         assert record.classification == "would_withhold"
         assert [o.assertion_id for o in record.obligations] == [a.id for a in record.assertions]
         target = next(o for o in record.obligations if o.assertion_id == "translation")
@@ -175,7 +189,8 @@ def test_research_retains_every_failed_slot(tmp_path: Path, monkeypatch: pytest.
             else "bounded_meaning_" + case
         )
         assert expected_reason in target.reasons
-        assert report["file_export"]["exported"] == 0
+        assert report["file_export"]["exported"] == 0 and len(sent) == 2
+    assert read_source_comparison(root, card) == proof
 
 
 def test_research_readable_application_negative_is_not_processing_failure(

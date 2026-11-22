@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-21T21:44:04Z"
+updated_at: "2026-11-22T18:04:53Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -11,7 +11,7 @@ blockers:
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
 next_action: Resolve blocker on T-200-evaluate-held-out-automatic-acceptance-against
-last_verification_result: fail for T-200-evaluate-held-out-automatic-acceptance-against at 2026-11-21T21:44:04Z
+last_verification_result: pass for T-240-trim-redundant-integration-scenarios at 2026-11-22T18:04:53Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Last Verification
 
-- fail for T-200-evaluate-held-out-automatic-acceptance-against at 2026-11-21T21:44:04Z
+- pass for T-240-trim-redundant-integration-scenarios at 2026-11-22T18:04:53Z
 
 ## Next Action
 
@@ -57,6 +57,6 @@ continuation_notes:
 
 - todo: 18
 - in_progress: 0
-- completed: 218
+- completed: 219
 - blocked: 3
 - cancelled: 0

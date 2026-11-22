@@ -154,8 +154,7 @@ def meaning_fixture(root: Path, language: str, family: str = "form") -> tuple[Pa
     return profile, objectives
 
 
-@pytest.mark.parametrize("language", ["en", "de"])
-@pytest.mark.parametrize("family", ["form", "preposition-noun", "noun-genitive", "adjective-noun", "verb-noun"])
+@pytest.mark.parametrize("family,language", [("form", "en"), ("preposition-noun", "de")])
 def test_complete_meaning_analysis_stays_disabled(tmp_path: Path, language: str, family: str) -> None:
     profile, objectives = meaning_fixture(tmp_path, language, family)
     output = tmp_path / "workflow"
@@ -365,8 +364,16 @@ def captured_answer(body: dict[str, Any], paraphrase: bool = False) -> bytes:
     return canonical({"choices": [{"finish_reason": "stop", "message": {"content": canonical(response).decode()}}]})
 
 
-@pytest.mark.parametrize("language", ["en", "de"])
-@pytest.mark.parametrize("family", ["form", "preposition-noun", "noun-genitive", "adjective-noun", "verb-noun"])
+@pytest.mark.parametrize(
+    "family,language",
+    [
+        ("form", "en"),
+        ("preposition-noun", "de"),
+        ("noun-genitive", "en"),
+        ("adjective-noun", "de"),
+        ("verb-noun", "en"),
+    ],
+)
 def test_complete_public_comparison_and_saved_reuse(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, language: str, family: str
 ) -> None:
@@ -459,7 +466,6 @@ def test_complete_public_comparison_and_saved_reuse(
     "language,damage,side",
     [
         ("en", "translation", "both"),
-        ("de", "translation", "both"),
         ("en", "explanation", "proposal"),
         ("de", "explanation", "counter"),
         ("en", "roles", "counter"),
@@ -631,17 +637,16 @@ def test_all_six_present_cells_have_bound_meaning_evidence(tmp_path: Path, langu
     assert result["file_export"]["exported"] == 0
 
 
-@pytest.mark.parametrize("language", ["en", "de"])
-@pytest.mark.parametrize("damage", ["compatible", "context", "overlapping-sense", "source-sibling", "caveat"])
+@pytest.mark.parametrize(
+    "damage,language", [("context", "en"), ("overlapping-sense", "de"), ("source-sibling", "en"), ("caveat", "de")]
+)
 def test_bounded_meaning_does_not_qualify_unproved_claims(tmp_path: Path, language: str, damage: str) -> None:
     profile, objectives = meaning_fixture(tmp_path, language)
     raw = json.loads(objectives.read_text())
     objective = raw["forms"][0]
     data = json.loads((tmp_path / "inputs.json").read_text())
     entry = data["entries"][0]
-    if damage == "compatible":
-        objective["translations"] = ["I feel love" if language == "en" else "ich empfinde Liebe"]
-    elif damage == "context":
+    if damage == "context":
         objective["context"] = "Additional context requires its own interpretation."
     elif damage == "overlapping-sense":
         entry["senses"][0]["key"] = objective["sense"] = "affection"
@@ -668,8 +673,7 @@ def test_bounded_meaning_does_not_qualify_unproved_claims(tmp_path: Path, langua
     assert result["file_export"]["exported"] == 0
 
 
-@pytest.mark.parametrize("language", ["en", "de"])
-@pytest.mark.parametrize("family", ["preposition-noun", "noun-genitive", "adjective-noun", "verb-noun"])
+@pytest.mark.parametrize("family,language", [("preposition-noun", "en"), ("verb-noun", "de")])
 def test_phrase_context_is_displayed_and_required(tmp_path: Path, language: str, family: str) -> None:
     profile, objectives = meaning_fixture(tmp_path, language, family)
     for mode in ("bound", "missing", "changed"):
@@ -702,8 +706,9 @@ def test_phrase_context_is_displayed_and_required(tmp_path: Path, language: str,
         assert report["file_export"]["exported"] == 0
 
 
-@pytest.mark.parametrize("language", ["en", "de"])
-@pytest.mark.parametrize("case", ["compatible", "conflict", "ambiguous", "unknown"])
+@pytest.mark.parametrize(
+    "case,language", [("compatible", "en"), ("conflict", "de"), ("ambiguous", "en"), ("unknown", "de")]
+)
 def test_finite_meaning_diagnostics_distinguish_unproved_claims(tmp_path: Path, language: str, case: str) -> None:
     profile, objectives = meaning_fixture(tmp_path, language)
     raw = json.loads(objectives.read_text())
@@ -737,56 +742,3 @@ def test_finite_meaning_diagnostics_distinguish_unproved_claims(tmp_path: Path, 
     assert checks["translation"].objections == ("bounded_meaning_" + expected,)
     assert checks["translation"].result != "pass" and checks["rendered"].result != "pass"
     assert report["file_export"]["exported"] == 0
-
-
-@pytest.mark.parametrize("language", ["en", "de"])
-@pytest.mark.parametrize("case", ["compatible_alternatives", "contradiction", "ambiguous", "unresolved"])
-def test_public_comparison_distinguishes_meaning_with_correct_source_labels(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, language: str, case: str
-) -> None:
-    import grammar_pipeline_test as fixtures
-    from grammar_pipeline_test import configure_pipeline_http, synthetic_pipeline_http
-
-    from latinitas_cards.pipeline_orchestration import read_source_comparison
-
-    def respond(body: dict[str, Any]) -> bytes:
-        wrapper = json.loads(captured_answer(body))
-        response = json.loads(wrapper["choices"][0]["message"]["content"])
-        assertions = {a["id"]: a for a in response["assertions"]}
-        primary = "I love" if language == "en" else "ich liebe"
-        other = "we love" if language == "en" else "wir lieben"
-        values = {
-            "compatible_alternatives": "I feel love" if language == "en" else "ich empfinde Liebe",
-            "contradiction": other,
-            "ambiguous": primary + " / " + other,
-            "unresolved": "An uninterpreted utterance.",
-        }
-        assertions["translation"]["value"] = values[case]
-        assertions["translation"]["alternatives"] = [other] if case == "ambiguous" else []
-        wrapper["choices"][0]["message"]["content"] = canonical(response).decode()
-        return canonical(wrapper)
-
-    monkeypatch.setattr(fixtures, "provider_answer", respond)
-    profile, objectives = meaning_fixture(tmp_path, language)
-    data = json.loads((tmp_path / "inputs.json").read_text())
-    data["entries"][0]["forms"] = data["entries"][0]["forms"][:1]
-    rebind(profile, data)
-    with synthetic_pipeline_http() as (url, sent, _):
-        configure_pipeline_http(profile, url)
-        settings = json.loads(profile.read_text())
-        settings["selection"]["entries"] = ["v"]
-        write(profile, settings)
-        output = tmp_path / "workflow"
-        report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
-        root = output / "run"
-        run = load_run(root)
-        card = current_cards(profile, run.profile, run.objectives, root)[0][0]
-        proof = read_source_comparison(root, card)
-        assert proof is not None and proof["relation"] != "equivalent", proof
-        comparisons = {c["assertion_id"]: c for c in json.loads(canonical(proof))["comparisons"]}
-        assert comparisons["source"]["relation"] == comparisons["target"]["relation"] == "equivalent"
-        translation = comparisons["translation"]
-        assert translation["relation"] == ("unresolved" if case == "ambiguous" else case)
-        assert "bounded_meaning_" + case in translation["check"]["objections"]
-        assert report["file_export"]["exported"] == 0 and len(sent) == 2
-    assert read_source_comparison(root, card) == proof

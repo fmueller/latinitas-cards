@@ -327,15 +327,15 @@ def phrase_fixture(root: Path, language: str, family: str) -> tuple[Path, Path, 
     return profile, objectives, run
 
 
-@pytest.mark.parametrize("recipe", ["phrase_translation", "phrase_recognition", "phrase_form_cloze"])
-@pytest.mark.parametrize("language", ["de", "en"])
 @pytest.mark.parametrize(
-    "family,text",
+    "family,text,recipe,language",
     [
-        ("preposition-noun", "cum puellā"),
-        ("noun-genitive", "puella puellārum"),
-        ("adjective-noun", "puella bona"),
-        ("verb-noun", "puella puellam amat"),
+        ("preposition-noun", "cum puellā", "phrase_translation", "de"),
+        ("noun-genitive", "puella puellārum", "phrase_translation", "en"),
+        ("adjective-noun", "puella bona", "phrase_recognition", "de"),
+        ("verb-noun", "puella puellam amat", "phrase_recognition", "en"),
+        ("preposition-noun", "cum puellā", "phrase_form_cloze", "en"),
+        ("verb-noun", "puella puellam amat", "phrase_form_cloze", "de"),
     ],
 )
 def test_public_controlled_families(
@@ -401,14 +401,13 @@ def test_public_controlled_families(
 
 
 @pytest.mark.parametrize(
-    "family,mutation,reason",
+    "family,mutation,reason,language",
     [
-        ("preposition-noun", "government", "government"),
-        ("adjective-noun", "agreement", "requires"),
-        ("verb-noun", "valency", "valency"),
+        ("preposition-noun", "government", "government", "de"),
+        ("adjective-noun", "agreement", "requires", "en"),
+        ("verb-noun", "valency", "valency", "de"),
     ],
 )
-@pytest.mark.parametrize("language", ["de", "en"])
 def test_public_wrong_construction_is_not_licensed(
     tmp_path: Path, family: str, mutation: str, reason: str, language: str
 ) -> None:
@@ -525,11 +524,8 @@ def prove_cards(profile_path: Path, objectives_path: Path, root: Path, *, unsupp
         )
 
 
-@pytest.mark.parametrize("language", ["de", "en"])
-def test_ppp_default_automatic_and_independent_opt_ins(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, language: str
-) -> None:
-    profile, objectives, root = fixture(tmp_path, language, preset=None)
+def test_ppp_default_automatic_and_independent_opt_ins(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile, objectives, root = fixture(tmp_path, "en", preset=None)
     raw = json.loads(profile.read_text())
     choices = RecipeOverrides(
         include=("ppp_recognition", "adjective_declension", "form_cloze"), exclude=("form_translation",)
@@ -580,9 +576,7 @@ def test_ppp_default_automatic_and_independent_opt_ins(
     assert {c["recipe"] for c in cards} == {"ppp_translation", "ppp_recognition", "adjective_declension", "form_cloze"}
     assert all(c["state"] == "accepted" for c in cards)
     assert next(c for c in cards if c["recipe"] == "adjective_declension")["answer"].splitlines()[0] == "amātam"
-    assert next(c for c in cards if c["recipe"] == "ppp_translation")["prompt"] == "amātus\n" + (
-        "Übersetze." if language == "de" else "Translate."
-    )
+    assert next(c for c in cards if c["recipe"] == "ppp_translation")["prompt"] == "amātus\nTranslate."
     assert call("export", "--run", str(root), "--output", str(tmp_path / "ppp.csv"))["exported"] == 4
 
 
@@ -1021,8 +1015,9 @@ def test_selection_bounds_and_identity_do_not_follow_wording(tmp_path: Path) -> 
     assert (before["note_id"], before["card_key"]) == (after["note_id"], after["card_key"])
 
 
-@pytest.mark.parametrize("language", ["de", "en"])
-@pytest.mark.parametrize("addition", [None, "ppp_recognition", "adjective_declension", "form_cloze"])
+@pytest.mark.parametrize(
+    "addition,language", [(None, "de"), ("ppp_recognition", "en"), ("adjective_declension", "de"), ("form_cloze", "en")]
+)
 def test_ppp_recipe_opt_ins_are_independent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, language: str, addition: str | None
 ) -> None:
@@ -1157,9 +1152,8 @@ def test_automatic_ppp_uses_form_meaning_not_lemma_gloss(tmp_path: Path, languag
     assert all(c["state"] == "withheld" for c in ppp)
 
 
-@pytest.mark.parametrize("language", ["de", "en"])
-def test_ppp_recognition_preserves_readings_without_guessing_number(tmp_path: Path, language: str) -> None:
-    profile, objectives, root = fixture(tmp_path, language, preset=None)
+def test_ppp_recognition_preserves_readings_without_guessing_number(tmp_path: Path) -> None:
+    profile, objectives, root = fixture(tmp_path, "de", preset=None)
     source = tmp_path / "deck.csv"
     source.write_text(source.read_text().replace("amātus", "amāta"))
     data = json.loads((tmp_path / "inputs.json").read_text())
@@ -2724,8 +2718,16 @@ def test_source_bound_rule_producer_keeps_production_policy_disabled(tmp_path: P
     assert call("export", "--run", str(root), "--output", str(tmp_path / "denied"))["exported"] == 0
 
 
-@pytest.mark.parametrize("mutation", ["wrong-feature", "wrong-form", "extra-clause", "extra-alternative"])
-@pytest.mark.parametrize("derived", [False, True])
+@pytest.mark.parametrize(
+    "mutation,derived",
+    [
+        ("wrong-feature", False),
+        ("wrong-form", False),
+        ("extra-clause", False),
+        ("extra-alternative", False),
+        ("wrong-feature", True),
+    ],
+)
 def test_source_bound_rule_rejects_candidate_claims(tmp_path: Path, mutation: str, derived: bool) -> None:
     from dataclasses import replace
 
