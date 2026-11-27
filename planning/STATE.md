@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-27T21:32:39Z"
+updated_at: "2026-11-27T23:26:05Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -12,7 +12,7 @@ blockers:
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
 next_action: Resolve blocker on T-201-validate-real-pipeline-and-linux-anki-desktop
-last_verification_result: pass for T-251-align-ppp-adjective-stem-convention-and-record at 2026-11-27T21:32:39Z
+last_verification_result: pass for T-248-diagnose-provider-deadline-boundaries-without at 2026-11-27T23:26:05Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -41,7 +41,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-251-align-ppp-adjective-stem-convention-and-record at 2026-11-27T21:32:39Z
+- pass for T-248-diagnose-provider-deadline-boundaries-without at 2026-11-27T23:26:05Z
 
 ## Next Action
 
@@ -57,8 +57,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 20
+- todo: 19
 - in_progress: 0
-- completed: 227
+- completed: 228
 - blocked: 4
 - cancelled: 0

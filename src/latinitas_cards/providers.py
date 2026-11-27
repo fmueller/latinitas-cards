@@ -255,9 +255,15 @@ class Result:
 
 
 class TransportFailure(Exception):
-    def __init__(self, kind: Literal["transient", "failed", "unknown"], request_id: str | None = None) -> None:
+    def __init__(
+        self,
+        kind: Literal["transient", "failed", "unknown"],
+        request_id: str | None = None,
+        timing: dict[str, int] | None = None,
+    ) -> None:
         self.kind = kind
         self.request_id = request_id
+        self.timing = timing
         super().__init__(kind)  # never persist provider exception bodies or credentials
 
 
@@ -266,6 +272,7 @@ class TransportReply:
     body: bytes
     request_id: str | None = None
     status: int = 200
+    timing: dict[str, int] | None = None
 
 
 class Transport(Protocol):
@@ -296,6 +303,7 @@ def _credential_reflected(raw: bytes, credential: str) -> bool:
 
 def _http_worker(pipe: Connection, endpoint: Endpoint, body: bytes, timeout: float, credential: str | None) -> None:
     """A disposable I/O process bounds DNS, connect, TLS and slow response bodies."""
+    pipe.send_bytes(b"W")
     url = urlsplit(endpoint.url)
     assert url.hostname is not None
     connection = (
@@ -309,6 +317,7 @@ def _http_worker(pipe: Connection, endpoint: Endpoint, body: bytes, timeout: flo
             headers["Authorization"] = f"Bearer {credential}"
         connection.request("POST", url.path or "/", body, headers)
         response = connection.getresponse()
+        pipe.send_bytes(b"H" + str(response.status).encode())
         request_id = response.getheader("x-request-id")
         if request_id and (credential is None or credential not in request_id):
             pipe.send_bytes(b"I" + request_id.encode())
@@ -318,7 +327,6 @@ def _http_worker(pipe: Connection, endpoint: Endpoint, body: bytes, timeout: flo
             and response.length in (None, 0)
             and (not credential or not _credential_reflected(data, credential))
         ):
-            pipe.send_bytes(b"S" + str(response.status).encode())
             pipe.send_bytes(b"B" + data)
     except (OSError, http.client.HTTPException, ValueError):
         pass  # The parent records unknown, never raw exception text.
@@ -332,6 +340,8 @@ class HTTPTransport:
 
     A cancelled/disconnected/HTTP-error request is conservatively unknown; HTTP
     status alone does not prove that inference never executed. Responses are capped.
+    Timing marks are when the parent received the worker-start, response-header and
+    screened-body markers, in milliseconds since this call started.
     """
 
     def __init__(self, credential: str | None = None) -> None:
@@ -343,24 +353,29 @@ class HTTPTransport:
         context = multiprocessing.get_context("spawn")
         reader, writer = context.Pipe(duplex=False)
         process = context.Process(target=_http_worker, args=(writer, endpoint, body, timeout, self._credential))
-        deadline = time.monotonic() + timeout
+        started = time.monotonic()
+        deadline = started + timeout
         request_id = None
         status = 200
+        timing: dict[str, int] = {}
         process.start()
         writer.close()
         try:
             while not cancel.is_set() and time.monotonic() < deadline:
                 if reader.poll(0.01):
                     message = reader.recv_bytes(1024 * 1024 + 1)
+                    mark = {b"W": "worker_started", b"H": "headers", b"B": "body"}.get(message[:1])
+                    if mark:
+                        timing[mark] = math.ceil((time.monotonic() - started) * 1000)
                     if message[:1] == b"I":
                         request_id = message[1:].decode()
-                    elif message[:1] == b"S":
+                    elif message[:1] == b"H":
                         status = int(message[1:])
                     elif message[:1] == b"B":
-                        return TransportReply(message[1:], request_id, status)
-            raise TransportFailure("unknown", request_id)
+                        return TransportReply(message[1:], request_id, status, timing)
+            raise TransportFailure("unknown", request_id, timing)
         except (EOFError, OSError, ValueError):
-            raise TransportFailure("unknown", request_id) from None
+            raise TransportFailure("unknown", request_id, timing) from None
         finally:
             reader.close()
             if process.is_alive():
@@ -1013,10 +1028,12 @@ class ProviderRun:
                 started = time.monotonic()
                 usage = None
                 stop_reason = None
+                timing = None
                 try:
                     reply = transport(ep, body, timeout, cancel)
                     if isinstance(reply, TransportReply):
                         raw = reply.body
+                        timing = reply.timing
                         call = call.model_copy(update={"provider_request_id": reply.request_id})
                     else:
                         raw = reply
@@ -1037,7 +1054,7 @@ class ProviderRun:
                                 stop_reason = "usage_above_reservation"
                             call = call.model_copy(update={"used_tokens": usage.total_tokens})
                     if cancel.is_set() or isinstance(reply, TransportReply) and reply.status != 200:
-                        raise TransportFailure("unknown", call.provider_request_id)
+                        raise TransportFailure("unknown", call.provider_request_id, timing)
                     try:
                         parsed = self._answer(ep, raw, task)
                     except ContractViolation:
@@ -1055,6 +1072,7 @@ class ProviderRun:
                 except TransportFailure as exc:
                     kind = exc.kind if exc.kind in ("transient", "failed", "unknown") else "unknown"
                     state: Literal["unknown", "failed"] = "unknown" if kind == "unknown" else "failed"
+                    timing = exc.timing
                     call = call.model_copy(
                         update={
                             "state": state,
@@ -1068,6 +1086,7 @@ class ProviderRun:
                     call = call.model_copy(update={"state": "unknown", "reason": "transport_interrupted"})
                     result = Result("unknown", "transport_interrupted", call_id)
                 elapsed = time.monotonic() - started
+                elapsed_milliseconds = math.ceil(elapsed * 1000)
                 if estimated_reservation:
                     if elapsed > timeout:
                         call = call.model_copy(update={"state": "unknown", "reason": "deadline_exceeded"})
@@ -1080,10 +1099,17 @@ class ProviderRun:
                         state=cast(Literal["succeeded", "failed", "unknown", "cancelled"], call.state),
                         usage=usage,
                         stop_reason=stop_reason,
-                        elapsed_milliseconds=math.ceil(elapsed * 1000),
+                        elapsed_milliseconds=elapsed_milliseconds,
                     )
                 ledger = ledger.model_copy(update={"calls": (*ledger.calls[:-1], call)})
                 self._save(ledger)
+                if timing is not None:
+                    # Diagnostic only, so it follows durable accounting; null means the marker never arrived.
+                    marks = {f"{name}_milliseconds": timing.get(name) for name in ("worker_started", "headers", "body")}
+                    _write(
+                        self.root / f"{call_id}.timing.json",
+                        canonical({**marks, "elapsed_milliseconds": elapsed_milliseconds}),
+                    )
                 if not retry or attempt == self.limits.retries:
                     return result
                 if cancel.wait(1):

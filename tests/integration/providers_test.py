@@ -1,5 +1,6 @@
 """Synthetic transport contracts, not empirical model acceptance."""
 
+import contextlib
 import json
 import os
 import socket
@@ -566,7 +567,13 @@ def test_offline_validation_disclosure_and_missing_token_bound(tmp_path: Path) -
 
 @contextmanager
 def server(
-    *, delay: Event | None = None, raw: bytes | None = None, extra_length: int = 0, status_code: int = 200
+    *,
+    delay: Event | None = None,
+    raw: bytes | None = None,
+    extra_length: int = 0,
+    status_code: int = 200,
+    headers_first: bool = False,
+    respond_at: float | None = None,
 ) -> Iterator[tuple[str, list[bytes], Event]]:
     requests: list[bytes] = []
     received = Event()
@@ -576,6 +583,19 @@ def server(
             body = self.rfile.read(int(self.headers["Content-Length"]))
             requests.append(body)
             received.set()
+            if respond_at is not None:
+                time.sleep(max(0.0, respond_at - time.monotonic()))
+            if headers_first:
+                payload = raw or answer()
+                self.send_response(status_code)
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.flush()
+                assert delay is not None
+                delay.wait(3)
+                with contextlib.suppress(OSError):
+                    self.wfile.write(payload)
+                return
             if delay is not None:
                 delay.wait(3)
             wire = json.loads(body)
@@ -902,6 +922,9 @@ def test_http_timeout_is_bounded_and_unknown(tmp_path: Path) -> None:
         )
         assert result.state == "unknown" and time.monotonic() - started < 2
         assert len(captured) == 1 and r.calls()[0].state == "unknown"
+        timing = json.loads((tmp_path / f"{r.calls()[0].call_id}.timing.json").read_bytes())
+        assert timing["worker_started_milliseconds"] < 1000 and timing["elapsed_milliseconds"] >= 1000
+        assert timing["headers_milliseconds"] is None and timing["body_milliseconds"] is None
 
 
 def test_source_instructions_cannot_expand_tools_or_destinations(tmp_path: Path) -> None:
@@ -1046,6 +1069,8 @@ def test_http_valid_json_with_incomplete_framing_is_unknown(tmp_path: Path) -> N
             token_bound=lambda body: len(body),
         )
         assert result.state == "unknown" and len(captured) == 1
+        timing = json.loads((tmp_path / f"{r.calls()[0].call_id}.timing.json").read_bytes())
+        assert isinstance(timing["headers_milliseconds"], int) and timing["body_milliseconds"] is None
 
 
 @pytest.mark.parametrize("provider", ["latinitas-json/1", "openai", "ollama"])
@@ -1695,6 +1720,83 @@ def test_estimated_unknown_http_retains_screened_error_response(
         assert call.response_artifact is not None
         assert (r.root / call.response_artifact).read_bytes() == raw
         assert campaign.load().charges[0].state == "unknown"
+        timing = json.loads((r.root / f"{call.call_id}.timing.json").read_bytes())
+        assert timing["headers_milliseconds"] <= timing["body_milliseconds"]
+
+
+@pytest.mark.parametrize("case", ["body_delay", "near_deadline"])
+def test_estimated_http_timing_separates_headers_body_and_postprocessing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    release = Event()
+    started = time.monotonic()
+    near = case == "near_deadline"
+    with server(
+        raw=estimated_reply(),
+        delay=None if near else release,
+        headers_first=not near,
+        respond_at=started + 1.5 if near else None,
+    ) as (url, captured, _):
+        ep = endpoint().model_copy(update={"url": url})
+        settings = estimated_settings(ep)
+        campaign = allocate(settings)
+        r = ProviderRun(
+            tmp_path / "a",
+            run_id="timing",
+            config_sha256=digest("config"),
+            proposal=ep,
+            counter_check=ep,
+            accounting=settings,
+            limits=Limits(timeout_seconds=2),
+        )
+        result = r.request(
+            "proposal",
+            task(),
+            recipe="form_recognition",
+            scope=SCOPE,
+            prompt_version="proposal/2",
+            transport=HTTPTransport(),
+        )
+        release.set()
+    call = r.calls()[0]
+    timing = json.loads((r.root / f"{call.call_id}.timing.json").read_bytes())
+    charge = campaign.load().charges[0]
+    assert len(captured) == 1 and len(campaign.load().charges) == 1
+    assert charge.reservation.execution_seconds == 2
+    assert charge.elapsed_milliseconds == timing["elapsed_milliseconds"]
+    assert timing["worker_started_milliseconds"] <= timing["headers_milliseconds"]
+    if near:
+        assert result.state == "succeeded" and charge.state == "succeeded"
+        assert 1000 < timing["headers_milliseconds"] <= timing["body_milliseconds"] < 2000
+        assert timing["body_milliseconds"] <= timing["elapsed_milliseconds"] < 2000
+    else:
+        assert (result.state, result.reason, charge.state) == ("unknown", "deadline_exceeded", "unknown")
+        assert timing["body_milliseconds"] is None
+        assert timing["elapsed_milliseconds"] > 2000 and call.response_artifact is None
+
+
+def test_estimated_timing_write_failure_follows_durable_accounting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings)
+    write = provider_module._write
+
+    def failing(path: Path, data: bytes) -> None:
+        if path.name.endswith(".timing.json"):
+            raise OSError("synthetic timing write failure")
+        write(path, data)
+
+    def timed(endpoint: Endpoint, body: bytes, timeout: float, cancel: Event) -> TransportReply:
+        return TransportReply(estimated_reply(), timing={"headers": 1, "body": 2})
+
+    monkeypatch.setattr(provider_module, "_write", failing)
+    r = estimated_run(tmp_path / "a", settings)
+    with pytest.raises(OSError, match="synthetic timing"):
+        estimated_invoke(r, cast(Fake, timed))
+    assert r.calls()[0].state == "succeeded" and campaign.load().charges[0].state == "succeeded"
 
 
 @pytest.mark.parametrize("error", ["unknown", "unrecognized-http-error", "cancelled"])

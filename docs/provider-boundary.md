@@ -309,6 +309,22 @@ retry ceiling survives reopen. HTTP errors, timeouts, disconnects and cancellati
 after dispatch are unknown, not proof that inference was never executed. A
 disposable HTTP I/O process bounds DNS/connect/TLS/body waits and is terminated on
 cancellation/deadline. This cannot cancel processing or billing at the remote server.
+Once `HTTPTransport` has started its worker and returns or fails, the run writes
+`<call_id>.timing.json` after the call's ledger and any charge are durable. An interrupt
+such as Ctrl-C during the transport call loses the marks. The file records the
+integer milliseconds, since the transport call started, at which the parent received
+the worker-start, response-header and screened-body markers, plus the total elapsed
+time including local postprocessing. The parent wakes as soon as a marker arrives
+and otherwise rechecks cancellation and the deadline every 10 ms. A marker never
+received stays `null`. A null worker start means local worker startup did not finish
+or the worker failed before reporting. Headers without a body mean the call ended
+after the worker parsed headers. The body read failed or was slow, screening dropped
+the body, or cancellation or the deadline came first. Without headers, the call
+ended before the worker parsed response headers. Causes include local connection
+setup, a fast connection failure, slow DNS, connect, TLS, send or header wait, or
+cancellation. The timing does not attribute delay to the remote service, and it
+does not change the deadline, retries or charges. Runs recorded before this change
+have no such split, so their historical cause stays unknown.
 
 Unabandoned unresolved dispatches block new work. Abandonment permits different
 work while preserving the unresolved call and its charged reservation. Resume reuses integrity-checked
