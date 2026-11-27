@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- Provider profiles can opt into strict OpenAI-compatible JSON Schema output;
+  MiniMax Chat uses prompt-only formatting with strict local answer validation.
 - A disposable offline walkthrough covers resumable grammar runs, curated review
   and CSV handoffs; a separate Linux Desktop acceptance kit lists unexecuted steps.
 - Opt-in `acceptance-1` answers show per-card review origin and collapsible evidence

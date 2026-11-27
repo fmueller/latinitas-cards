@@ -54,7 +54,7 @@ ANSWER_CONTRACT = (
 
 class Endpoint(Record):
     url: Text
-    provider: Literal["latinitas-json/1", "ollama", "openai"]
+    provider: Literal["latinitas-json/1", "ollama", "openai", "openai-json-schema"]
     model: Text
     locality: Literal["local", "hosted"]
     credential_ref: Text | None
@@ -68,6 +68,8 @@ class Endpoint(Record):
             raise ValueError("endpoint queries, fragments and control characters are forbidden")
         if self.locality == "hosted" and url.scheme != "https":
             raise ValueError("hosted endpoints require HTTPS")
+        if self.provider == "openai-json-schema" and url.hostname in ("api.minimax.io", "api.minimaxi.com"):
+            raise ValueError("MiniMax Chat does not document strict schema output")
         return self
 
 
@@ -372,6 +374,22 @@ def _minimax_chat(endpoint: Endpoint) -> bool:
     )
 
 
+def _strict_schema(value: JsonValue) -> JsonValue:
+    """Project the answer schema onto the portable strict-output subset.
+
+    Local validation retains string/array constraints and semantic invariants.
+    """
+    if isinstance(value, list):
+        return [_strict_schema(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            "enum" if key == "const" else key: [item] if key == "const" else _strict_schema(item)
+            for key, item in value.items()
+            if key not in {"minLength", "pattern", "minItems"}
+        }
+    return value
+
+
 def _request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: int) -> bytes:
     # Both roles solve the same proposal-free task. Model/source data cannot alter
     # the installed instruction, endpoint, headers, output cap or destinations.
@@ -401,6 +419,18 @@ def _request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: i
                 "options": {"num_predict": output},
             }
         )
+    response_options: dict[str, JsonValue] = {}
+    if endpoint.provider == "openai-json-schema":
+        response_options["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "latinitas_model_answer",
+                "strict": True,
+                "schema": _strict_schema(schema),
+            },
+        }
+    elif urlsplit(endpoint.url).hostname not in ("api.minimax.io", "api.minimaxi.com"):
+        response_options["response_format"] = {"type": "json_object"}
     return canonical(
         {
             "model": endpoint.model,
@@ -411,7 +441,7 @@ def _request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: i
                 if _minimax_chat(endpoint)
                 else {"max_tokens": output}
             ),
-            "response_format": {"type": "json_object"},
+            **response_options,
         }
     )
 
@@ -432,8 +462,13 @@ def _answer(endpoint: Endpoint, raw: bytes, task: ModelTask) -> ModelAnswer:
             if choices[0].get("finish_reason") != "stop":
                 raise ValueError("incomplete output")
             message = choices[0].get("message")
-        if not isinstance(message, dict) or message.get("tool_calls") or message.get("function_call"):
-            raise ValueError("model tools forbidden")
+        if (
+            not isinstance(message, dict)
+            or message.get("tool_calls")
+            or message.get("function_call")
+            or message.get("refusal")
+        ):
+            raise ValueError("model tools or refusal forbidden")
         text = message.get("content")
         if not isinstance(text, str):
             raise ValueError("missing answer")

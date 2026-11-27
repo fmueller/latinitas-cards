@@ -16,6 +16,48 @@ endpoint; `ollama` means a non-streaming Ollama chat endpoint. Supply the full U
 including its path. `latinitas-json/1` is the direct strict task/answer protocol used
 by controlled test servers, not a claim of real-provider support or reliability.
 
+### Output capabilities
+
+Select `provider: openai-json-schema` explicitly for a Chat Completions endpoint
+and model documented to support strict Structured Outputs. For example, OpenAI's
+`https://api.openai.com/v1/chat/completions` with `gpt-4o-mini` or
+`gpt-4o-2024-08-06` supports this mode. It sends `response_format.type: json_schema`
+with `strict: true`, required fields and closed objects. Constants become singleton
+enums; string patterns/minimum lengths and minimum array lengths remain local
+checks, so the wire schema also fits the documented fine-tuned-model subset.
+The full local answer schema remains in the prompt. No model is selected or changed
+for you. Check the exact model's endpoint, token-cap and schema support before use.
+
+For other compatible services, this selector is an explicit operator declaration
+of documented strict-schema capability, not capability detection or certification.
+Provider errors and invalid answers fail without falling back to JSON mode or
+another model. A third-party service may silently ignore unsupported parameters;
+a locally valid answer does not prove provider-side schema enforcement.
+Existing `openai` configurations retain `json_object` JSON mode, which does not
+enforce a schema. Compatibility or accepting unknown parameters proves neither
+JSON mode nor schema enforcement on a third-party service.
+
+MiniMax Chat requests to `api.minimax.io` and `api.minimaxi.com` omit
+`response_format`, and cannot select `openai-json-schema`. The official M3.1-Flash/M3
+Chat request schema does not document that field. The separate native
+`/v1/text/chatcompletion_v2` documentation limits `json_schema` to Text-01;
+it does not establish support for M3 Chat. MiniMax therefore receives a prompt-only
+answer schema, with no provider-side JSON/schema guarantee claimed.
+
+Official sources rechecked 2026-11-27:
+- https://platform.openai.com/docs/guides/structured-outputs
+- https://platform.minimax.io/docs/api-reference/text-chat-openai
+- https://platform.minimax.io/docs/api-reference/text-post
+
+All modes retain strict local parsing, task binding and semantic validation.
+Refusals, truncation, malformed JSON and extra answer keys fail closed, even when
+the response claims to follow the schema. Valid structure does not establish Latin
+correctness or whole-card acceptance. Capability selection, including the complete
+wire schema, is committed in disclosure, request identity and pre-dispatch budgeting.
+Existing endpoint record keys and historical receipt formats are unchanged. Changed
+wire bytes need fresh permission and do not reuse an older completed invocation;
+old ledger calls remain charged and readable. Live qualification is separate.
+
 The orchestration caller must show `disclosure(task, scope, recipe=...)` before confirmation
 or network use, including provider retention policy information. It contains both
 effective endpoints/models, the complete outbound task, source fields/spans/language,
@@ -175,7 +217,8 @@ declared scope; a profile or permission cannot add another qualification:
 - The installed proposal/1 and blind/1 messages plus MiniMax structured-answer
   contract/1, which states the existing selected-sense validator invariant.
   Both roles receive the same source task, without the proposal answer.
-- Nonstreaming text-only JSON-object requests, `max_completion_tokens: 2048` and
+- Nonstreaming text-only requests with a prompt-only JSON answer contract,
+  `max_completion_tokens: 2048` and
   `reasoning_effort: low`, 60-second configured deadline and zero retries. No tools,
   multimodal data, alternate service tier, user-supplied system prompt or fallback.
 - Unchanged strict stop/one-choice/task-bound answer parsing, version-2 hosted
@@ -195,7 +238,10 @@ explanation; the explicit structural contract then produced two complete answers
 The proposal gave the useful accusative plural `silvas`/`silvās`, but the blind
 counter-check falsely gave `silvae`. Structural success does not accept that claim;
 neither agreement nor this qualification supplies linguistic or whole-card authority.
-No runtime-purpose hosted request was used to qualify the identical wire.
+No runtime-purpose hosted request was used to qualify that historical wire.
+The current serializer omits its undocumented `response_format: json_object`;
+the historical observation is not live qualification of these changed bytes.
+Fresh wire-bound permission is required; no hosted rerun is authorized by this change.
 
 Observed public rates were USD 0.15/M input and USD 0.60/M output at
 https://platform.minimax.io/docs/guides/pricing-paygo.md. Actual plan deduction,

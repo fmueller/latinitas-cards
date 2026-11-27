@@ -1,12 +1,12 @@
 ---
 id: T-242-use-provider-supported-structured-output-with
 title: Use provider-supported structured output with explicit capability boundaries
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-241-align-blind-model-tasks-with-whole-card-assertion
-updated_at: "2026-11-27T01:28:37Z"
+updated_at: "2026-11-27T04:19:43Z"
 ---
 
 # T-242-use-provider-supported-structured-output-with Use provider-supported structured output with explicit capability boundaries
@@ -28,3 +28,23 @@ The current providers._request sends response_format=json_object to every OpenAI
 - Official sources checked 2026-11-27: https://platform.openai.com/docs/guides/structured-outputs ; https://platform.minimax.io/docs/api-reference/text-chat-openai ; https://platform.minimax.io/docs/api-reference/text-post . Recheck if provider capabilities change.
 
 ## Implementation Notes
+
+- Added explicit `openai-json-schema` capability selection without adding endpoint
+  record keys or changing historical endpoint hashes. Supported configurations send
+  strict closed/required schemas; local string/array and semantic checks remain.
+- Known MiniMax Chat hosts omit undocumented `response_format` and reject strict
+  selection. Existing non-MiniMax `openai` profiles retain JSON mode. Third-party
+  compatibility and locally valid output do not prove remote schema enforcement.
+- Extended complete-wire reservation and HTTP coverage; refusal/truncation/invalid
+  output and a synthetic historical MiniMax transition retain fail-closed behavior,
+  old charges, permission commitments and distinct current invocation identities.
+- Dedicated simplifier and high-risk conventional review completed. Five specialist
+  lanes plus independent security/data, claims/test-cost and overall verification
+  closed the documentation overclaim and historical-transition evidence gap.
+- Ten additional test cases, none removed. No live provider calls or qualification,
+  semantic-policy enablement, Latin replay, study or collection changes occurred.
+- RTK verified; exact evidence used proxy output. Comment-hygiene AST pass skipped
+  because uncomment is absent. Mutation adapter doctor passed; its calibrated
+  research-reader scope does not cover providers, so no provider score is claimed.
+- 2026-11-27T04:19:43Z: verification pass
+- 2026-11-27T04:19:43Z: Implemented explicit strict schema capability with preserved local validation and historical accounting; independent review and final Ruff/mypy/4013-pass pytest chain complete. Live qualification remains separate.

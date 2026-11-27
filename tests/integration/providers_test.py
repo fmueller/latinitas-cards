@@ -134,17 +134,17 @@ class AccountingFake(Fake):
         return super().__call__(endpoint, body, timeout, cancel)
 
 
-@pytest.mark.parametrize("provider", ["latinitas-json/1", "openai", "ollama"])
+@pytest.mark.parametrize("provider", ["latinitas-json/1", "openai", "openai-json-schema", "ollama"])
 @pytest.mark.parametrize("shortfall", [0, 1])
 def test_complete_wire_role_budget_boundary(
-    tmp_path: Path, provider: Literal["latinitas-json/1", "openai", "ollama"], shortfall: int
+    tmp_path: Path, provider: Literal["latinitas-json/1", "openai", "openai-json-schema", "ollama"], shortfall: int
 ) -> None:
     output_cap = 37
     proposal = endpoint(model="synthetic/ā").model_copy(update={"provider": provider})
     counter = proposal.model_copy(update={"model": "independent-longer/Überprüfung"})
     supplied = task().model_copy(update={"objective": "Bestimme amās: Präsens, nicht Präteritum. Grüße!"})
     raw_answer = answer()
-    if provider == "openai":
+    if provider in ("openai", "openai-json-schema"):
         raw_answer = canonical(
             {
                 "choices": [{"finish_reason": "stop", "message": {"content": raw_answer.decode()}}],
@@ -208,7 +208,10 @@ def test_complete_wire_role_budget_boundary(
                 assert decoded["format"] == ModelAnswer.model_json_schema()
                 assert decoded["options"]["num_predict"] == output_cap
             else:
-                assert decoded["response_format"] == {"type": "json_object"}
+                if provider == "openai":
+                    assert decoded["response_format"] == {"type": "json_object"}
+                else:
+                    assert decoded["response_format"]["type"] == "json_schema"
                 assert decoded["max_tokens"] == output_cap
         assert len(wire) > len(wire.decode())  # Non-ASCII bytes really reach the service.
 
@@ -608,8 +611,10 @@ def server(
         thread.join()
 
 
-@pytest.mark.parametrize("provider", ["latinitas-json/1", "openai", "ollama"])
-def test_public_http_boundary(tmp_path: Path, provider: Literal["latinitas-json/1", "openai", "ollama"]) -> None:
+@pytest.mark.parametrize("provider", ["latinitas-json/1", "openai", "openai-json-schema", "ollama"])
+def test_public_http_boundary(
+    tmp_path: Path, provider: Literal["latinitas-json/1", "openai", "openai-json-schema", "ollama"]
+) -> None:
     with server() as (url, captured, _):
         ep = Endpoint(url=url, provider=provider, model="synthetic-only/1", locality="local", credential_ref=None)
         r = ProviderRun(tmp_path, run_id="synthetic-run", config_sha256=digest("config"), proposal=ep, counter_check=ep)
@@ -629,7 +634,63 @@ def test_public_http_boundary(tmp_path: Path, provider: Literal["latinitas-json/
         if provider != "latinitas-json/1":
             assert json.loads(wire["messages"][1]["content"]) == json.loads(canonical(task()))
             assert "tools" not in wire
+        if provider == "openai-json-schema":
+            output = wire["response_format"]
+            assert output["type"] == "json_schema"
+            assert output["json_schema"]["strict"] is True
+            schema = output["json_schema"]["schema"]
+            assert schema["properties"]["format"]["enum"] == ["latinitas-model-answer"]
+            assert schema["properties"]["version"]["enum"] == [1]
+            for obj in (schema, schema["$defs"]["Assertion"], schema["$defs"]["Evidence"]):
+                assert obj["additionalProperties"] is False
+                assert set(obj["required"]) == set(obj["properties"])
+            assert schema["$defs"]["Assertion"]["properties"]["selected_sense"]["anyOf"][1] == {"type": "null"}
+            assert schema["$defs"]["Text"] == {"type": "string"}
+            assert "minItems" not in schema["properties"]["assertions"]
         assert captured[0] == (tmp_path / r.calls()[0].request_artifact).read_bytes()
+
+
+def test_minimax_cannot_claim_strict_chat_support() -> None:
+    with pytest.raises(ValueError, match="MiniMax Chat does not document strict schema output"):
+        Endpoint(
+            url="https://api.minimax.io/v1/chat/completions",
+            provider="openai-json-schema",
+            model="MiniMax-M3.1-Flash",
+            locality="hosted",
+            credential_ref=None,
+        )
+
+
+@pytest.mark.parametrize("failure", ["refusal", "length", "extra_key", "malformed", "sense"])
+def test_strict_output_still_fails_closed(tmp_path: Path, failure: str) -> None:
+    ep = endpoint().model_copy(update={"provider": "openai-json-schema"})
+    r = run(tmp_path, ep=ep)
+    inner = json.loads(answer())
+    message = {"content": answer().decode()}
+    if failure == "refusal":
+        message["refusal"] = "Cannot comply"
+    elif failure == "extra_key":
+        inner["unexpected"] = "not permitted"
+        message["content"] = json.dumps(inner)
+    elif failure == "malformed":
+        message["content"] = "{"
+    elif failure == "sense":
+        inner["assertions"][0]["selected_sense"] = "invalid for label"
+        message["content"] = json.dumps(inner)
+    fake = Fake(
+        [canonical({"choices": [{"finish_reason": "length" if failure == "length" else "stop", "message": message}]})]
+    )
+    result = r.request(
+        "proposal",
+        task(),
+        recipe="form_recognition",
+        scope=SCOPE,
+        prompt_version="proposal/1",
+        transport=fake,
+        token_bound=lambda body: len(body),
+    )
+    assert result.state == "failed" and result.reason == "malformed_output"
+    assert result.answer is None and len(fake.requests) == 1
 
 
 def test_cancel_in_flight_http_is_unknown_and_not_retried(tmp_path: Path) -> None:
@@ -1300,12 +1361,95 @@ def test_minimax_estimated_runtime_admission_is_installed_and_exact(
             "stream",
             "max_completion_tokens",
             "reasoning_effort",
-            "response_format",
         }
         assert wire["model"] == "MiniMax-M3.1-Flash" and wire["stream"] is False
         assert wire["max_completion_tokens"] == 2048 and wire["reasoning_effort"] == "low"
-        assert wire["response_format"] == {"type": "json_object"}
+        assert "response_format" not in wire
     assert len(campaign.load().charges) == 2
+
+
+def test_minimax_historical_wire_stays_readable_and_charged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    ep = Endpoint(
+        url="https://api.minimax.io/v1/chat/completions",
+        provider="openai",
+        model="MiniMax-M3.1-Flash",
+        locality="hosted",
+        credential_ref=None,
+    )
+    settings = estimated_settings(ep)
+    campaign = allocate(settings, calls=2)
+    limits = Limits(max_calls=2, retries=0)
+
+    def opened(root: Path = tmp_path / "run", *, run_id: str = "synthetic-run") -> ProviderRun:
+        return ProviderRun(
+            root,
+            run_id=run_id,
+            config_sha256=digest("config"),
+            proposal=ep,
+            counter_check=ep,
+            accounting=settings,
+            limits=limits,
+        )
+
+    def grant(r: ProviderRun) -> HostedPermission:
+        disclosed = json.loads(r.disclosure(task(), SCOPE, recipe="form_recognition"))
+        return permission(
+            ep,
+            run_id=r.run_id,
+            version=2,
+            accounting=settings.model_dump(mode="json"),
+            effective_limits_sha256=digest(limits),
+            max_microdollars=25000000,
+            max_execution_seconds=86400,
+            possible_existing_credits_use=True,
+            input_sha256s=[*disclosed["input_sha256s"], *disclosed["request_sha256s"]],
+        )
+
+    current_request = provider_module._request
+
+    def historical_request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: int) -> bytes:
+        wire = json.loads(current_request(endpoint, task, prompt_version, output))
+        return canonical({**wire, "response_format": {"type": "json_object"}})
+
+    reply = canonical(
+        {
+            "choices": [{"finish_reason": "stop", "message": {"content": answer().decode()}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 30, "total_tokens": 130},
+        }
+    )
+    with monkeypatch.context() as old:
+        old.setattr(provider_module, "_request", historical_request)
+        r = opened()
+        old_grant = grant(r)
+        old_fake = Fake([reply])
+        assert estimated_invoke(r, old_fake, permission=old_grant).state == "succeeded"
+        old_call = r.calls()[0]
+        assert json.loads(old_fake.requests[0])["response_format"] == {"type": "json_object"}
+        old_ledger = (r.root / "provider-ledger.json").read_bytes()
+        old_charge = campaign.load().charges[0]
+
+    reopened = opened()
+    assert reopened.calls() == (old_call,)
+    assert (reopened.root / old_call.request_artifact).read_bytes() == old_fake.requests[0]
+    assert (reopened.root / "provider-ledger.json").read_bytes() == old_ledger
+    assert campaign.load().charges == (old_charge,)
+    assert reopened.completed("proposal", task(), SCOPE) is None
+    fake = Fake([reply])
+    assert estimated_invoke(reopened, fake, permission=old_grant).reason == "permission_or_scope"
+    assert not fake.requests and reopened.calls() == (old_call,)
+    fresh_grant = grant(reopened)
+    assert estimated_invoke(reopened, fake, permission=fresh_grant).state == "succeeded"
+    assert len(fake.requests) == 1 and "response_format" not in json.loads(fake.requests[0])
+    new_call = reopened.calls()[1]
+    assert new_call.request_sha256 != old_call.request_sha256 and new_call.stage_id != old_call.stage_id
+    assert reopened.calls()[0] == old_call and campaign.load().charges[0] == old_charge
+    assert len(campaign.load().charges) == 2
+    assert estimated_invoke(reopened, fake, role="counter_check", permission=fresh_grant).reason == "budget_exhausted"
+    other = opened(tmp_path / "other-run", run_id="other-run")
+    result = estimated_invoke(other, fake, permission=grant(other))
+    assert result.state == "deferred" and result.reason == "campaign_budget_exhausted"
+    assert len(fake.requests) == 1 and len(campaign.load().charges) == 2
 
 
 @pytest.mark.parametrize("usage_ok", [True, False])
