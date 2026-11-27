@@ -46,8 +46,11 @@ from .claim_review import Evidence
 from .deck_evidence import CHECKER, DeckTask, analyze_deck
 from .html_text import source_html_to_text
 from .latin_library import LocalStanza
+from .phrase_inputs import Features
 from .pipeline_batches import _atomic, run_lock
 from .pipeline_consumers import (
+    FORM_ASSERTION_VALUE_CONTRACTS,
+    FORM_PRESENTATION,
     Analysis,
     FormObjective,
     Objectives,
@@ -58,6 +61,7 @@ from .pipeline_consumers import (
     _decide,
     _entry,
     _export,
+    _feature_terms,
     _form,
     _versions,
     current_cards,
@@ -69,6 +73,7 @@ from .pipeline_consumers import (
 from .pipeline_profile import PipelineProfile, load_pipeline_profile
 from .pipeline_reporting import build_report, safe_snapshot
 from .providers import (
+    ANSWER_CONTRACT,
     PROMPT_VERSIONS,
     Endpoint,
     HostedPermission,
@@ -267,24 +272,23 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
         evidence.append(
             Evidence("confirmed-deck-mapping", source.scope + "/" + identity, "1", canonical(selected).decode())
         )
-        if not isinstance(objective, FormObjective) or objective.recipe == "form_translation":
-            supplied = canonical({"entry": entry, "identity": asdict(source.identities[identity])}).decode()
-            evidence.append(
-                Evidence(
-                    "unverified-form-entry" if isinstance(objective, FormObjective) else "unverified-phrase-entry",
-                    source.scope + "/" + identity,
-                    "1",
-                    supplied,
-                )
+        supplied = canonical({"entry": entry, "identity": asdict(source.identities[identity])}).decode()
+        evidence.append(
+            Evidence(
+                "unverified-form-entry" if isinstance(objective, FormObjective) else "unverified-phrase-entry",
+                source.scope + "/" + identity,
+                "1",
+                supplied,
             )
-            scopes.append(
-                Scope(
-                    source_identity=identity,
-                    fields=("phrase-input/entry",),
-                    spans=(Span(start=0, end=len(supplied)),),
-                    language=profile.language,
-                )
+        )
+        scopes.append(
+            Scope(
+                source_identity=identity,
+                fields=("phrase-input/entry",),
+                spans=(Span(start=0, end=len(supplied)),),
+                language=profile.language,
             )
+        )
     registry = SupportRegistry.read_json(canonical(SUPPORT_REGISTRY))
     keys = next(e.target for e in registry.entries if e.recipe == card.recipe)
     features = objective.target if isinstance(objective, FormObjective) else None
@@ -308,22 +312,35 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
     }
     target: dict[str, JsonValue] = {key: values[key] for key in keys}
     binding = card.binding.model_copy(update={"config_sha256": _config(profile)})
-    request_objective = card.recipe
-    if isinstance(objective, FormObjective) and card.recipe == "form_translation":
+    if isinstance(objective, FormObjective):
         request_objective = canonical(
             {
                 "recipe": card.recipe,
+                "answer_contract": ANSWER_CONTRACT,
                 "selected_form": objective.form,
                 "selected_sense": objective.sense,
+                "anchors": objective.anchors,
                 "context": objective.context,
-                "assertions": tuple({"id": a.id, "kind": a.kind} for a in card.claims.assertions),
+                "distinction": objective.distinction,
+                "presentation": FORM_PRESENTATION[profile.language],
+                "feature_terms": _feature_terms(source.deck),
+                "feature_order": tuple(Features.model_fields),
+                "assertions": tuple(
+                    {
+                        "id": a.id,
+                        "kind": a.kind,
+                        "value_contract": FORM_ASSERTION_VALUE_CONTRACTS.get(
+                            a.id,
+                            "Plain translated text for the selected sense."
+                            if a.kind == "translation"
+                            else "Plain explanatory prose, independently supported by evidence.",
+                        ),
+                    }
+                    for a in card.claims.assertions
+                ),
             }
         ).decode()
-    elif isinstance(objective, FormObjective) and card.recipe == "ppp_recognition" and objective.context:
-        request_objective = canonical(
-            {"recipe": card.recipe, "context": objective.context, "selected_form": objective.form}
-        ).decode()
-    elif not isinstance(objective, FormObjective):
+    else:
         pattern = next(p for p in source.data.patterns if p.key == objective.selection.pattern)
         supplied_pattern = canonical(pattern).decode()
         evidence.append(
@@ -355,6 +372,7 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
         request_objective = canonical(
             {
                 "recipe": card.recipe,
+                "answer_contract": ANSWER_CONTRACT,
                 "family": pattern.family,
                 "function_words": pattern.function_words,
                 "bindings": objective.selection.bindings,

@@ -217,12 +217,8 @@ def captured_answer(body: dict[str, Any], paraphrase: bool = False) -> bytes:
         for a in objective["assertions"]:
             if a["id"].startswith("caveat-"):
                 values[a["id"]] = caveat
-        prompt = form["text"] + ("\nTranslate." if language == "en" else "\nÜbersetze.")
-        answer = translation + (
-            "\nReference guidance; self-assessment."
-            if language == "en"
-            else "\nReferenz als Orientierung; Selbstbeurteilung."
-        )
+        prompt = objective["presentation"]["translation_prompt"].format(surface=form["text"])
+        answer = objective["presentation"]["translation_answer"].format(translations=translation)
         answer += "\n" + explanation + "\n" + caveat
         selected_sense = sense["key"]
     else:
@@ -415,6 +411,10 @@ def test_complete_public_comparison_and_saved_reuse(
         assert len(sent) == 2 and sent[0]["messages"][1]["content"] == sent[1]["messages"][1]["content"]
         task = json.loads(sent[1]["messages"][1]["content"])
         assert task["reference_constraints"] == []
+        objective = json.loads(task["objective"])
+        assert "For form translations" in objective["answer_contract"]
+        assert "mapping every bound role to its sense key" in objective["answer_contract"]
+        assert objective["answer_contract"] in sent[1]["messages"][0]["content"]
         if family != "form":
             assert json.loads(task["objective"])["contexts"] == [CONTEXTS[family][language]]
             assert [e["text"] for e in task["source_evidence"] if e["source"] == "unverified-phrase-context"] == [

@@ -1,11 +1,11 @@
 ---
 id: T-241-align-blind-model-tasks-with-whole-card-assertion
 title: Align blind model tasks with whole-card assertion and language contracts
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies: []
-updated_at: "2026-11-27T01:28:37Z"
+updated_at: "2026-11-27T02:54:26Z"
 ---
 
 # T-241-align-blind-model-tasks-with-whole-card-assertion Align blind model tasks with whole-card assertion and language contracts
@@ -28,3 +28,6 @@ Fix the request/checker mismatch reproduced in the ten-entry development trial. 
 - Source report: https://ampcode.com/artifacts/ten-entry-latin-trial-408e5fb9-10c2-4fde-a753-08f91ae7f770 . Private trial data stays outside Git. No new hosted calls are needed to reproduce the contract gap.
 
 ## Implementation Notes
+
+- 2026-11-27T02:54:15Z: verification pass
+- 2026-11-27T02:54:26Z: Verified at 2026-11-27T02:54:15Z after dedicated simplification, independent high-risk review, disposition verification and final outcome verification. Ruff and mypy passed; full pytest 4003 passed, 7 skipped in 3091.86s (chain wall 3093.80s). Added two test cases, removed none. Whole-card request contracts preserve independent blind solving, untrusted input isolation, strict readers and disabled acceptance/export gates. T-242 and T-243 remain separate; no successor selected.

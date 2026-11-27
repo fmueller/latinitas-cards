@@ -267,12 +267,76 @@ def _form(source: Source, entry: EntryV2, key: str) -> FormV2:
     return form
 
 
+def _feature_terms(deck: DeckProfile) -> dict[str, dict[str, str]]:
+    return {
+        key: {
+            "label": feature_name(key, deck.morphology.terminology, deck.language_tag),
+            **{
+                value: feature_value(key, canonical_value, deck.morphology.terminology, deck.language_tag)
+                for value, canonical_value in values.items()
+            },
+        }
+        for key, values in _CANONICAL.items()
+    }
+
+
 def _features(features: Features, deck: DeckProfile) -> str:
-    return "; ".join(
-        f"{feature_name(k, deck.morphology.terminology, deck.language_tag)}: "
-        f"{feature_value(k, _CANONICAL[k][v], deck.morphology.terminology, deck.language_tag)}"
-        for k, v in features.model_dump(exclude_none=True).items()
-    )
+    terms = _feature_terms(deck)
+    return "; ".join(f"{terms[k]['label']}: {terms[k][v]}" for k, v in features.model_dump(exclude_none=True).items())
+
+
+FORM_PRESENTATION = {
+    "de": {
+        "production_prompt": "Bilde die lateinische Form: {cue}\n{features}",
+        "translation_prompt": "{surface}\nÜbersetze.",
+        "translation_answer": "{translations}\nReferenz als Orientierung; Selbstbeurteilung.",
+        "recognition_prompt": "{context_or_surface}\nBestimme die Form; mögliche Lesarten angeben.",
+        "cloze_prompt": "{context}\n{features}\n{lemma} — {meaning}",
+        "ppp_suffix": "PPP (Partizip Perfekt Passiv)",
+        "stem_line": "Stamm/Basis: {stem}",
+    },
+    "en": {
+        "production_prompt": "Supply the Latin form: {cue}\n{features}",
+        "translation_prompt": "{surface}\nTranslate.",
+        "translation_answer": "{translations}\nReference guidance; self-assessment.",
+        "recognition_prompt": "{context_or_surface}\nAnalyze the form; give possible readings.",
+        "cloze_prompt": "{context}\n{features}\n{lemma} — {meaning}",
+        "ppp_suffix": "PPP (perfect passive participle)",
+        "stem_line": "Stem/base: {stem}",
+    },
+}
+
+
+FORM_ASSERTION_VALUE_CONTRACTS = {
+    "source": "JSON object {entry, sense}: the supplied entry and its selected sense object, not just the sense key.",
+    "target": (
+        "JSON object {surface, features, source_role, anchors, rule}, plus context only for a contextual "
+        "recognition/cloze task. surface is Latin; features uses canonical feature names and values, with "
+        "unspecified features null. source_role is the selected form's role, or derived if none is selected. "
+        "anchors contains the full supplied form objects in selected anchor order (or []). "
+        "rule is null without derivation; otherwise identify the applicable derivation: "
+        "regular-first-present-active/1, regular-first-declension/1 or regular-us-a-um/1. "
+        "A selected PPP can anchor an adjective derivation while retaining its source_role."
+    ),
+    "stem": (
+        "JSON object {convention, components, operation, surface}. components is an ordered array of "
+        "{role, text} objects: stem then personal-ending (verb) or case-ending (noun/adjective). "
+        "Use bennett-present-stem/1 for verbs, bennett-declensional-stem/1 for nouns, or "
+        "bounded-generator-base/1 for adjectives. operation is concatenation when component texts "
+        "reconstruct the Latin surface; otherwise unverified with ending text null."
+    ),
+    "rendered": (
+        "JSON object {prompt, answer}, both strings: independently construct the whole visible card, "
+        "using presentation templates. Production cue: second anchor for a verb with two anchors, otherwise "
+        "first anchor, otherwise mapped lemma. Add ppp_suffix as a new prompt line for PPP production. "
+        "Production/cloze answer begins with the Latin surface. Translation joins readings with ' / '. "
+        "Recognition joins distinct feature displays for all same-surface source forms with newlines, "
+        "prefixed by 'PPP — ' for PPP. Feature displays use feature_order, omit nulls, and join "
+        "'label: value' terms with '; '. Append stem_line if stem is listed, then independently supported "
+        "explanation and caveat clauses in assertion order, each on a new answer line. "
+        "Templates specify fixed presentation only; solve their placeholders independently."
+    ),
+}
 
 
 def _assertion(
@@ -506,6 +570,7 @@ def rule_checks(source: Source, card: Rendered, root: Path | None = None) -> tup
 def _render_form(
     source: Source, objective: FormObjective, language: str
 ) -> tuple[str, str, tuple[Assertion, ...], str, str]:
+    presentation = FORM_PRESENTATION[language]
     entry, sense = _entry(source, objective.entry, objective.sense)
     selected = _form(source, entry, objective.form) if objective.form else None
     anchors = tuple(_form(source, entry, key) for key in objective.anchors)
@@ -591,13 +656,9 @@ def _render_form(
             cue = anchors[0].text
         else:
             cue = source.records[entry.identity].fields[source.deck.fields.lexical_entry_field]
-        prompt = (
-            "Bilde die lateinische Form" if language == "de" else "Supply the Latin form"
-        ) + f": {cue}\n{_features(target, source.deck)}"
+        prompt = presentation["production_prompt"].format(cue=cue, features=_features(target, source.deck))
         if ppp:
-            prompt += "\n" + (
-                "PPP (Partizip Perfekt Passiv)" if language == "de" else "PPP (perfect passive participle)"
-            )
+            prompt += "\n" + presentation["ppp_suffix"]
         answer = surface
         if surface in prompt:
             raise ValueError("answer revealed by production prompt")
@@ -607,16 +668,11 @@ def _render_form(
         surface = selected.text
         target = selected.features
         if objective.recipe.endswith("translation"):
-            prompt = surface + "\n" + ("Übersetze." if language == "de" else "Translate.")
+            prompt = presentation["translation_prompt"].format(surface=surface)
             translations = objective.translations or form_translations(
                 entry.pos, target, sense.meaning, language, selected.source_role
             )
-            answer = " / ".join(translations)
-            answer += "\n" + (
-                "Referenz als Orientierung; Selbstbeurteilung."
-                if language == "de"
-                else "Reference guidance; self-assessment."
-            )
+            answer = presentation["translation_answer"].format(translations=" / ".join(translations))
         elif objective.recipe.endswith("recognition"):
             matching_forms = tuple(f for f in entry.forms if f.text == surface)
             readings = tuple(dict.fromkeys(_features(f.features, source.deck) for f in matching_forms))
@@ -626,15 +682,7 @@ def _render_form(
                 values = {getattr(f.features, objective.distinction) for f in matching_forms}
                 if None in values or len(values) != 1:
                     raise ValueError("ambiguous recognition distinction")
-            prompt = (
-                (objective.context or surface)
-                + "\n"
-                + (
-                    "Bestimme die Form; mögliche Lesarten angeben."
-                    if language == "de"
-                    else "Analyze the form; give possible readings."
-                )
-            )
+            prompt = presentation["recognition_prompt"].format(context_or_surface=objective.context or surface)
             answer = "\n".join(readings)
             if ppp:
                 answer = "PPP — " + answer
@@ -648,11 +696,12 @@ def _render_form(
             )
             if any(getattr(target, key) is None for key in required):
                 raise ValueError("complete cloze target features required")
-            prompt = objective.context + "\n" + _features(target, source.deck)
             cue = source.records[entry.identity].fields[source.deck.fields.lexical_entry_field]
             if surface in cue or surface in sense.meaning:
                 raise ValueError("cloze cue reveals the target")
-            prompt += "\n" + cue + " — " + sense.meaning
+            prompt = presentation["cloze_prompt"].format(
+                context=objective.context, features=_features(target, source.deck), lemma=cue, meaning=sense.meaning
+            )
             answer = surface
             material = "target-cloze/1"
         else:
@@ -692,7 +741,7 @@ def _render_form(
             )
         )
     if derived:
-        answer += "\n" + ("Stamm/Basis: " if language == "de" else "Stem/base: ") + derived.stem
+        answer += "\n" + presentation["stem_line"].format(stem=derived.stem)
         concatenates = surface.startswith(derived.stem)
         segmentation = {
             "convention": {

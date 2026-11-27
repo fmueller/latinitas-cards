@@ -217,11 +217,10 @@ def test_contextual_models_receive_selected_task(tmp_path: Path, recipe: str, co
         assert len(sent) == 2
         task = json.loads(sent[0]["messages"][1]["content"])
         if recipe == "ppp_recognition":
-            assert json.loads(task["objective"]) == {
-                "recipe": recipe,
-                "context": context,
-                "selected_form": "ppp",
-            }
+            objective = json.loads(task["objective"])
+            assert objective["recipe"] == recipe
+            assert objective["context"] == context
+            assert objective["selected_form"] == "ppp"
         elif recipe == "form_cloze":
             assert task["target"]["context"] == context
         if recipe == "adjective_declension":
