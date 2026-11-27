@@ -1,12 +1,12 @@
 ---
 id: T-201-validate-real-pipeline-and-linux-anki-desktop
 title: Validate real pipeline and Linux Anki Desktop journeys
-status: todo
+status: blocked
 priority: medium
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-200-evaluate-held-out-automatic-acceptance-against
-updated_at: "2026-11-02T23:10:11Z"
+updated_at: "2026-11-27T16:41:12Z"
 ---
 
 # T-201-validate-real-pipeline-and-linux-anki-desktop Validate real pipeline and Linux Anki Desktop journeys
@@ -39,6 +39,27 @@ blocks evidence. Use disposable data/profile; follow spec execution/validation r
   artifact revisions. No Mobile/existing scheduled-collection claim; previews/mocks
   cannot replace native/library/provider evidence.
 
+### Approved post-trial acceptance amendment — 2026-11-27
+
+The maintainer approved post-trial package revision 4 (unchanged requirements in
+revision 5), including this dated body amendment. Preserve the T200 dependency and
+all acceptance criteria above. The separate Taskrail block latch requires accepted
+T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts.
+Only the coordinator may unblock after recording their exact independent acceptance
+evidence/candidate; that does not waive T200 or this task's own qualification/native
+criteria. No re-block or reason rewrite is assumed.
+
+Before any hosted native journey, this owner checks M1/M2 qualification identity
+consequences against the exact installed endpoint/model/settings/accounting scope.
+If transport changes invalidate MiniMax qualification, propose and obtain separately
+bounded development-purpose qualification permission, valid exact-wire reservations
+and independent qualification acceptance before runtime admission or native hosted
+use. No existing qualification transfers by assumption, no self-attestation enables
+runtime, and the ten-entry R1 replay is not qualification. Unavailable qualification,
+budget or approval blocks this task; preserve failed/unknown charges and never bypass
+admission to obtain evidence. Do not use protected/native campaign capacity for
+unrecorded development calls.
+
 ## Verification Notes
 
 Use independent expected results from kit/protocol. Run the full mandatory ruff/mypy/
@@ -46,3 +67,5 @@ pytest chain before verify/complete. Name any unavailable environment as a block
 No publication permission is granted.
 
 ## Implementation Notes
+
+- 2026-11-27T16:41:12Z: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.
