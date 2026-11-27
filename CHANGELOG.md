@@ -41,6 +41,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `pipeline resume` refreshes model stages after an output-token allowance change,
+  retaining earlier receipts and charges and requiring fresh exact hosted permission.
 - Focused answer-evidence disclosures in Anki Desktop use Enter/Space to toggle
   without grading the card; ordinary review shortcuts outside them are unchanged.
 - German cards render withheld-status explanations, blank markers and reference

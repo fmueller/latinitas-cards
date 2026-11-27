@@ -590,9 +590,15 @@ def _card_key(card: Rendered, name: StageName) -> str:
     return name + "/" + digest((card.claims.note_id, card.claims.card_key))
 
 
-def _model_envelope(root: Path, card: Rendered, role: Role) -> dict[str, object]:
+def _model_envelope(
+    root: Path, card: Rendered, role: Role, *, max_output_tokens: int | None = None
+) -> dict[str, object]:
     saved = load_run(root)
     profile = saved.profile
+    if max_output_tokens is not None:
+        profile = profile.model_copy(
+            update={"processing": profile.processing.model_copy(update={"max_output_tokens": max_output_tokens})}
+        )
     source = load_source(Path(saved.profile_path), profile)
     task, scope = _task(card, source, profile)
     provider = _provider(root, load_execution(root), profile)
@@ -688,21 +694,29 @@ def _prerequisite(root: Path, index: dict[str, JsonValue], card: Rendered, name:
     reusable_stage(root, identity, binding=card.binding, versions=card.versions, input_sha256=stage.input_sha256)
     # Wrapper integrity alone does not validate the mutable analysis files it
     # commits. Follow ancestors even when their IDs left the current index.
-    pending, visited = [stage], set[str]()
+    capacity = load_run(root).profile.processing.max_output_tokens
+    stale = False
+    pending, visited = [(stage, capacity)], set[str]()
     while pending:
-        current = pending.pop()
+        current, historical_capacity = pending.pop()
         if current.stage_id in visited:
             continue
         visited.add(current.stage_id)
         envelope = cast(dict[str, object], stage_artifact(root, current))
         if current.stage in ("propose", "counter_check"):
             if set(envelope) == {"effective_profile", "outcomes", "prerequisite_output_sha256s"}:
+                historical_capacity = PipelineProfile.read_json(
+                    canonical(envelope["effective_profile"])
+                ).processing.max_output_tokens
+                stale |= historical_capacity != capacity
                 for outcome in cast(list[dict[str, object]], envelope["outcomes"]):
                     if "stage_id" in outcome and outcome["stage_id"] not in current.prerequisite_ids:
                         raise ValueError("uncommitted model outcome reference")
             else:
                 role: Role = "proposal" if current.stage == "propose" else "counter_check"
-                if canonical(envelope) != canonical(_model_envelope(root, card, role)):
+                if canonical(envelope) != canonical(
+                    _model_envelope(root, card, role, max_output_tokens=historical_capacity)
+                ):
                     raise ValueError("source comparison or model stage proof mismatch")
         for row in cast(list[dict[str, object]], envelope.get("outcomes", [])):
             if "analysis" not in row:
@@ -725,8 +739,8 @@ def _prerequisite(root: Path, index: dict[str, JsonValue], card: Rendered, name:
                 reusable_stage(
                     root, proof_id, binding=card.binding, versions=card.versions, input_sha256=proof.input_sha256
                 )
-        pending.extend(load_stage(root, p) for p in current.prerequisite_ids)
-    return identity
+        pending.extend((load_stage(root, p), historical_capacity) for p in current.prerequisite_ids)
+    return None if stale else identity
 
 
 def cancel(root: Path) -> dict[str, object]:

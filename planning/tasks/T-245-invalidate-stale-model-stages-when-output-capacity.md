@@ -1,12 +1,12 @@
 ---
 id: T-245-invalidate-stale-model-stages-when-output-capacity
 title: Invalidate stale model stages when output capacity changes
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-244-align-hosted-answer-capacity-with-complete-model
-updated_at: "2026-11-27T09:17:39Z"
+updated_at: "2026-11-27T10:38:34Z"
 ---
 
 # T-245-invalidate-stale-model-stages-when-output-capacity Invalidate stale model stages when output capacity changes
@@ -29,3 +29,11 @@ Independent integrated QA on 6eeab137 reproduced a pipeline resume defect after 
 - Ownership path: pipeline_orchestration._prerequisite reconstructs historical model envelopes through _model_envelope with current Limits. Card versions do not change with the allowance, so missing current-cap success is treated as corruption before dispatch. QA also reproduced 8192 -> 8191; restoring 8192 reused original calls without new dispatch.
 
 ## Implementation Notes
+
+- Historical model wrappers supply their committed output capacity during proof reconstruction. The prerequisite traversal still validates referenced artifacts, responses, analyses and independent proofs before returning a stale result. Current dispatch continues using current limits and exact permission; ledgers and campaign charges are retained.
+- Public regression covers omitted-2048 -> 8192 and 8192 -> 8191, unchanged and restored-capacity reuse, stale/fresh version-2 permission, blind task equality, original receipts/charges, and isolated referenced checker-response corruption. The original implementation failed the stale-permission assertion with prerequisite_artifact_invalid; corrected cases passed. A deliberate stale-checker-validation bypass failed the strengthened custody assertion and was removed.
+- Separate simplifier and high-risk conventional-review completed. Five independent review lanes and fresh custody/overall verifiers found one test-isolation gap, fixed by targeting the restored checker's exact historical response instead of corrupting every response. No production-code findings or unresolved scoped blockers remained.
+- Public local-HTTPS reproduction now completes the fresh 8192 pair, reaches research would_accept, retains the original two charges and reuses unchanged requests without dispatch. This is synthetic task-local evidence, not independent integrated acceptance or hosted qualification. Parent owns the integrated recheck; maintainer gates remain unchanged.
+- Mutation adapter discovery/doctor passed, but its calibrated research-reader scope does not cover orchestration; the module-wide diff campaign exceeds its ten-minute budget estimate. Focused original-bug and checker-custody fault injections provide bounded effectiveness evidence only. AST comment-hygiene was unavailable because uncomment 3.7.0 is not installed.
+- 2026-11-27T10:38:24Z: verification pass
+- 2026-11-27T10:38:34Z: Implementation verified at 2026-11-27T10:38:24Z after final Ruff -> mypy -> full pytest (4028 passed, 7 skipped, 3295.68s). High-risk independent review and isolated custody regression resolved; parent independent integrated recheck remains pending.

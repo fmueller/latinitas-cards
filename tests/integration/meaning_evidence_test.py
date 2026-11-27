@@ -462,6 +462,121 @@ def test_complete_public_comparison_and_saved_reuse(
             read_acceptance_model_checks(root, card.binding, card.versions, changed_assertions)
 
 
+@pytest.mark.parametrize("initial_cap,cap", [(2048, 8192), (8192, 8191)])
+def test_completed_pipeline_capacity_migration_preserves_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, initial_cap: int, cap: int
+) -> None:
+    from grammar_pipeline_test import configure_pipeline_http
+    from providers_test import allocate, estimated_settings, permission
+
+    from latinitas_cards import pipeline_orchestration as workflow
+    from latinitas_cards.acceptance_records import digest
+    from latinitas_cards.hosted_accounting import Campaign
+    from latinitas_cards.providers import Endpoint, Limits
+    from latinitas_cards.research_classification import classify
+
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    profile, objectives = meaning_fixture(tmp_path, "en")
+    data = json.loads((tmp_path / "inputs.json").read_text())
+    data["entries"][0]["forms"] = data["entries"][0]["forms"][:1]
+    rebind(profile, data)
+    configure_pipeline_http(profile, "https://synthetic.invalid")
+    raw = json.loads(profile.read_text())
+    raw["selection"]["entries"] = ["v"]
+    for endpoint in raw["providers"].values():
+        endpoint["locality"] = "hosted"
+    endpoint = Endpoint.model_validate(raw["providers"]["proposal"])
+    settings = estimated_settings(endpoint)
+    campaign = allocate(settings)
+    raw["version"] = 2
+    raw["processing"].update(retries=0, max_calls=4, accounting=settings.model_dump(mode="json"))
+    if initial_cap != 2048:
+        raw["processing"]["max_output_tokens"] = initial_cap
+    write(profile, raw)
+    sent: list[dict[str, Any]] = []
+
+    class Transport:
+        def __init__(self, credential: str | None = None) -> None:
+            pass
+
+        def __call__(self, endpoint: Endpoint, body: bytes, timeout: float, cancel: workflow.Cancellation) -> bytes:
+            decoded = json.loads(body)
+            answer = json.loads(captured_answer(decoded, paraphrase=bool(len(sent) % 2)))
+            tokens = (len(answer["choices"][0]["message"]["content"].encode()) + 1) // 2
+            assert tokens <= 2048
+            answer["usage"] = dict(prompt_tokens=100, completion_tokens=tokens, total_tokens=100 + tokens)
+            sent.append(decoded)
+            return canonical(answer)
+
+    monkeypatch.setattr(workflow, "HTTPTransport", Transport)
+    output = tmp_path / "workflow"
+    prepared = call(
+        "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output), "--prepare-only"
+    )
+    root = output / "run"
+    grant_path = tmp_path / "permission.json"
+
+    def grant(report: dict[str, Any]) -> None:
+        disclosed = report["disclosure"][0]
+        write(
+            grant_path,
+            permission(
+                endpoint,
+                version=2,
+                run_id=report["run_id"],
+                config_sha256=disclosed["sent_task"]["binding"]["config_sha256"],
+                input_sha256s=[*disclosed["input_sha256s"], *disclosed["request_sha256s"]],
+                data_scope=disclosed["data_scope"],
+                max_calls=4,
+                accounting=settings.model_dump(mode="json"),
+                effective_limits_sha256=digest(
+                    Limits.model_validate({k: v for k, v in raw["processing"].items() if k in Limits.model_fields})
+                ),
+                max_microdollars=25000000,
+                max_execution_seconds=86400,
+                possible_existing_credits_use=True,
+            ),
+        )
+
+    grant(prepared)
+    first = call("resume", "--run", str(root), "--allow-hosted", str(grant_path))
+    assert len(sent) == 2 and classify(root)[0].classification == "would_accept", first["stages"]
+    charges = campaign.load().charges
+    receipts = {p: p.read_bytes() for p in (root / "providers").rglob("*.response.json")}
+    assert len(receipts) == 2 and len(charges) == 2
+    reused = call("resume", "--run", str(root), "--allow-hosted", str(grant_path))
+    assert reused["provider_calls"] == first["provider_calls"] and len(sent) == 2
+    raw["processing"]["max_output_tokens"] = cap
+    write(profile, raw)
+    denied = call("resume", "--run", str(root), "--profile", str(profile), "--allow-hosted", str(grant_path))
+    assert len(sent) == 2
+    assert denied["stages"]["propose"][0]["reason"] == "permission_or_scope"
+    grant(denied)
+    call("resume", "--run", str(root), "--allow-hosted", str(grant_path))
+    assert len(sent) == 4 and classify(root)[0].classification == "would_accept"
+    assert [body["max_tokens"] for body in sent[-2:]] == [cap, cap]
+    assert sent[-2]["messages"][1] == sent[-1]["messages"][1]
+    assert campaign.load().charges[: len(charges)] == charges
+    assert all(p.read_bytes() == content for p, content in receipts.items())
+    raw["processing"]["max_output_tokens"] = initial_cap
+    write(profile, raw)
+    restored = call("resume", "--run", str(root), "--profile", str(profile))
+    assert len(sent) == 4 and classify(root)[0].classification == "would_accept"
+    assert len(restored["provider_calls"]) == 4
+    # A stale capacity is not a waiver for damaged historical response custody.
+    checker_call = restored["stages"]["counter_check"][0]["call_id"]
+    checker = next(c for c in restored["provider_calls"] if c["call_id"] == checker_call)
+    response = root / "providers" / checker["response_artifact"]
+    assert response in receipts
+    response.write_bytes(receipts[response] + b" ")
+    raw["processing"]["max_output_tokens"] = 8190
+    write(profile, raw)
+    damaged = call("resume", "--run", str(root), "--profile", str(profile))
+    assert damaged["stages"]["counter_check"][0]["reason"] == "prerequisite_artifact_invalid"
+    assert len(sent) == 4
+    assert Campaign(settings.campaign_id).load().charges[: len(charges)] == charges
+
+
 @pytest.mark.parametrize(
     "language,damage,side",
     [
