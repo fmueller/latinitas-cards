@@ -38,6 +38,50 @@ def write(path: Path, value: object) -> None:
     path.write_bytes(canonical(value))
 
 
+@pytest.mark.parametrize("version", [1, 2])
+def test_development_output_capacity_preserves_legacy_profile(tmp_path: Path, version: int) -> None:
+    from providers_test import endpoint, estimated_settings
+
+    from latinitas_cards.pipeline_profile import load_pipeline_profile
+
+    profile, _, _ = fixture(tmp_path)
+    original = json.loads(profile.read_bytes())
+    if version == 2:
+        original["version"] = 2
+        original["processing"].update(retries=0, accounting=estimated_settings(endpoint()).model_dump(mode="json"))
+        write(profile, original)
+    loaded = load_pipeline_profile(profile)
+    assert loaded.processing.max_output_tokens == 2048
+    assert json.loads(canonical(loaded)) == original
+    processing_type = type(loaded.processing)
+    historical = canonical(loaded.processing)
+    assert processing_type.read_json(historical) == loaded.processing
+    with pytest.raises(ValueError):
+        processing_type.read_json(historical[:-1] + b',"max_calls":200}')
+    with pytest.raises(ValueError):
+        processing_type.read_json(historical.replace(b'"max_calls":200', b'"max_calls":NaN'))
+    original["processing"]["max_output_tokens"] = 2048
+    write(profile, original)
+    assert digest(load_pipeline_profile(profile)) == digest(loaded)
+    original["processing"]["max_output_tokens"] = 8192
+    write(profile, original)
+    larger = load_pipeline_profile(profile)
+    assert larger.processing.max_output_tokens == 8192
+    assert json.loads(canonical(larger)) == original
+    assert digest(larger) != digest(loaded)
+    assert processing_type.read_json(canonical(larger.processing)) == larger.processing
+    for invalid in (0, 8193, True):
+        original["processing"]["max_output_tokens"] = invalid
+        write(profile, original)
+        with pytest.raises(ValueError):
+            load_pipeline_profile(profile)
+    original["processing"]["max_output_tokens"] = 8192
+    original["processing"].pop("max_tokens")
+    write(profile, original)
+    with pytest.raises(ValueError):
+        load_pipeline_profile(profile)
+
+
 def rebind(profile: Path, data: dict[str, Any]) -> None:
     """Explicitly confirm changed synthetic inputs, without preserving their approvals."""
     base = profile.parent
@@ -3566,8 +3610,10 @@ def test_estimated_installed_pipeline_separates_usage_custody_and_authority(
         configure_pipeline_http(profile, url)
         raw = json.loads(profile.read_text())
         raw["version"] = 2
+        output_cap = 8192 if purpose == "development" else 2048
         raw["processing"].update(
             retries=0,
+            max_output_tokens=output_cap,
             accounting={
                 "format": "latinitas-estimated-accounting",
                 "version": 1,
@@ -3619,7 +3665,9 @@ def test_estimated_installed_pipeline_separates_usage_custody_and_authority(
             assert reservation["permission_id"] is None
             assert charge["usage"] == {"input_tokens": 100, "output_tokens": 30, "total_tokens": 130}
             assert reservation["input_tokens"] > charge["usage"]["input_tokens"]
-            assert reservation["output_tokens"] > charge["usage"]["output_tokens"]
+            assert reservation["output_tokens"] == output_cap
+            assert disclosure["limits"]["max_output_tokens"] == output_cap
+            assert captured[reservation["request_sha256"]]["max_tokens"] == output_cap
             assert provider_call["reserved_tokens"] == reservation["input_tokens"] + reservation["output_tokens"]
             assert provider_call["reserved_tokens"] > provider_call["used_tokens"]
         limits = report["outcome_report"]["details"]["limits"]

@@ -1,12 +1,12 @@
 ---
 id: T-244-align-hosted-answer-capacity-with-complete-model
 title: Align hosted answer capacity with complete model task contracts
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-243-verify-real-trial-latin-errors-remain-withheld
-updated_at: "2026-11-27T07:01:45Z"
+updated_at: "2026-11-27T08:25:43Z"
 ---
 
 # T-244-align-hosted-answer-capacity-with-complete-model Align hosted answer capacity with complete model task contracts
@@ -31,3 +31,6 @@ The fresh ten-entry MiniMax replay on 46f1a716 exposed a live integration limit 
 - Existing public source owners: providers.Limits.max_output_tokens defaults to and caps at 2048; pipeline_profile.Processing has no max_output_tokens field; pipeline_orchestration constructs Limits from intersecting fields. Estimated-runtime qualification explicitly pins 2048 and must not be broadened without qualification.
 
 ## Implementation Notes
+
+- 2026-11-27T08:25:34Z: verification pass
+- 2026-11-27T08:25:43Z: Implemented explicit processing.max_output_tokens (1..8192), preserving default/explicit-2048 historical profile identity in both versions, exact-wire permission and reuse, original charges, total ceilings and runtime qualification. Public complete-answer, budget, usage and fail-closed controls pass. All five high-risk review findings were fixed and independently rechecked; simplifier retained no edits. Final Ruff -> mypy -> full pytest passed: 4026 passed, 7 skipped in 3009.34s; six cases added, none removed. Verified at 2026-11-27T08:25:34Z. Task-local completion only: independent integrated QA, prospective hosted permissions/replay and maintainer gates remain with their owners.

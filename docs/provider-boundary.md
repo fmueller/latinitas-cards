@@ -132,8 +132,8 @@ record; version-2 profiles cannot omit it. Existing offline workflows are unchan
 
 `wire-padded/1` reserves 2 × complete serialized UTF-8 request bytes + 8192 estimated
 input tokens, plus the full requested output allowance. This is a padded heuristic,
-**not a guaranteed service-token or financial ceiling**. Reasoning must share the
-2048-token output cap; qualifying a real adapter's compliance is separate work.
+**not a guaranteed service-token or financial ceiling**. Reasoning shares the
+selected output cap (2048 by default); qualifying a real adapter's compliance is separate work.
 Public rates are operator-checked observations bound to the exact endpoint/model
 digest, with a public HTTPS source, check time and expiry. Rates are positive integer
 microdollars per million input/output tokens. Each reservation rounds valuation
@@ -162,9 +162,32 @@ operator-authored permission/allocation files remain trusted; this is not a
 tamper-proof remote billing service. A single application dispatch lock spans
 campaigns and is held through response persistence. Runs and roles share campaign
 spending, and each run is additionally limited to 200 attempts and 200000 estimated
-tokens. Request wire bytes are limited to 16384, output to 2048 tokens including
-reasoning, and deadline to 60 seconds. The full deadline is reserved before every
+tokens. Request wire bytes are limited to 16384 and deadline to 60 seconds.
+Output defaults to 2048 tokens including reasoning. The full deadline is reserved before every
 attempt; actual elapsed milliseconds are recorded separately, without refunds.
+
+For development tasks, profiles may explicitly set `processing.max_output_tokens`
+to an integer from 1 through 8192, for example `"max_output_tokens": 8192`.
+Omitting it keeps the 2048 default and historical profile serialization; explicitly
+selecting 2048 has the same identity. Both profile versions support the setting.
+It reaches each adapter's exact output-cap field and appears in preflight disclosures
+and effective report limits. Changed caps change request/stage identity and require
+fresh exact-wire hosted permission (also a new effective-limits digest in version 2).
+They cannot reuse a differently capped answer. Historical receipts, responses and
+charges remain intact; the full new allowance is reserved before dispatch, not
+refunded from reported usage. Larger answers leave less budget for other calls:
+run, permission, phase, campaign, token, cost and time ceilings do not increase.
+
+This is development capacity, not expanded runtime qualification. Estimated
+`purpose: runtime` still requires the exact qualified 2048-token configuration.
+Offline public controls use an independently interpreted complete phrase answer
+and a synthetic byte-pair token counter; they do not establish hosted tokenization,
+success, or linguistic quality. Every requested assertion, including full source,
+anchor/role bindings and rendered prompt/answer claims, remains required. Use the
+task's existing presentation contract concisely; do not abbreviate source identity,
+omit claims, or repair malformed responses to fit. Truncation and invalid schemas
+remain failures. More capacity does not fix wrong senses, recipes, segmentation
+or unsupported claims; agreement still grants no acceptance authority.
 
 Hosted estimated requests require permission version `2`, including all version-1
 scope/request commitments, the exact accounting record, effective `Limits` digest,

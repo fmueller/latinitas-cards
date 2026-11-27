@@ -9,9 +9,11 @@ from grammar_pipeline_test import call, configure_pipeline_http, rebind, synthet
 from meaning_evidence_test import captured_answer, meaning_fixture
 
 
-@pytest.mark.parametrize("family,language", [("form", "de"), ("verb-noun", "en")])
+@pytest.mark.parametrize(
+    "family,language,output_cap", [("form", "de", 2048), ("verb-noun", "en", 2048), ("verb-noun", "en", 8192)]
+)
 def test_research_complete_card_and_denial(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, language: str, family: str
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, language: str, family: str, output_cap: int
 ) -> None:
     import grammar_pipeline_test as fixtures
 
@@ -24,6 +26,17 @@ def test_research_complete_card_and_denial(
     def answer(body: dict[str, Any]) -> bytes:
         result = captured_answer(body, paraphrase=bool(invocations))
         invocations.append(body)
+        if family == "verb-noun":
+            wrapper = json.loads(result)
+            choice = wrapper["choices"][0]
+            text = choice["message"]["content"]
+            # Fixture service counts pairs of UTF-8 bytes, not hosted model tokens.
+            tokens = (len(text.encode()) + 1) // 2
+            assert 2048 < tokens <= 8192
+            if tokens > body["max_tokens"]:
+                choice["finish_reason"] = "length"
+                choice["message"]["content"] = text[:100]
+                result = json.dumps(wrapper).encode()
         return result
 
     monkeypatch.setattr(fixtures, "provider_answer", answer)
@@ -36,13 +49,22 @@ def test_research_complete_card_and_denial(
         configure_pipeline_http(profile, url)
         settings = json.loads(profile.read_text())
         settings["selection"]["entries"] = ["v"] if family == "form" else []
+        if output_cap != 2048:
+            settings["processing"]["max_output_tokens"] = output_cap
         write(profile, settings)
         output = tmp_path / "workflow"
         report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
         root = output / "run"
+        assert all(wire["max_tokens"] == output_cap for wire in sent)
         records = classify(root)
         assert len(records) == 1
         record = records[0]
+        if family == "verb-noun" and output_cap == 2048:
+            assert len(sent) == 1
+            assert record.classification == "would_withhold"
+            assert report["provider_calls"][0]["state"] == "failed"
+            assert report["file_export"]["exported"] == 0
+            return
         assert record.classification == "would_accept", record
         assert not record.failures
         assert len(record.obligations) == len(record.assertions)
@@ -158,6 +180,7 @@ def test_research_retains_every_failed_slot(tmp_path: Path, monkeypatch: pytest.
         configure_pipeline_http(profile, url)
         settings = json.loads(profile.read_text())
         settings["selection"]["entries"] = ["v"]
+        settings["processing"]["max_output_tokens"] = 8192
         write(profile, settings)
         output = tmp_path / "workflow"
         report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))

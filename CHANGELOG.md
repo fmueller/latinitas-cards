@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- Development pipeline profiles can select up to 8192 output tokens per call;
+  defaults stay at 2048, with unchanged total budgets and runtime qualification.
 - Provider profiles can opt into strict OpenAI-compatible JSON Schema output;
   MiniMax Chat uses prompt-only formatting with strict local answer validation.
 - A disposable offline walkthrough covers resumable grammar runs, curated review

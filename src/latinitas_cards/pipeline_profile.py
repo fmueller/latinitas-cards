@@ -5,10 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal, Self
 
-from pydantic import Field, SerializeAsAny, model_validator
+from pydantic import (
+    Field,
+    SerializeAsAny,
+    SerializerFunctionWrapHandler,
+    ValidationInfo,
+    model_serializer,
+    model_validator,
+)
 
 from .acceptance_policy import SupportRegistry, lookup_policy
-from .acceptance_records import Hash, Record, Text, canonical
+from .acceptance_records import Hash, Record, Text, canonical, decode_json
 from .acceptance_registry import SUPPORT_REGISTRY
 from .hosted_accounting import EstimatedAccounting
 from .providers import Endpoint
@@ -64,6 +71,28 @@ class Processing(Record):
     max_tokens: int = Field(default=200000, gt=0)
     timeout_seconds: int = Field(default=60, gt=0, le=60)
     retries: int = Field(default=1, ge=0, le=1)
+    max_output_tokens: int = Field(default=2048, gt=0, le=8192)
+
+    @model_serializer(mode="wrap")
+    def historical_fields(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        result: dict[str, object] = handler(self)
+        if self.max_output_tokens == 2048:
+            result.pop("max_output_tokens", None)
+        return result
+
+    @classmethod
+    def read_json(cls, data: bytes | str) -> Self:
+        return cls.model_validate_json(canonical(decode_json(data)))
+
+    @model_validator(mode="before")
+    @classmethod
+    def json_fields(cls, value: object, info: ValidationInfo) -> object:
+        # Preserve historical profile bytes/digests when the allowance is unchanged.
+        if info.mode == "json" and isinstance(value, dict):
+            value = {"max_output_tokens": 2048, **value}
+        if info.mode == "json" and (not isinstance(value, dict) or set(value) != set(cls.model_fields)):
+            raise ValueError("record requires exactly its versioned keys")
+        return value
 
 
 class EstimatedProcessing(Processing):

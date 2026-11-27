@@ -123,7 +123,7 @@ class Reservation(Record):
     endpoint_sha256: Hash
     permission_id: Hash | None
     input_tokens: int = Field(gt=0)
-    output_tokens: int = Field(gt=0, le=2048)
+    output_tokens: int = Field(gt=0, le=8192)
     wire_bytes: int = Field(gt=0, le=16384)
     microdollars: int = Field(gt=0)
     execution_seconds: int = Field(gt=0, le=60)

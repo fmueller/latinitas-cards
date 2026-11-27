@@ -139,7 +139,7 @@ class AccountingFake(Fake):
 def test_complete_wire_role_budget_boundary(
     tmp_path: Path, provider: Literal["latinitas-json/1", "openai", "openai-json-schema", "ollama"], shortfall: int
 ) -> None:
-    output_cap = 37
+    output_cap = 8192
     proposal = endpoint(model="synthetic/ā").model_copy(update={"provider": provider})
     counter = proposal.model_copy(update={"model": "independent-longer/Überprüfung"})
     supplied = task().model_copy(update={"objective": "Bestimme amās: Präsens, nicht Präteritum. Grüße!"})
@@ -664,7 +664,7 @@ def test_minimax_cannot_claim_strict_chat_support() -> None:
 @pytest.mark.parametrize("failure", ["refusal", "length", "extra_key", "assertion_key", "malformed", "sense"])
 def test_strict_output_still_fails_closed(tmp_path: Path, failure: str) -> None:
     ep = endpoint().model_copy(update={"provider": "openai-json-schema"})
-    r = run(tmp_path, ep=ep)
+    r = run(tmp_path, ep=ep, limits=Limits(max_output_tokens=8192))
     inner = json.loads(answer())
     message = {"content": answer().decode()}
     if failure == "refusal":
@@ -1179,34 +1179,35 @@ def test_estimated_campaign_exact_and_one_over_shared_across_runs(
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     settings = estimated_settings(endpoint())
     # Independent public disclosure gives the exact wire, not an accounting helper.
-    probe = estimated_run(tmp_path / "probe", settings)
+    probe = estimated_run(tmp_path / "probe", settings, max_output_tokens=8192)
     wire = json.loads(probe.disclosure(task(), SCOPE, recipe="form_recognition"))["requests"]["proposal"]
     estimated_input = 2 * len(canonical(wire)) + 8192
     cap = {
         "calls": 1,
-        "tokens": estimated_input + 2048,
-        "cost": estimated_input + 3 * 2048,
+        "tokens": estimated_input + 8192,
+        "cost": estimated_input + 3 * 8192,
         "seconds": 60,
         "phase_calls": 1,
     }[ceiling]
     campaign = allocate(settings, **{ceiling: cap - shortfall})
-    fake = Fake([estimated_reply(), estimated_reply()])
-    r = estimated_run(tmp_path / "a", settings)
+    fake = Fake([estimated_reply(prompt_tokens=100, completion_tokens=8192, total_tokens=8292)])
+    r = estimated_run(tmp_path / "a", settings, max_output_tokens=8192)
     if shortfall:
         assert estimated_invoke(r, fake).reason == "campaign_budget_exhausted"
         assert fake.requests == [] and campaign.load().charges == ()
         return
     assert estimated_invoke(r, fake).state == "succeeded"
     assert (
-        estimated_invoke(estimated_run(tmp_path / "b", settings, run_id="other"), fake).reason
+        estimated_invoke(estimated_run(tmp_path / "b", settings, run_id="other", max_output_tokens=8192), fake).reason
         == "campaign_budget_exhausted"
     )
     assert len(fake.requests) == 1
     saved = campaign.load().charges
     assert len(saved) == 1 and saved[0].usage is not None
     assert saved[0].reservation.input_tokens == estimated_input
-    assert saved[0].reservation.output_tokens == 2048
-    assert saved[0].usage.total_tokens == 120  # Usage never refunds the full reservation.
+    assert saved[0].reservation.output_tokens == 8192
+    assert saved[0].usage.output_tokens == 8192
+    assert saved[0].usage.total_tokens == 8292  # Usage never refunds the full reservation.
 
 
 def test_estimated_missing_usage_stops_campaign_and_preserves_evidence(
@@ -1227,28 +1228,37 @@ def test_estimated_missing_usage_stops_campaign_and_preserves_evidence(
 
 
 @pytest.mark.parametrize(
-    "usage",
+    "output_cap,usage",
     [
-        {"prompt_tokens": -1, "completion_tokens": 2, "total_tokens": 1},
-        {"prompt_tokens": True, "completion_tokens": 2, "total_tokens": 3},
-        {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 4},
-        {"prompt_tokens": 999999, "completion_tokens": 2, "total_tokens": 1000001},
-        {"prompt_tokens": 2, "completion_tokens": 2049, "total_tokens": 2051},
+        (2048, {"prompt_tokens": -1, "completion_tokens": 2, "total_tokens": 1}),
+        (2048, {"prompt_tokens": True, "completion_tokens": 2, "total_tokens": 3}),
+        (2048, {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 4}),
+        (2048, {"prompt_tokens": 999999, "completion_tokens": 2, "total_tokens": 1000001}),
+        (2048, {"prompt_tokens": 2, "completion_tokens": 2049, "total_tokens": 2051}),
+        (8192, {"prompt_tokens": 2, "completion_tokens": 8193, "total_tokens": 8195}),
     ],
 )
 def test_estimated_invalid_or_excess_usage_never_refunds_or_continues(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, usage: dict[str, int]
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, output_cap: int, usage: dict[str, int]
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     settings = estimated_settings(endpoint())
     campaign = allocate(settings)
     fake = Fake([estimated_reply(**usage)])
-    assert estimated_invoke(estimated_run(tmp_path / "a", settings), fake).reason == "usage_review_required"
+    assert (
+        estimated_invoke(estimated_run(tmp_path / "a", settings, max_output_tokens=output_cap), fake).reason
+        == "usage_review_required"
+    )
     assert (
         estimated_invoke(estimated_run(tmp_path / "b", settings, run_id="other"), fake).reason
         == "campaign_review_required"
     )
     assert len(fake.requests) == 1 and len(campaign.load().charges) == 1
+    charge = campaign.load().charges[0]
+    assert charge.reservation.output_tokens == output_cap
+    if output_cap == 8192:
+        assert charge.stop_reason == "usage_above_reservation"
+        assert charge.usage is not None and charge.usage.output_tokens == 8193
 
 
 @pytest.mark.parametrize("elapsed", [60.0, 60.001])
@@ -1284,7 +1294,7 @@ def test_estimated_accounting_does_not_qualify_runtime(tmp_path: Path, monkeypat
 
 
 @pytest.mark.parametrize(
-    "change", ["none", "model", "url", "locality", "provider", "revision", "output", "timeout", "retries"]
+    "change", ["none", "model", "url", "locality", "provider", "revision", "output", "output_low", "timeout", "retries"]
 )
 def test_minimax_estimated_runtime_admission_is_installed_and_exact(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
@@ -1314,7 +1324,7 @@ def test_minimax_estimated_runtime_admission_is_installed_and_exact(
     )
     limits = Limits(
         retries=int(change == "retries"),
-        max_output_tokens=1024 if change == "output" else 2048,
+        max_output_tokens={"output": 8192, "output_low": 1024}.get(change, 2048),
         timeout_seconds=30 if change == "timeout" else 60,
     )
     campaign = allocate(settings)
@@ -1371,7 +1381,10 @@ def test_minimax_estimated_runtime_admission_is_installed_and_exact(
     assert len(campaign.load().charges) == 2
 
 
-def test_minimax_historical_wire_stays_readable_and_charged(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("migration", ["wire", "output"])
+def test_minimax_historical_wire_stays_readable_and_charged(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, migration: str
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     ep = Endpoint(
         url="https://api.minimax.io/v1/chat/completions",
@@ -1413,7 +1426,9 @@ def test_minimax_historical_wire_stays_readable_and_charged(tmp_path: Path, monk
 
     def historical_request(endpoint: Endpoint, task: ModelTask, prompt_version: str, output: int) -> bytes:
         wire = json.loads(current_request(endpoint, task, prompt_version, output))
-        return canonical({**wire, "response_format": {"type": "json_object"}})
+        return (
+            canonical({**wire, "response_format": {"type": "json_object"}}) if migration == "wire" else canonical(wire)
+        )
 
     reply = canonical(
         {
@@ -1428,10 +1443,14 @@ def test_minimax_historical_wire_stays_readable_and_charged(tmp_path: Path, monk
         old_fake = Fake([reply])
         assert estimated_invoke(r, old_fake, permission=old_grant).state == "succeeded"
         old_call = r.calls()[0]
-        assert json.loads(old_fake.requests[0])["response_format"] == {"type": "json_object"}
+        assert json.loads(old_fake.requests[0])["max_completion_tokens"] == 2048
+        if migration == "wire":
+            assert json.loads(old_fake.requests[0])["response_format"] == {"type": "json_object"}
         old_ledger = (r.root / "provider-ledger.json").read_bytes()
         old_charge = campaign.load().charges[0]
 
+    if migration == "output":
+        limits = Limits(max_calls=2, retries=0, max_output_tokens=8192)
     reopened = opened()
     assert reopened.calls() == (old_call,)
     assert (reopened.root / old_call.request_artifact).read_bytes() == old_fake.requests[0]
@@ -1444,9 +1463,11 @@ def test_minimax_historical_wire_stays_readable_and_charged(tmp_path: Path, monk
     fresh_grant = grant(reopened)
     assert estimated_invoke(reopened, fake, permission=fresh_grant).state == "succeeded"
     assert len(fake.requests) == 1 and "response_format" not in json.loads(fake.requests[0])
+    assert json.loads(fake.requests[0])["max_completion_tokens"] == limits.max_output_tokens
     new_call = reopened.calls()[1]
     assert new_call.request_sha256 != old_call.request_sha256 and new_call.stage_id != old_call.stage_id
     assert reopened.calls()[0] == old_call and campaign.load().charges[0] == old_charge
+    assert campaign.load().charges[1].reservation.output_tokens == limits.max_output_tokens
     assert len(campaign.load().charges) == 2
     assert estimated_invoke(reopened, fake, role="counter_check", permission=fresh_grant).reason == "budget_exhausted"
     other = opened(tmp_path / "other-run", run_id="other-run")

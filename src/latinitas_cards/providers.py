@@ -78,7 +78,7 @@ class Limits(Record):
     max_tokens: int = Field(default=200000, gt=0)
     timeout_seconds: int = Field(default=60, gt=0, le=60)
     retries: int = Field(default=1, ge=0, le=1)
-    max_output_tokens: int = Field(default=2048, gt=0, le=2048)
+    max_output_tokens: int = Field(default=2048, gt=0, le=8192)
 
 
 class Span(Record):
