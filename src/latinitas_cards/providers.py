@@ -1241,7 +1241,36 @@ class ProviderRun:
                         )
                     )
                     return Result("failed", "usage_review_required", call_id)
-            parsed = self._answer(endpoint, response, task)
+            try:
+                parsed = self._answer(endpoint, response, task)
+            except ContractViolation:
+                # A well-formed provider answer is recorded like a dispatched one. Malformed
+                # bytes still raise, so an operator can supply a correctly retrieved response.
+                response_path = f"{call.call_id}.response.json"
+                _write(self.root / response_path, response)
+                failed = call.model_copy(
+                    update={
+                        "state": "failed",
+                        "reason": "contract_violation",
+                        "response_artifact": response_path,
+                        "response_sha256": hashlib.sha256(response).hexdigest(),
+                        **({"used_tokens": usage.total_tokens} if usage else {}),
+                    }
+                )
+                if self.campaign:
+                    self.campaign.finish(
+                        call_id,
+                        state="failed",
+                        usage=usage,
+                        stop_reason=charge.stop_reason,
+                        elapsed_milliseconds=charge.elapsed_milliseconds,
+                    )
+                self._save(
+                    ledger.model_copy(
+                        update={"calls": tuple(failed if c.call_id == call_id else c for c in ledger.calls)}
+                    )
+                )
+                return Result("failed", "contract_violation", call_id)
             if self.campaign:
                 self.campaign.finish(
                     call_id,

@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-246-record-approved-post-trial-contracts-and-task
-updated_at: "2026-11-27T20:13:06Z"
+updated_at: "2026-11-27T21:32:29Z"
 ---
 
 # T-247-enforce-explicit-per-card-exercise-and-nested Enforce explicit per-card exercise and nested-output contracts
@@ -96,8 +96,13 @@ do not wait for CI. Parent owns successor selection and final CI supervision.
   and prose are not checked mechanically.
 - The pipeline report is now schema 3. Historical 1/2 reports stay readable and
   cannot claim `contract_violation`.
-- Deferred follow-up: PPP-anchored adjective_declension cards claim a verb stem
-  convention (the renderer selects by entry POS), and reconciling a
-  contract-violating response raises without recording the failed call. Both
-  fail closed.
+- Acceptance correction (formerly deferred as T251 scope): the stem convention
+  and ending role now follow the derivation rule, so PPP-anchored adjective cards
+  claim bounded-generator-base/1 with a case ending. Reconciling a well-formed
+  contract-violating response records a charged `contract_violation` failure with
+  its response retained; malformed retrieved bytes still raise unrecorded. The
+  historical-store control now sends the fdb0a27 objective layout; a scratch probe
+  against that commit's code matched its objective bytes (only the implementation
+  digest in `config_sha256` differs).
 - 2026-11-27T20:13:00Z: verification pass
+- 2026-11-27T21:32:29Z: verification pass

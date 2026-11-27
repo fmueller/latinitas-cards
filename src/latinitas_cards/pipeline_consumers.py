@@ -332,7 +332,8 @@ FORM_ASSERTION_VALUE_CONTRACTS = {
         "JSON object {convention, components, operation, surface}. components is an ordered array of "
         "{role, text} objects: stem then personal-ending (verb) or case-ending (noun/adjective). "
         "Use bennett-present-stem/1 (infinitive without -re) for verbs, bennett-declensional-stem/1 for nouns, "
-        "or bounded-generator-base/1 (masculine nominative without -us) for adjectives. "
+        "or bounded-generator-base/1 (masculine nominative without -us) for adjectives, including an adjective "
+        "derived from a PPP. "
         "surface is the target surface. Copy Latin literally, including long-vowel marks. "
         "operation is concatenation only when stem text + ending text equals surface exactly; "
         "otherwise unverified with ending text null. Examples: vocāre 1st plural is "
@@ -765,17 +766,17 @@ def _render_form(
     if derived:
         answer += "\n" + presentation["stem_line"].format(stem=derived.stem)
         concatenates = surface.startswith(derived.stem)
+        # The derivation, not the entry, selects the convention: a PPP anchors an adjective derivation.
+        convention, ending = {
+            "regular-first-present-active/1": ("bennett-present-stem/1", "personal-ending"),
+            "regular-first-declension/1": ("bennett-declensional-stem/1", "case-ending"),
+            "regular-us-a-um/1": ("bounded-generator-base/1", "case-ending"),
+        }[derived.rule]
         segmentation = {
-            "convention": {
-                "verb": "bennett-present-stem/1",
-                "noun": "bennett-declensional-stem/1",
-            }.get(entry.pos, "bounded-generator-base/1"),
+            "convention": convention,
             "components": [
                 {"role": "stem", "text": derived.stem},
-                {
-                    "role": "personal-ending" if entry.pos == "verb" else "case-ending",
-                    "text": surface[len(derived.stem) :] if concatenates else None,
-                },
+                {"role": ending, "text": surface[len(derived.stem) :] if concatenates else None},
             ],
             "operation": "concatenation" if concatenates else "unverified",
             "surface": surface,

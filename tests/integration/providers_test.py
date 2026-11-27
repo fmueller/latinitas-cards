@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta, tzinfo
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Event, Thread
-from typing import Literal, Self
+from typing import Any, Literal, Self, cast
 
 import pytest
 
@@ -673,6 +673,26 @@ NESTED = {
     "nested_keys": canonical({**TARGET, "extra": 1}).decode(),
     "nested_deep": canonical(TARGET).decode().replace('"anchors":[]', '"anchors":' + "[" * 3000 + "]" * 3000),
 }
+WRONG_DIRECTION = "Supply the Latin form: amāre\nPerson: 2"
+
+
+def recognition_task() -> ModelTask:
+    objective = {
+        "recipe": "form_recognition",
+        "direction": "recognition",
+        "presentation": {"recognition_prompt": "{context_or_surface}\nAnalyze the form; give possible readings."},
+        "assertions": [{"id": "target", "kind": "label"}, {"id": "rendered", "kind": "label"}],
+    }
+    return task().model_copy(update={"objective": canonical(objective).decode()})
+
+
+def form_answer(target: str, prompt: str) -> dict[str, Any]:
+    inner = json.loads(answer())
+    structured = inner["assertions"][0]
+    structured.update(id="target", value=target)
+    rendered = {"prompt": prompt, "answer": "Person: 2"}
+    inner["assertions"].append({**structured, "id": "rendered", "value": canonical(rendered).decode()})
+    return cast(dict[str, Any], inner)
 
 
 @pytest.mark.parametrize(
@@ -697,19 +717,11 @@ def test_strict_output_still_fails_closed(tmp_path: Path, failure: str) -> None:
     message = {"content": answer().decode()}
     structured = inner["assertions"][0]
     if failure in NESTED or failure == "wrong_direction":
-        objective = {
-            "recipe": "form_recognition",
-            "direction": "recognition",
-            "presentation": {"recognition_prompt": "{context_or_surface}\nAnalyze the form; give possible readings."},
-            "assertions": [{"id": "target", "kind": "label"}, {"id": "rendered", "kind": "label"}],
-        }
-        supplied = task().model_copy(update={"objective": canonical(objective).decode()})
-        structured.update(id="target", value=NESTED.get(failure, canonical(TARGET).decode()))
-        prompt = "amās\nAnalyze the form; give possible readings."
-        if failure == "wrong_direction":
-            prompt = "Supply the Latin form: amāre\nPerson: 2"
-        rendered = {"prompt": prompt, "answer": "Person: 2"}
-        inner["assertions"].append({**structured, "id": "rendered", "value": canonical(rendered).decode()})
+        supplied = recognition_task()
+        inner = form_answer(
+            NESTED.get(failure, canonical(TARGET).decode()),
+            WRONG_DIRECTION if failure == "wrong_direction" else "amās\nAnalyze the form; give possible readings.",
+        )
         message["content"] = json.dumps(inner)
     elif failure == "phrase_sense":
         objective = {"recipe": "phrase_translation", "bindings": [{"role": "object"}, {"role": "verb"}]}
@@ -1219,10 +1231,11 @@ def estimated_invoke(
     token_bound: Callable[[bytes], int] | None = None,
     retry_unknown: bool = False,
     duplicate_warning_confirmed: bool = False,
+    supplied: ModelTask | None = None,
 ) -> Result:
     return r.request(
         role,
-        task(),
+        supplied or task(),
         recipe="form_recognition",
         scope=SCOPE,
         prompt_version="proposal/2" if role == "proposal" else "blind/2",
@@ -1551,36 +1564,45 @@ def test_minimax_historical_wire_stays_readable_and_charged(
     assert len(fake.requests) == 1 and len(campaign.load().charges) == 2
 
 
-@pytest.mark.parametrize("usage_ok", [True, False])
+@pytest.mark.parametrize("outcome", ["usage_ok", "usage_above", "contract_violation"])
 def test_estimated_reconciliation_retains_usage_review_and_original_reservation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, usage_ok: bool
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, outcome: str
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     settings = estimated_settings(endpoint())
     campaign = allocate(settings)
     r = estimated_run(tmp_path / "a", settings)
-    first = estimated_invoke(r, Fake([TransportFailure("unknown", "retrieved-1")]))
+    supplied = recognition_task() if outcome == "contract_violation" else task()
+    first = estimated_invoke(r, Fake([TransportFailure("unknown", "retrieved-1")]), supplied=supplied)
     assert first.call_id is not None
     before = campaign.load().charges[0].reservation
-    response = (
-        estimated_reply() if usage_ok else estimated_reply(prompt_tokens=1, completion_tokens=2049, total_tokens=2050)
-    )
+    response = estimated_reply()
+    if outcome == "usage_above":
+        response = estimated_reply(prompt_tokens=1, completion_tokens=2049, total_tokens=2050)
+    elif outcome == "contract_violation":
+        usage = {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120}
+        response = canonical({**form_answer(canonical(TARGET).decode(), WRONG_DIRECTION), "usage": usage})
     result = r.reconcile(
         first.call_id,
         endpoint=endpoint(),
-        task=task(),
+        task=supplied,
         request_sha256=r.calls()[0].request_sha256,
         provider_request_id="retrieved-1",
         response=response,
     )
-    assert result.state == ("succeeded" if usage_ok else "failed")
+    assert result.state == ("succeeded" if outcome == "usage_ok" else "failed")
     assert campaign.load().charges[0].reservation == before
     artifact = r.calls()[0].response_artifact
     assert artifact and (r.root / artifact).read_bytes() == response
-    if usage_ok:
+    if outcome == "usage_ok":
         fake = Fake()
         assert r.completed("proposal", task(), SCOPE) is not None
         assert estimated_invoke(r, fake).state == "succeeded" and fake.requests == []
+    elif outcome == "contract_violation":
+        assert result.reason == r.calls()[0].reason == "contract_violation" and result.answer is None
+        charge = campaign.load().charges[0]
+        assert charge.state == "failed" and charge.usage is not None and charge.usage.total_tokens == 120
+        assert r.completed("proposal", supplied, SCOPE) is None
     else:
         assert campaign.load().charges[0].stop_reason == "usage_above_reservation"
         other = estimated_run(tmp_path / "b", settings, run_id="other")

@@ -1,12 +1,12 @@
 ---
 id: T-251-align-ppp-adjective-stem-convention-and-record
 title: Align PPP adjective stem convention and record contract-violating reconciliations
-status: todo
+status: completed
 priority: low
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-247-enforce-explicit-per-card-exercise-and-nested
-updated_at: "2026-11-27T20:13:00Z"
+updated_at: "2026-11-27T21:32:39Z"
 ---
 
 # T-251-align-ppp-adjective-stem-convention-and-record Align PPP adjective stem convention and record contract-violating reconciliations
@@ -23,3 +23,16 @@ From T-247 review: PPP-anchored adjective_declension cards claim bennett-present
 ## Verification Notes
 
 - Re-run task-scoped verification after implementing the fix.
+
+## Implementation Notes
+
+- Resolved inside T-247's acceptance correction, as the coordinator directed: both
+  items were in F1's scope. The stem convention and ending role follow the
+  derivation rule, so PPP-anchored adjective cards claim bounded-generator-base/1
+  with a case ending. Reconciling a well-formed contract-violating response
+  records a charged `contract_violation` failure with the response retained;
+  malformed retrieved bytes still raise unrecorded. German goldens are unchanged;
+  only PPP adjective stem claims change, and stores are bound to the
+  implementation digest.
+- 2026-11-27T21:32:39Z: verification pass
+- 2026-11-27T21:32:39Z: Resolved within T-247's acceptance correction

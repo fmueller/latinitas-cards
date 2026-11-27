@@ -315,7 +315,9 @@ work while preserving the unresolved call and its charged reservation. Resume re
 successes, does not repair malformed answers and never resubmits unknown calls.
 `reconcile` can retain an operator-retrieved response only when the captured
 provider request ID, original endpoint/request commitments and exact original task
-match. Retrieval authentication belongs to the trusted operator/adapter; response
+match. A retrieved well-formed answer that breaks its form contract is retained as
+a charged `contract_violation` failure, as on dispatch; malformed retrieved bytes
+are refused unrecorded so the operator can supply a correctly retrieved response. Retrieval authentication belongs to the trusted operator/adapter; response
 content cannot attest its own provenance. Without a captured identity or available
 retrieval, `abandon` leaves the call unresolved and its reservation charged. Retrying
 that abandoned request requires both `retry_unknown=True` and

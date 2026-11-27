@@ -20,7 +20,7 @@ from latinitas_cards.claim_review import Evidence
 from latinitas_cards.cli import app
 from latinitas_cards.grammar_layout import GRAMMAR_LAYOUT, LAYOUT_SHA256
 from latinitas_cards.phrase_inputs import PhraseInputV2
-from latinitas_cards.pipeline_consumers import Analysis, Rendered, current_cards, input_binding
+from latinitas_cards.pipeline_consumers import Analysis, Rendered, current_cards, input_binding, load_run
 from latinitas_cards.pipeline_profile import PipelineProfile, RecipeOverrides, resolve_recipes
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
 from latinitas_cards.providers import PROMPT_VERSIONS
@@ -615,6 +615,15 @@ def test_ppp_default_automatic_and_independent_opt_ins(tmp_path: Path, monkeypat
         str(root),
     )
     (root / "analyses").mkdir()
+    rendered, _ = current_cards(
+        profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root
+    )
+    stem = next(
+        a for c in rendered if c.recipe == "adjective_declension" for a in c.claims.assertions if a.id == "stem"
+    )
+    # A PPP anchors the adjective derivation, so the adjective convention applies, not the verb's.
+    assert json.loads(stem.value)["convention"] == "bounded-generator-base/1"
+    assert [p["role"] for p in json.loads(stem.value)["components"]] == ["stem", "case-ending"]
     prove_cards(profile, objectives, root)
     call("stage", "decide", "--run", str(root))
     cards = call("preview", "--run", str(root))["cards"]
@@ -3967,10 +3976,43 @@ def test_orchestrated_permission_exact_requests_and_renewal(tmp_path: Path, monk
 
 
 def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> None:
-    """Prompt-version-stale stores in the unchanged 72fdf19 file layout, with a profile-versioned report.
+    """Stores in the unchanged 72fdf19 file layout, with a profile-versioned report.
 
-    Their objective bytes come from current code; only the version labels are historical.
+    Their requests carry that baseline's version labels and objective layout: every
+    presentation template, a repeated answer contract and no direction.
     """
+    from latinitas_cards import pipeline_orchestration as workflow
+    from latinitas_cards.pipeline_consumers import FORM_PRESENTATION
+    from latinitas_cards.providers import ANSWER_CONTRACT
+
+    current_task = workflow._task
+    # The baseline's own value contracts, so form objectives are byte-identical to that commit's.
+    contracts = {
+        "stem": "JSON object {convention, components, operation, surface}. components is an ordered array of "
+        "{role, text} objects: stem then personal-ending (verb) or case-ending (noun/adjective). "
+        "Use bennett-present-stem/1 for verbs, bennett-declensional-stem/1 for nouns, or "
+        "bounded-generator-base/1 for adjectives. operation is concatenation when component texts "
+        "reconstruct the Latin surface; otherwise unverified with ending text null.",
+        "rendered": "JSON object {prompt, answer}, both strings: independently construct the whole visible card, "
+        "using presentation templates. Production cue: second anchor for a verb with two anchors, otherwise "
+        "first anchor, otherwise mapped lemma. Add ppp_suffix as a new prompt line for PPP production. "
+        "Production/cloze answer begins with the Latin surface. Translation joins readings with ' / '. "
+        "Recognition joins distinct feature displays for all same-surface source forms with newlines, "
+        "prefixed by 'PPP — ' for PPP. Feature displays use feature_order, omit nulls, and join "
+        "'label: value' terms with '; '. Append stem_line if stem is listed, then independently supported "
+        "explanation and caveat clauses in assertion order, each on a new answer line. "
+        "Templates specify fixed presentation only; solve their placeholders independently.",
+    }
+
+    def baseline_task(card: Rendered, source: Any, profile: PipelineProfile) -> Any:
+        task, scopes = current_task(card, source, profile)
+        objective = json.loads(task.objective)
+        if objective.pop("direction", None):
+            objective["presentation"] = FORM_PRESENTATION[profile.language]
+            for assertion in objective["assertions"]:
+                assertion["value_contract"] = contracts.get(assertion["id"], assertion["value_contract"])
+        objective["answer_contract"] = ANSWER_CONTRACT
+        return task.model_copy(update={"objective": canonical(objective).decode()}), scopes
 
     def historical(base: Path, url: str) -> tuple[Path, dict[str, Any]]:
         profile, objectives, _ = fixture(base)
@@ -3978,6 +4020,7 @@ def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> N
         with pytest.MonkeyPatch.context() as before:
             before.setitem(PROMPT_VERSIONS, "proposal", "proposal/1")
             before.setitem(PROMPT_VERSIONS, "counter_check", "blind/1")
+            before.setattr(workflow, "_task", baseline_task)
             stored = call(
                 "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(base / "w")
             )
@@ -3993,6 +4036,10 @@ def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> N
         # Stale calls are neither reused nor rewritten; the changed task needs its own calls.
         current = call("resume", "--run", str(root))
         assert len(requests) == 4 and "proposal/2" in requests[2]["messages"][0]["content"]
+        layouts = [json.loads(json.loads(r["messages"][1]["content"])["objective"]) for r in requests]
+        assert all("answer_contract" in o and "direction" not in o for o in layouts[:2])
+        assert all("answer_contract" not in o and "direction" in o for o in layouts[2:])
+        assert len(layouts[0]["presentation"]) > len(layouts[2]["presentation"])
         assert {r["reuse"] for r in current["stages"]["propose"]} == {"processed"}
         assert current["provider_calls"][:2] == stored["provider_calls"]
         assert current["outcome_report"]["schema_version"] == 3

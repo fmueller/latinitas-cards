@@ -614,8 +614,9 @@ unchanged. The installed conventions have different source obligations:
   historical analysis: §117 footnote 39 distinguishes underlying thematic-vowel
   stems such as amā-ĕ-/amā-ŏ-. No inferred sound change is accepted.
 - `bounded-generator-base/1` identifies the adjective generator's proposal,
-  not a corroborated convention. All 36 bonus component analyses and all
-  PPP-derived component analyses remain unsupported. T234 target diagnostics
+  not a corroborated convention. The derivation, not the entry, selects it, so
+  a PPP-anchored adjective uses it with a case ending. All 36 bonus component
+  analyses and all PPP-derived component analyses remain unsupported. T234 target diagnostics
   remain separate and retain their original finite coverage and cue refusals.
 
 The proposed **puell- + -ārum** termination analysis and **puellā- + -rum**
