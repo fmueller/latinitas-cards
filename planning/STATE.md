@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-27T08:25:43Z"
+updated_at: "2026-11-27T09:18:12Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -10,7 +10,7 @@ blockers:
     - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
-next_action: Resolve blocker on T-200-evaluate-held-out-automatic-acceptance-against
+next_action: 'Start task T-245-invalidate-stale-model-stages-when-output-capacity: Invalidate stale model stages when output capacity changes'
 last_verification_result: pass for T-244-align-hosted-answer-capacity-with-complete-model at 2026-11-27T08:25:34Z
 relevant_artifacts: []
 continuation_notes:
@@ -43,7 +43,7 @@ continuation_notes:
 
 ## Next Action
 
-- Resolve blocker on T-200-evaluate-held-out-automatic-acceptance-against
+- Start task T-245-invalidate-stale-model-stages-when-output-capacity: Invalidate stale model stages when output capacity changes
 
 ## Relevant Artifacts
 
@@ -55,7 +55,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 18
+- todo: 19
 - in_progress: 0
 - completed: 223
 - blocked: 3
