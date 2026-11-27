@@ -12,6 +12,18 @@ from latinitas_cards.pipeline_consumers import Analysis, FormObjective, current_
 from latinitas_cards.pipeline_profile import PipelineProfile
 
 
+def unsupported_siblings(task: dict[str, Any], prompt: dict[str, str], answer: str) -> dict[str, str]:
+    """Well-formed but unsupported source/rendered values that follow the task's fixed presentation."""
+    objective = json.loads(task["objective"])
+    supplied = next(e for e in task["source_evidence"] if e["source"] == "unverified-form-entry")
+    entry = json.loads(supplied["text"])["entry"]
+    template = objective["presentation"][objective["direction"] + "_prompt"]
+    return {
+        "source": canonical(dict(entry=entry, sense=entry["senses"][0])).decode(),
+        "rendered": canonical(dict(prompt=template.format(**prompt), answer=answer)).decode(),
+    }
+
+
 @pytest.mark.parametrize("entry,ending", [("v", "mus"), ("n", "rum")])
 def test_named_source_stem_reconstruction(tmp_path: Path, entry: str, ending: str) -> None:
     profile, objectives, _ = fixture(tmp_path)
@@ -91,11 +103,12 @@ def test_context_model_proof_reconstructs_original_task(
 
     def answer(body: dict[str, Any]) -> bytes:
         task = json.loads(body["messages"][1]["content"])
+        values = unsupported_siblings(task, dict(lemma="MODEL-UNSUPPORTED", meaning="unsupported"), "amātus")
         assertions = [
             dict(
                 id=identity,
                 kind="label",
-                value=canonical(target).decode() if identity == "target" else "MODEL-UNSUPPORTED",
+                value=canonical(target).decode() if identity == "target" else values[identity],
                 selected_sense=None,
                 alternatives=[],
                 evidence=[fixtures.EVIDENCE],
@@ -278,11 +291,14 @@ def test_segmentation_model_proof_is_source_bound(
 
     def answer(body: dict[str, Any]) -> bytes:
         task = json.loads(body["messages"][1]["content"])
+        stem_line = json.loads(task["objective"])["presentation"]["stem_line"]
+        stem = segmentation["components"][0]["text"]
+        siblings = unsupported_siblings(task, dict(cue="MODEL-UNSUPPORTED"), "amāmus\n" + stem_line.format(stem=stem))
         values = {
-            "source": "MODEL-UNSUPPORTED",
+            "source": siblings["source"],
             "target": canonical(target).decode(),
             "stem": "not JSON" if control == "malformed" else canonical(segmentation).decode(),
-            "rendered": "MODEL-UNSUPPORTED",
+            "rendered": siblings["rendered"],
         }
         assertions = [
             dict(
@@ -314,6 +330,16 @@ def test_segmentation_model_proof_is_source_bound(
         output = tmp_path / "workflow"
         report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
         root = output / "run"
+        # Broken literal concatenation and malformed values are processing failures, not verdicts.
+        failure = {
+            "components": "contract_violation",
+            "sound-change": "malformed_output",
+            "malformed": "malformed_output",
+        }
+        if control in failure:
+            assert [(c["state"], c["reason"]) for c in report["provider_calls"]] == [("failed", failure[control])]
+            assert len(sent) == 1 and report["file_export"]["exported"] == 0
+            return
         card = current_cards(profile, PipelineProfile.read_json(profile.read_bytes()), load_run(root).objectives, root)[
             0
         ][0]

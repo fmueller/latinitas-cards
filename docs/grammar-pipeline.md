@@ -813,9 +813,12 @@ uv run latinitas-cards pipeline report --run workflow/run --json
 The readable report groups reasons with representative source links, examples,
 origin, policy revision, alternatives, objections and evidence limitations. JSON
 preserves the unversioned execution diagnostics and adds `outcome_report`, with
-`schema_version: 1`, `record` and `details`. The strict `record` follows the approved
-`latinitas-pipeline-report` v1 shape; `details` holds counts, source links, examples,
-findings, processing problems and actual analysis/provider reuse for this invocation.
+`schema_version: 3`, `record` and `details`. Schema 3 may report the
+`contract_violation` processing reason; historical reports with schema 1 or 2 (equal
+to their profile version) stay readable, and claiming that reason under them is
+rejected. The strict `record` follows the approved `latinitas-pipeline-report` shape;
+`details` holds counts, source links, examples, findings, processing problems and
+actual analysis/provider reuse for this invocation.
 The envelope schema is available as
 `latinitas_cards.pipeline_reporting.Reporting.model_json_schema()`; the approved
 record schema is `PipelineReport.model_json_schema()` in the same module. Legacy
@@ -831,8 +834,11 @@ Outcomes distinguish `not_generated`, `deferred`, `withheld`, `processing_failed
 `accepted_unselected` and `exported` (accepted and selected into a CSV receipt, not
 imported into Anki). Missing token accounting is a deferred prerequisite, not a
 linguistic rejection; missing analyzer resources and uncertain/failed provider calls
-are processing problems. Valid independent authority can still export a card when
-an optional stage fails; `outcome_report.details.processing_outcomes` retains that
+are processing problems. `malformed_output` covers malformed answers and nested values;
+`contract_violation` marks a well-formed form answer that breaks its fixed direction,
+presentation or literal stem-concatenation contract. Disputed but well-formed Latin
+stays `withheld`. Valid independent authority can still export a card when an
+optional stage fails; `outcome_report.details.processing_outcomes` retains that
 failure separately. `complete` is false while work, assessments or stages remain
 deferred, failed, unknown or cancelled, even if an export operation completed.
 

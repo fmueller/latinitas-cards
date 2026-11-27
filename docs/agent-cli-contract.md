@@ -465,7 +465,7 @@ See [development workflows](v0.5.0-workflows.md) for runnable inputs and
 | --- | --- |
 | `pipeline validate/adapt/preview/export/handoff` | `--json` selects JSON; default is readable key/value output. Callback input/filesystem failures emit `diagnostics` with `code`, `item`, `message`, exit 1. There is no `ok`/`exit_code` envelope. |
 | `pipeline run/resume/stage/cancel/reconcile-call` | Same JSON option; execution problems can be reported inside a successful callback. Inspect status, stages, processing outcomes and `complete`, not exit 0 alone. |
-| `pipeline report` | Reads saved execution JSON; `outcome_report` wraps `schema_version: 1`, strict `record` and `details`. Readable mode groups reasons. Historical snapshots without outcomes stay legacy, not invented v1 records. |
+| `pipeline report` | Reads saved execution JSON; `outcome_report` wraps `schema_version: 3` (historical 1/2 equal the profile version and stay readable), strict `record` and `details`. Readable mode groups reasons. Historical snapshots without outcomes stay legacy, not invented v1 records. |
 | `pipeline migration-plan/confirm-layout` | Same JSON option; migration is data, confirmation an explicit installation attestation, neither an Anki write or verification. |
 | `curated validate` | Text validation summary; not export authorization. |
 | `curated preview/export` | JSON on stdout without `--json`; failures use escaped `Curated input error:` on stderr and exit 1, not structured envelope diagnostics. |
@@ -482,7 +482,7 @@ Authoritative version sources (package version is independent of document versio
 | Explicit objectives | `latinitas-grammar-objectives` v1, `pipeline_consumers.Objectives`; not approval or provider response. |
 | Acceptance/stages | `latinitas-acceptance`/`latinitas-stage` v1, `acceptance_records.Acceptance`/`Stage`; binding and version validity precede semantic eligibility. |
 | Policy/support | `acceptance_registry.POLICY_REGISTRY`, `AUTHORIZATION_HISTORY`, `SUPPORT_REGISTRY`; installed policy `v050-disabled` revision `1`, empty scope; support `v050-support/1`. No run file registers authority. |
-| Report | `latinitas-pipeline-report` v1, `pipeline_reporting.PipelineReport`; wrapper `Reporting` has schema_version 1, not another CLI envelope. |
+| Report | `latinitas-pipeline-report` v1/v2 (equals the profile version), `pipeline_reporting.PipelineReport`; wrapper `Reporting` writes schema_version 3, which adds the `contract_violation` reason; it is not another CLI envelope. |
 | Receipt | `latinitas-export-receipt` v1, `export_receipts.ExportReceipt`; selection receipts are separate `pipeline_batches.Receipt` v1. Card identity is `(note_id, card_key)`, not card_key alone. |
 | Curated | `latinitas-curated`, `latinitas-curated-permission`, `latinitas-curated-approval`, `latinitas-curated-recipes`, all v1; models `curated.CuratedInput/Permission/Approval`, `curated_cards.RecipePlan`. |
 | Layout | Grammar defaults to `grammar-v1` v1; curated defaults to `curated-v1` (`curated_cards.TEMPLATE_SHA256`). Both support explicit family-specific `acceptance-1` v1 with exact digest; this is not a profile schema upgrade or installed template migration. |

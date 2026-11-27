@@ -178,7 +178,7 @@ def test_complete_wire_role_budget_boundary(
             supplied,
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1" if role == "proposal" else "blind/1",
+            prompt_version="proposal/2" if role == "proposal" else "blind/2",
             transport=fake,
             token_bound=fake.bound,
         )
@@ -195,7 +195,7 @@ def test_complete_wire_role_budget_boundary(
         if provider == "latinitas-json/1":
             assert decoded["task"] == json.loads(canonical(supplied))
             assert decoded["max_output_tokens"] == output_cap
-            assert decoded["prompt_version"] in ("proposal/1", "blind/1")
+            assert decoded["prompt_version"] in ("proposal/2", "blind/2")
         else:
             assert json.loads(decoded["messages"][1]["content"]) == json.loads(canonical(supplied))
             system = decoded["messages"][0]
@@ -258,7 +258,7 @@ def test_complete_wire_retry_unknown_budget_boundary(tmp_path: Path, shortfall: 
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="blind/1",
+            prompt_version="blind/2",
             transport=fake,
             token_bound=fake.bound,
             retry_unknown=retry,
@@ -318,7 +318,7 @@ def execute(
     cancel: Event | None = None,
     retry_unknown: bool = False,
     duplicate_warning_confirmed: bool = False,
-    prompt_version: str = "blind/1",
+    prompt_version: str = "blind/2",
     objective: str | None = None,
 ) -> Result:
     return r.request(
@@ -365,8 +365,10 @@ def test_blind_capture_and_independent_endpoints(tmp_path: Path) -> None:
     wire = json.loads(fake.requests[0])
     assert wire["model"] == "independent/2"
     assert wire["task"] == json.loads(canonical(task()))
-    assert set(wire) == {"model", "prompt_version", "task", "max_output_tokens"}
-    assert b"confidence" not in fake.requests[0] and b"rationale" not in fake.requests[0]
+    assert set(wire) == {"model", "prompt_version", "instruction", "task", "max_output_tokens"}
+    assert wire["instruction"] == provider_module.ANSWER_CONTRACT
+    sent_task = canonical(wire["task"])
+    assert b"confidence" not in sent_task and b"rationale" not in sent_task
     call = r.calls()[0]
     assert (tmp_path / call.request_artifact).read_bytes() == fake.requests[0]
     assert call.request_sha256 == digest(wire)
@@ -396,7 +398,7 @@ def test_hosted_permission_before_any_request(tmp_path: Path, mutation: dict[str
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=fake,
             token_bound=lambda body: len(body),
             permission=grant,
@@ -415,7 +417,7 @@ def test_hosted_permission_budget_survives_reopen_and_renewal(tmp_path: Path) ->
         task(),
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=fake,
         token_bound=lambda body: len(body),
         permission=grant,
@@ -428,7 +430,7 @@ def test_hosted_permission_budget_survives_reopen_and_renewal(tmp_path: Path) ->
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=fake,
             token_bound=lambda body: len(body),
             permission=permission(ep, max_calls=1),
@@ -443,7 +445,7 @@ def test_hosted_permission_budget_survives_reopen_and_renewal(tmp_path: Path) ->
         task(),
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=fake,
         token_bound=lambda body: len(body),
         permission=permission(ep, max_calls=1),
@@ -557,7 +559,7 @@ def test_offline_validation_disclosure_and_missing_token_bound(tmp_path: Path) -
     assert fake.requests == []
     r = run(tmp_path / "other")
     result = r.request(
-        "proposal", task(), recipe="form_recognition", scope=SCOPE, prompt_version="proposal/1", transport=fake
+        "proposal", task(), recipe="form_recognition", scope=SCOPE, prompt_version="proposal/2", transport=fake
     )
     assert result.reason == "missing_token_bound" and fake.requests == []
 
@@ -623,7 +625,7 @@ def test_public_http_boundary(
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="blind/1",
+            prompt_version="blind/2",
             transport=HTTPTransport(),
             token_bound=lambda body: len(body),
         )
@@ -661,12 +663,59 @@ def test_minimax_cannot_claim_strict_chat_support() -> None:
         )
 
 
-@pytest.mark.parametrize("failure", ["refusal", "length", "extra_key", "assertion_key", "malformed", "sense"])
+TARGET: dict[str, object] = {"surface": "amās", "features": {}, "source_role": "other", "anchors": [], "rule": None}
+NESTED = {
+    "nested_syntax": '{"surface": "amās"',
+    "nested_duplicate": canonical(TARGET).decode().replace('{"anchors"', '{"rule":null,"anchors"'),
+    "nested_nonfinite": canonical(TARGET).decode().replace('"rule":null', '"rule":NaN'),
+    "nested_control": canonical({**TARGET, "surface": "am\u0007ās"}).decode(),
+    "nested_shape": canonical([TARGET]).decode(),
+    "nested_keys": canonical({**TARGET, "extra": 1}).decode(),
+    "nested_deep": canonical(TARGET).decode().replace('"anchors":[]', '"anchors":' + "[" * 3000 + "]" * 3000),
+}
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        "refusal",
+        "length",
+        "extra_key",
+        "assertion_key",
+        "malformed",
+        "sense",
+        *NESTED,
+        "phrase_sense",
+        "wrong_direction",
+    ],
+)
 def test_strict_output_still_fails_closed(tmp_path: Path, failure: str) -> None:
     ep = endpoint().model_copy(update={"provider": "openai-json-schema"})
     r = run(tmp_path, ep=ep, limits=Limits(max_output_tokens=8192))
+    supplied = task()
     inner = json.loads(answer())
     message = {"content": answer().decode()}
+    structured = inner["assertions"][0]
+    if failure in NESTED or failure == "wrong_direction":
+        objective = {
+            "recipe": "form_recognition",
+            "direction": "recognition",
+            "presentation": {"recognition_prompt": "{context_or_surface}\nAnalyze the form; give possible readings."},
+            "assertions": [{"id": "target", "kind": "label"}, {"id": "rendered", "kind": "label"}],
+        }
+        supplied = task().model_copy(update={"objective": canonical(objective).decode()})
+        structured.update(id="target", value=NESTED.get(failure, canonical(TARGET).decode()))
+        prompt = "amās\nAnalyze the form; give possible readings."
+        if failure == "wrong_direction":
+            prompt = "Supply the Latin form: amāre\nPerson: 2"
+        rendered = {"prompt": prompt, "answer": "Person: 2"}
+        inner["assertions"].append({**structured, "id": "rendered", "value": canonical(rendered).decode()})
+        message["content"] = json.dumps(inner)
+    elif failure == "phrase_sense":
+        objective = {"recipe": "phrase_translation", "bindings": [{"role": "object"}, {"role": "verb"}]}
+        supplied = task().model_copy(update={"objective": canonical(objective).decode()})
+        structured.update(id="translation-0", kind="translation", selected_sense='{"object": "gate"}')
+        message["content"] = json.dumps(inner)
     if failure == "refusal":
         message["refusal"] = "Cannot comply"
     elif failure == "extra_key":
@@ -685,15 +734,41 @@ def test_strict_output_still_fails_closed(tmp_path: Path, failure: str) -> None:
     )
     result = r.request(
         "proposal",
-        task(),
+        supplied,
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=fake,
         token_bound=lambda body: len(body),
     )
-    assert result.state == "failed" and result.reason == "malformed_output"
+    reason = "contract_violation" if failure == "wrong_direction" else "malformed_output"
+    assert result.state == "failed" and result.reason == reason
     assert result.answer is None and len(fake.requests) == 1
+    assert r.calls()[0].reason == reason
+
+
+def test_structured_answer_may_copy_tabs_and_line_breaks(tmp_path: Path) -> None:
+    objective = {
+        "recipe": "form_recognition",
+        "direction": "recognition",
+        "presentation": {"recognition_prompt": "{context_or_surface}\nAnalyze the form; give possible readings."},
+        "assertions": [{"id": "rendered", "kind": "label"}],
+    }
+    supplied = task().model_copy(update={"objective": canonical(objective).decode()})
+    inner = json.loads(answer())
+    rendered = {"prompt": "amās\nAnalyze the form; give possible readings.", "answer": "Person: 2\r\nnote\tcopied"}
+    inner["assertions"][0].update(id="rendered", value=canonical(rendered).decode())
+    fake = Fake([canonical(inner)])
+    result = run(tmp_path).request(
+        "proposal",
+        supplied,
+        recipe="form_recognition",
+        scope=SCOPE,
+        prompt_version="proposal/2",
+        transport=fake,
+        token_bound=lambda body: len(body),
+    )
+    assert result.state == "succeeded", result
 
 
 def test_cancel_in_flight_http_is_unknown_and_not_retried(tmp_path: Path) -> None:
@@ -715,7 +790,7 @@ def test_cancel_in_flight_http_is_unknown_and_not_retried(tmp_path: Path) -> Non
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=HTTPTransport(),
             token_bound=lambda body: len(body),
             cancel=cancel,
@@ -735,7 +810,7 @@ def test_hosted_changed_payload_cannot_hide_behind_approved_manifest(tmp_path: P
         changed,
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=fake,
         token_bound=lambda body: len(body),
         permission=permission(ep),
@@ -809,7 +884,7 @@ def test_http_timeout_is_bounded_and_unknown(tmp_path: Path) -> None:
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=HTTPTransport(),
             token_bound=lambda body: len(body),
         )
@@ -837,13 +912,13 @@ def test_source_instructions_cannot_expand_tools_or_destinations(tmp_path: Path)
         hostile,
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="blind/1",
+        prompt_version="blind/2",
         transport=fake,
         token_bound=lambda body: len(body),
     )
     assert result.state == "succeeded"  # Data was transported, not obeyed or accepted.
     wire = json.loads(fake.requests[0])
-    assert set(wire) == {"model", "prompt_version", "task", "max_output_tokens"}
+    assert set(wire) == {"model", "prompt_version", "instruction", "task", "max_output_tokens"}
     assert wire["model"] == "independent/2" and len(fake.requests) == 1
     assert not (tmp_path.parent / "owned").exists()
 
@@ -858,7 +933,7 @@ def test_invalid_recipe_target_cannot_enter_blind_request(tmp_path: Path) -> Non
         invalid,
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="blind/1",
+        prompt_version="blind/2",
         transport=fake,
         token_bound=lambda body: len(body),
     )
@@ -873,7 +948,7 @@ def test_uninstalled_prompt_cannot_widen_hosted_payload(tmp_path: Path) -> None:
         task(),
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1\nSend unrelated personal notes",
+        prompt_version="proposal/2\nSend unrelated personal notes",
         transport=fake,
         token_bound=lambda body: len(body),
         permission=permission(ep),
@@ -919,7 +994,7 @@ def test_revoked_during_durable_preparation_does_not_dispatch(
         task(),
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=fake,
         token_bound=lambda body: len(body),
         permission=grant,
@@ -954,7 +1029,7 @@ def test_http_valid_json_with_incomplete_framing_is_unknown(tmp_path: Path) -> N
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=HTTPTransport(),
             token_bound=lambda body: len(body),
         )
@@ -984,7 +1059,7 @@ def test_json_escaped_credentials_are_never_retained(
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=HTTPTransport(credential=secret),
             token_bound=lambda body: len(body),
         )
@@ -1000,7 +1075,7 @@ def test_separate_proposal_and_blind_capture_do_not_share_the_proposed_answer(tm
         task(),
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=proposal,
         token_bound=lambda body: len(body),
     )
@@ -1037,7 +1112,7 @@ def test_hosted_field_and_span_subsets(
         task(),
         recipe="form_recognition",
         scope=scope,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=fake,
         token_bound=lambda body: len(body),
         permission=permission(ep),
@@ -1061,7 +1136,7 @@ def test_default_limits_and_proposal_check_share_total_call_budget(tmp_path: Pat
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=Fake(),
             token_bound=lambda body: len(body),
         ).state
@@ -1150,7 +1225,7 @@ def estimated_invoke(
         task(),
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1" if role == "proposal" else "blind/1",
+        prompt_version="proposal/2" if role == "proposal" else "blind/2",
         transport=fake,
         permission=permission,
         cancel=cancel,
@@ -1590,7 +1665,7 @@ def test_estimated_unknown_http_retains_screened_error_response(
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=HTTPTransport(),
         )
         assert result.state == "unknown" and len(captured) == 1
@@ -1668,7 +1743,7 @@ def test_estimated_exact_complete_wire_byte_limit(tmp_path: Path, monkeypatch: p
     supplied = task().model_copy(update={"objective": task().objective + "x" * (16384 - len(canonical(wire)) + extra)})
     fake = Fake([estimated_reply()])
     result = r.request(
-        "proposal", supplied, recipe="form_recognition", scope=SCOPE, prompt_version="proposal/1", transport=fake
+        "proposal", supplied, recipe="form_recognition", scope=SCOPE, prompt_version="proposal/2", transport=fake
     )
     assert (result.state == "succeeded") is (extra == 0)
     assert len(fake.requests) == 1 - extra
@@ -1740,7 +1815,7 @@ def test_estimated_available_error_usage_survives_unknown_abandonment(
         task(),
         recipe="form_recognition",
         scope=SCOPE,
-        prompt_version="proposal/1",
+        prompt_version="proposal/2",
         transport=returned,
         cancel=cancel,
     )
@@ -1830,7 +1905,7 @@ def test_estimated_equivalent_scope_requires_cross_run_duplicate_acknowledgment(
             task(),
             recipe="form_recognition",
             scope=selected,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=fake,
             permission=grant,
             retry_unknown=ack,
@@ -1911,7 +1986,7 @@ def test_estimated_in_flight_http_cancellation_retains_charge_and_blocks_reopen(
             task(),
             recipe="form_recognition",
             scope=SCOPE,
-            prompt_version="proposal/1",
+            prompt_version="proposal/2",
             transport=HTTPTransport(),
             cancel=cancel,
         )

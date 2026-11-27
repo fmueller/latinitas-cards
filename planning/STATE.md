@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-27T16:55:56Z"
+updated_at: "2026-11-27T20:13:06Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -11,8 +11,8 @@ blockers:
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
-next_action: 'Start task T-247-enforce-explicit-per-card-exercise-and-nested: Enforce explicit per-card exercise and nested-output contracts'
-last_verification_result: pass for T-246-record-approved-post-trial-contracts-and-task at 2026-11-27T16:53:29Z
+next_action: Resolve blocker on T-201-validate-real-pipeline-and-linux-anki-desktop
+last_verification_result: pass for T-247-enforce-explicit-per-card-exercise-and-nested at 2026-11-27T20:13:00Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -41,11 +41,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-246-record-approved-post-trial-contracts-and-task at 2026-11-27T16:53:29Z
+- pass for T-247-enforce-explicit-per-card-exercise-and-nested at 2026-11-27T20:13:00Z
 
 ## Next Action
 
-- Start task T-247-enforce-explicit-per-card-exercise-and-nested: Enforce explicit per-card exercise and nested-output contracts
+- Resolve blocker on T-201-validate-real-pipeline-and-linux-anki-desktop
 
 ## Relevant Artifacts
 
@@ -59,6 +59,6 @@ continuation_notes:
 
 - todo: 21
 - in_progress: 0
-- completed: 225
+- completed: 226
 - blocked: 4
 - cancelled: 0

@@ -9,6 +9,7 @@ from grammar_pipeline_test import bennett_phrase_fixture, call, fixture, rebind,
 
 from latinitas_cards.acceptance_records import canonical
 from latinitas_cards.pipeline_consumers import Analysis, current_cards, load_run
+from latinitas_cards.providers import ANSWER_CONTRACT
 
 CONTEXTS = {
     "preposition-noun": {
@@ -412,9 +413,9 @@ def test_complete_public_comparison_and_saved_reuse(
         task = json.loads(sent[1]["messages"][1]["content"])
         assert task["reference_constraints"] == []
         objective = json.loads(task["objective"])
-        assert "For form translations" in objective["answer_contract"]
-        assert "mapping every bound role to its sense key" in objective["answer_contract"]
-        assert objective["answer_contract"] in sent[1]["messages"][0]["content"]
+        assert "answer_contract" not in objective
+        assert canonical(sent[1]).decode().count(ANSWER_CONTRACT.split(".")[0]) == 1
+        assert ("direction" in objective) == (family == "form")
         if family != "form":
             assert json.loads(task["objective"])["contexts"] == [CONTEXTS[family][language]]
             assert [e["text"] for e in task["source_evidence"] if e["source"] == "unverified-phrase-context"] == [

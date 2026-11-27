@@ -41,6 +41,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Fixed
 
+- `pipeline run` rejects malformed nested model answers as `malformed_output` and form
+  answers that break their card format as `contract_violation`; reports use schema 3.
 - `pipeline resume` refreshes model stages after an output-token allowance change,
   retaining earlier receipts and charges and requiring fresh exact hosted permission.
 - Focused answer-evidence disclosures in Anki Desktop use Enter/Space to toggle

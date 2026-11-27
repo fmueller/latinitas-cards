@@ -50,7 +50,9 @@ from .phrase_inputs import Features
 from .pipeline_batches import _atomic, run_lock
 from .pipeline_consumers import (
     FORM_ASSERTION_VALUE_CONTRACTS,
+    FORM_DIRECTIONS,
     FORM_PRESENTATION,
+    FORM_RENDERED_CONTRACTS,
     Analysis,
     FormObjective,
     Objectives,
@@ -62,6 +64,7 @@ from .pipeline_consumers import (
     _entry,
     _export,
     _feature_terms,
+    _features,
     _form,
     _versions,
     current_cards,
@@ -73,7 +76,6 @@ from .pipeline_consumers import (
 from .pipeline_profile import PipelineProfile, load_pipeline_profile
 from .pipeline_reporting import build_report, safe_snapshot
 from .providers import (
-    ANSWER_CONTRACT,
     PROMPT_VERSIONS,
     Endpoint,
     HostedPermission,
@@ -313,23 +315,26 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
     target: dict[str, JsonValue] = {key: values[key] for key in keys}
     binding = card.binding.model_copy(update={"config_sha256": _config(profile)})
     if isinstance(objective, FormObjective):
+        assert features is not None
+        direction = FORM_DIRECTIONS[card.recipe]
+        contracts = {**FORM_ASSERTION_VALUE_CONTRACTS, "rendered": FORM_RENDERED_CONTRACTS[direction]}
         request_objective = canonical(
             {
                 "recipe": card.recipe,
-                "answer_contract": ANSWER_CONTRACT,
+                "direction": direction,
                 "selected_form": objective.form,
                 "selected_sense": objective.sense,
                 "anchors": objective.anchors,
                 "context": objective.context,
                 "distinction": objective.distinction,
-                "presentation": FORM_PRESENTATION[profile.language],
+                "presentation": _presentation(card, source, profile.language, features),
                 "feature_terms": _feature_terms(source.deck),
                 "feature_order": tuple(Features.model_fields),
                 "assertions": tuple(
                     {
                         "id": a.id,
                         "kind": a.kind,
-                        "value_contract": FORM_ASSERTION_VALUE_CONTRACTS.get(
+                        "value_contract": contracts.get(
                             a.id,
                             "Plain translated text for the selected sense."
                             if a.kind == "translation"
@@ -372,7 +377,6 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
         request_objective = canonical(
             {
                 "recipe": card.recipe,
-                "answer_contract": ANSWER_CONTRACT,
                 "family": pattern.family,
                 "function_words": pattern.function_words,
                 "bindings": objective.selection.bindings,
@@ -394,6 +398,30 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
     )
     task.validate_recipe(card.recipe)
     return task, tuple(scopes)
+
+
+def _presentation(card: Rendered, source: Source, language: str, features: Features) -> dict[str, str]:
+    """Only the direction's templates, with values the task already fixes filled in."""
+    objective = cast(FormObjective, card.objective)
+    direction = FORM_DIRECTIONS[card.recipe]
+    templates = FORM_PRESENTATION[language]
+
+    def literal(text: str) -> str:
+        return text.replace("{", "{{").replace("}", "}}")
+
+    prompt = templates[direction + "_prompt"].replace("{features}", literal(_features(features, source.deck)))
+    if objective.context:
+        placeholder = "{context}" if direction == "cloze" else "{context_or_surface}"
+        prompt = prompt.replace(placeholder, literal(objective.context))
+    entry = _entry(source, objective.entry, objective.sense)[0]
+    if direction == "production" and objective.form and _form(source, entry, objective.form).source_role == "ppp":
+        prompt += "\n" + literal(templates["ppp_suffix"])
+    presentation = {direction + "_prompt": prompt}
+    if direction == "translation":
+        presentation["translation_answer"] = templates["translation_answer"]
+    if any(a.id == "stem" for a in card.claims.assertions):
+        presentation["stem_line"] = templates["stem_line"]
+    return presentation
 
 
 def _stage(root: Path, state: Execution, card: Rendered, name: StageName, envelope: dict[str, object]) -> str:

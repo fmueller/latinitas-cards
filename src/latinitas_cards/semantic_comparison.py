@@ -9,7 +9,7 @@ from .acceptance_records import Assertion, Check, decode_json, digest
 from .meaning_evidence import meaning_checks
 from .phrase_inputs import Features
 from .pipeline_consumers import Rendered, Source, source_claims
-from .providers import Call, ModelAnswer, ModelTask
+from .providers import PROMPT_VERSIONS, Call, ModelAnswer, ModelTask
 
 VERSION = "source-role-comparison/1"
 type Relation = Literal["equivalent", "compatible_alternatives", "contradiction", "unresolved"]
@@ -164,7 +164,7 @@ def compare_source_answers(
         id="blind/transport",
         assertion_ids=tuple(a.id for a in card.claims.assertions),
         method="blind_model",
-        version="blind/1",
+        version=PROMPT_VERSIONS["counter_check"],
         result="pass" if complete and not global_objections and not global_alternatives else "unresolved",
         evidence=task.source_evidence,
         alternatives=global_alternatives,

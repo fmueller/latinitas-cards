@@ -274,7 +274,9 @@ def test_phrase_saved_comparison_uses_independent_source_proofs(
                 id=a["id"],
                 kind=a["kind"],
                 value="proposal-only-sentinel" if side == "proposal" else "unsupported response",
-                selected_sense="unqualified" if a["kind"] == "translation" else None,
+                selected_sense=canonical({b["role"]: b["sense"] for b in objective["bindings"]}).decode()
+                if a["kind"] == "translation"
+                else None,
                 alternatives=[],
                 evidence=[fixtures.EVIDENCE],
             )

@@ -23,6 +23,7 @@ from latinitas_cards.phrase_inputs import PhraseInputV2
 from latinitas_cards.pipeline_consumers import Analysis, Rendered, current_cards, input_binding
 from latinitas_cards.pipeline_profile import PipelineProfile, RecipeOverrides, resolve_recipes
 from latinitas_cards.profile import DeckProfile, SourceIdentityConfig
+from latinitas_cards.providers import PROMPT_VERSIONS
 
 runner = CliRunner()
 EVIDENCE = Evidence("synthetic-reference", "engineering-only", "1", "Isolated fixture, not evaluated authority")
@@ -3488,6 +3489,23 @@ def test_pipeline_report_schema_rejects_invalid_version_and_counts(tmp_path: Pat
             PipelineReport.read_json(canonical({**view["record"], **mutation}))
     with pytest.raises(ValidationError):
         Reporting.read_json(canonical({**view, "details": {**view["details"], "counts": {"cards": -1}}}))
+    # Schema 3 adds the contract_violation reason; profile-versioned v1/v2 reports stay readable.
+    assert view["schema_version"] == 3
+    assert (
+        Reporting.read_json(canonical({**view, "schema_version": 1})).record
+        == Reporting.read_json(canonical(view)).record
+    )
+    flagged = json.loads(canonical(view))
+    for row in (flagged["record"]["outcomes"][0], flagged["details"]["outcomes"][0]):
+        row.update(outcome="processing_failed", reason="contract_violation")
+    assert Reporting.read_json(canonical(flagged)).record.outcomes[0].reason == "contract_violation"
+    with pytest.raises(ValueError, match="report_reason_schema_mismatch"):
+        Reporting.read_json(canonical({**flagged, "schema_version": 1}))
+    failed = [{"stage": "propose", "outcome": "processing_failed", "reason": "contract_violation"}]
+    with pytest.raises(ValueError, match="report_reason_schema_mismatch"):
+        Reporting.read_json(
+            canonical({**view, "schema_version": 1, "details": {**view["details"], "processing_outcomes": failed}})
+        )
     view["record"]["version"] = "private-error-string"
     write(tmp_path / "workflow" / "report.json", result)
     bad = runner.invoke(app, ["pipeline", "report", "--run", str(tmp_path / "workflow" / "run"), "--json"])
@@ -3783,8 +3801,8 @@ def test_orchestrated_http_success_lost_response_resume_and_offline(
         assert len(requests) == 2 and report["file_export"]["exported"] == 0
         assert [r["state"] for r in report["provider_calls"]] == ["succeeded", "succeeded"]
         assert json.loads(requests[0]["messages"][1]["content"]) == json.loads(requests[1]["messages"][1]["content"])
-        assert "proposal/1" in requests[0]["messages"][0]["content"]
-        assert "blind/1" in requests[1]["messages"][0]["content"]
+        assert "proposal/2" in requests[0]["messages"][0]["content"]
+        assert "blind/2" in requests[1]["messages"][0]["content"]
         assert "synthetic-only" not in requests[1]["messages"][1]["content"]
         call("resume", "--run", str(root))
         call("resume", "--run", str(root), "--offline")
@@ -3936,10 +3954,56 @@ def test_orchestrated_permission_exact_requests_and_renewal(tmp_path: Path, monk
     # A renewed ceiling still does not grant the changed endpoint/body.
     call("resume", "--run", str(root), "--allow-hosted", str(grant))
     assert len(sent) == 2
+    # A later prompt/checker revision changes every request; the prior grant cannot dispatch it.
+    with pytest.MonkeyPatch.context() as revision:
+        revision.setitem(PROMPT_VERSIONS, "proposal", "proposal/next")
+        revised = call("resume", "--run", str(root), "--allow-hosted", str(grant))
+    assert len(sent) == 2 and revised["stages"]["propose"][0]["reason"] == "permission_or_scope"
+    assert revised["provider_calls"] == changed["provider_calls"]
     local = runner.invoke(app, ["pipeline", "resume", "--run", str(root), "--local-only", "--json"])
     assert local.exit_code != 0 and "local_only" in local.stdout
     assert call("resume", "--run", str(root), "--offline")["provider_calls"] == changed["provider_calls"]
     assert len(sent) == 2
+
+
+def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> None:
+    """Prompt-version-stale stores in the unchanged 72fdf19 file layout, with a profile-versioned report.
+
+    Their objective bytes come from current code; only the version labels are historical.
+    """
+
+    def historical(base: Path, url: str) -> tuple[Path, dict[str, Any]]:
+        profile, objectives, _ = fixture(base)
+        configure_pipeline_http(profile, url)
+        with pytest.MonkeyPatch.context() as before:
+            before.setitem(PROMPT_VERSIONS, "proposal", "proposal/1")
+            before.setitem(PROMPT_VERSIONS, "counter_check", "blind/1")
+            stored = call(
+                "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(base / "w")
+            )
+        stored["outcome_report"]["schema_version"] = stored["outcome_report"]["record"]["version"]
+        write(base / "w" / "report.json", stored)
+        return base / "w" / "run", stored
+
+    with synthetic_pipeline_http() as (url, requests, _):
+        root, stored = historical(tmp_path / "kept", url)
+        assert len(requests) == 2 and "proposal/1" in requests[0]["messages"][0]["content"]
+        evidence = {p: p.read_bytes() for p in (*root.glob("*.*.json"), *(root / "stages").glob("*.json"))}
+        assert call("report", "--run", str(root)) == stored
+        # Stale calls are neither reused nor rewritten; the changed task needs its own calls.
+        current = call("resume", "--run", str(root))
+        assert len(requests) == 4 and "proposal/2" in requests[2]["messages"][0]["content"]
+        assert {r["reuse"] for r in current["stages"]["propose"]} == {"processed"}
+        assert current["provider_calls"][:2] == stored["provider_calls"]
+        assert current["outcome_report"]["schema_version"] == 3
+        assert all(p.read_bytes() == data for p, data in evidence.items())
+
+        damaged, original = historical(tmp_path / "damaged", url)
+        stage = damaged / "stages" / (original["stage_ids"]["propose"] + ".json")
+        write(stage, {**json.loads(stage.read_text()), "state": "corrupted"})
+        rejected = call("resume", "--run", str(damaged), "--offline")
+        assert rejected["status"] == "failed" and rejected["invalid_stages"] and len(requests) == 6
+        assert rejected["provider_calls"] == original["provider_calls"]
 
 
 def test_orchestrated_abandon_cancel_and_tampered_stages(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

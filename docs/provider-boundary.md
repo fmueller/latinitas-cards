@@ -94,11 +94,20 @@ model. Unexpected proposal-answer/rationale/confidence target fields are rejecte
 the caller still owns constructing objectives/evidence from original sources, not
 from proposal results. Both roles use separate requests. Only installed role-specific
 prompt revisions are allowed, not caller-provided prompt text. OpenAI/Ollama requests
-include the output schema; the direct test protocol uses its versioned answer contract
-out of band. No tools are exposed. The journal retains the actual credential-free HTTP request bytes and a
+include the output schema; the direct test protocol carries the same answer contract as
+its `instruction`. Each request states that contract once, never inside task data.
+No tools are exposed. The journal retains the actual credential-free HTTP request bytes and a
 data-scope artifact, not just a digest. Model output must match the strict versioned
 answer schema and task digest. Duplicate keys, nonfinite JSON, truncation, tool
-calls and unexpected answer keys fail closed. Credential-bearing reflected responses
+calls and unexpected answer keys fail closed. Since `proposal/2` and `blind/2`, the
+documented nested assertion values are read with the same strict JSON reader: form
+`source`/`target`/`stem`/`rendered` objects and controlled-phrase sense mappings.
+Malformed JSON, wrong shapes and control characters other than tab and line breaks
+inside form values are `malformed_output`. A
+well-formed form answer that ignores its explicit direction, prompt template, stem
+line, literal stem concatenation or target surface is a separate `contract_violation`
+failure. Both are retained, charged failures without repair or retry; neither
+checks Latin correctness or explanatory prose. Credential-bearing reflected responses
 (including supported JSON decoding layers) are rejected before persistence. Other raw responses are retained separately;
 they are untrusted evidence, not instructions or acceptance records.
 
@@ -237,8 +246,11 @@ declared scope; a profile or permission cannot add another qualification:
 
 - Hosted `openai` protocol at `https://api.minimax.io/v1/chat/completions`, model
   `MiniMax-M3.1-Flash`, with explicit `service_revision: null` (unpinnable alias).
-- The installed proposal/1 and blind/1 messages plus MiniMax structured-answer
-  contract/1, which states the existing selected-sense validator invariant.
+- The installed proposal/blind messages plus MiniMax structured-answer contract/1,
+  which states the existing selected-sense validator invariant. The 2026-11-20
+  observation below used proposal/1 and blind/1. The admission check does not compare
+  prompt revisions; proposal/2 and blind/2 change request bytes and need fresh exact
+  permission. This does not decide whether the changed prompts need requalification.
   Both roles receive the same source task, without the proposal answer.
 - Nonstreaming text-only requests with a prompt-only JSON answer contract,
   `max_completion_tokens: 2048` and

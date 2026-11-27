@@ -99,15 +99,24 @@ class ReportDetails(Record):
     reuse: dict[str, Count]
 
 
+REPORT_SCHEMA = 3  # Adds the contract_violation reason; 1/2 equal their profile's accounting version.
+
+
 class Reporting(Record):
-    schema_version: Annotated[int, Field(strict=True, ge=1, le=2)]
+    schema_version: Annotated[int, Field(strict=True, ge=1, le=REPORT_SCHEMA)]
     record: PipelineReport
     details: ReportDetails
 
     @model_validator(mode="after")
     def matching_projection(self) -> Self:
-        if self.schema_version != self.record.version or self.record.version != self.record.effective_profile.version:
-            raise ValueError("report accounting schema mismatch")
+        if self.schema_version < REPORT_SCHEMA:
+            if self.schema_version != self.record.version:
+                raise ValueError("report accounting schema mismatch")
+            if "contract_violation" in (
+                *(o.reason for o in self.details.outcomes),
+                *(p.get("reason") for p in self.details.processing_outcomes),
+            ):
+                raise ValueError("report_reason_schema_mismatch")
         rows = tuple(Outcome(**o.model_dump(include=set(Outcome.model_fields))) for o in self.details.outcomes)
         if rows != self.record.outcomes:
             raise ValueError("report_detail_identity_mismatch")
@@ -428,7 +437,7 @@ def build_report(
     return {
         **execution,
         "installed_handoff": [h.model_dump(mode="json") for h in handoffs],
-        "outcome_report": Reporting(schema_version=profile.version, record=report, details=details).model_dump(
+        "outcome_report": Reporting(schema_version=REPORT_SCHEMA, record=report, details=details).model_dump(
             mode="json"
         ),
     }
@@ -518,7 +527,7 @@ def readable(report: dict[str, object]) -> str:
         key = (outcome.outcome, outcome.reason, outcome.origin, outcome.policy_id, outcome.policy_version)
         groups.setdefault(key, []).append(outcome)
     lines = [
-        f"Pipeline {model.run_id} (report v{model.version})",
+        f"Pipeline {model.run_id} (report v{view.schema_version}, profile v{model.version})",
         "Yield: " + ", ".join(f"{n} {k}" for k, n in details.counts.items()),
         "Source work (recipe/objective units): " + json.dumps(model.source_units.model_dump()),
         "Stages: " + json.dumps(model.stage_counts),

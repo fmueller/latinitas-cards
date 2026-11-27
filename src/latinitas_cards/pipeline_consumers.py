@@ -307,6 +307,16 @@ FORM_PRESENTATION = {
 }
 
 
+FORM_DIRECTIONS = {
+    "verb_production": "production",
+    "noun_declension": "production",
+    "adjective_declension": "production",
+    "form_translation": "translation",
+    "ppp_translation": "translation",
+    "form_recognition": "recognition",
+    "ppp_recognition": "recognition",
+    "form_cloze": "cloze",
+}
 FORM_ASSERTION_VALUE_CONTRACTS = {
     "source": "JSON object {entry, sense}: the supplied entry and its selected sense object, not just the sense key.",
     "target": (
@@ -321,21 +331,33 @@ FORM_ASSERTION_VALUE_CONTRACTS = {
     "stem": (
         "JSON object {convention, components, operation, surface}. components is an ordered array of "
         "{role, text} objects: stem then personal-ending (verb) or case-ending (noun/adjective). "
-        "Use bennett-present-stem/1 for verbs, bennett-declensional-stem/1 for nouns, or "
-        "bounded-generator-base/1 for adjectives. operation is concatenation when component texts "
-        "reconstruct the Latin surface; otherwise unverified with ending text null."
+        "Use bennett-present-stem/1 (infinitive without -re) for verbs, bennett-declensional-stem/1 for nouns, "
+        "or bounded-generator-base/1 (masculine nominative without -us) for adjectives. "
+        "surface is the target surface. Copy Latin literally, including long-vowel marks. "
+        "operation is concatenation only when stem text + ending text equals surface exactly; "
+        "otherwise unverified with ending text null. Examples: vocāre 1st plural is "
+        "vocā + mus = vocāmus; vocō is stem vocā, ending null, unverified. porta genitive plural is "
+        "portā + rum = portārum; porta is stem portā, ending null, unverified."
     ),
-    "rendered": (
-        "JSON object {prompt, answer}, both strings: independently construct the whole visible card, "
-        "using presentation templates. Production cue: second anchor for a verb with two anchors, otherwise "
-        "first anchor, otherwise mapped lemma. Add ppp_suffix as a new prompt line for PPP production. "
-        "Production/cloze answer begins with the Latin surface. Translation joins readings with ' / '. "
-        "Recognition joins distinct feature displays for all same-surface source forms with newlines, "
-        "prefixed by 'PPP — ' for PPP. Feature displays use feature_order, omit nulls, and join "
-        "'label: value' terms with '; '. Append stem_line if stem is listed, then independently supported "
-        "explanation and caveat clauses in assertion order, each on a new answer line. "
-        "Templates specify fixed presentation only; solve their placeholders independently."
-    ),
+}
+_RENDERED_ANSWERS = {
+    "production": "Production cue: second anchor for a verb with two anchors, otherwise first anchor, otherwise "
+    "mapped lemma. answer line 1 is the Latin target surface; if stem_line is supplied, line 2 is stem_line "
+    "with the stem component text.",
+    "translation": "answer begins with translation_answer, joining readings with ' / '.",
+    "recognition": "answer joins distinct feature displays for all same-surface source forms with newlines, "
+    "prefixed by 'PPP — ' for PPP. Feature displays use feature_order, omit nulls, and join 'label: value' "
+    "terms with '; '.",
+    "cloze": "answer line 1 is the Latin target surface.",
+}
+FORM_RENDERED_CONTRACTS = {
+    direction: "JSON object {prompt, answer}, both strings: independently construct the whole visible card. "
+    "prompt is the supplied prompt template with each remaining placeholder replaced by the value you solve "
+    "independently; keep all other template text exactly. "
+    + text
+    + " Then add independently supported explanation and caveat clauses in assertion order, each on a new "
+    "answer line."
+    for direction, text in _RENDERED_ANSWERS.items()
 }
 
 

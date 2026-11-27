@@ -1,12 +1,12 @@
 ---
 id: T-247-enforce-explicit-per-card-exercise-and-nested
 title: Enforce explicit per-card exercise and nested-output contracts
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-246-record-approved-post-trial-contracts-and-task
-updated_at: "2026-11-27T16:40:12Z"
+updated_at: "2026-11-27T20:13:06Z"
 ---
 
 # T-247-enforce-explicit-per-card-exercise-and-nested Enforce explicit per-card exercise and nested-output contracts
@@ -67,3 +67,37 @@ dependency migration or policy enablement. Commit/push main after local checks;
 do not wait for CI. Parent owns successor selection and final CI supervision.
 
 ## Implementation Notes
+
+- Base: origin/main fdb0a2724ce9aaf6b0d3590bf03f0c3953dcb3d6, containing the T246
+  documentation commit 3147ad29bf11d776cd2b3243d67a14bb90359acf. Spec SHA256
+  e7922ded1924bc79019a58493d1e767d198fcb396b7eed1a81f3f48226c461be (recorded
+  before implementation).
+- Audit boundary: the worker had only the coordinator's sanitized numeric/boolean
+  inventory of the 17 saved requests, not raw private files. It reports one task,
+  fresh system/user messages, identical two-call user content, the answer contract
+  duplicated in the objective and no explicit direction key; request sizes were
+  12,238-12,941 bytes. Linguistic evidence sufficiency was not audited from raw text.
+- Form tasks now carry `direction` and only that direction's templates, with the
+  feature display and context pre-filled. The objective no longer repeats the answer
+  contract; chat requests keep it in the system message and `latinitas-json/1`
+  requests carry it once as `instruction`. Phrase objectives only lose the duplicate.
+  Prompts are versioned proposal/2 and blind/2.
+- Public synthetic request sizes before and after (system message unchanged at
+  2,753 bytes): verb production 11,817 -> 10,528; noun declension 13,136 -> 11,808;
+  recognition 12,644 -> 10,923; translation 12,721 -> 10,913; cloze 12,681 -> 10,807.
+  Before/after saved-request sizes for the private 17 need a custody-side check.
+- The stem contract names Bennett conventions with public examples (vocare and
+  porta), which the coordinator confirmed are outside the selected ten.
+- The provider reader validates the documented nested values: malformed JSON,
+  duplicate keys, nonfinite numbers, disallowed control characters, wrong shapes and
+  pathological nesting are `malformed_output`. A well-formed answer that breaks
+  direction/template, stem line, literal concatenation or the target surface is
+  `contract_violation`. Neither reason repairs or retries, and Latin correctness
+  and prose are not checked mechanically.
+- The pipeline report is now schema 3. Historical 1/2 reports stay readable and
+  cannot claim `contract_violation`.
+- Deferred follow-up: PPP-anchored adjective_declension cards claim a verb stem
+  convention (the renderer selects by entry POS), and reconciling a
+  contract-violating response raises without recording the failed call. Both
+  fail closed.
+- 2026-11-27T20:13:00Z: verification pass
