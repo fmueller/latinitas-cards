@@ -1,11 +1,11 @@
 ---
 id: T-246-record-approved-post-trial-contracts-and-task
 title: Record approved post-trial contracts and task package
-status: in_progress
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies: []
-updated_at: "2026-11-27T16:53:29Z"
+updated_at: "2026-11-27T16:55:56Z"
 ---
 
 # T-246-record-approved-post-trial-contracts-and-task Record approved post-trial contracts and task package
@@ -55,6 +55,9 @@ approval and conditional task bodies. A completed planning task is not product Q
   coordinator reconciled the specialist reports; its earlier self-passes do not
   count as independent coverage. The coordinator checked approved artifact
   revision 5 directly; source reviewers did not retrieve the approval artifact.
-- Delivery and exact-head CI remain pending. Keep this task active until the
-  planning push has passed CI; product implementation has not started.
+- Planning/spec commit 3147ad29bf11d776cd2b3243d67a14bb90359acf is on main.
+  Exact-head Build run 46037434017 and CodeQL run 46037433522 passed. Runtime
+  suites were correctly skipped for this documentation-only change; no runtime
+  pass is claimed. Product implementation had not started at this checkpoint.
 - 2026-11-27T16:53:29Z: verification pass
+- 2026-11-27T16:55:56Z: Planning verification passed at 2026-11-27T16:53:29Z. Commit 3147ad29bf11d776cd2b3243d67a14bb90359acf is on main; exact-head Build and CodeQL passed. Product implementation remains separate.

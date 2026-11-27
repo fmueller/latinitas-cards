@@ -1,17 +1,17 @@
 ---
 schema_version: 1
-updated_at: "2026-11-27T16:53:29Z"
+updated_at: "2026-11-27T16:55:56Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
-current_task: T-246-record-approved-post-trial-contracts-and-task
-current_task_title: Record approved post-trial contracts and task package
-status_summary: in_progress
+current_task: ""
+current_task_title: ""
+status_summary: blocked
 blockers:
     - 'T-205-publish-v0-5-0-through-the-maintainer-release-gate: maintainer release gate: readiness acceptance and separate publication permission required'
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
-next_action: Select the next eligible task
+next_action: 'Start task T-247-enforce-explicit-per-card-exercise-and-nested: Enforce explicit per-card exercise and nested-output contracts'
 last_verification_result: pass for T-246-record-approved-post-trial-contracts-and-task at 2026-11-27T16:53:29Z
 relevant_artifacts: []
 continuation_notes:
@@ -26,12 +26,11 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: `T-246-record-approved-post-trial-contracts-and-task`
-- Title: Record approved post-trial contracts and task package
+- Task: none
 
 ## Status
 
-- in_progress
+- blocked
 
 ## Blockers
 
@@ -46,7 +45,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-247-enforce-explicit-per-card-exercise-and-nested: Enforce explicit per-card exercise and nested-output contracts
 
 ## Relevant Artifacts
 
@@ -59,7 +58,7 @@ continuation_notes:
 ## Task Counts
 
 - todo: 21
-- in_progress: 1
-- completed: 224
+- in_progress: 0
+- completed: 225
 - blocked: 4
 - cancelled: 0
