@@ -1,5 +1,6 @@
 """Synthetic transport and confirmed source roles, not linguistic qualification."""
 
+import csv
 import json
 from pathlib import Path
 from typing import Any, cast
@@ -383,6 +384,141 @@ def test_agreement_does_not_supply_source_evidence(
         before = len(sent)
         call("resume", "--run", str(root), "--offline")
         assert len(sent) == before
+
+
+@pytest.mark.parametrize("surface", ["viās", "laudant", "puellae"])
+@pytest.mark.parametrize("mistake", [False, True], ids=["correct", "model-error"])
+def test_trial_errors_do_not_gain_authority_from_agreement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, surface: str, mistake: bool
+) -> None:
+    import grammar_pipeline_test as fixtures
+
+    profile, objectives, _ = fixture(tmp_path, language="en", preset=None)
+    inputs = json.loads((tmp_path / "inputs.json").read_text())
+    entry = inputs["entries"][0 if surface == "laudant" else 1]
+    if surface == "laudant":
+        lemma = "laudō"
+        readings = [{**PRESENT, "person": "3", "number": "plural"}]
+        displays = ["Number: Plural; Person: 3rd person; Tense: Present; Mood: Indicative; Voice: Active"]
+    elif surface == "viās":
+        lemma = "via"
+        readings = [dict(case="accusative", number="plural", gender="feminine")]
+        displays = ["Case: Accusative; Number: Plural; Gender: Feminine"]
+    else:
+        lemma = "puella"
+        readings = [
+            dict(case=case, number=number, gender="feminine")
+            for case, number in (
+                ("genitive", "singular"),
+                ("dative", "singular"),
+                ("nominative", "plural"),
+                ("vocative", "plural"),
+            )
+        ]
+        displays = [
+            "Case: Genitive; Number: Singular; Gender: Feminine",
+            "Case: Dative; Number: Singular; Gender: Feminine",
+            "Case: Nominative; Number: Plural; Gender: Feminine",
+            "Case: Vocative; Number: Plural; Gender: Feminine",
+        ]
+    entry["forms"] = [
+        dict(key=f"reading-{i}", text=surface, features=reading, source_role="other", role_evidence=[EVIDENCE])
+        for i, reading in enumerate(readings)
+    ]
+    inputs["entries"] = [entry]
+    with (tmp_path / "deck.csv").open() as stream:
+        rows = list(csv.DictReader(stream))
+    row = next(r for r in rows if r["ID"] == entry["identity"])
+    row.update(Lemma=lemma, Parts=surface)
+    with (tmp_path / "deck.csv").open("w") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(row))
+        writer.writeheader()
+        writer.writerow(row)
+    rebind(profile, inputs)
+    raw = json.loads(objectives.read_text())
+    raw["forms"] = [
+        {
+            **raw["forms"][0],
+            "entry": entry["identity"],
+            "recipe": "form_recognition",
+            "form": "reading-0",
+            "anchors": [],
+            "target": {},
+            "distinction": "analysis",
+        }
+    ]
+    raw["phrases"] = []
+    write(objectives, raw)
+
+    def answer(body: dict[str, Any]) -> bytes:
+        task = json.loads(body["messages"][1]["content"])
+        objective = json.loads(task["objective"])
+        target: dict[str, Any] = dict(
+            surface="vīās" if mistake and surface == "viās" else surface,
+            features=readings[0],
+            source_role="other",
+            anchors=[],
+            rule=None,
+        )
+        rendered = dict(
+            prompt=surface + "\nAnalyze the form; give possible readings.",
+            answer="\n".join(displays[2:] if mistake and surface == "puellae" else displays),
+        )
+        values = {
+            "source": canonical(dict(entry=entry, sense=entry["senses"][0])).decode(),
+            "target": canonical(target).decode(),
+            "rendered": canonical(rendered).decode(),
+        }
+        result = dict(
+            format="latinitas-model-answer",
+            version=1,
+            task_sha256=task["task_sha256"],
+            assertions=[
+                dict(
+                    id=a["id"],
+                    kind=a["kind"],
+                    value=values[a["id"]],
+                    selected_sense=None,
+                    alternatives=["laudānt"] if mistake and surface == "laudant" and a["id"] == "target" else [],
+                    evidence=[EVIDENCE],
+                )
+                for a in objective["assertions"]
+            ],
+            alternatives=[],
+            objections=[],
+        )
+        return canonical({"choices": [{"finish_reason": "stop", "message": {"content": canonical(result).decode()}}]})
+
+    monkeypatch.setattr(fixtures, "provider_answer", answer)
+    with synthetic_pipeline_http() as (url, sent, _):
+        configure_pipeline_http(profile, url)
+        settings = json.loads(profile.read_text())
+        settings["selection"]["entries"] = [entry["identity"]]
+        settings.update(
+            recipes=["form_recognition"],
+            recipe_overrides={
+                "include": ["form_recognition"],
+                "exclude": ["form_translation", "ppp_translation", "phrase_translation"],
+            },
+        )
+        write(profile, settings)
+        report = call(
+            "run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(tmp_path / "workflow")
+        )
+        root = tmp_path / "workflow" / "run"
+        assert len(sent) == 2 and sent[0]["messages"][1]["content"] == sent[1]["messages"][1]["content"]
+        proof = cast(
+            dict[str, Any], stage_artifact(root, load_stage(root, report["stages"]["counter_check"][0]["stage_id"]))
+        )["semantic_comparison"]
+        assert proof["complete_assertion_coverage"] and proof["blind_check"]["result"] == "pass"
+        assert proof["relation"] == "unresolved" and proof["authorizes_acceptance"] is False
+        assert all(c["check"]["result"] == "unresolved" for c in proof["comparisons"])
+        target_check = next(c["check"] for c in proof["comparisons"] if c["assertion_id"] == "target")
+        assert target_check["alternatives"] == (["laudānt"] if mistake and surface == "laudant" else [])
+        preview = call("preview", "--run", str(root))["cards"][0]
+        assert preview["state"] == "withheld"
+        assert set(preview["answer"].splitlines()) == set(displays)
+        assert report["file_export"]["exported"] == 0
 
 
 def recommit_stage_tree(root: Path, identity: str) -> None:

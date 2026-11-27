@@ -741,6 +741,66 @@ campaign qualification, native Anki acceptance or policy enablement. Normal
 server-stopped saved-call reuse is distinct from the explicit `--offline` active
 projection limitation recorded above.
 
+## Trial error regressions and ten-entry replay
+
+The reported trial mistakes are development regressions, not protected evaluation
+material. Disposable source-bound comparisons exercise **viās**, not **vīās**;
+**laudant** without the unsupported **laudānt** alternative; and isolated **puellae**
+with genitive/dative singular and nominative/vocative plural readings. Recognition
+keeps all supplied same-surface readings rather than treating plural readings as
+exhaustive. These cases do not add Latin tables or lemma-specific exceptions.
+
+Both synthetic model roles can agree on a wrong quantity, an unsupported alternative
+or an incomplete rendered answer and still return locally valid JSON. They remain
+withheld, as do the correct controls: these source forms have no qualified
+independent whole-card evidence. This is safe withholding, not a claim that the
+checker diagnoses each linguistic error. Source and rendered semantics can remain
+unsupported even where another card's target or stem diagnostic passes. Existing
+missing-sibling checks and strict local parsing also reject incomplete coverage
+and malformed assertion keys. Schema adherence improves structure, not Latin truth.
+
+For card feedback, give the maintainer the run/candidate identity, recipe, front,
+back, disputed text and suggested correction with a source. Use `pipeline preview`
+and `pipeline report` to identify the card; do not send private collection files or
+credentials. Feedback is not acceptance authority. Correct confirmed input/objective
+errors or fix the responsible implementation defect, then regenerate with current
+bindings; do not edit sound inputs to match a model error or edit receipts. Optional
+[whole-card human review](v0.5.0-workflows.md#library-only-stages-optional-review-and-resources)
+is separate from automatic safeguards and is not required for every generated card.
+
+The coordinating maintainer/session owns the private ten-entry inventory, hosted
+execution and campaign ledger. After independent high-effort integrated QA, it can reproduce a fresh
+same-ten-entry replay as follows:
+
+1. Pin the delivered T-243 commit SHA and `specs/v0.5.0.md`; record the clean code
+   state and QA result. Retain the original ten identities and objectives, source
+   hashes, recipe/language selections and historical trial receipts. Record any
+   intentional profile changes instead of silently changing the sample.
+2. Prepare a new run/output identity on that exact candidate. Use the T-241 complete
+   answer-free task inventory and presentation/language contracts. Select the T-242
+   documented capability for each exact endpoint/model: explicit strict schema
+   where supported, no undocumented format parameter for known MiniMax Chat hosts.
+   Keep the blind call proposal-free and retain every whole-card assertion.
+3. Inspect the existing allocation and authoritative ledger without initializing,
+   replacing or resetting either. Reconcile unknown calls before new dispatch;
+   failed/unknown calls remain charged. Compute the exact outbound disclosures and
+   full wire/accounting reservations. Obtain fresh prospective wire-bound permission
+   with current expiry, pricing and scope within the existing phase/campaign caps.
+   An expired trial permission or an insufficient remaining budget blocks replay;
+   it does not authorize another allocation, hidden retry or model fallback.
+4. Dispatch only after those checks. Save new request/response commitments, actual
+   outcomes/usage and retained charges alongside the unchanged historical receipts.
+   Regenerate the ten-entry report with front/back previews, structural failures,
+   per-assertion source comparisons, alternatives and whole-card decisions. Compare
+   each original problem against the new observation, including unresolved cases;
+   do not call saved receipt reuse a fresh hosted result.
+
+No hosted replay was performed by this regression task. Offline tests do not prove
+live linguistic correctness, protected-study qualification or release readiness.
+Automatic policy remains `v050-disabled`; protected evaluation, native Anki
+acceptance, lifecycle safety and the maintainer's publication gate remain separate.
+Neither feedback nor a replay authorizes collection writes, publication or deployment.
+
 ## Outcome reports
 
 After `pipeline run` or `resume`, inspect the saved snapshot without provider calls:

@@ -661,7 +661,7 @@ def test_minimax_cannot_claim_strict_chat_support() -> None:
         )
 
 
-@pytest.mark.parametrize("failure", ["refusal", "length", "extra_key", "malformed", "sense"])
+@pytest.mark.parametrize("failure", ["refusal", "length", "extra_key", "assertion_key", "malformed", "sense"])
 def test_strict_output_still_fails_closed(tmp_path: Path, failure: str) -> None:
     ep = endpoint().model_copy(update={"provider": "openai-json-schema"})
     r = run(tmp_path, ep=ep)
@@ -671,6 +671,9 @@ def test_strict_output_still_fails_closed(tmp_path: Path, failure: str) -> None:
         message["refusal"] = "Cannot comply"
     elif failure == "extra_key":
         inner["unexpected"] = "not permitted"
+        message["content"] = json.dumps(inner)
+    elif failure == "assertion_key":
+        inner["assertions"][0]["explanation"] = inner["assertions"][0].pop("value")
         message["content"] = json.dumps(inner)
     elif failure == "malformed":
         message["content"] = "{"
