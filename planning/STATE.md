@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-28T12:21:27Z"
+updated_at: "2026-11-28T12:51:37Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -11,9 +11,8 @@ blockers:
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
-    - 'T-254-replay-approved-ten-german-cards-after-post-trial: Approved stop-on-unknown rule: silva generation timed out without captured headers/body; retain full reservation. Reconcile provider outcome or obtain explicit maintainer abandonment without refund/retry before dispatching untouched entries 6-10.'
-next_action: Resolve blocker on T-254-replay-approved-ten-german-cards-after-post-trial
-last_verification_result: pass for T-250-verify-integrated-post-trial-fixes-on-current at 2026-11-28T04:37:50Z
+next_action: Resolve blocker on T-201-validate-real-pipeline-and-linux-anki-desktop
+last_verification_result: pass for T-254-replay-approved-ten-german-cards-after-post-trial at 2026-11-28T12:51:37Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -39,15 +38,14 @@ continuation_notes:
 - T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers
 - T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.
 - T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.
-- T-254-replay-approved-ten-german-cards-after-post-trial: Approved stop-on-unknown rule: silva generation timed out without captured headers/body; retain full reservation. Reconcile provider outcome or obtain explicit maintainer abandonment without refund/retry before dispatching untouched entries 6-10.
 
 ## Last Verification
 
-- pass for T-250-verify-integrated-post-trial-fixes-on-current at 2026-11-28T04:37:50Z
+- pass for T-254-replay-approved-ten-german-cards-after-post-trial at 2026-11-28T12:51:37Z
 
 ## Next Action
 
-- Resolve blocker on T-254-replay-approved-ten-german-cards-after-post-trial
+- Resolve blocker on T-201-validate-real-pipeline-and-linux-anki-desktop
 
 ## Relevant Artifacts
 
@@ -61,6 +59,6 @@ continuation_notes:
 
 - todo: 17
 - in_progress: 0
-- completed: 232
-- blocked: 5
+- completed: 233
+- blocked: 4
 - cancelled: 0
