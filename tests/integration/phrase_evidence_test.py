@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from grammar_pipeline_test import bennett_phrase_fixture, call, rebind, write
+from grammar_pipeline_test import bennett_phrase_fixture, call, phrase_fixture, rebind, write
 
 from latinitas_cards.acceptance_records import canonical
 from latinitas_cards.pipeline_consumers import Analysis, current_cards, load_run, load_source, source_claims
@@ -223,6 +223,8 @@ def test_phrase_proof_reconstructs_without_stage_timestamps(tmp_path: Path, fami
         ("noun-genitive", "manifest", "both"),
         ("noun-genitive", "html", "both"),
         ("noun-genitive", "whitespace", "both"),
+        ("verb-noun", "same-entry", "both"),
+        ("noun-genitive", "same-entry", "both"),
     ],
 )
 def test_phrase_saved_comparison_uses_independent_source_proofs(
@@ -233,7 +235,10 @@ def test_phrase_saved_comparison_uses_independent_source_proofs(
 
     from latinitas_cards.pipeline_orchestration import read_source_comparison
 
-    profile, objectives, _ = bennett_phrase_fixture(tmp_path, family)
+    if control == "same-entry":  # Several roles bind forms of one German source entry.
+        profile, objectives, _ = phrase_fixture(tmp_path, "de", family)
+    else:
+        profile, objectives, _ = bennett_phrase_fixture(tmp_path, family)
     if control == "manifest":
         manifest_phrase_inputs(profile)
     elif control in ("html", "whitespace"):
@@ -315,7 +320,9 @@ def test_phrase_saved_comparison_uses_independent_source_proofs(
         proof = read_source_comparison(root, card)
         assert proof is not None
         comparisons = {c["assertion_id"]: c for c in json.loads(canonical(proof))["comparisons"]}
-        expected_relation = {"wrong-identity": "contradiction", "alternative": "unresolved"}.get(control, "equivalent")
+        # The plain German fixture's senses are not Bennett-qualified, so its comparison stays unresolved.
+        relations = {"wrong-identity": "contradiction", "alternative": "unresolved", "same-entry": "unresolved"}
+        expected_relation = relations.get(control, "equivalent")
         assert comparisons["construction"]["relation"] == expected_relation
         assert all(c["check"]["result"] != "pass" for key, c in comparisons.items() if key != "construction")
         assert report["file_export"]["exported"] == 0
@@ -328,6 +335,12 @@ def test_phrase_saved_comparison_uses_independent_source_proofs(
         assert proof["proposal_output_sha256"] != proof["counter_output_sha256"]
         if control == "missing-sibling":
             assert proof["complete_assertion_coverage"] is False
+        if control == "same-entry":
+            evidence = json.loads(sent[0]["messages"][1]["content"])["source_evidence"]
+            references = [(e["source"], e["reference"].rsplit("/", 1)[-1]) for e in evidence]
+            assert report["status"] == "completed"
+            assert references.count(("confirmed-deck-mapping", "n")) == 2  # One per binding.
+            assert references.count(("unverified-phrase-entry", "n")) == 1
     # The server is stopped: normal saved-call reuse must not dispatch again.
     replay = call("resume", "--run", str(root))
     assert replay["file_export"]["exported"] == 0 and len(sent) == 2

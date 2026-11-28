@@ -291,6 +291,8 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
                 language=profile.language,
             )
         )
+    # Bindings that reuse one entry share its identical evidence and scopes instead of repeating them.
+    evidence, scopes = list(dict.fromkeys(evidence)), list(dict.fromkeys(scopes))
     registry = SupportRegistry.read_json(canonical(SUPPORT_REGISTRY))
     keys = next(e.target for e in registry.entries if e.recipe == card.recipe)
     features = objective.target if isinstance(objective, FormObjective) else None
