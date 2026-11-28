@@ -70,7 +70,7 @@ class Processing(Record):
     max_calls: int = Field(default=200, gt=0)
     max_tokens: int = Field(default=200000, gt=0)
     timeout_seconds: int = Field(default=60, gt=0, le=60)
-    retries: int = Field(default=1, ge=0, le=1)
+    retries: int = Field(default=1, ge=0, le=2)
     max_output_tokens: int = Field(default=2048, gt=0, le=8192)
 
     @model_serializer(mode="wrap")
@@ -99,7 +99,6 @@ class EstimatedProcessing(Processing):
     accounting: EstimatedAccounting
     max_calls: int = Field(default=200, gt=0, le=200)
     max_tokens: int = Field(default=200000, gt=0, le=200000)
-    retries: Literal[0] = 0
 
 
 class Providers(Record):

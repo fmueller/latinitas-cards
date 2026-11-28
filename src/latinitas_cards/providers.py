@@ -13,7 +13,9 @@ import http.client
 import math
 import multiprocessing
 import os
+import random
 import re
+import socket
 import ssl
 import string
 import time
@@ -81,7 +83,7 @@ class Limits(Record):
     max_calls: int = Field(default=200, gt=0)
     max_tokens: int = Field(default=200000, gt=0)
     timeout_seconds: int = Field(default=60, gt=0, le=60)
-    retries: int = Field(default=1, ge=0, le=1)
+    retries: int = Field(default=1, ge=0, le=2)
     max_output_tokens: int = Field(default=2048, gt=0, le=8192)
 
 
@@ -312,6 +314,14 @@ def _http_worker(pipe: Connection, endpoint: Endpoint, body: bytes, timeout: flo
         else http.client.HTTPConnection(url.hostname, url.port, timeout=timeout)
     )
     try:
+        try:
+            connection.connect()
+        except (socket.gaierror, ssl.SSLError):
+            pipe.send_bytes(b"F")  # DNS and TLS protocol/certificate errors are configuration, never retried.
+            return
+        except OSError:
+            pipe.send_bytes(b"T")  # Refused/reset/timed-out connect or handshake: no HTTP byte was sent.
+            return
         headers = {"Content-Type": "application/json"}
         if credential is not None:
             headers["Authorization"] = f"Bearer {credential}"
@@ -339,7 +349,8 @@ class HTTPTransport:
     """No redirects, proxy environment, tool execution, streaming or fallback.
 
     A cancelled/disconnected/HTTP-error request is conservatively unknown; HTTP
-    status alone does not prove that inference never executed. Responses are capped.
+    status alone does not prove that inference never executed. Only a connection
+    that fails before any HTTP request byte is sent is transient. Responses are capped.
     Timing marks are when the parent received the worker-start, response-header and
     screened-body markers, in milliseconds since this call started.
     """
@@ -373,6 +384,10 @@ class HTTPTransport:
                         status = int(message[1:])
                     elif message[:1] == b"B":
                         return TransportReply(message[1:], request_id, status, timing)
+                    elif message == b"T":
+                        raise TransportFailure("transient", request_id, timing)
+                    elif message == b"F":
+                        raise TransportFailure("failed", request_id, timing)
             raise TransportFailure("unknown", request_id, timing)
         except (EOFError, OSError, ValueError):
             raise TransportFailure("unknown", request_id, timing) from None
@@ -382,6 +397,11 @@ class HTTPTransport:
                 process.terminate()
             process.join()
             process.close()
+
+
+def _backoff(retry: int) -> float:
+    """Seconds before retry 1 or 2: linear and jittered, so at most 4 seconds in total."""
+    return retry + random.uniform(0, 0.5)
 
 
 def _minimax_chat(endpoint: Endpoint) -> bool:
@@ -882,7 +902,6 @@ class ProviderRun:
                 and self.accounting.service_revision is None
                 and self.limits.max_output_tokens == 2048
                 and self.limits.timeout_seconds == 60
-                and self.limits.retries == 0
             ):
                 return Result("deferred", "estimated_runtime_not_qualified")
             if token_bound is not None:
@@ -924,21 +943,16 @@ class ProviderRun:
                     since_abandonment.append(previous)
             if since_abandonment:
                 previous = since_abandonment[-1]
-                if (
-                    self.accounting
-                    or previous.reason != "transient"
-                    or len(since_abandonment) >= self.limits.retries + 1
-                ):
+                if previous.reason != "transient" or len(since_abandonment) >= self.limits.retries + 1:
                     return Result("failed", previous.reason or "retry_exhausted", previous.call_id)
-                if cancel.wait(1):
+                if cancel.wait(_backoff(len(since_abandonment))):
                     return Result("cancelled", "cancelled_during_backoff", previous.call_id)
             max_calls, max_tokens, timeout = self.limits.max_calls, self.limits.max_tokens, self.limits.timeout_seconds
             if ep.locality == "hosted" and permission is not None:
                 max_calls = min(max_calls, permission.max_calls)
                 max_tokens = min(max_tokens, permission.max_tokens)
                 timeout = min(timeout, permission.timeout_seconds)
-            retries = 0 if self.accounting else self.limits.retries
-            for attempt in range(len(since_abandonment), retries + 1):
+            for attempt in range(len(since_abandonment), self.limits.retries + 1):
                 if cancel.is_set():
                     return Result("cancelled", "cancelled_before_dispatch")
                 if (
@@ -1081,7 +1095,7 @@ class ProviderRun:
                         }
                     )
                     result = Result(state, kind, call_id)
-                    retry = kind == "transient" and self.accounting is None
+                    retry = kind == "transient"
                 except (Exception, KeyboardInterrupt):
                     call = call.model_copy(update={"state": "unknown", "reason": "transport_interrupted"})
                     result = Result("unknown", "transport_interrupted", call_id)
@@ -1091,7 +1105,7 @@ class ProviderRun:
                     if elapsed > timeout:
                         call = call.model_copy(update={"state": "unknown", "reason": "deadline_exceeded"})
                         result = Result("unknown", "deadline_exceeded", call_id)
-                    if usage is None and call.state != "unknown":
+                    if usage is None and call.state != "unknown" and call.reason != "transient":
                         stop_reason = "missing_or_invalid_usage"
                     assert self.campaign is not None
                     self.campaign.finish(
@@ -1110,9 +1124,9 @@ class ProviderRun:
                         self.root / f"{call_id}.timing.json",
                         canonical({**marks, "elapsed_milliseconds": elapsed_milliseconds}),
                     )
-                if not retry or attempt == self.limits.retries:
+                if not retry or call.state != "failed" or attempt == self.limits.retries:
                     return result
-                if cancel.wait(1):
+                if cancel.wait(_backoff(attempt + 1)):
                     return Result("cancelled", "cancelled_during_backoff", call_id)
         raise AssertionError("bounded attempt loop must return")
 

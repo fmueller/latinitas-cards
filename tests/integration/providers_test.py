@@ -19,6 +19,7 @@ import latinitas_cards.providers as provider_module
 from latinitas_cards.acceptance_records import Binding, canonical, digest
 from latinitas_cards.claim_review import Evidence
 from latinitas_cards.hosted_accounting import Campaign, CampaignAllocation, EstimatedAccounting, Pricing
+from latinitas_cards.pipeline_profile import EstimatedProcessing
 from latinitas_cards.providers import (
     Endpoint,
     HostedPermission,
@@ -493,11 +494,105 @@ def test_known_transient_retry_only_and_fresh_reservations(tmp_path: Path) -> No
     assert all(c.reserved_tokens >= 2048 for c in r.calls())
 
 
-def test_reopening_does_not_renew_per_request_retry_budget(tmp_path: Path) -> None:
-    fake = Fake([TransportFailure("transient"), TransportFailure("transient"), answer()])
-    assert execute(run(tmp_path), fake).state == "failed"
-    assert execute(run(tmp_path), fake).state == "failed"
-    assert len(fake.requests) == 2
+class RecordedWaits(Event):
+    """A never-set cancellation event that records backoff waits instead of sleeping."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.waits: list[float | None] = []
+
+    def wait(self, timeout: float | None = None) -> bool:
+        self.waits.append(timeout)
+        return False
+
+
+@pytest.mark.parametrize("failures", [2, 3])
+def test_transient_failures_retry_at_most_twice_with_bounded_backoff(tmp_path: Path, failures: int) -> None:
+    fake = Fake([*(TransportFailure("transient") for _ in range(failures)), answer()])
+    waits = RecordedWaits()
+    result = execute(run(tmp_path, limits=Limits(retries=2)), fake, cancel=waits)
+    assert result.state == ("succeeded" if failures == 2 else "failed")
+    assert len(fake.requests) == 3 and len(run(tmp_path).calls()) == 3
+    first, second = cast(list[float], waits.waits)
+    assert 1 <= first <= 1.5 and 2 <= second <= 2.5
+    # Reopening does not renew the per-request retry ceiling.
+    assert execute(run(tmp_path, limits=Limits(retries=2)), fake).state == result.state
+    assert len(fake.requests) == 3
+
+
+def test_retry_ceiling_is_two_for_guaranteed_and_estimated_profiles() -> None:
+    accounting = estimated_settings(endpoint())
+    assert EstimatedProcessing(accounting=accounting, retries=2).retries == 2
+    with pytest.raises(ValueError):
+        Limits(retries=3)
+    with pytest.raises(ValueError):
+        EstimatedProcessing(accounting=accounting, retries=3)
+
+
+@pytest.mark.parametrize("phase_calls", [2, 3])
+def test_estimated_transient_retries_reserve_and_retain_each_attempt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase_calls: int
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    campaign = allocate(settings, phase_calls=phase_calls)
+    fake = Fake([TransportFailure("transient"), TransportFailure("transient"), estimated_reply()])
+    result = estimated_invoke(estimated_run(tmp_path / "a", settings, retries=2), fake, cancel=RecordedWaits())
+    charges = campaign.load().charges
+    if phase_calls == 2:
+        assert (result.state, result.reason) == ("deferred", "campaign_budget_exhausted")
+        assert [c.state for c in charges] == ["failed", "failed"]
+    else:
+        assert result.state == "succeeded"
+        assert [c.state for c in charges] == ["failed", "failed", "succeeded"]
+    assert len(fake.requests) == len(charges)
+    assert len({c.reservation for c in charges}) == 1 and charges[0].reservation.microdollars > 0
+    assert all(c.stop_reason is None for c in charges)
+
+
+def test_estimated_transient_past_deadline_is_unknown_without_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class LateTransient(Fake):
+        def __call__(self, endpoint: Endpoint, body: bytes, timeout: float, cancel: Event) -> bytes:
+            time.sleep(timeout + 0.05)
+            return super().__call__(endpoint, body, timeout, cancel)
+
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    settings = estimated_settings(endpoint())
+    allocate(settings)
+    fake = LateTransient([TransportFailure("transient"), estimated_reply()])
+    waits = RecordedWaits()
+    r = estimated_run(tmp_path / "a", settings, retries=2, timeout_seconds=1)
+    result = estimated_invoke(r, fake, cancel=waits)
+    assert (result.state, result.reason) == ("unknown", "deadline_exceeded")
+    assert len(fake.requests) == 1 and waits.waits == []
+
+
+def test_http_refused_connection_is_retried_but_tls_failure_is_not(tmp_path: Path) -> None:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        closed = f"http://127.0.0.1:{probe.getsockname()[1]}/infer"
+    with server() as (plain, captured, _):
+        for name, url, reasons in (
+            ("refused", closed, ["transient"] * 3),
+            ("tls", plain.replace("http:", "https:"), ["failed"]),
+        ):
+            ep = Endpoint(url=url, provider="latinitas-json/1", model="fake/1", locality="local", credential_ref=None)
+            r = run(tmp_path / name, ep=ep, limits=Limits(retries=2))
+            result = r.request(
+                "proposal",
+                task(),
+                recipe="form_recognition",
+                scope=SCOPE,
+                prompt_version="proposal/2",
+                transport=HTTPTransport(),
+                token_bound=lambda body: len(body),
+                cancel=RecordedWaits(),
+            )
+            assert (result.state, result.reason) == ("failed", reasons[0])
+            assert [c.reason for c in r.calls()] == reasons
+        assert captured == []
 
 
 def test_reconcile_requires_original_request_endpoint_and_provider_identity(tmp_path: Path) -> None:
@@ -1407,7 +1502,7 @@ def test_estimated_accounting_does_not_qualify_runtime(tmp_path: Path, monkeypat
 
 
 @pytest.mark.parametrize(
-    "change", ["none", "model", "url", "locality", "provider", "revision", "output", "output_low", "timeout", "retries"]
+    "change", ["none", "model", "url", "locality", "provider", "revision", "output", "output_low", "timeout"]
 )
 def test_minimax_estimated_runtime_admission_is_installed_and_exact(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
@@ -1436,7 +1531,7 @@ def test_minimax_estimated_runtime_admission_is_installed_and_exact(
         }
     )
     limits = Limits(
-        retries=int(change == "retries"),
+        retries=2,
         max_output_tokens={"output": 8192, "output_low": 1024}.get(change, 2048),
         timeout_seconds=30 if change == "timeout" else 60,
     )

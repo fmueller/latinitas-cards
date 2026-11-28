@@ -128,8 +128,8 @@ trusted, proven upper bound over the complete service input; missing qualificati
 still refuses new requests. No heuristic is supplied through that callback.
 
 Version-2 pipeline profiles explicitly add `processing.accounting` and set
-`processing.retries` to `0`. This uses the **same** `pipeline run`, `stage` and
-`resume` path, without a fallback provider or a second development runner. The
+`processing.retries` from `0` to `2`. This uses the **same** `pipeline run`, `stage`
+and `resume` path, without a fallback provider or a second development runner. The
 accounting record has format `latinitas-estimated-accounting`, version `1`, kind
 `estimated`, a campaign digest, phase (`development`, `study`, `native`, `qa`),
 purpose (`development`, `isolated_evaluation`, `runtime`), estimator
@@ -204,9 +204,11 @@ permission microdollar/execution-second ceilings and
 `possible_existing_credits_use: true`. Permission binds purpose and estimator, not
 just endpoint and model. Renewing it cannot restore run, phase or campaign budget.
 Every dispatch takes the strictest remaining permission/run/phase/campaign limit.
-No hidden API retry occurs. Exact request/scope commitments and full reservations
-are durable before sending. Raw request/scope artifacts and fully received,
-screened responses within the transport capture limit stay in the owner-only run
+No hidden API retry occurs; the bounded transient retries below are separate,
+journaled attempts that each pass the same permission and strictest-limit checks
+and take a fresh full reservation. Exact request/scope commitments and full
+reservations are durable before sending. Raw request/scope artifacts and fully
+received, screened responses within the transport capture limit stay in the owner-only run
 store; other outcomes retain available identity/error/unknown evidence.
 Version-2 reports identify estimated accounting, while
 the versioned campaign provenance retains each reservation and provider-reported
@@ -214,7 +216,9 @@ input/output/total usage separately. Neither a low usage report nor cancellation
 refunds any reservation.
 
 Missing/invalid usage, or usage above either input or output reservation, stops
-new campaign dispatch for review. A failed/unknown dispatch retains its full charge.
+new campaign dispatch for review. A transient failure that sent no request has no
+usage to report, so it retains its charge without a review stop. A failed/unknown
+dispatch retains its full charge.
 Unknown transport error labels map conservatively to `unknown`; raw exception
 messages are not persisted. Unknown calls block the campaign until identified
 reconciliation or explicit abandonment. Existing `pipeline reconcile` controls
@@ -254,13 +258,14 @@ declared scope; a profile or permission cannot add another qualification:
   Both roles receive the same source task, without the proposal answer.
 - Nonstreaming text-only requests with a prompt-only JSON answer contract,
   `max_completion_tokens: 2048` and
-  `reasoning_effort: low`, 60-second configured deadline and zero retries. No tools,
-  multimodal data, alternate service tier, user-supplied system prompt or fallback.
+  `reasoning_effort: low`, 60-second configured deadline and at most two transient
+  retries. No tools, multimodal data, alternate service tier, user-supplied system
+  prompt or fallback.
 - Unchanged strict stop/one-choice/task-bound answer parsing, version-2 hosted
   permission, applicable public pricing, estimated reservations and campaign guards.
 
 Other endpoints/models/protocols/localities, a claimed pinned service revision or
-different runtime output/deadline/retry configuration still refuse with
+different runtime output/deadline configuration still refuse with
 `estimated_runtime_not_qualified`. Guaranteed mode still has no installed input
 bound. Development and runtime use the same serializer and admission does not
 change artifact custody, the policy registry or learning-export eligibility.
@@ -287,10 +292,10 @@ requalification, and undisclosed provider-side changes cannot be detected locall
 
 ## Guaranteed spending, cancellation and recovery
 
-Defaults are 60 seconds/request, one retry, 200 total attempts, 200000 total
-input-plus-reserved-output tokens, at most 2048 output tokens per attempt, and one
-in-flight call under the run lock. Hosted permission caps configured limits by
-minimum. Both roles and every retry consume the same durable ledger. Copying a run
+Defaults are 60 seconds/request, one retry (configurable up to two), 200 total
+attempts, 200000 total input-plus-reserved-output tokens, at most 2048 output tokens
+per attempt, and one in-flight call under the run lock. Hosted permission caps
+configured limits by minimum. Both roles and every retry consume the same durable ledger. Copying a run
 with a different run ID/config fails; permission renewal does not reset spending.
 Explicit higher total ceilings require corresponding confirmed hosted permission.
 
@@ -304,9 +309,21 @@ Request and scope artifacts, the prepared reservation and the sent journal state
 are durably written before dispatch. Responses and digests precede succeeded state.
 The current API conservatively charges full reservations, even after success; it
 does not trust model-supplied token usage to release spending. Known transient
-failures alone may retry, after one second and with fresh budget. The per-request
-retry ceiling survives reopen. HTTP errors, timeouts, disconnects and cancellation
-after dispatch are unknown, not proof that inference was never executed. A
+failures alone may retry: at most `processing.retries` (0–2) times after the first
+attempt, waiting 1–1.5 seconds before the first retry and 2–2.5 seconds before the
+second, so at most three attempts per logical request. Each retry rechecks
+cancellation, permission expiry/scope and every call/token/campaign ceiling, then
+journals and reserves a fresh full attempt; failed attempts stay charged. The
+per-request retry ceiling survives reopen. `HTTPTransport` reports `transient` only
+when connection setup (TCP connect or TLS handshake) is refused, reset or times out
+before any HTTP request byte is sent. DNS resolution and TLS protocol or certificate
+errors are non-retryable `failed`. A transient attempt that also overran its deadline
+is recorded `unknown` and not retried. Backoff waits hold the run and any campaign
+dispatch lock, at most about 4 seconds per request. HTTP errors (including
+401/403, 429 and 5xx), timeouts, disconnects and cancellation after dispatch are
+unknown, not proof that inference was never executed; they are never retried
+automatically, so provider `Retry-After` guidance is not consulted. Malformed answers
+and contract violations are retained failures without retry or repair. A
 disposable HTTP I/O process bounds DNS/connect/TLS/body waits and is terminated on
 cancellation/deadline. This cannot cancel processing or billing at the remote server.
 Once `HTTPTransport` has started its worker and returns or fails, the run writes

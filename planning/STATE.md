@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-28T13:31:17Z"
+updated_at: "2026-11-28T14:33:39Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -13,7 +13,7 @@ blockers:
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
     - 'T-255-compare-ten-german-cards-opencode-go-luna: Maintainer decision needed: supported Go route cannot run gpt-5.6-luna under the approved 20-call/60s bounded protocol; GPT-6 Luna is unreviewed in the launcher registry. Zero paid calls made.'
 next_action: Resolve blocker on T-255-compare-ten-german-cards-opencode-go-luna
-last_verification_result: pass for T-254-replay-approved-ten-german-cards-after-post-trial at 2026-11-28T12:51:37Z
+last_verification_result: pass for T-256-bounded-model-retries at 2026-11-28T14:33:39Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -43,7 +43,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-254-replay-approved-ten-german-cards-after-post-trial at 2026-11-28T12:51:37Z
+- pass for T-256-bounded-model-retries at 2026-11-28T14:33:39Z
 
 ## Next Action
 
@@ -59,8 +59,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 19
+- todo: 18
 - in_progress: 0
-- completed: 233
+- completed: 234
 - blocked: 5
 - cancelled: 0

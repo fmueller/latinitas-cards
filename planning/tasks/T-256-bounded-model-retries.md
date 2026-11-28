@@ -1,12 +1,12 @@
 ---
 id: T-256-bounded-model-retries
 title: Add bounded two-retry recovery for transient model failures
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-254-replay-approved-ten-german-cards-after-post-trial
-updated_at: "2026-11-28T13:23:46Z"
+updated_at: "2026-11-28T14:33:39Z"
 ---
 
 # T-256-bounded-model-retries Add bounded two-retry recovery for transient model failures
@@ -41,3 +41,33 @@ Use implementing-changes and keep prompt simplification owned by T257.
   for CI before the sibling task can proceed; subscribe to exact-head results.
 
 ## Implementation Notes
+
+- Reused the existing ProviderRun.request attempt loop; no new retry layer.
+  `Limits.retries` and pipeline `processing.retries` now accept 0–2 (default
+  stays 1). Estimated-accounting profiles and MiniMax runtime admission no
+  longer pin zero retries, so at most three attempts per logical request.
+- Backoff before retry n is n + uniform(0, 0.5) seconds through the
+  cancellation event (at most about 4 s per request). Each retry rechecks
+  cancellation, permission and every call/token/campaign limit, journals a new
+  call and takes a fresh full reservation; failed attempts stay charged.
+- Only `transient` retries. HTTPTransport now connects explicitly: a refused,
+  reset or timed-out TCP connect or TLS handshake (no HTTP byte sent) is
+  transient; DNS and TLS protocol/certificate errors are non-retryable
+  `failed`. HTTP errors including 401/403/429/5xx, post-send timeouts,
+  disconnects and cancellation stay `unknown` and never retry, so Retry-After
+  is not consulted. A transient attempt that overran its deadline is recorded
+  `unknown` without retry. Malformed answers and contract violations are not
+  retried or repaired. Transient not-sent attempts no longer raise a usage
+  review stop. Spec, provider-boundary, contract proposal and changelog
+  updated. Prompt builders (T257) untouched.
+- Evidence: red/green on the new focused tests; seven wrong-implementation
+  mutants (fixed backoff, one/three retries, usage stop on transient,
+  refused→failed, TLS→transient, no accounted retry) each fail a test.
+  Simplifier pass; independent high-tier review found one medium defect
+  (deadline-overrun transient retried) fixed with a red/green regression and
+  two wording/limit notes; dispositions independently verified. Synthetic
+  and loopback tests only; no provider inference. `uncomment` unavailable,
+  so the comment-hygiene pass was skipped.
+- 2026-11-28T14:33:39Z: verification pass
+- Final gate on the delivered code: Ruff, mypy, pytest 4059 passed,
+  7 skipped (2787 s); Taskrail verify run 2026-11-28T14:33:39Z passed.

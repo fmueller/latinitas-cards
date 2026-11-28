@@ -6,6 +6,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
 
 ### Added
 
+- Pipeline profiles, including estimated-accounting ones, can set `processing.retries`
+  up to 2; only connection failures that sent no request retry, each separately charged.
 - Development pipeline profiles can select up to 8192 output tokens per call;
   defaults stay at 2048, with unchanged total budgets and runtime qualification.
 - Provider profiles can opt into strict OpenAI-compatible JSON Schema output;
