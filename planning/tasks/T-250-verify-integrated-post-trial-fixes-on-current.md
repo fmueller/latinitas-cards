@@ -1,12 +1,12 @@
 ---
 id: T-250-verify-integrated-post-trial-fixes-on-current
 title: Verify integrated post-trial fixes on current transport
-status: todo
+status: blocked
 priority: high
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-249-evaluate-bounded-pydantic-ai-migration-feasibility
-updated_at: "2026-11-27T16:40:12Z"
+updated_at: "2026-11-28T00:36:19Z"
 ---
 
 # T-250-verify-integrated-post-trial-fixes-on-current Verify integrated post-trial fixes on current transport
@@ -50,3 +50,39 @@ import or publication. Commit/push evidence/task completion on main without wait
 for CI; parent owns final CI-fix supervision.
 
 ## Implementation Notes
+
+- Candidate: origin/main 32f1af090dd754a97c81d36bbce833ee45f9e033. Built wheel
+  sha256 2ae70f43a2adee5403fe9fcc52bf9e71841f3fd66655e70b079417b56bacfb40
+  (sdist 979aa18602ce7d3bc77f1f64ef7fdda66b8e17b4ea384b4a8a07852594d0a02f),
+  installed into a separate Python 3.13.5 venv with locked runtime constraints.
+  All CLI runs used a loopback-only network namespace, a scrubbed environment
+  without API keys or proxies, a scratch HOME and a synthetic local endpoint
+  with hand-derived answers. No hosted call, collection, import or replay.
+- Passed on the installed candidate: German and English production and
+  recognition with explicit direction and only the applicable template;
+  byte-identical proposal-free blind tasks; two- and three-binding phrases
+  with distinct entries; malformed, duplicate-key and partial-sense output as
+  `malformed_output`; direction, stem-line and concatenation breaks as
+  `contract_violation`; consistent wrong Latin parsed but withheld; 503 and a
+  stalled body under a 2 s deadline retained as charged unknowns with timing
+  marks and no redispatch on resume; unchanged-scope resume with identical
+  calls and charges; a store written by the 72fdf19 wheel read as schema 2,
+  resumed offline with no dispatch and online with only the changed
+  proposal/2 call while old calls and charges stayed byte-identical; stage,
+  response, ledger and duplicate-key corruption rejected without dispatch;
+  owner-only run, provider and campaign directories (0700, files 0600), with
+  widened directories refused; LLM-off and `--offline` made no requests.
+- Blocking defect (pre-dates the post-trial package; also present at 72fdf19):
+  a controlled phrase whose bindings reuse one source entry (verb-noun
+  subject and object, or noun-genitive head and dependent, from the same
+  noun) aborts the provider path before dispatch. `pipeline run` exits 1 with
+  `duplicate source_evidence` from ModelTask validation, writes no outcome
+  report and records no calls or charges; the same inputs complete offline.
+  `_task` adds identical per-binding `unverified-phrase-entry` evidence for a
+  repeated entry. Committed provider-path phrase tests bind distinct entries.
+  Returned to the parent for owner assignment; affected phrase scenarios must
+  be rerun on a corrected candidate.
+- Not claimed: hosted quality, Latin authority, T200 evaluation, native Anki,
+  release readiness, R1 or M2. Verify/complete not run; the final chain was
+  stopped after Ruff and mypy passed and pytest had 334 passing, 0 failing.
+- 2026-11-28T00:36:19Z: A1 defect: phrases whose bindings reuse one source entry abort the provider path (duplicate source_evidence in ModelTask, pre-dates package); needs owner correction and rerun of affected phrase scenarios on the corrected candidate
