@@ -1,12 +1,12 @@
 ---
 id: T-250-verify-integrated-post-trial-fixes-on-current
 title: Verify integrated post-trial fixes on current transport
-status: blocked
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-249-evaluate-bounded-pydantic-ai-migration-feasibility
-updated_at: "2026-11-28T02:01:46Z"
+updated_at: "2026-11-28T04:37:50Z"
 ---
 
 # T-250-verify-integrated-post-trial-fixes-on-current Verify integrated post-trial fixes on current transport
@@ -117,3 +117,41 @@ for CI; parent owns final CI-fix supervision.
   the task is blocked; the full Ruff, mypy and pytest chain was not run on
   6aca005 in this task.
 - 2026-11-28T02:01:46Z: A1 round 2 on 6aca005: identical repeated phrase constructed-exercise-context still aborts the provider run (duplicate source_evidence; contexts appended after T-252 dedup), stopping unrelated cards; needs owner correction and rerun
+- 2026-11-28T03:34:05Z: T-253 correction on origin/main c3a3523; resuming A1 on the corrected candidate
+- Round 3 candidate: origin/main c3a352342de2083adc9ed17d06ac466c9f4f1463
+  (T-253). git-archive sha256
+  ff1eb2ccb81d598de65286f15561ea5ff43e755b3f9688a5aafcd90a60bb848d, wheel
+  e94d1ed7db0f8fd068e73b3a33aca4011587e90d5ee943832c4e39afdf072b32, sdist
+  db041cc9c1c29d4ef03924a7f4c6d0f8f44fd4ec7aa75d8c984ab8fdda9873d5, fresh
+  venv. The installed package differs from round 2 only in
+  pipeline_orchestration.py, and runtime pins are identical.
+- Round 3 passed: repeated identical and mixed constructed-exercise-contexts
+  (A, A, B) plus an unrelated clean sibling complete with exit 0 and are
+  withheld. Objective contexts stay verbatim, context evidence is
+  deduplicated and one shared context scope is kept. Same entry with
+  different senses plus repeated contexts keeps both mappings; partial sense
+  mapping stays `malformed_output`. Same-entry and 2- and 3-binding phrases
+  pass, and blind checks are byte-identical to proposals with no leak. Stores
+  that aborted on 6aca005 resume online with one dispatch, then reuse,
+  without changing original files. A completed 6aca005 store keeps prior
+  calls and charges and redispatches once because stage identity binds the
+  implementation digest, then reuses. A 72fdf19 historical store resumes
+  with old calls and charges intact. German production, English
+  recognition, wrong direction, malformed nested output, the 2 s deadline
+  and LLM-off behave as in round 2, with requests byte-identical apart from
+  implementation-bound digests.
+- Reused from round 2 without rerun: wrong Latin, missing or unjoined stem
+  lines, duplicate-key and non-JSON nested output, 503 failure accounting,
+  stage/response/ledger/duplicate-key corruption and widened-permission
+  refusal. Basis: the only installed change is the deduplication move and
+  every rerun request is identical modulo digests. No round-1 result is
+  reused as a pass.
+- Gaps: no hosted quality, Latin authority, T200 evaluation, native Anki,
+  release readiness, R1 or M2 claims. The two T-253 parallel-run failures
+  with lost tracebacks reported by the parent remain unexplained; this serial
+  run did not reproduce them.
+- Round 3 checks on c3a3523: `uv run ruff check` passed, `uv run mypy` found
+  no issues in 249 source files, `uv run pytest -v` gave 4054 passed and
+  7 skipped in 3255.95 s. No tests added or removed. Isolated CI
+  integration-job time was not measured.
+- 2026-11-28T04:37:50Z: verification pass
