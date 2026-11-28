@@ -1,12 +1,12 @@
 ---
 id: T-249-evaluate-bounded-pydantic-ai-migration-feasibility
 title: Evaluate bounded Pydantic AI migration feasibility
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#cli-orchestration-and-provider-boundaries
 dependencies:
     - T-248-diagnose-provider-deadline-boundaries-without
-updated_at: "2026-11-27T16:40:12Z"
+updated_at: "2026-11-28T00:00:51Z"
 ---
 
 # T-249-evaluate-bounded-pydantic-ai-migration-feasibility Evaluate bounded Pydantic AI migration feasibility
@@ -78,3 +78,18 @@ evidence summary on main without secrets or machine-specific artifacts; do not w
 for CI. Parent owns receipt acceptance and successor selection.
 
 ## Implementation Notes
+
+Decision: defer, recorded in docs/v0.5.0-m1-pydantic-ai-receipt.md. Evaluated exact
+pydantic-ai-slim[openai]==2.76.0 (PyPI; file-identical to tag v2.76.0, cdb587e) on
+CPython 3.13.5 and 3.14.7, offline under a loopback-only network namespace with a
+scrubbed environment and synthetic data. One disposable prototype, one targeted
+correction; no hosted calls. The gated design keeps one send, strict raw validation,
+the deadline and TLS trust only by delegating to HTTPTransport and _answer, so it
+removes no plumbing, and the MiniMax wire change needs a maintainer-approved
+contract change and T201 requalification. Product dependencies, uv.lock, dispatcher,
+policies and store contracts are unchanged. Independent medium-tier conventional
+review (general, evidence-fidelity and security lanes plus coordinator disposition
+check) found no blocking issue; all candidates were fixed in the receipt or recorded
+as unknowns, and extra probe runs were declined under the correction cap.
+Documentation-only: git diff --check and taskrail validate; no Python suite applies.
+- 2026-11-28T00:00:51Z: verification pass
