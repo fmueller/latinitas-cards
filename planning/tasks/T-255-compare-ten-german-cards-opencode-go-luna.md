@@ -1,12 +1,12 @@
 ---
 id: T-255-compare-ten-german-cards-opencode-go-luna
 title: Compare ten German cards through OpenCode Go Luna
-status: blocked
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-254-replay-approved-ten-german-cards-after-post-trial
-updated_at: "2026-11-28T13:31:17Z"
+updated_at: "2026-11-28T15:15:07Z"
 ---
 
 # T-255-compare-ten-german-cards-opencode-go-luna Compare ten German cards through OpenCode Go Luna
@@ -54,3 +54,27 @@ the completed MiniMax replay without incorporating concurrent product fixes.
   extension for reviewed GPT-5.6 Luna (one request, no tools or title call,
   8192 cap, 60-second deadline). No exception is approved; the skill and its
   allowlist are unchanged.
+- 2026-11-28: The maintainer approved a scoped bounded-worker extension.
+  The user skills repository now accepts explicit opencode-go/gpt-5.6-luna
+  requests capped at 8192 output tokens and 60 seconds, with one broker
+  request, no tools and title/summary/compaction disabled. Synthetic tests
+  passed and an independent review found no blocking issue.
+- Comparison ran 14:09-14:15 UTC on pinned executable c3a3523 with the
+  unchanged MiniMax request texts and objectives: low effort, Responses
+  protocol, one fresh generation and one answer-free blind check per entry,
+  the check sent only after a strict-valid proposal. 16 of 20 calls, 16
+  captured, no timeout, adapter or transport failure, no retries.
+- Pinned strict reader: 10 of 16 valid; complete unresolved pairs for
+  amica, puella, amare and laudare. Rejections: three outer JSON syntax,
+  two nested source objects with the wrong keys, one nested source JSON
+  syntax. No card was accepted, exported or imported.
+- Contract findings shared with MiniMax: double-encoded nested evidence
+  breaks JSON escaping; the literal stem-concatenation rule makes both
+  models emit laudānt, which the reader accepts; the production-cue rule
+  is resolved to the genitive and the template check accepts any cue.
+- Reported usage: 41084 input and 23704 output tokens (4254 reasoning).
+  Go quota after the run was 1% rolling, 0% weekly and monthly. Protocol,
+  wrapper, deadline and retention differences prevent a model-only
+  conclusion. An offline independent check reproduced all 16 strict
+  outcomes; private outputs stay uncommitted.
+- 2026-11-28T15:15:07Z: verification pass
