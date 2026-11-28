@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-28T13:23:46Z"
+updated_at: "2026-11-28T13:31:17Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -11,7 +11,8 @@ blockers:
     - 'T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers'
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
-next_action: Resolve blocker on T-201-validate-real-pipeline-and-linux-anki-desktop
+    - 'T-255-compare-ten-german-cards-opencode-go-luna: Maintainer decision needed: supported Go route cannot run gpt-5.6-luna under the approved 20-call/60s bounded protocol; GPT-6 Luna is unreviewed in the launcher registry. Zero paid calls made.'
+next_action: Resolve blocker on T-255-compare-ten-german-cards-opencode-go-luna
 last_verification_result: pass for T-254-replay-approved-ten-german-cards-after-post-trial at 2026-11-28T12:51:37Z
 relevant_artifacts: []
 continuation_notes:
@@ -38,6 +39,7 @@ continuation_notes:
 - T-207-approve-deck-workflow-contract-and-calibration: maintainer-only contract approval: accept exact follow-up schemas, source-stream authority and independently judged calibration revisions before consumers
 - T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.
 - T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.
+- T-255-compare-ten-german-cards-opencode-go-luna: Maintainer decision needed: supported Go route cannot run gpt-5.6-luna under the approved 20-call/60s bounded protocol; GPT-6 Luna is unreviewed in the launcher registry. Zero paid calls made.
 
 ## Last Verification
 
@@ -45,7 +47,7 @@ continuation_notes:
 
 ## Next Action
 
-- Resolve blocker on T-201-validate-real-pipeline-and-linux-anki-desktop
+- Resolve blocker on T-255-compare-ten-german-cards-opencode-go-luna
 
 ## Relevant Artifacts
 
@@ -57,8 +59,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 20
+- todo: 19
 - in_progress: 0
 - completed: 233
-- blocked: 4
+- blocked: 5
 - cancelled: 0

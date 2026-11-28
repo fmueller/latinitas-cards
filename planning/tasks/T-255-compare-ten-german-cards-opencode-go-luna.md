@@ -1,12 +1,12 @@
 ---
 id: T-255-compare-ten-german-cards-opencode-go-luna
 title: Compare ten German cards through OpenCode Go Luna
-status: todo
+status: blocked
 priority: high
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-254-replay-approved-ten-german-cards-after-post-trial
-updated_at: "2026-11-28T13:23:46Z"
+updated_at: "2026-11-28T13:31:17Z"
 ---
 
 # T-255-compare-ten-german-cards-opencode-go-luna Compare ten German cards through OpenCode Go Luna
@@ -42,3 +42,15 @@ the completed MiniMax replay without incorporating concurrent product fixes.
   Report unverified properties; no release or independent Latin authority claim.
 
 ## Implementation Notes
+
+- 2026-11-28T13:31:17Z: Maintainer decision needed: supported Go route cannot run gpt-5.6-luna under the approved 20-call/60s bounded protocol; GPT-6 Luna is unreviewed in the launcher registry. Zero paid calls made.
+- Discovery used only the launcher's authenticated catalog refresh and the
+  public Go docs. GPT-5.6 Luna is reviewed and available; GPT-6 Luna is
+  advertised but unreviewed. The bounded one-request, no-tool worker route
+  allowlists only GLM-5.3-Flash, DeepSeek V4.1 Flash and Qwen3.8 Flash. The
+  general agent route adds title generation and tool steps without a request
+  cap or 60-second deadline, so twenty fresh tasks exceed twenty calls.
+- Unblock only after the maintainer authorizes a scoped bounded-worker
+  extension for reviewed GPT-5.6 Luna (one request, no tools or title call,
+  8192 cap, 60-second deadline). No exception is approved; the skill and its
+  allowlist are unchanged.
