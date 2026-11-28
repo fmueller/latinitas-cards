@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-28T02:01:46Z"
+updated_at: "2026-11-28T02:03:05Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -12,7 +12,7 @@ blockers:
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
     - 'T-250-verify-integrated-post-trial-fixes-on-current: A1 round 2 on 6aca005: identical repeated phrase constructed-exercise-context still aborts the provider run (duplicate source_evidence; contexts appended after T-252 dedup), stopping unrelated cards; needs owner correction and rerun'
-next_action: Resolve blocker on T-250-verify-integrated-post-trial-fixes-on-current
+next_action: No active-spec task is ready
 last_verification_result: pass for T-252-preserve-shared-source-evidence-for-repeated at 2026-11-28T01:50:27Z
 relevant_artifacts: []
 continuation_notes:
@@ -47,7 +47,7 @@ continuation_notes:
 
 ## Next Action
 
-- Resolve blocker on T-250-verify-integrated-post-trial-fixes-on-current
+- No active-spec task is ready
 
 ## Relevant Artifacts
 
@@ -59,7 +59,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 17
+- todo: 18
 - in_progress: 0
 - completed: 230
 - blocked: 5
