@@ -6,7 +6,7 @@ priority: high
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-249-evaluate-bounded-pydantic-ai-migration-feasibility
-updated_at: "2026-11-28T00:36:19Z"
+updated_at: "2026-11-28T02:01:46Z"
 ---
 
 # T-250-verify-integrated-post-trial-fixes-on-current Verify integrated post-trial fixes on current transport
@@ -86,3 +86,34 @@ for CI; parent owns final CI-fix supervision.
   release readiness, R1 or M2. Verify/complete not run; the final chain was
   stopped after Ruff and mypy passed and pytest had 334 passing, 0 failing.
 - 2026-11-28T00:36:19Z: A1 defect: phrases whose bindings reuse one source entry abort the provider path (duplicate source_evidence in ModelTask, pre-dates package); needs owner correction and rerun of affected phrase scenarios on the corrected candidate
+- 2026-11-28T01:52:21Z: T-252 correction on origin/main 6aca005; resuming A1 on the corrected candidate
+- Round 2 candidate: origin/main 6aca005c028430c4f99d3807473eac052d20e3f0
+  (T-252). Wheel sha256
+  a423025cc4f3f92fd8452ddf64c59b276f9a44fdea383764cc9c357983c2c885, sdist
+  b0e41153327c7b5a071bee2a46bbbe22ea225c68178bc9607252403badc7d7e3, fresh
+  venv. The installed package differs from round 1 only in
+  pipeline_orchestration.py, and runtime pins are identical. Every round-1
+  scenario was rerun on this install; round-1 results are not reused.
+- Round 2 passed: same-entry verb-noun and noun-genitive phrases now send one
+  proposal and one byte-identical blind check, keep each role's form cell and
+  deduplicate only identical entry evidence; same entry with different senses
+  keeps both meaning spans; a same-entry partial sense mapping is still
+  `malformed_output`. Form, recognition and distinct-entry phrase requests
+  equal round 1 except implementation-bound digests. Direction, nested-output,
+  wrong-Latin, unknown/deadline accounting, unchanged-scope reuse, 72fdf19
+  store read and resume, response/stage/ledger/duplicate-key corruption,
+  owner-only permissions and offline controls behave as in round 1. A
+  tampered current-store response fails only its card, with no dispatch.
+- Round 2 blocking defect (same class as T-252): a phrase reference repeating
+  an identical `constructed-exercise-context` aborts the provider run with
+  `duplicate source_evidence` before dispatch, because contexts are appended
+  after T-252's deduplication. The whole run stops, including an unrelated
+  clean phrase card, and writes no outcome report; offline both cards
+  complete as withheld. Two distinct contexts work. Returned to the parent.
+- Harness note: copied runs still read and write report.json in the original
+  output directory recorded in execution.json, so `report` results on copied
+  stores were discarded; resume results are copy-local.
+- Round 2 checks: no tests added or removed. Verify/complete not run because
+  the task is blocked; the full Ruff, mypy and pytest chain was not run on
+  6aca005 in this task.
+- 2026-11-28T02:01:46Z: A1 round 2 on 6aca005: identical repeated phrase constructed-exercise-context still aborts the provider run (duplicate source_evidence; contexts appended after T-252 dedup), stopping unrelated cards; needs owner correction and rerun
