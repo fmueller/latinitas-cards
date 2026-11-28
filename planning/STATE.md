@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-11-28T02:03:05Z"
+updated_at: "2026-11-28T03:31:58Z"
 active_spec_version: v0.5.0
 active_spec_path: specs/v0.5.0.md
 current_task: ""
@@ -12,8 +12,8 @@ blockers:
     - 'T-200-evaluate-held-out-automatic-acceptance-against: Protected custody not demonstrated: provision an independently administered non-bypassable execution/storage boundary and sentinel denial evidence before reference appointments, feasibility or holdout work; qualified references, numerical freeze and separate execution approval also remain unpassed.'
     - 'T-201-validate-real-pipeline-and-linux-anki-desktop: Approved post-trial latch: require independent acceptance of T-250-verify-integrated-post-trial-fixes-on-current and the M2 task if M1 adopts before coordinator unblocks; preserve T200 and all qualification/native gates.'
     - 'T-250-verify-integrated-post-trial-fixes-on-current: A1 round 2 on 6aca005: identical repeated phrase constructed-exercise-context still aborts the provider run (duplicate source_evidence; contexts appended after T-252 dedup), stopping unrelated cards; needs owner correction and rerun'
-next_action: No active-spec task is ready
-last_verification_result: pass for T-252-preserve-shared-source-evidence-for-repeated at 2026-11-28T01:50:27Z
+next_action: Resolve blocker on T-250-verify-integrated-post-trial-fixes-on-current
+last_verification_result: pass for T-253-preserve-phrase-context-evidence-without-duplicate at 2026-11-28T03:31:58Z
 relevant_artifacts: []
 continuation_notes:
     - Retrofitted onto an existing repo before its first release; specs/v0.1.0.md is the active spec and records both the pipeline built so far and the work left to cut 0.1.0.
@@ -43,11 +43,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-252-preserve-shared-source-evidence-for-repeated at 2026-11-28T01:50:27Z
+- pass for T-253-preserve-phrase-context-evidence-without-duplicate at 2026-11-28T03:31:58Z
 
 ## Next Action
 
-- No active-spec task is ready
+- Resolve blocker on T-250-verify-integrated-post-trial-fixes-on-current
 
 ## Relevant Artifacts
 
@@ -59,8 +59,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 18
+- todo: 17
 - in_progress: 0
-- completed: 230
+- completed: 231
 - blocked: 5
 - cancelled: 0

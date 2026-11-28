@@ -1,12 +1,12 @@
 ---
 id: T-253-preserve-phrase-context-evidence-without-duplicate
 title: Preserve phrase context evidence without duplicate-run crashes
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.5.0.md#whole-spec-acceptance-and-final-checks
 dependencies:
     - T-252-preserve-shared-source-evidence-for-repeated
-updated_at: "2026-11-28T02:03:05Z"
+updated_at: "2026-11-28T03:31:58Z"
 ---
 
 # T-253-preserve-phrase-context-evidence-without-duplicate Preserve phrase context evidence without duplicate-run crashes
@@ -45,3 +45,30 @@ main after local gates without waiting for CI. Cite verification timestamps,
 not ignored artifact paths. T250 remains pending independent acceptance.
 
 ## Implementation Notes
+
+Fix: pipeline_orchestration._task now applies T-252's exact-identity sharing
+(dict.fromkeys, first-seen order) once, after the whole evidence/scope
+assembly and immediately before ModelTask construction, instead of after the
+binding loop. Pattern and context items are now covered too. Every context
+stays verbatim in the request objective; distinct contexts keep separate
+evidence; ModelTask/RequestContext duplicate validation is unchanged. A second
+base failure surfaced while reproducing: two distinct equal-length contexts
+produce identical context Scopes, and RequestContext rejected them with
+`duplicate scope`, also aborting the run. The same move fixes it. Tasks the
+base accepted are byte-identical, so saved calls, scopes and permissions keep
+their digests.
+
+Regression: one German noun-genitive case (contexts A, A, B with B distinct
+but equal length, plus a clean sibling phrase) in phrase_evidence_test through
+the local synthetic endpoint. On the base it exits 1 with duplicate
+source_evidence and nothing is dispatched; with the fix the run completes, both
+cards dispatch, and one context scope plus [A, B] evidence is sent. Wrong-fix
+mutants (evidence-only late sharing, per-text context dedup, dropped context
+scopes) all fail it. Tests added: 1; removed: 0.
+
+Review: simplifier (no code changes; comment wording corrected), high-tier
+conventional review relayed as four lanes plus an independent adversarial
+verifier; no blocking findings. Accepted: assert scopes, collapse to one case.
+Gap: same-entry different-sense binding remains covered by T-250's installed
+rerun, not by a committed test.
+- 2026-11-28T03:31:58Z: verification pass

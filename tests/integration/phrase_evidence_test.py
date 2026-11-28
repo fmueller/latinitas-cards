@@ -346,6 +346,57 @@ def test_phrase_saved_comparison_uses_independent_source_proofs(
     assert replay["file_export"]["exported"] == 0 and len(sent) == 2
 
 
+def test_repeated_phrase_contexts_reach_provider_with_clean_sibling(tmp_path: Path) -> None:
+    from grammar_pipeline_test import configure_pipeline_http, synthetic_pipeline_http
+
+    from latinitas_cards.providers import ModelTask
+
+    # A repeats exactly; B is distinct but equal length, so its scope coincides with A's.
+    a, b = "Der Satz steht im Garten.", "Die Rede klingt im Saale."
+    contexts = (a, a, b)
+    profile, objectives, _ = phrase_fixture(tmp_path, "de", "noun-genitive")
+    targets = json.loads(objectives.read_text())
+    phrase = targets["phrases"][0]
+    targets["phrases"].append(dict(phrase, object_key="clean"))
+    phrase["reference"] = dict(
+        phrase["reference"],
+        evidence=[
+            *phrase["reference"]["evidence"],
+            *(
+                dict(source="constructed-exercise-context", reference=f"context-{i}", version="1", text=text)
+                for i, text in enumerate(contexts)
+            ),
+        ],
+    )
+    write(objectives, targets)
+    output = tmp_path / "workflow"
+    with synthetic_pipeline_http() as (url, sent, _):
+        configure_pipeline_http(profile, url)
+        settings = json.loads(profile.read_text())
+        settings["selection"]["entries"] = []
+        settings["processing"]["max_source_units"] = 2
+        write(profile, settings)
+        report = call("run", "--profile", str(profile), "--objectives", str(objectives), "--output", str(output))
+    assert report["status"] == "completed" and report["outcome_report"]["details"]["counts"]["cards"] == 2
+    assert len(sent) == 4
+    tasks = [json.loads(body["messages"][1]["content"]) for body in sent]
+    affected = [t for t in tasks if json.loads(t["objective"])["contexts"]]
+    assert len(affected) == 2 and affected[0] == affected[1]  # Clean sibling sent the other two.
+    assert tuple(json.loads(affected[0]["objective"])["contexts"]) == contexts
+    evidence = affected[0]["source_evidence"]
+    assert [e["text"] for e in evidence if e["source"] == "unverified-phrase-context"] == [a, b]
+    assert [e["source"] for e in evidence].count("confirmed-deck-mapping") == 2  # Both same-entry bindings.
+    requests = [json.loads(p.read_text()) for p in (output / "run" / "request-contexts").glob("*.json")]
+    context_scopes = [
+        [s["spans"] for s in r["scope"] if s["fields"] == ["phrase-objective/context"]]
+        for r in requests
+        if json.loads(r["task"]["objective"])["contexts"]
+    ]
+    assert context_scopes and all(s == [[{"start": 0, "end": len(a)}]] for s in context_scopes)
+    with pytest.raises(ValueError, match="duplicate source_evidence"):
+        ModelTask.read_json(canonical({**affected[0], "source_evidence": [*evidence, evidence[-1]]}))
+
+
 def test_added_constituent_tables_preserve_all_qualified_alternatives() -> None:
     from latinitas_cards.lexical_evidence import BennettLexicon
 
