@@ -3810,8 +3810,8 @@ def test_orchestrated_http_success_lost_response_resume_and_offline(
         assert len(requests) == 2 and report["file_export"]["exported"] == 0
         assert [r["state"] for r in report["provider_calls"]] == ["succeeded", "succeeded"]
         assert json.loads(requests[0]["messages"][1]["content"]) == json.loads(requests[1]["messages"][1]["content"])
-        assert "proposal/2" in requests[0]["messages"][0]["content"]
-        assert "blind/2" in requests[1]["messages"][0]["content"]
+        assert "proposal/3" in requests[0]["messages"][0]["content"]
+        assert "blind/3" in requests[1]["messages"][0]["content"]
         assert "synthetic-only" not in requests[1]["messages"][1]["content"]
         call("resume", "--run", str(root))
         call("resume", "--run", str(root), "--offline")
@@ -3982,7 +3982,7 @@ def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> N
     presentation template, a repeated answer contract and no direction.
     """
     from latinitas_cards import pipeline_orchestration as workflow
-    from latinitas_cards.pipeline_consumers import FORM_PRESENTATION
+    from latinitas_cards.pipeline_consumers import FORM_PRESENTATION, _feature_terms
     from latinitas_cards.providers import ANSWER_CONTRACT
 
     current_task = workflow._task
@@ -4002,6 +4002,8 @@ def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> N
         "'label: value' terms with '; '. Append stem_line if stem is listed, then independently supported "
         "explanation and caveat clauses in assertion order, each on a new answer line. "
         "Templates specify fixed presentation only; solve their placeholders independently.",
+        "source": "JSON object {entry, sense}: the supplied entry and its selected sense object, "
+        "not just the sense key.",
     }
 
     def baseline_task(card: Rendered, source: Any, profile: PipelineProfile) -> Any:
@@ -4009,6 +4011,8 @@ def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> N
         objective = json.loads(task.objective)
         if objective.pop("direction", None):
             objective["presentation"] = FORM_PRESENTATION[profile.language]
+            objective["selected_sense"] = objective.pop("sense_key")
+            objective["feature_terms"] = _feature_terms(source.deck)
             for assertion in objective["assertions"]:
                 assertion["value_contract"] = contracts.get(assertion["id"], assertion["value_contract"])
         objective["answer_contract"] = ANSWER_CONTRACT
@@ -4035,7 +4039,7 @@ def test_historical_prompt_store_is_readable_but_not_reused(tmp_path: Path) -> N
         assert call("report", "--run", str(root)) == stored
         # Stale calls are neither reused nor rewritten; the changed task needs its own calls.
         current = call("resume", "--run", str(root))
-        assert len(requests) == 4 and "proposal/2" in requests[2]["messages"][0]["content"]
+        assert len(requests) == 4 and "proposal/3" in requests[2]["messages"][0]["content"]
         layouts = [json.loads(json.loads(r["messages"][1]["content"])["objective"]) for r in requests]
         assert all("answer_contract" in o and "direction" not in o for o in layouts[:2])
         assert all("answer_contract" not in o and "direction" in o for o in layouts[2:])

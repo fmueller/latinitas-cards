@@ -47,6 +47,8 @@ Notable user-facing changes to Latinitas Cards are documented here.
   answers that break their card format as `contract_violation`; reports use schema 3.
 - `pipeline resume` refreshes model stages after an output-token allowance change,
   retaining earlier receipts and charges and requiring fresh exact hosted permission.
+- `pipeline run` model requests (`proposal/3`, `blind/3`) state answer shapes once and
+  more precisely, without reusing answer field names; they need fresh permission.
 - Focused answer-evidence disclosures in Anki Desktop use Enter/Space to toggle
   without grading the card; ordinary review shortcuts outside them are unchanged.
 - German cards render withheld-status explanations, blank markers and reference

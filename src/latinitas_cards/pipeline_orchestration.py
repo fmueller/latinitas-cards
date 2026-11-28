@@ -323,12 +323,13 @@ def _task(card: Rendered, source: Source, profile: PipelineProfile) -> tuple[Mod
                 "recipe": card.recipe,
                 "direction": direction,
                 "selected_form": objective.form,
-                "selected_sense": objective.sense,
+                "sense_key": objective.sense,
                 "anchors": objective.anchors,
                 "context": objective.context,
                 "distinction": objective.distinction,
                 "presentation": _presentation(card, source, profile.language, features),
-                "feature_terms": _feature_terms(source.deck),
+                # Only recognition answers spell out feature labels; other templates have no unfilled features.
+                **({"feature_terms": _feature_terms(source.deck)} if direction == "recognition" else {}),
                 "feature_order": tuple(Features.model_fields),
                 "assertions": tuple(
                     {

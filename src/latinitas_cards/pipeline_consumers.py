@@ -318,7 +318,10 @@ FORM_DIRECTIONS = {
     "form_cloze": "cloze",
 }
 FORM_ASSERTION_VALUE_CONTRACTS = {
-    "source": "JSON object {entry, sense}: the supplied entry and its selected sense object, not just the sense key.",
+    "source": (
+        "JSON object {entry, sense}: entry is the whole entry object from the unverified-form-entry evidence, "
+        "not its lemma; sense is the object in entry.senses whose key is objective.sense_key."
+    ),
     "target": (
         "JSON object {surface, features, source_role, anchors, rule}, plus context only for a contextual "
         "recognition/cloze task. surface is Latin; features uses canonical feature names and values, with "

@@ -190,7 +190,7 @@ def captured_answer(body: dict[str, Any], paraphrase: bool = False) -> bytes:
     if objective["recipe"] == "form_translation":
         entry = next(iter(supplied.values()))["entry"]
         form = next(f for f in entry["forms"] if f["key"] == objective["selected_form"])
-        sense = next(s for s in entry["senses"] if s["key"] == objective["selected_sense"])
+        sense = next(s for s in entry["senses"] if s["key"] == objective["sense_key"])
         # This loopback fixture qualifies only the captured amō first-person cell.
         assert form["text"] == "amō" and sense["key"] == "love"
         translation = "I love" if language == "en" else "ich liebe"

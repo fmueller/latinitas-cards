@@ -229,6 +229,7 @@ def test_contextual_models_receive_selected_task(tmp_path: Path, recipe: str, co
         )
         assert len(sent) == 2
         task = json.loads(sent[0]["messages"][1]["content"])
+        assert ("feature_terms" in json.loads(task["objective"])) == (recipe == "ppp_recognition")
         if recipe == "ppp_recognition":
             objective = json.loads(task["objective"])
             assert objective["recipe"] == recipe

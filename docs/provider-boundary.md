@@ -250,11 +250,15 @@ declared scope; a profile or permission cannot add another qualification:
 
 - Hosted `openai` protocol at `https://api.minimax.io/v1/chat/completions`, model
   `MiniMax-M3.1-Flash`, with explicit `service_revision: null` (unpinnable alias).
-- The installed proposal/blind messages plus MiniMax structured-answer contract/1,
-  which states the existing selected-sense validator invariant. The 2026-11-20
-  observation below used proposal/1 and blind/1. The admission check does not compare
-  prompt revisions; proposal/2 and blind/2 change request bytes and need fresh exact
-  permission. This does not decide whether the changed prompts need requalification.
+- The installed proposal/blind messages. Through proposal/2 and blind/2, MiniMax
+  requests appended structured-answer contract/1, which restated the selected-sense
+  validator invariant. Since proposal/3 and blind/3 that invariant is stated once in
+  the shared answer contract for every provider, form objectives name the selected
+  sense `sense_key` instead of reusing the answer field name `selected_sense`, and
+  only recognition tasks carry feature terms. The 2026-11-20 observation below used
+  proposal/1 and blind/1. The admission check does not compare prompt revisions;
+  each revision changes request bytes and needs fresh exact permission. This does not
+  decide whether the changed prompts need requalification.
   Both roles receive the same source task, without the proposal answer.
 - Nonstreaming text-only requests with a prompt-only JSON answer contract,
   `max_completion_tokens: 2048` and
